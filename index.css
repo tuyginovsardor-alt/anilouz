@@ -23,6 +23,59 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
+/* Animations */
+@keyframes kenburns {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.15); }
+}
+
+.animate-ken-burns {
+    animation: kenburns 12s ease-out forwards;
+}
+
+@keyframes slideRight {
+    from { opacity: 0; transform: translateX(-50px); filter: blur(10px); }
+    to { opacity: 1; transform: translateX(0); filter: blur(0); }
+}
+
+.animate-slide-right {
+    animation: slideRight 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes titleBlur {
+    from { opacity: 0; filter: blur(20px); transform: translateY(20px); }
+    to { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+.animate-title-blur {
+    animation: titleBlur 1s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes infiniteScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-100% / 2)); }
+}
+
+.animate-infinite-scroll {
+    animation: infiniteScroll 60s linear infinite;
+    display: flex;
+    width: max-content;
+}
+
+.pause-scroll {
+    animation-play-state: paused;
+}
+
+/* Card Styling */
+.anime-card {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.anime-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+}
+
 .bottom-nav {
   background: rgba(17, 17, 20, 0.85);
   backdrop-filter: blur(30px);
@@ -40,25 +93,6 @@ body {
   stroke-width: 3px;
 }
 
-@keyframes gradient-x {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.animate-gradient-x {
-  animation: gradient-x 3s ease infinite;
-}
-
-.anime-card {
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.anime-card:hover {
-  transform: translateY(-10px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-}
-
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: scale(1); }
@@ -74,10 +108,5 @@ body {
 ::-webkit-scrollbar-thumb { background: #1e1e22; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
