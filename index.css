@@ -24,9 +24,11 @@ body {
 }
 
 .bottom-nav {
-  background: #111114;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 24px 24px 0 0;
+  background: rgba(17, 17, 20, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 40px;
 }
 
 .hero-gradient {
@@ -47,7 +49,9 @@ body {
 }
 
 .active-nav-item svg {
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+  filter: drop-shadow(0 0 8px rgba(255, 115, 0, 0.5));
+  stroke: #f97316;
+  stroke-width: 2.5px;
 }
 
 @keyframes fadeIn {
@@ -60,7 +64,15 @@ body {
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg-main); }
 ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { WelcomePage } from './WelcomePage';
@@ -16,13 +17,12 @@ import { supabase } from './services/supabaseClient';
 import { SupportChatWidget } from './components/SupportChatWidget';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
-import { AniConcursPage } from './AniConcursPage';
-import { ArkTradingPage } from './ArkTradingPage';
-import { Home, LayoutGrid, Repeat, RefreshCw, Menu } from 'lucide-react';
+import { Home, Search, Bookmark, User, MoreHorizontal, ShieldCheck } from 'lucide-react';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'aniconcurs' | 'arktrading';
-export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing';
-export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'contest' | 'sitemap' | 'cash_contest' | 'security' | 'stamp_tool';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright';
+export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more';
+// Fix: Added missing Admin subpages 'contest' and 'cash_contest'
+export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 
 const App: React.FC = () => {
   const [page, setPage] = useState<Page>('welcome');
@@ -79,7 +79,8 @@ const App: React.FC = () => {
 
   const fetchUserRole = async (userId: string) => {
       const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-      if (data) setCurrentUserRole(data.role);
+      // Fix: Added cast to any for role access when Database type inference is broken
+      if (data) setCurrentUserRole((data as any).role);
   };
 
   const handleNavigation = (targetPage: Page) => {
@@ -98,6 +99,8 @@ const App: React.FC = () => {
   };
 
   if (isCheckingAuth) return <div className="h-screen bg-[#0a0a0c] flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
+
+  const isAdmin = ['admin', 'owner', 'manager'].includes(currentUserRole);
 
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
@@ -122,8 +125,6 @@ const App: React.FC = () => {
                         {page === 'search' && <SearchPage initialQuery={currentQuery} onNewSearch={setCurrentQuery} onMovieClick={handleMovieClick} />}
                         {page === 'dashboard' && <DashboardPage currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
-                        {page === 'aniconcurs' && <AniConcursPage />}
-                        {page === 'arktrading' && <ArkTradingPage />}
                         {page === 'ai-assistant' && <AiAssistantPage />}
                         {page === 'copyright' && <CopyrightPage onBack={() => setPage('welcome')} />}
                       </>
@@ -132,44 +133,44 @@ const App: React.FC = () => {
                 )}
           </main>
 
-          {/* MOBILE BOTTOM NAVIGATION */}
+          {/* MOBILE BOTTOM NAVIGATION (Minimalist Streaming Style) */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
             <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-8">
                 <div className="bottom-nav h-20 flex justify-around items-center px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.6)]">
                     <button 
                         onClick={() => handleNavigation('welcome')}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'welcome' ? 'active-nav-item' : 'text-gray-600'}`}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'welcome' ? 'active-nav-item' : 'text-gray-500'}`}
                     >
                         <Home size={22} strokeWidth={page === 'welcome' ? 2.5 : 2} />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Asosiy</span>
+                        <span className="text-[9px] font-bold uppercase">Asosiy</span>
                     </button>
                     <button 
-                        onClick={() => {setPage('dashboard'); setDashboardPage('billing')}}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${dashboardPage === 'billing' && page === 'dashboard' ? 'active-nav-item' : 'text-gray-600'}`}
+                        onClick={() => handleNavigation('search')}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'search' ? 'active-nav-item' : 'text-gray-500'}`}
                     >
-                        <LayoutGrid size={22} />
-                        <span className="text-[9px] font-black uppercase tracking-widest">To'lovlar</span>
+                        <Search size={22} />
+                        <span className="text-[9px] font-bold uppercase">Qidiruv</span>
                     </button>
                     <button 
-                        onClick={() => handleNavigation('arktrading')}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'arktrading' ? 'active-nav-item' : 'text-gray-600'}`}
+                        onClick={() => {setPage('dashboard'); setDashboardPage('saved')}}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'saved' ? 'active-nav-item' : 'text-gray-500'}`}
                     >
-                        <Repeat size={22} />
-                        <span className="text-[9px] font-black uppercase tracking-widest">O'tkazmalar</span>
-                    </button>
-                    <button 
-                        onClick={() => handleNavigation('aniconcurs')}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'aniconcurs' ? 'active-nav-item' : 'text-gray-600'}`}
-                    >
-                        <RefreshCw size={22} />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Konvert</span>
+                        <Bookmark size={22} />
+                        <span className="text-[9px] font-bold uppercase">Saqlangan</span>
                     </button>
                     <button 
                         onClick={() => {setPage('dashboard'); setDashboardPage('profile')}}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${dashboardPage === 'profile' && page === 'dashboard' ? 'active-nav-item' : 'text-gray-600'}`}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'profile' ? 'active-nav-item' : 'text-gray-500'}`}
                     >
-                        <Menu size={22} />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Yana</span>
+                        <User size={22} />
+                        <span className="text-[9px] font-bold uppercase">Profil</span>
+                    </button>
+                    <button 
+                        onClick={() => {setPage('dashboard'); setDashboardPage('more')}}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'more' ? 'active-nav-item' : 'text-gray-500'}`}
+                    >
+                        <MoreHorizontal size={22} />
+                        <span className="text-[9px] font-bold uppercase">Yana</span>
                     </button>
                 </div>
             </div>

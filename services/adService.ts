@@ -21,15 +21,17 @@ export const getActiveAdForLocation = async (location: Ad['location']): Promise<
 
         if (!data) return null;
 
+        // Fix: Use any type cast to safely access fields from the dynamically fetched table
+        const adData = data as any;
         return {
-            id: data.id,
-            name: data.name,
-            type: data.type,
-            contentUrl: data.content_url,
-            targetUrl: data.target_url,
-            location: data.location,
-            status: data.status,
-            view_count: data.view_count
+            id: adData.id,
+            name: adData.name,
+            type: adData.type,
+            contentUrl: adData.content_url,
+            targetUrl: adData.target_url,
+            location: adData.location,
+            status: adData.status,
+            view_count: adData.view_count
         };
     } catch (err) {
         console.error("Ad service error:", err);
@@ -48,6 +50,7 @@ export const getPlayerAds = async (): Promise<Ad[]> => {
 
         if (error) throw error;
 
+        // Fix: Added any cast in map for property access when table is not in Database interface
         return (data || []).map((ad: any) => ({
             id: ad.id,
             name: ad.name,

@@ -101,7 +101,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
                 throw logError;
             }
         }
-        const role = profile?.role || 'user';
+        // Fix: Use optional chaining and cast to any for role access as profile might be null or have missing fields in type Database
+        const role = (profile as any)?.role || 'user';
         onAuthSuccess(role);
         addNotification({ type: 'success', title: 'Muvaffaqiyatli!', message: `Xush kelibsiz!` });
     };
@@ -190,7 +191,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
             if (!user) throw new Error("Foydalanuvchi topilmadi");
 
             const fullName = `${firstName} ${lastName}`.trim();
-            const { error } = await supabase.from('profiles').update({ username, full_name: fullName, device_id: deviceId }).eq('id', user.id);
+            // Fix: Added explicit cast to any for profiles table as Database type does not contain username or device_id
+            const { error } = await supabase.from('profiles').update({ username, full_name: fullName, device_id: deviceId } as any).eq('id', user.id);
             if (error) throw error;
 
             await logDeviceLogin(user.id, deviceId);

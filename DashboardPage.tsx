@@ -1,19 +1,14 @@
-
-
-
 import React from 'react';
-import { HamburgerMenu } from './components/HamburgerMenu';
 import { DashboardSubPage, Page } from './App';
 import { ProfilePage } from './ProfilePage';
 import { SettingsPage } from './SettingsPage';
 import { HistoryPage } from './HistoryPage';
 import { DashboardHomePage } from './DashboardHomePage';
 import { Movie, UserRole } from './types';
-import { AdminIcon } from './components/icons/AdminIcon';
 import { AccountPage } from './AccountPage';
 import { BillingPage } from './BillingPage';
 import { SavedPage } from './SavedPage';
-import { TrendingUpIcon } from './components/icons/TrendingUpIcon';
+import { LogOut, Settings, CreditCard, History, ShieldCheck, Instagram, Send, Youtube, Facebook } from 'lucide-react';
 
 interface DashboardPageProps {
   currentPage: DashboardSubPage;
@@ -39,6 +34,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     viewUserId 
 }) => {
 
+    const isAdmin = ['admin', 'owner', 'manager'].includes(currentRole);
+
     const renderContent = () => {
         switch (currentPage) {
             case 'profile':
@@ -53,61 +50,58 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 return <AccountPage onNavigate={onNavigate} />;
             case 'billing':
                 return <BillingPage />;
-            case 'main':
-            default:
+            case 'more':
                 return (
-                    <div>
-                        <div className="mb-8">
-                            {/* ARK Banner */}
-                            <div 
-                                onClick={() => onMainNavigate('arktrading')}
-                                className="bg-gradient-to-r from-gray-900 via-black to-gray-900 border border-yellow-600/50 rounded-2xl p-6 mb-6 cursor-pointer group relative overflow-hidden shadow-[0_0_15px_rgba(202,138,4,0.2)]"
-                            >
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <TrendingUpIcon className="w-32 h-32 text-yellow-500" />
-                                </div>
-                                <div className="relative z-10 flex justify-between items-center">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="bg-yellow-500 text-black text-xs font-black px-2 py-0.5 rounded animate-pulse">NEW</span>
-                                            <h2 className="text-2xl font-bold text-white tracking-widest font-mono">ARK TRADING</h2>
-                                        </div>
-                                        <p className="text-gray-400 text-sm max-w-md">
-                                            Yangi raqamli aktivlarni yig'ing, savdo qiling va real pulga almashtiring. 
-                                            <br/><span className="text-yellow-500 font-bold">Premium a'zolar uchun maxsus.</span>
-                                        </p>
-                                    </div>
-                                    <div className="bg-yellow-600/20 p-3 rounded-full border border-yellow-600/50 group-hover:scale-110 transition-transform">
-                                        <TrendingUpIcon className="w-8 h-8 text-yellow-500" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <DashboardHomePage onSearch={onSearch} onMovieClick={onMovieClick} onNavigate={onMainNavigate} />
+                    <div className="animate-fade-in space-y-6 max-w-xl mx-auto pb-10">
+                        <h2 className="text-2xl font-black tracking-tight text-white mb-8">Boshqa Bo'limlar</h2>
+                        
+                        <div className="grid gap-3">
+                            {isAdmin && (
+                                <button onClick={() => onSwitchRole(currentRole)} className="w-full flex items-center justify-between p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl text-yellow-500 font-bold hover:bg-yellow-500/20 transition-all">
+                                    <div className="flex items-center gap-3"><ShieldCheck size={20}/> Admin Paneli</div>
+                                    <span>&rarr;</span>
+                                </button>
+                            )}
+                            <button onClick={() => onNavigate('billing')} className="w-full flex items-center justify-between p-4 bg-gray-900 border border-gray-800 rounded-2xl text-gray-300 font-bold hover:bg-gray-800 transition-all">
+                                <div className="flex items-center gap-3"><CreditCard size={20}/> Hisob To'ldirish</div>
+                                <span>&rarr;</span>
+                            </button>
+                            <button onClick={() => onNavigate('history')} className="w-full flex items-center justify-between p-4 bg-gray-900 border border-gray-800 rounded-2xl text-gray-300 font-bold hover:bg-gray-800 transition-all">
+                                <div className="flex items-center gap-3"><History size={20}/> Ko'rilganlar</div>
+                                <span>&rarr;</span>
+                            </button>
+                            <button onClick={() => onNavigate('settings')} className="w-full flex items-center justify-between p-4 bg-gray-900 border border-gray-800 rounded-2xl text-gray-300 font-bold hover:bg-gray-800 transition-all">
+                                <div className="flex items-center gap-3"><Settings size={20}/> Sozlamalar</div>
+                                <span>&rarr;</span>
+                            </button>
                         </div>
+
+                        <div className="pt-8 space-y-4">
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Biz Ijtimoiy Tarmoqlarda</p>
+                            <div className="flex justify-center gap-4">
+                                <a href="#" className="p-3 bg-gray-900 border border-gray-800 rounded-full text-gray-400 hover:text-white transition-all"><Instagram size={20}/></a>
+                                <a href="#" className="p-3 bg-gray-900 border border-gray-800 rounded-full text-gray-400 hover:text-white transition-all"><Send size={20}/></a>
+                                <a href="#" className="p-3 bg-gray-900 border border-gray-800 rounded-full text-gray-400 hover:text-white transition-all"><Youtube size={20}/></a>
+                                <a href="#" className="p-3 bg-gray-900 border border-gray-800 rounded-full text-gray-400 hover:text-white transition-all"><Facebook size={20}/></a>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={onLogout}
+                            className="w-full mt-6 flex items-center justify-center gap-3 p-4 bg-red-600/10 border border-red-600/20 rounded-2xl text-red-500 font-bold hover:bg-red-600 hover:text-white transition-all"
+                        >
+                            <LogOut size={20}/> Hisobdan Chiqish
+                        </button>
                     </div>
                 );
+            case 'main':
+            default:
+                return <DashboardHomePage onSearch={onSearch} onMovieClick={onMovieClick} onNavigate={onMainNavigate} />;
         }
     }
-    
-    const isAdminOrPrivileged = ['admin', 'owner', 'manager', 'support', 'accountant'].includes(currentRole);
 
     return (
-        <div>
-            <div className="flex justify-end items-center gap-4 mb-8">
-                {isAdminOrPrivileged && !viewUserId && (
-                    <button
-                        onClick={() => onSwitchRole(currentRole)} // This would take you back to the admin view
-                        className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/20 transition-colors"
-                        aria-label="Admin Paneliga o'tish"
-                    >
-                        <AdminIcon className="w-5 h-5" />
-                        <span>Admin Paneli</span>
-                    </button>
-                )}
-                
-                <HamburgerMenu onLogout={onLogout} onNavigate={onNavigate} onSwitchRole={onSwitchRole} />
-            </div>
+        <div className="container mx-auto px-4">
             {renderContent()}
         </div>
     );
