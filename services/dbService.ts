@@ -5,7 +5,7 @@ import {
     QuizQuestion, ContestAd, Broadcast, ArkWithdrawal, ArkAd, 
     ArkQuiz, ArkSchedule, SocialLink, PaymentRequestDB, UserDevice, 
     Promocode, SupportTicket, TicketMessage, News, DashboardStats, 
-    ActivityLog, Transaction, WheelPrize, Ad 
+    ActivityLog, Transaction, WheelPrize, Ad, ArkWallet, ArkMarketData 
 } from '../types';
 
 // --- Mappers ---
@@ -233,11 +233,13 @@ export const rewardExtraSpin = async (userId: string, amount: number) => {
 };
 
 // --- Ark Trading ---
+// Added missing ArkWallet import above to fix errors on lines 236 and 238
 export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
     const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).single();
     return data as ArkWallet;
 };
 
+// Added missing ArkMarketData import above to fix errors on lines 241 and 243
 export const getArkMarketHistory = async (): Promise<ArkMarketData[]> => {
     const { data } = await supabase.from('ark_market_history').select('*').order('timestamp', { ascending: true });
     return (data || []) as ArkMarketData[];
