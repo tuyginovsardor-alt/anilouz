@@ -1,14 +1,9 @@
 
-
-
-
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Gift, Repeat, List, CheckCircle, Lock, Brain, X, ArrowRight, Play, Clock } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
-import { getProfileWithWallet, getATCTransactions, getContestSettings, getContestTasks, claimATCReward, convertATCtoUZS, getQuizQuestions, rewardExtraSpin, getATCWallet, getContestAds } from './services/dbService';
+// Added getUserProfile to imports
+import { getUserProfile, getATCTransactions, getContestSettings, getContestTasks, claimATCReward, convertATCtoUZS, getQuizQuestions, rewardExtraSpin, getATCWallet, getContestAds } from './services/dbService';
 import { ATCWallet, ATCTransaction, ContestTask, WheelPrize, UserProfile, QuizQuestion, ContestAd } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
@@ -445,16 +440,26 @@ export const AniConcursPage: React.FC = () => {
             if (!user) return;
 
             // Fetch everything
-            const [prof, tx, s, t, w, a] = await Promise.all([
-                getProfileWithWallet(user.id),
+            // FIX: Correctly mapping wallet fields to the expected state structure to avoid type mismatch and balance collision
+            const [profRaw, tx, s, t, w, a] = await Promise.all([
+                getUserProfile(user.id),
                 getATCTransactions(user.id),
                 getContestSettings(),
                 getContestTasks(),
-                getProfileWithWallet(user.id).then(() => getATCWallet(user.id)),
-                getContestAds() // Fetch ads
+                getATCWallet(user.id),
+                getContestAds() 
             ]);
 
-            setProfileData(prof);
+            if (profRaw && w) {
+                setProfileData({
+                    ...profRaw,
+                    atc_balance: w.balance,
+                    atc_converted: w.total_converted,
+                    atc_earned: w.total_earned,
+                    active_days: w.active_days
+                } as any);
+            }
+
             setTransactions(tx);
             setSettings(s);
             setTasks(t);
@@ -462,7 +467,7 @@ export const AniConcursPage: React.FC = () => {
             setAds(a);
 
             // Calculate Spin Eligibility
-            checkSpinStatus(w);
+            if (w) checkSpinStatus(w);
 
         } catch (e) {
             console.error("Contest init error", e);

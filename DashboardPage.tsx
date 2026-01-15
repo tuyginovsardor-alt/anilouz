@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { DashboardSubPage, Page } from './App';
 import { ProfilePage } from './ProfilePage';
@@ -96,7 +97,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 );
             case 'main':
             default:
-                return <DashboardHomePage onSearch={onSearch} onMovieClick={onMovieClick} onNavigate={onMainNavigate} />;
+                // FIX: Removed 'onNavigate' as it is not part of DashboardHomePageProps
+                return <DashboardHomePage onSearch={onSearch} onMovieClick={onMovieClick} />;
         }
     }
 
