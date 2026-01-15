@@ -1,17 +1,25 @@
 import { supabase } from './supabaseClient';
 import { Movie, UserProfile, Transaction, PaymentRequestDB, SupportTicket, TicketMessage, Ad, Promocode, Review, DashboardStats, ActivityLog, News, SocialLink, UserDevice, Episode, Broadcast, ATCWallet, ATCTransaction, ContestTask, WheelPrize, QuizQuestion, ContestAd, ArkWallet, ArkMarketData, ArkWithdrawal, ArkQuiz, ArkAd } from '../types';
 
-// Helper to map DB movie to Frontend movie (CRITICAL FIX FOR IMAGES)
+// Helper to map DB movie to Frontend movie
 const mapMovie = (m: any): Movie => {
     if (!m) return m;
     return {
         ...m,
-        // Agarda bazada poster_url bo'lsa uni posterUrl ga o'qiymiz, aks holda mavjudini qoldiramiz
+        id: m.id,
+        title: m.title || 'Nomsiz',
+        year: m.year || 2024,
+        plot: m.plot || 'Mazmun yozilmagan.',
         posterUrl: m.poster_url || m.posterUrl || '',
         videoUrl: m.video_url || m.videoUrl || '',
+        genre: m.genre || 'Janr noma\'lum',
+        language: m.language || 'JP / UZ',
+        quality: m.quality || 'HD',
+        rating: m.rating || 0,
         view_count: m.view_count || 0,
         status: m.status || 'completed',
-        translator: m.translator || 'Anilo Team'
+        translator: m.translator || 'Anilo Team',
+        tags: m.tags || ''
     };
 };
 
@@ -41,11 +49,11 @@ export const addMovieToDB = async (movie: any) => {
         title: movie.title,
         year: movie.year,
         plot: movie.plot,
-        poster_url: movie.posterUrl, // Frontend dagi posterUrl ni DB dagi poster_url ga yozamiz
+        poster_url: movie.posterUrl,
         video_url: movie.videoUrl,
         genre: movie.genre,
-        language: movie.language || 'JP/UZ',
-        quality: movie.quality || 'HD',
+        language: movie.language,
+        quality: movie.quality,
         status: movie.status,
         tags: movie.tags,
         translator: movie.translator
@@ -90,7 +98,11 @@ export const incrementMovieView = async (id: number) => {
 
 export const getEpisodes = async (movieId: number): Promise<Episode[]> => {
     const { data } = await supabase.from('episodes').select('*').eq('movie_id', movieId).order('id', { ascending: true });
-    return (data || []).map((e: any) => ({ title: e.title, sourceType: 'url', source: e.source }));
+    return (data || []).map((e: any) => ({ 
+        title: e.title || `${e.id}-qism`, 
+        sourceType: 'url', 
+        source: e.source || e.video_url || '' 
+    }));
 };
 
 // --- REVIEWS ---

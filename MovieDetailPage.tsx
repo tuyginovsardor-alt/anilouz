@@ -36,6 +36,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
         const { data: { user } } = await supabase.auth.getUser();
         setCurrentUser(user);
 
+        // Fetch details from DB
         const [revs, eps, saved] = await Promise.all([
             getReviews(movie.id!),
             getEpisodes(movie.id!),
@@ -46,7 +47,11 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
         setReviews(revs);
         setEpisodes(eps);
         setIsSaved(saved);
+        
+        // Agar qismlar bo'lsa, birinchisini tanlab qo'yamiz
         if (eps.length > 0) setCurrentEpisode(eps[0]);
+        else if (movie.videoUrl) setCurrentEpisode({ title: 'Film', sourceType: 'url', source: movie.videoUrl });
+        
         setIsLoading(false);
     };
     init();
@@ -108,8 +113,10 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
               title: `${movie.title} - ${currentEpisode.title}`,
               videoUrl: currentEpisode.source as string
           });
-      } else {
+      } else if (movie.videoUrl) {
           onPlay(movie);
+      } else {
+          addNotification({ type: 'error', title: 'Xatolik', message: 'Video fayl topilmadi.' });
       }
   };
 
@@ -119,9 +126,9 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     <div className="animate-fade-in pb-20 bg-[#0a0a0c] min-h-screen text-white">
       
       {/* HEADER SECTION (Stable Cinematic) */}
-      <div className="relative w-full h-[350px] md:h-[500px] overflow-hidden rounded-b-[4rem] mb-12 shadow-2xl">
-          <img src={movie.posterUrl} className="w-full h-full object-cover opacity-40 blur-[2px]" alt="" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-transparent"></div>
+      <div className="relative w-full h-[350px] md:h-[550px] overflow-hidden rounded-b-[4rem] mb-12 shadow-2xl">
+          <img src={movie.posterUrl} className="w-full h-full object-cover opacity-30 blur-[4px]" alt="" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/20 to-transparent"></div>
           
           <button 
             onClick={onBack}
@@ -136,15 +143,15 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
               </div>
               <div className="flex-1 space-y-5">
                   <div className="flex items-center gap-3">
-                      <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase">ANIME</span>
-                      <span className="text-yellow-500 font-black text-xl flex items-center gap-1.5"><Star size={20} fill="currentColor"/> {movie.rating.toFixed(1)}</span>
+                      <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase shadow-lg shadow-orange-600/30">PREMIUM ANIME</span>
+                      <span className="text-yellow-500 font-black text-xl flex items-center gap-1.5"><Star size={20} fill="currentColor"/> {movie.rating?.toFixed(1) || '0.0'}</span>
                   </div>
-                  <h1 className="text-4xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-lg">{movie.title}</h1>
+                  <h1 className="text-4xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-2xl">{movie.title}</h1>
                   <div className="flex flex-wrap items-center gap-6 text-gray-400 font-bold text-sm">
-                      <span className="flex items-center gap-2"><Calendar size={18}/> {movie.year}</span>
-                      <span className="flex items-center gap-2"><Eye size={18}/> {movie.view_count || 0}</span>
-                      <span className="bg-white/10 px-3 py-1 rounded-lg text-[10px] tracking-widest uppercase font-black">{movie.quality}</span>
-                      <span className={`uppercase font-black ${movie.status === 'ongoing' ? 'text-green-500' : 'text-blue-500'}`}>{movie.status}</span>
+                      <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl"><Calendar size={18}/> {movie.year}</span>
+                      <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl"><Eye size={18}/> {movie.view_count || 0}</span>
+                      <span className="bg-white/10 px-3 py-1.5 rounded-xl text-[10px] tracking-widest uppercase font-black">{movie.quality}</span>
+                      <span className={`uppercase font-black px-3 py-1.5 rounded-xl ${movie.status === 'ongoing' ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}`}>{movie.status || 'Tugallangan'}</span>
                   </div>
               </div>
           </div>
@@ -157,12 +164,16 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
               
               {/* Episodes Panel */}
               <section className="bg-white/5 p-10 rounded-[3rem] border border-white/5 shadow-xl">
-                  <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-8 flex items-center gap-4">
-                      <div className="w-2 h-8 bg-orange-600 rounded-full"></div>
-                      Qismlar
-                  </h2>
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-2xl font-black uppercase tracking-widest text-white flex items-center gap-4">
+                        <div className="w-2 h-8 bg-orange-600 rounded-full"></div>
+                        Qismlar
+                    </h2>
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Jami: {episodes.length || (movie.videoUrl ? 1 : 0)} ta</span>
+                  </div>
+
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                      {episodes.map((ep, idx) => (
+                      {episodes.length > 0 ? episodes.map((ep, idx) => (
                           <button
                               key={idx}
                               onClick={() => setCurrentEpisode(ep)}
@@ -174,9 +185,18 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                           >
                               {ep.title}
                           </button>
-                      ))}
-                      {episodes.length === 0 && <p className="text-gray-600 italic">Qismlar yuklanmoqda...</p>}
+                      )) : movie.videoUrl ? (
+                          <button
+                            onClick={() => setCurrentEpisode({ title: 'Film', sourceType: 'url', source: movie.videoUrl! })}
+                            className="py-4 rounded-2xl font-bold text-sm bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-600/30"
+                          >
+                             Film
+                          </button>
+                      ) : (
+                          <p className="text-gray-600 italic col-span-full">Hozircha qismlar mavjud emas.</p>
+                      )}
                   </div>
+
                   <button 
                     onClick={handlePlayClick}
                     className="w-full mt-10 py-5 bg-white text-black hover:bg-orange-600 hover:text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-4 shadow-xl active:scale-95"
@@ -188,8 +208,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
               {/* Description */}
               <section>
                   <h2 className="text-xl font-black uppercase tracking-[0.2em] text-gray-500 mb-8">Qisqacha Mazmun</h2>
-                  <p className="text-xl text-gray-300 leading-relaxed font-medium pl-8 border-l-2 border-white/5">
-                      {movie.plot}
+                  <p className="text-xl text-gray-300 leading-relaxed font-medium pl-8 border-l-2 border-orange-600/30">
+                      {movie.plot || "Mazmun yozilmagan."}
                   </p>
               </section>
 
@@ -199,8 +219,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                   
                   {/* Stats Bar */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-10 bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-inner">
-                      <div className="text-center flex flex-col justify-center">
-                          <p className="text-6xl font-black text-orange-500">{movie.rating.toFixed(1)}</p>
+                      <div className="text-center flex flex-col justify-center border-r border-white/5">
+                          <p className="text-6xl font-black text-orange-500">{movie.rating?.toFixed(1) || '0.0'}</p>
                           <div className="flex justify-center text-yellow-500 my-3"><Star size={20} fill="currentColor"/><Star size={20} fill="currentColor"/><Star size={20} fill="currentColor"/><Star size={20} fill="currentColor"/><Star size={20} fill="currentColor"/></div>
                           <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest">{reviews.length} TA REYTING</p>
                       </div>
@@ -222,7 +242,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                   {/* Form */}
                   <form onSubmit={handleReviewSubmit} className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 space-y-6 shadow-2xl">
                       <div className="flex items-center gap-4">
-                        <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Baho:</span>
+                        <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Animega baho bering:</span>
                         <div className="flex gap-2">
                             {[1,2,3,4,5].map(s => (
                                 <button key={s} type="button" onClick={() => setUserRating(s)} className={`transition-transform active:scale-90 ${userRating >= s ? 'text-orange-500' : 'text-gray-700'}`}><Star size={28} fill={userRating >= s ? 'currentColor' : 'none'}/></button>
@@ -230,8 +250,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         </div>
                       </div>
                       <div className="relative">
-                          <textarea value={userComment} onChange={e => setUserComment(e.target.value)} placeholder="Anime haqida fikringiz..." className="w-full bg-black/40 border border-white/10 rounded-[2rem] p-6 text-white outline-none focus:border-orange-500 min-h-[120px] transition-all"></textarea>
-                          <button type="submit" disabled={isSubmitting || !userComment.trim()} className="absolute bottom-4 right-4 bg-orange-600 text-white p-4 rounded-2xl hover:bg-orange-500 transition-all active:scale-90 disabled:opacity-50"><Send size={20}/></button>
+                          <textarea value={userComment} onChange={e => setUserComment(e.target.value)} placeholder="Fikringizni yozing..." className="w-full bg-black/40 border border-white/10 rounded-[2rem] p-6 text-white outline-none focus:border-orange-500 min-h-[120px] transition-all"></textarea>
+                          <button type="submit" disabled={isSubmitting || !userComment.trim()} className="absolute bottom-4 right-4 bg-orange-600 text-white p-4 rounded-2xl hover:bg-orange-500 transition-all active:scale-90 disabled:opacity-50 shadow-xl"><Send size={20}/></button>
                       </div>
                   </form>
 
@@ -239,11 +259,11 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                   <div className="space-y-6">
                       {reviews.length === 0 && <p className="text-center py-20 text-gray-600 italic font-bold">Hali izohlar yo'q. Birinchi bo'ling!</p>}
                       {reviews.map(r => (
-                          <div key={r.id} className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 flex justify-between items-start animate-fade-in group">
+                          <div key={r.id} className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 flex justify-between items-start animate-fade-in group hover:bg-white/10 transition-all">
                               <div className="space-y-4">
                                   <div className="flex items-center gap-4">
-                                      <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center font-black text-orange-500 border border-white/5">
-                                          {r.profiles?.avatar_url ? <img src={r.profiles.avatar_url} className="w-full h-full rounded-full object-cover" /> : (r.profiles?.username?.[0].toUpperCase() || 'U')}
+                                      <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center font-black text-orange-500 border border-white/5 overflow-hidden">
+                                          {r.profiles?.avatar_url ? <img src={r.profiles.avatar_url} className="w-full h-full object-cover" /> : (r.profiles?.username?.[0].toUpperCase() || 'U')}
                                       </div>
                                       <div>
                                         <span className="font-black text-orange-500 text-sm">@{r.profiles?.username || 'user'}</span>
@@ -266,8 +286,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
           {/* RIGHT: SIDEBAR */}
           <div className="space-y-10">
-              <div className="bg-white/5 p-10 rounded-[3rem] border border-white/10 space-y-8 sticky top-24">
-                  <h3 className="font-black uppercase tracking-[0.2em] text-[10px] text-gray-500 border-b border-white/5 pb-4">Anime Ma'lumotlari</h3>
+              <div className="bg-white/5 p-10 rounded-[3rem] border border-white/10 space-y-8 sticky top-24 shadow-2xl">
+                  <h3 className="font-black uppercase tracking-[0.2em] text-[10px] text-gray-500 border-b border-white/5 pb-4">Anime Tafsilotlari</h3>
                   <div className="space-y-6">
                       <div className="flex justify-between border-b border-white/5 pb-4 group">
                           <span className="text-gray-500 font-bold text-sm group-hover:text-gray-400 transition-colors">Tarjimon</span>
@@ -275,30 +295,30 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                       </div>
                       <div className="flex justify-between border-b border-white/5 pb-4 group">
                           <span className="text-gray-500 font-bold text-sm group-hover:text-gray-400 transition-colors">Til</span>
-                          <span className="font-black text-white text-sm">JP / UZ</span>
+                          <span className="font-black text-white text-sm">{movie.language || 'JP / UZ'}</span>
                       </div>
                       <div className="flex justify-between border-b border-white/5 pb-4 group">
                           <span className="text-gray-500 font-bold text-sm group-hover:text-gray-400 transition-colors">Janrlar</span>
-                          <span className="font-black text-white text-sm text-right max-w-[150px] leading-snug">{movie.genre}</span>
+                          <span className="font-black text-white text-sm text-right max-w-[150px] leading-snug">{movie.genre || 'Noma\'lum'}</span>
                       </div>
                       <div className="flex justify-between group">
                           <span className="text-gray-500 font-bold text-sm group-hover:text-gray-400 transition-colors">Holati</span>
-                          <span className={`font-black text-xs uppercase px-2 py-0.5 rounded ${movie.status === 'ongoing' ? 'bg-green-500/20 text-green-500' : 'bg-blue-500/20 text-blue-500'}`}>{movie.status}</span>
+                          <span className={`font-black text-[10px] uppercase px-3 py-1 rounded-full ${movie.status === 'ongoing' ? 'bg-green-500/20 text-green-500' : 'bg-blue-500/20 text-blue-500'}`}>{movie.status === 'ongoing' ? 'Ongoing' : 'Completed'}</span>
                       </div>
                   </div>
                   <button 
                     onClick={handleToggleSave}
                     className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 transition-all ${isSaved ? 'bg-white text-black' : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'}`}
                   >
-                    <Bookmark size={20} fill={isSaved ? "black" : "none"} /> {isSaved ? 'Saqlangan' : 'Saqlash'}
+                    <Bookmark size={20} fill={isSaved ? "black" : "none"} /> {isSaved ? 'Ro\'yxatdan o\'chirish' : 'Ro\'yxatga saqlash'}
                   </button>
               </div>
 
               {/* Tag Cloud */}
               <div className="flex flex-wrap gap-2 px-4">
-                  {movie.tags?.split(',').map(t => (
+                  {movie.tags ? movie.tags.split(',').map(t => (
                       <span key={t} className="px-4 py-2 bg-white/5 rounded-xl text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 border border-white/5 hover:text-orange-500 hover:border-orange-500/30 transition-all cursor-default"><Tag size={10}/> {t.trim()}</span>
-                  ))}
+                  )) : <p className="text-gray-700 text-xs italic">Teglar mavjud emas.</p>}
               </div>
           </div>
       </div>
