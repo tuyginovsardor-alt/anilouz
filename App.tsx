@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { WelcomePage } from './WelcomePage';
@@ -17,11 +16,10 @@ import { supabase } from './services/supabaseClient';
 import { SupportChatWidget } from './components/SupportChatWidget';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Bookmark, User, MoreHorizontal, ShieldCheck } from 'lucide-react';
+import { Home, Search, Bookmark, User, MoreHorizontal, ShieldCheck, X, Sparkles } from 'lucide-react';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more';
-// Fix: Added missing Admin subpages 'contest' and 'cash_contest'
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 
 const App: React.FC = () => {
@@ -32,6 +30,7 @@ const App: React.FC = () => {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>('user');
   const [currentQuery, setCurrentQuery] = useState<string>('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -79,7 +78,6 @@ const App: React.FC = () => {
 
   const fetchUserRole = async (userId: string) => {
       const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-      // Fix: Added cast to any for role access when Database type inference is broken
       if (data) setCurrentUserRole((data as any).role);
   };
 
@@ -87,6 +85,7 @@ const App: React.FC = () => {
     setPage(targetPage);
     setSelectedMovie(null);
     setIsPlayerActive(false);
+    setIsSearchOpen(false);
     window.scrollTo(0, 0);
   };
 
@@ -100,18 +99,22 @@ const App: React.FC = () => {
 
   if (isCheckingAuth) return <div className="h-screen bg-[#0a0a0c] flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
-  const isAdmin = ['admin', 'owner', 'manager'].includes(currentUserRole);
-
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
         <NotificationContainer />
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#0a0a0c]">
           
           {!isPlayerActive && !activeVideoAd && (
-            <Header onNavigate={handleNavigation} currentPage={page} isAuthenticated={isAuthenticated} onLoginClick={() => setIsAuthModalOpen(true)} />
+            <Header 
+              onNavigate={handleNavigation} 
+              currentPage={page} 
+              isAuthenticated={isAuthenticated} 
+              onLoginClick={() => setIsAuthModalOpen(true)}
+              onSearchClick={() => setIsSearchOpen(true)}
+            />
           )}
           
-          <main className={`flex-1 ${selectedMovie || isPlayerActive ? '' : 'pb-32 md:pb-20'}`}>
+          <main className={`flex-1 ${selectedMovie || isPlayerActive ? '' : 'pt-20 pb-32 md:pb-20'}`}>
                 {activeVideoAd && selectedMovie && <VideoAdPlayer ad={activeVideoAd} onFinish={() => {setActiveVideoAd(null); setIsPlayerActive(true);}} />}
                 {isPlayerActive && selectedMovie && !activeVideoAd && <VideoPlayerPage movie={selectedMovie} onBack={() => setIsPlayerActive(false)} />}
                 
@@ -133,42 +136,74 @@ const App: React.FC = () => {
                 )}
           </main>
 
-          {/* MOBILE BOTTOM NAVIGATION (Minimalist Streaming Style) */}
+          {/* SEARCH MODAL (SEO & RICH UX) */}
+          {isSearchOpen && (
+              <div className="fixed inset-0 z-[200] bg-[#0a0a0c]/98 backdrop-blur-3xl animate-fade-in flex flex-col p-6 sm:p-10">
+                  <button 
+                    onClick={() => setIsSearchOpen(false)}
+                    className="absolute top-6 right-6 sm:top-10 sm:right-10 p-3 bg-white/5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-all"
+                  >
+                      <X size={28} />
+                  </button>
+                  
+                  <div className="max-w-4xl mx-auto w-full pt-20">
+                      <div className="flex items-center gap-3 mb-8">
+                          <Sparkles className="text-orange-500" size={24} />
+                          <h2 className="text-4xl font-black tracking-tighter uppercase">Nima qidiramiz?</h2>
+                      </div>
+                      
+                      <div className="relative group">
+                          <input 
+                            type="text" 
+                            autoFocus
+                            placeholder="Anime nomi, janr yoki kashfiyot..."
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    setCurrentQuery((e.target as HTMLInputElement).value);
+                                    setPage('search');
+                                    setIsSearchOpen(false);
+                                }
+                            }}
+                            className="w-full bg-white/5 border-b-2 border-white/10 py-6 px-4 text-2xl sm:text-4xl font-bold outline-none focus:border-orange-500 transition-all placeholder:text-gray-700"
+                          />
+                          <div className="mt-6 flex flex-wrap gap-3">
+                              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest w-full mb-2">Ommabop so'rovlar:</span>
+                              {['Solo Leveling', 'One Piece', 'Naruto', 'Isekai', 'Uchuvchi'].map(tag => (
+                                  <button 
+                                    key={tag} 
+                                    onClick={() => { setCurrentQuery(tag); setPage('search'); setIsSearchOpen(false); }}
+                                    className="px-4 py-2 bg-white/5 hover:bg-orange-600 rounded-full text-xs font-bold transition-all border border-white/5"
+                                  >
+                                      {tag}
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          )}
+
+          {/* MOBILE BOTTOM NAVIGATION */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
-            <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-8">
-                <div className="bottom-nav h-20 flex justify-around items-center px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.6)]">
-                    <button 
-                        onClick={() => handleNavigation('welcome')}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'welcome' ? 'active-nav-item' : 'text-gray-500'}`}
-                    >
-                        <Home size={22} strokeWidth={page === 'welcome' ? 2.5 : 2} />
+            <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-8 pointer-events-none">
+                <div className="bottom-nav h-20 flex justify-around items-center px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.6)] pointer-events-auto">
+                    <button onClick={() => handleNavigation('welcome')} className={`flex flex-col items-center gap-1.5 transition-all ${page === 'welcome' ? 'active-nav-item' : 'text-gray-500'}`}>
+                        <Home size={22} />
                         <span className="text-[9px] font-bold uppercase">Asosiy</span>
                     </button>
-                    <button 
-                        onClick={() => handleNavigation('search')}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'search' ? 'active-nav-item' : 'text-gray-500'}`}
-                    >
+                    <button onClick={() => setIsSearchOpen(true)} className={`flex flex-col items-center gap-1.5 text-gray-500`}>
                         <Search size={22} />
                         <span className="text-[9px] font-bold uppercase">Qidiruv</span>
                     </button>
-                    <button 
-                        onClick={() => {setPage('dashboard'); setDashboardPage('saved')}}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'saved' ? 'active-nav-item' : 'text-gray-500'}`}
-                    >
+                    <button onClick={() => {setPage('dashboard'); setDashboardPage('saved')}} className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'saved' ? 'active-nav-item' : 'text-gray-500'}`}>
                         <Bookmark size={22} />
                         <span className="text-[9px] font-bold uppercase">Saqlangan</span>
                     </button>
-                    <button 
-                        onClick={() => {setPage('dashboard'); setDashboardPage('profile')}}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'profile' ? 'active-nav-item' : 'text-gray-500'}`}
-                    >
+                    <button onClick={() => {setPage('dashboard'); setDashboardPage('profile')}} className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'profile' ? 'active-nav-item' : 'text-gray-500'}`}>
                         <User size={22} />
                         <span className="text-[9px] font-bold uppercase">Profil</span>
                     </button>
-                    <button 
-                        onClick={() => {setPage('dashboard'); setDashboardPage('more')}}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'more' ? 'active-nav-item' : 'text-gray-500'}`}
-                    >
+                    <button onClick={() => {setPage('dashboard'); setDashboardPage('more')}} className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'more' ? 'active-nav-item' : 'text-gray-500'}`}>
                         <MoreHorizontal size={22} />
                         <span className="text-[9px] font-bold uppercase">Yana</span>
                     </button>
