@@ -1,3 +1,4 @@
+
 import { supabase } from './supabaseClient';
 import { 
     Movie, UserProfile, ATCTransaction, ATCWallet, ContestTask, 
@@ -137,7 +138,29 @@ export const toggleMovieArchive = async (id: number, isArchived: boolean) => {
     if (error) throw error;
 };
 
-// --- ATC Game & Other Functions (O'zgarishsiz qoldi) ---
+// --- Bookmark Actions ---
+export const isMovieSaved = async (userId: string, movieId: number): Promise<boolean> => {
+    const { count, error } = await supabase
+        .from('saved_movies')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('movie_id', movieId);
+    if (error) return false;
+    return (count || 0) > 0;
+};
+
+export const toggleSaveMovie = async (userId: string, movieId: number): Promise<boolean> => {
+    const saved = await isMovieSaved(userId, movieId);
+    if (saved) {
+        await supabase.from('saved_movies').delete().eq('user_id', userId).eq('movie_id', movieId);
+        return false;
+    } else {
+        await supabase.from('saved_movies').insert({ user_id: userId, movie_id: movieId } as any);
+        return true;
+    }
+};
+
+// --- ATC Game & Other Functions ---
 export const getATCWallet = async (userId: string): Promise<ATCWallet | null> => {
     const { data, error } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).single();
     if (error) return null;
@@ -209,7 +232,7 @@ export const rewardExtraSpin = async (userId: string, amount: number) => {
     await supabase.from('atc_wallets').update({ extra_spins: amount } as any).eq('user_id', userId);
 };
 
-// --- Ark Trading (O'zgarishsiz qoldi) ---
+// --- Ark Trading ---
 export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
     const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).single();
     return data as ArkWallet;
