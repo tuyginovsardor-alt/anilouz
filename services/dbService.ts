@@ -1,19 +1,28 @@
 import { supabase } from './supabaseClient';
-// Added ArkAd to imports from ../types
 import { Movie, UserProfile, Transaction, PaymentRequestDB, SupportTicket, TicketMessage, Ad, Promocode, Review, DashboardStats, ActivityLog, News, SocialLink, UserDevice, Episode, Broadcast, ATCWallet, ATCTransaction, ContestTask, WheelPrize, QuizQuestion, ContestAd, ArkWallet, ArkMarketData, ArkWithdrawal, ArkQuiz, ArkAd } from '../types';
 
-// Helper to map DB movie to Frontend movie
-const mapMovie = (m: any): Movie => ({
-    ...m,
-    posterUrl: m.poster_url,
-    videoUrl: m.video_url,
-    view_count: m.view_count || 0
-});
+// Helper to map DB movie to Frontend movie (CRITICAL FIX FOR IMAGES)
+const mapMovie = (m: any): Movie => {
+    if (!m) return m;
+    return {
+        ...m,
+        // Agarda bazada poster_url bo'lsa uni posterUrl ga o'qiymiz, aks holda mavjudini qoldiramiz
+        posterUrl: m.poster_url || m.posterUrl || '',
+        videoUrl: m.video_url || m.videoUrl || '',
+        view_count: m.view_count || 0,
+        status: m.status || 'completed',
+        translator: m.translator || 'Anilo Team'
+    };
+};
 
 // --- MOVIES ---
 
 export const getMovies = async (): Promise<Movie[]> => {
-    const { data } = await supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false });
+    if (error) {
+        console.error("Error fetching movies:", error);
+        return [];
+    }
     return (data || []).map(mapMovie);
 };
 
@@ -32,11 +41,11 @@ export const addMovieToDB = async (movie: any) => {
         title: movie.title,
         year: movie.year,
         plot: movie.plot,
-        poster_url: movie.posterUrl,
+        poster_url: movie.posterUrl, // Frontend dagi posterUrl ni DB dagi poster_url ga yozamiz
         video_url: movie.videoUrl,
         genre: movie.genre,
-        language: movie.language,
-        quality: movie.quality,
+        language: movie.language || 'JP/UZ',
+        quality: movie.quality || 'HD',
         status: movie.status,
         tags: movie.tags,
         translator: movie.translator
@@ -210,7 +219,6 @@ export const buySubscription = async (userId: string, plan: string, price: numbe
     if (error) throw error;
 };
 
-// Added giveGlobalBonus function
 export const giveGlobalBonus = async (amount: number, description: string) => {
     const { data, error } = await supabase.rpc('give_global_bonus', { amount_val: amount, desc_val: description });
     if (error) throw error;
@@ -277,9 +285,6 @@ export const getRecentActivity = async (): Promise<ActivityLog[]> => {
     return (data || []).map((l: any) => ({ id: l.id, title: l.title, description: l.description, time: new Date(l.created_at).toLocaleTimeString() }));
 };
 
-// ... qolgan barcha funksiyalar (atc, ark, support, file upload) mavjud dbService dagi kabi qoladi
-// (Tepada o'sha funksiyalarning to'liq ro'yxati importda bor)
-
 export const uploadFile = async (file: File, bucket: string): Promise<string> => {
     const path = `${Date.now()}_${file.name}`;
     const { error } = await supabase.storage.from(bucket).upload(path, file);
@@ -291,7 +296,6 @@ export const uploadFile = async (file: File, bucket: string): Promise<string> =>
 export const uploadPoster = (file: File) => uploadFile(file, 'posters');
 export const uploadVideo = (file: File) => uploadFile(file, 'videos');
 
-// Missing exports added to match components
 export const getAllSessions = async (): Promise<UserDevice[]> => {
     const { data } = await supabase.from('user_devices').select('*, profiles(full_name, email, role)').order('last_active', { ascending: false });
     return data || [];
@@ -338,7 +342,6 @@ export const updateUserEmail = async (email: string) => {
     if (error) throw error;
 };
 
-// Support, ATC, Ark Trading funksiyalari (Faqat asosiylari)
 export const getMyTickets = async (userId: string): Promise<SupportTicket[]> => {
     const { data } = await supabase.from('support_tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     return data || [];
@@ -364,20 +367,15 @@ export const getNews = async (): Promise<News[]> => {
     const { data } = await supabase.from('news').select('*').order('created_at', { ascending: false });
     return data || [];
 };
-
-// Added createNews function
 export const createNews = async (title: string, content: string) => {
     const { data, error } = await supabase.from('news').insert({ title, content }).select().single();
     if (error) throw error;
     return data;
 };
-
-// Added deleteNews function
 export const deleteNews = async (id: number) => {
     const { error } = await supabase.from('news').delete().eq('id', id);
     if (error) throw error;
 };
-
 export const getSocialLinks = async (): Promise<SocialLink[]> => {
     const { data } = await supabase.from('social_links').select('*').order('created_at', { ascending: true });
     return data || [];

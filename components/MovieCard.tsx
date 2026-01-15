@@ -9,6 +9,9 @@ interface MovieCardProps {
 }
 
 export const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
+  // Rasm URL manzili mavjudligini va to'g'riligini tekshiramiz
+  const posterSrc = movie.posterUrl || 'https://via.placeholder.com/400x600?text=No+Poster';
+
   return (
     <div 
         className="group flex flex-col w-full cursor-pointer animate-fade"
@@ -16,10 +19,14 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
     >
       <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#16161a] mb-5 anime-card shadow-2xl border border-white/5">
           <img 
-            src={movie.posterUrl} 
+            src={posterSrc} 
             alt={movie.title} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             loading="lazy" 
+            onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = 'https://via.placeholder.com/400x600?text=Yuklanmadi';
+            }}
           />
           
           {/* Overlay on Hover */}
