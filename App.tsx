@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { WelcomePage } from './WelcomePage';
@@ -20,7 +19,7 @@ import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
 import { AniConcursPage } from './AniConcursPage';
 import { ArkTradingPage } from './ArkTradingPage';
-import { Home, Search, Gift, User, LayoutGrid } from 'lucide-react';
+import { Home, ExternalLink, RefreshCw, Layers, Menu, Repeat } from 'lucide-react';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'aniconcurs' | 'arktrading';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing';
@@ -57,10 +56,7 @@ const App: React.FC = () => {
             if (session) {
                 setIsAuthenticated(true);
                 fetchUserRole(session.user.id);
-                setPage('dashboard'); // Kirgan foydalanuvchi to'g'ri dashboardga tushadi
             }
-            const config = await getAppConfig();
-            if (config['site_background']) document.body.style.backgroundImage = `url(${config['site_background']})`;
         } catch (e) {
             console.error(e);
         } finally {
@@ -73,7 +69,6 @@ const App: React.FC = () => {
         if (session) {
             setIsAuthenticated(true);
             fetchUserRole(session.user.id);
-            if (page === 'welcome') setPage('dashboard');
         } else {
             setIsAuthenticated(false);
             setCurrentUserRole('user');
@@ -81,7 +76,7 @@ const App: React.FC = () => {
         }
     });
     return () => subscription.unsubscribe();
-  }, [page]);
+  }, []);
 
   const fetchUserRole = async (userId: string) => {
       const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
@@ -103,20 +98,18 @@ const App: React.FC = () => {
     }
   };
 
-  if (isCheckingAuth) return <div className="h-screen bg-black flex items-center justify-center"><div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (isCheckingAuth) return <div className="h-screen bg-[#0a0a0c] flex items-center justify-center"><div className="w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
         <NotificationContainer />
-        <div className="min-h-screen text-gray-100 flex flex-col page-enter">
+        <div className="min-h-screen text-gray-100 flex flex-col bg-[#0a0a0c]">
           
-          {/* Header faqat video pleyer ochiq bo'lmaganda ko'rinadi */}
-          {!selectedMovie && !isPlayerActive && !activeVideoAd && (
+          {!isPlayerActive && !activeVideoAd && (
             <Header onNavigate={handleNavigation} currentPage={page} isAuthenticated={isAuthenticated} onLoginClick={() => setIsAuthModalOpen(true)} />
           )}
           
-          <main className="flex-1 pb-20 md:pb-8">
-            <div className={`${selectedMovie || isPlayerActive ? '' : 'container mx-auto px-4 py-6'}`}>
+          <main className={`flex-1 ${selectedMovie || isPlayerActive ? '' : 'container mx-auto pb-32 md:pb-20'}`}>
                 {activeVideoAd && selectedMovie && <VideoAdPlayer ad={activeVideoAd} onFinish={() => {setActiveVideoAd(null); setIsPlayerActive(true);}} />}
                 {isPlayerActive && selectedMovie && !activeVideoAd && <VideoPlayerPage movie={selectedMovie} onBack={() => setIsPlayerActive(false)} />}
                 
@@ -126,7 +119,8 @@ const App: React.FC = () => {
                       <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} />
                     ) : (
                       <>
-                        {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}
+                        {/* FIX: Use WelcomePage instead of DashboardHomePage for the landing state and provide onStart */}
+                        {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setPage('dashboard')} />}
                         {page === 'search' && <SearchPage initialQuery={currentQuery} onNewSearch={setCurrentQuery} onMovieClick={handleMovieClick} />}
                         {page === 'dashboard' && <DashboardPage currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
@@ -138,30 +132,48 @@ const App: React.FC = () => {
                     )}
                   </>
                 )}
-            </div>
           </main>
 
-          {/* MOBILE BOTTOM NAVIGATION - Faqat video ko'rmayotgan bo'lsa chiqadi */}
-          {!selectedMovie && !isPlayerActive && !activeVideoAd && page !== 'admin' && (
-            <div className="fixed bottom-0 left-0 right-0 glass-effect border-t border-white/5 md:hidden flex justify-around items-center h-16 z-50">
-               <button onClick={() => handleNavigation(isAuthenticated ? 'dashboard' : 'welcome')} className={`bottom-nav-item ${page === 'dashboard' || page === 'welcome' ? 'active' : ''}`}>
-                  <Home size={22} />
-                  <span className="text-[10px] font-bold">Uy</span>
-               </button>
-               <button onClick={() => handleNavigation('search')} className={`bottom-nav-item ${page === 'search' ? 'active' : ''}`}>
-                  <Search size={22} />
-                  <span className="text-[10px] font-bold">Qidiruv</span>
-               </button>
-               <button onClick={() => handleNavigation('aniconcurs')} className={`bottom-nav-item ${page === 'aniconcurs' ? 'active' : ''}`}>
-                  <div className="w-12 h-12 -mt-8 bg-orange-600 rounded-full flex items-center justify-center border-4 border-[#07070a] shadow-lg shadow-orange-500/20">
-                      <Gift size={24} className="text-white" />
-                  </div>
-                  <span className="text-[10px] font-bold">Konkurs</span>
-               </button>
-               <button onClick={() => {if(isAuthenticated) {setPage('dashboard'); setDashboardPage('profile');} else setIsAuthModalOpen(true)}} className={`bottom-nav-item ${dashboardPage === 'profile' ? 'active' : ''}`}>
-                  <User size={22} />
-                  <span className="text-[10px] font-bold">Profil</span>
-               </button>
+          {/* MOBILE BOTTOM NAVIGATION (Screenshot 2 Dizayni) */}
+          {!selectedMovie && !isPlayerActive && page !== 'admin' && (
+            <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-6">
+                <div className="bottom-nav h-20 flex justify-around items-center px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.4)]">
+                    <button 
+                        onClick={() => handleNavigation('welcome')}
+                        className={`flex flex-col items-center gap-1 ${page === 'welcome' ? 'active-nav-item' : 'text-gray-500'}`}
+                    >
+                        <Home size={24} />
+                        <span className="text-[10px] font-bold">Asosiy</span>
+                    </button>
+                    <button 
+                        onClick={() => {setPage('dashboard'); setDashboardPage('billing')}}
+                        className={`flex flex-col items-center gap-1 ${dashboardPage === 'billing' ? 'active-nav-item' : 'text-gray-500'}`}
+                    >
+                        <ExternalLink size={24} />
+                        <span className="text-[10px] font-bold">To'lovlar</span>
+                    </button>
+                    <button 
+                        onClick={() => handleNavigation('arktrading')}
+                        className={`flex flex-col items-center gap-1 ${page === 'arktrading' ? 'active-nav-item' : 'text-gray-500'}`}
+                    >
+                        <Repeat size={24} />
+                        <span className="text-[10px] font-bold">O'tkazmalar</span>
+                    </button>
+                    <button 
+                        onClick={() => handleNavigation('aniconcurs')}
+                        className={`flex flex-col items-center gap-1 ${page === 'aniconcurs' ? 'active-nav-item' : 'text-gray-500'}`}
+                    >
+                        <RefreshCw size={24} />
+                        <span className="text-[10px] font-bold">Konvertatsiya</span>
+                    </button>
+                    <button 
+                        onClick={() => {setPage('dashboard'); setDashboardPage('profile')}}
+                        className={`flex flex-col items-center gap-1 ${dashboardPage === 'profile' ? 'active-nav-item' : 'text-gray-500'}`}
+                    >
+                        <Menu size={24} />
+                        <span className="text-[10px] font-bold">Yana</span>
+                    </button>
+                </div>
             </div>
           )}
 

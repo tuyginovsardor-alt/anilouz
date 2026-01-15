@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getMovies } from './services/dbService';
 import { Movie } from './types';
@@ -13,7 +12,8 @@ interface WelcomePageProps {
   onStart: () => void;
 }
 
-export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onStart }) => {
+// FIX: Added onSearch to destructured arguments
+export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch, onStart }) => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -1,85 +1,66 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --primary-orange: #f97316;
-  --bg-dark: #07070a;
-  --glass: rgba(15, 15, 20, 0.85);
+  --primary: #f97316;
+  --bg-main: #0a0a0c;
+  --bg-card: #16161a;
+  --glass: rgba(22, 22, 26, 0.7);
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-dark);
-  color: #f8fafc;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-main);
+  color: #ffffff;
   overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
 }
 
-/* Glassmorphism */
-.glass-effect {
-  background: var(--glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.glass-header {
+  background: rgba(10, 10, 12, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Page Transitions */
-.page-enter {
-  animation: pageFadeSlide 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.bottom-nav {
+  background: #1c1c22;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px 24px 0 0;
 }
 
-@keyframes pageFadeSlide {
-  from { opacity: 0; transform: translateY(15px); }
+.hero-gradient {
+  background: linear-gradient(to top, var(--bg-main) 10%, transparent 100%);
+}
+
+.anime-card {
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.anime-card:hover {
+  transform: scale(1.05) translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.active-nav-item {
+  color: #ffffff !important;
+}
+
+.active-nav-item svg {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Mobile Bottom Nav */
-.bottom-nav-item {
-  @apply flex flex-col items-center justify-center text-gray-500 transition-all duration-300 gap-1;
-}
-.bottom-nav-item.active {
-  @apply text-orange-500 scale-110;
+.animate-fade {
+  animation: fadeIn 0.6s ease-out forwards;
 }
 
-/* Anime Card Styling */
-.anime-card-hover {
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.anime-card-hover:hover {
-  transform: translateY(-8px) scale(1.03);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(249, 115, 22, 0.15);
-}
-
-/* Custom Scrollbar */
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-::-webkit-scrollbar {
-  width: 5px;
-}
-::-webkit-scrollbar-track {
-  background: #000;
-}
-::-webkit-scrollbar-thumb {
-  background: #222;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-orange);
-}
-
-/* Neon pulsate */
-@keyframes pulsate-glow {
-  0%, 100% { filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.4)); }
-  50% { filter: drop-shadow(0 0 15px rgba(249, 115, 22, 0.7)); }
-}
-.animate-neon {
-  animation: pulsate-glow 3s infinite;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }

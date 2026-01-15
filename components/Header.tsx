@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Page } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Bot } from 'lucide-react';
+import { Search, Bell, User } from 'lucide-react';
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
@@ -11,73 +10,63 @@ interface HeaderProps {
   onLoginClick: () => void;
 }
 
-const NavLink: React.FC<{
-  onClick: () => void;
-  isActive: boolean;
-  children: React.ReactNode;
-}> = ({ onClick, isActive, children }) => (
-  <button
-    onClick={onClick}
-    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors flex items-center gap-2 ${
-      isActive
-        ? 'text-orange-400'
-        : 'text-gray-400 hover:text-white'
-    }`}
-  >
-    {children}
-  </button>
-);
-
-export const Header: React.FC<HeaderProps> = ({
-  onNavigate,
-  currentPage,
-  isAuthenticated,
-  onLoginClick,
-}) => {
-  const handleLogoClick = () => {
-    onNavigate('welcome');
-  };
-
+export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, isAuthenticated, onLoginClick }) => {
   return (
-    <header className="py-4 sticky top-0 z-20 bg-black/30 backdrop-blur-md border-b border-white/5">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <div 
-            className="flex items-center gap-3 cursor-pointer group" 
-            onClick={handleLogoClick}
-        >
-          {/* Logotip Chapda - O'lcham kattalashtirildi */}
-          <div className="relative">
-             <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-             <UzumakiLogo className="w-12 h-12 sm:w-14 sm:h-14 transition-transform duration-700 group-hover:rotate-[360deg]" />
+    <header className="fixed top-0 left-0 right-0 z-[100] glass-header">
+      <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
+        {/* Left: Logo & Nav */}
+        <div className="flex items-center gap-10">
+          <div 
+            className="flex items-center gap-3 cursor-pointer" 
+            onClick={() => onNavigate('welcome')}
+          >
+            <UzumakiLogo className="w-10 h-10 shadow-lg" />
+            <span className="text-2xl font-black tracking-tighter hidden md:block">ANILO</span>
           </div>
-          
-          {/* Domain Nomi O'ngda */}
-          <h1 className="font-bold font-['Metal_Mania'] tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-            <span className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent animate-pulsate-glow">
-                Anilo.uz
-            </span>
-          </h1>
+
+          <nav className="hidden lg:flex items-center gap-8">
+            {['welcome', 'dashboard', 'search'].map((p) => (
+              <button
+                key={p}
+                onClick={() => onNavigate(p as Page)}
+                className={`text-sm font-bold uppercase tracking-widest transition-colors ${
+                  currentPage === p ? 'text-white' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {p === 'welcome' ? 'Home' : p === 'dashboard' ? 'My Movies' : 'Discover'}
+              </button>
+            ))}
+          </nav>
         </div>
-        
-        <nav className="flex items-center gap-1 sm:gap-2">
-          <NavLink onClick={() => onNavigate('ai-assistant')} isActive={currentPage === 'ai-assistant'}>
-            <Bot size={18} />
-            <span className="hidden sm:inline">AI Yordamchi</span>
-          </NavLink>
-          {isAuthenticated && (
-            <NavLink onClick={() => onNavigate('dashboard')} isActive={currentPage === 'dashboard'}>
-              Boshqaruv
-            </NavLink>
-          )}
-          {!isAuthenticated ? (
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-6">
+          <button className="text-gray-300 hover:text-white transition-colors">
+            <Search size={22} strokeWidth={2.5} />
+          </button>
+          <button className="text-gray-300 hover:text-white transition-colors relative">
+            <Bell size={22} strokeWidth={2.5} />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
+          </button>
+          
+          {isAuthenticated ? (
+            <button 
+              onClick={() => onNavigate('dashboard')}
+              className="w-10 h-10 rounded-full border-2 border-gray-700 overflow-hidden hover:border-white transition-all"
+            >
+              <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                <User size={20} className="text-gray-400" />
+              </div>
+            </button>
+          ) : (
             <button
               onClick={onLoginClick}
-              className="ml-2 px-4 py-2 text-sm font-semibold bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
+              className="bg-white text-black px-6 py-2.5 rounded-full font-black text-sm uppercase tracking-wider hover:bg-gray-200 transition-all shadow-xl"
             >
-              Kirish
+              Log In
             </button>
-          ) : null}
-        </nav>
+          )}
+        </div>
       </div>
     </header>
   );

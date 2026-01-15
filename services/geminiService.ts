@@ -1,10 +1,8 @@
-
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { Movie } from '../types';
 
-const apiKey = process.env.API_KEY;
-
-const ai = new GoogleGenAI({ apiKey: apiKey });
+// FIX: Strict guideline compliance for API key initialization
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const API_TIMEOUT = 20000; // 20 soniya
 
@@ -92,8 +90,9 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
 
 export const getPopularMovies = async (): Promise<Movie[]> => {
     try {
+        // FIX: Using gemini-3-flash-preview as per task type recommendations
         const apiCall = ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             // Updated prompt for Anime
             contents: `Provide a list of 12 highly-rated and popular anime series or movies suitable for a general audience. For each anime, provide its title, release year, a brief plot summary, a valid poster URL, its genre (e.g., Shonen, Seinen, Isekai), original language (Japanese), available quality (like HD or 4K), and a rating out of 5.`,
             config: commonConfig,
@@ -117,8 +116,9 @@ export const getPopularMovies = async (): Promise<Movie[]> => {
 
 export const searchMovies = async (query: string): Promise<Movie[]> => {
     try {
+        // FIX: Using gemini-3-flash-preview as per task type recommendations
         const apiCall = ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             // Updated prompt for Anime search
             contents: `Find detailed information for anime (series or movies) matching the query: "${query}". For each anime, provide its title, release year, plot summary, a poster URL, genre, language, quality, and a rating out of 5. Return at least 5 results if available.`,
             config: commonConfig,
