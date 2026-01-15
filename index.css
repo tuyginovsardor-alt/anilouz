@@ -11,70 +11,64 @@
   body {
     @apply bg-[#0a0a0c] text-white;
     font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
 .glass-header {
-  background: rgba(10, 10, 12, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(10, 10, 12, 0.8);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
 }
 
-.bottom-nav {
-  background: rgba(10, 10, 12, 0.92);
-  backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 40px;
+/* --- ANIMATIONS --- */
+
+@keyframes kenBurns {
+    0% { transform: scale(1) translate(0, 0); }
+    50% { transform: scale(1.1) translate(-1%, -1%); }
+    100% { transform: scale(1) translate(0, 0); }
+}
+.animate-ken-burns {
+    animation: kenBurns 20s linear infinite;
 }
 
-/* Premium Animations */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
-.animate-fade-in {
-    animation: fadeIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+.animate-slide-up {
+    animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* Movie Card Special Hover */
+@keyframes titleReveal {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); filter: blur(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+.animate-title-reveal {
+    animation: titleReveal 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
 .anime-card {
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .anime-card:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 20px rgba(249,115,22,0.1);
+    transform: translateY(-15px) scale(1.03);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 30px rgba(249,115,22,0.15);
 }
 
-/* Custom Scrollbar for Premium Feel */
-::-webkit-scrollbar {
-  width: 6px;
-}
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0a0a0c; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #f97316; }
 
-::-webkit-scrollbar-track {
-  background: #0a0a0c;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1f1f23;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #2a2a2f;
-}
-
-/* Hide utility */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Gradient Text Animation */
 @keyframes gradient-x {
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
 }
 .animate-gradient-x {
-    animation: gradient-x 3s ease infinite;
+    animation: gradient-x 4s ease infinite;
 }
