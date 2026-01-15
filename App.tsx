@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { WelcomePage } from './WelcomePage';
@@ -13,13 +14,12 @@ import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
-import { SupportChatWidget } from './components/SupportChatWidget';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
 import { Home, Search, Bookmark, User, MoreHorizontal, ShieldCheck, X, Sparkles } from 'lucide-react';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright';
-export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more';
+export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 
 const App: React.FC = () => {
@@ -44,6 +44,7 @@ const App: React.FC = () => {
     setNotifications(prev => [...prev, { id, ...notification }]);
   };
   const removeNotification = (id: string) => {
+    // Correctly return the filtered array instead of calling setNotifications again inside
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
@@ -136,7 +137,7 @@ const App: React.FC = () => {
                 )}
           </main>
 
-          {/* SEARCH MODAL (SEO & RICH UX) */}
+          {/* SEARCH MODAL */}
           {isSearchOpen && (
               <div className="fixed inset-0 z-[200] bg-[#0a0a0c]/98 backdrop-blur-3xl animate-fade-in flex flex-col p-6 sm:p-10">
                   <button 
@@ -145,13 +146,11 @@ const App: React.FC = () => {
                   >
                       <X size={28} />
                   </button>
-                  
                   <div className="max-w-4xl mx-auto w-full pt-20">
                       <div className="flex items-center gap-3 mb-8">
                           <Sparkles className="text-orange-500" size={24} />
                           <h2 className="text-4xl font-black tracking-tighter uppercase">Nima qidiramiz?</h2>
                       </div>
-                      
                       <div className="relative group">
                           <input 
                             type="text" 
@@ -166,18 +165,6 @@ const App: React.FC = () => {
                             }}
                             className="w-full bg-white/5 border-b-2 border-white/10 py-6 px-4 text-2xl sm:text-4xl font-bold outline-none focus:border-orange-500 transition-all placeholder:text-gray-700"
                           />
-                          <div className="mt-6 flex flex-wrap gap-3">
-                              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest w-full mb-2">Ommabop so'rovlar:</span>
-                              {['Solo Leveling', 'One Piece', 'Naruto', 'Isekai', 'Uchuvchi'].map(tag => (
-                                  <button 
-                                    key={tag} 
-                                    onClick={() => { setCurrentQuery(tag); setPage('search'); setIsSearchOpen(false); }}
-                                    className="px-4 py-2 bg-white/5 hover:bg-orange-600 rounded-full text-xs font-bold transition-all border border-white/5"
-                                  >
-                                      {tag}
-                                  </button>
-                              ))}
-                          </div>
                       </div>
                   </div>
               </div>
@@ -213,7 +200,6 @@ const App: React.FC = () => {
 
           {!selectedMovie && !isPlayerActive && page !== 'admin' && <Footer onNavigate={handleNavigation} />}
           {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} onAuthSuccess={() => {setIsAuthModalOpen(false); setPage('dashboard');}} />}
-          <SupportChatWidget />
         </div>
     </NotificationContext.Provider>
   );
