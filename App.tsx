@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { WelcomePage } from './WelcomePage';
 import { SearchPage } from './SearchPage';
 import { DashboardPage } from './DashboardPage';
 import { AuthModal } from './components/AuthModal';
+// Fix: Ad and Notification are now correctly exported from types.ts
 import { Movie, UserRole, Ad, Notification } from './types';
 import { MovieDetailPage } from './MovieDetailPage';
 import { VideoPlayerPage } from './VideoPlayerPage';
@@ -44,7 +44,6 @@ const App: React.FC = () => {
     setNotifications(prev => [...prev, { id, ...notification }]);
   };
   const removeNotification = (id: string) => {
-    // Correctly return the filtered array instead of calling setNotifications again inside
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
