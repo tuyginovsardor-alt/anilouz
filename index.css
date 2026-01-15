@@ -5,50 +5,41 @@
 :root {
   --primary: #f97316;
   --bg-main: #0a0a0c;
-  --bg-card: #16161a;
-  --glass: rgba(10, 10, 12, 0.7);
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: var(--bg-main);
   color: #ffffff;
   overflow-x: hidden;
 }
 
-.glass-header {
-  background: rgba(10, 10, 12, 0.6);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-}
-
 /* Animations */
 @keyframes kenburns {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.15); }
+    0% { transform: scale(1) rotate(0.01deg); }
+    100% { transform: scale(1.15) rotate(0.01deg); }
 }
 
 .animate-ken-burns {
-    animation: kenburns 12s ease-out forwards;
+    animation: kenburns 15s ease-out forwards;
 }
 
 @keyframes slideRight {
-    from { opacity: 0; transform: translateX(-50px); filter: blur(10px); }
+    from { opacity: 0; transform: translateX(-40px); filter: blur(10px); }
     to { opacity: 1; transform: translateX(0); filter: blur(0); }
 }
 
 .animate-slide-right {
-    animation: slideRight 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: slideRight 1s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
 @keyframes titleBlur {
-    from { opacity: 0; filter: blur(20px); transform: translateY(20px); }
+    from { opacity: 0; filter: blur(30px); transform: translateY(30px); }
     to { opacity: 1; filter: blur(0); transform: translateY(0); }
 }
 
 .animate-title-blur {
-    animation: titleBlur 1s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: titleBlur 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
 @keyframes infiniteScroll {
@@ -57,7 +48,7 @@ body {
 }
 
 .animate-infinite-scroll {
-    animation: infiniteScroll 60s linear infinite;
+    animation: infiniteScroll 80s linear infinite;
     display: flex;
     width: max-content;
 }
@@ -66,47 +57,34 @@ body {
     animation-play-state: paused;
 }
 
-/* Card Styling */
-.anime-card {
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.anime-card:hover {
-  transform: translateY(-10px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+.glass-header {
+  background: rgba(10, 10, 12, 0.4);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .bottom-nav {
-  background: rgba(17, 17, 20, 0.85);
+  background: rgba(10, 10, 12, 0.8);
   backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 32px;
+  border-radius: 40px;
 }
 
-.active-nav-item {
-  color: #f97316 !important;
-}
-
-.active-nav-item svg {
-  filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.6));
-  stroke-width: 3px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-main); }
-::-webkit-scrollbar-thumb { background: #1e1e22; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
+/* Hide scrollbars but keep functionality */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Custom mask for reflections */
+.mask-image-gradient {
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
+}
+
+@keyframes fade {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade {
+    animation: fade 0.5s ease-out forwards;
+}
