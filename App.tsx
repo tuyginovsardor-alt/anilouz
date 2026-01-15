@@ -13,13 +13,12 @@ import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
-import { getAppConfig } from './services/dbService';
 import { SupportChatWidget } from './components/SupportChatWidget';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
 import { AniConcursPage } from './AniConcursPage';
 import { ArkTradingPage } from './ArkTradingPage';
-import { Home, ExternalLink, RefreshCw, Layers, Menu, Repeat } from 'lucide-react';
+import { Home, LayoutGrid, Repeat, RefreshCw, Menu } from 'lucide-react';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'aniconcurs' | 'arktrading';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing';
@@ -98,7 +97,7 @@ const App: React.FC = () => {
     }
   };
 
-  if (isCheckingAuth) return <div className="h-screen bg-[#0a0a0c] flex items-center justify-center"><div className="w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (isCheckingAuth) return <div className="h-screen bg-[#0a0a0c] flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
@@ -109,7 +108,7 @@ const App: React.FC = () => {
             <Header onNavigate={handleNavigation} currentPage={page} isAuthenticated={isAuthenticated} onLoginClick={() => setIsAuthModalOpen(true)} />
           )}
           
-          <main className={`flex-1 ${selectedMovie || isPlayerActive ? '' : 'container mx-auto pb-32 md:pb-20'}`}>
+          <main className={`flex-1 ${selectedMovie || isPlayerActive ? '' : 'pb-32 md:pb-20'}`}>
                 {activeVideoAd && selectedMovie && <VideoAdPlayer ad={activeVideoAd} onFinish={() => {setActiveVideoAd(null); setIsPlayerActive(true);}} />}
                 {isPlayerActive && selectedMovie && !activeVideoAd && <VideoPlayerPage movie={selectedMovie} onBack={() => setIsPlayerActive(false)} />}
                 
@@ -119,7 +118,6 @@ const App: React.FC = () => {
                       <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} />
                     ) : (
                       <>
-                        {/* FIX: Use WelcomePage instead of DashboardHomePage for the landing state and provide onStart */}
                         {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setPage('dashboard')} />}
                         {page === 'search' && <SearchPage initialQuery={currentQuery} onNewSearch={setCurrentQuery} onMovieClick={handleMovieClick} />}
                         {page === 'dashboard' && <DashboardPage currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
@@ -134,44 +132,44 @@ const App: React.FC = () => {
                 )}
           </main>
 
-          {/* MOBILE BOTTOM NAVIGATION (Screenshot 2 Dizayni) */}
+          {/* MOBILE BOTTOM NAVIGATION */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
-            <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-6">
-                <div className="bottom-nav h-20 flex justify-around items-center px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.4)]">
+            <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-8">
+                <div className="bottom-nav h-20 flex justify-around items-center px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.6)]">
                     <button 
                         onClick={() => handleNavigation('welcome')}
-                        className={`flex flex-col items-center gap-1 ${page === 'welcome' ? 'active-nav-item' : 'text-gray-500'}`}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'welcome' ? 'active-nav-item' : 'text-gray-600'}`}
                     >
-                        <Home size={24} />
-                        <span className="text-[10px] font-bold">Asosiy</span>
+                        <Home size={22} strokeWidth={page === 'welcome' ? 2.5 : 2} />
+                        <span className="text-[9px] font-black uppercase tracking-widest">Asosiy</span>
                     </button>
                     <button 
                         onClick={() => {setPage('dashboard'); setDashboardPage('billing')}}
-                        className={`flex flex-col items-center gap-1 ${dashboardPage === 'billing' ? 'active-nav-item' : 'text-gray-500'}`}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${dashboardPage === 'billing' && page === 'dashboard' ? 'active-nav-item' : 'text-gray-600'}`}
                     >
-                        <ExternalLink size={24} />
-                        <span className="text-[10px] font-bold">To'lovlar</span>
+                        <LayoutGrid size={22} />
+                        <span className="text-[9px] font-black uppercase tracking-widest">To'lovlar</span>
                     </button>
                     <button 
                         onClick={() => handleNavigation('arktrading')}
-                        className={`flex flex-col items-center gap-1 ${page === 'arktrading' ? 'active-nav-item' : 'text-gray-500'}`}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'arktrading' ? 'active-nav-item' : 'text-gray-600'}`}
                     >
-                        <Repeat size={24} />
-                        <span className="text-[10px] font-bold">O'tkazmalar</span>
+                        <Repeat size={22} />
+                        <span className="text-[9px] font-black uppercase tracking-widest">O'tkazmalar</span>
                     </button>
                     <button 
                         onClick={() => handleNavigation('aniconcurs')}
-                        className={`flex flex-col items-center gap-1 ${page === 'aniconcurs' ? 'active-nav-item' : 'text-gray-500'}`}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${page === 'aniconcurs' ? 'active-nav-item' : 'text-gray-600'}`}
                     >
-                        <RefreshCw size={24} />
-                        <span className="text-[10px] font-bold">Konvertatsiya</span>
+                        <RefreshCw size={22} />
+                        <span className="text-[9px] font-black uppercase tracking-widest">Konvert</span>
                     </button>
                     <button 
                         onClick={() => {setPage('dashboard'); setDashboardPage('profile')}}
-                        className={`flex flex-col items-center gap-1 ${dashboardPage === 'profile' ? 'active-nav-item' : 'text-gray-500'}`}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${dashboardPage === 'profile' && page === 'dashboard' ? 'active-nav-item' : 'text-gray-600'}`}
                     >
-                        <Menu size={24} />
-                        <span className="text-[10px] font-bold">Yana</span>
+                        <Menu size={22} />
+                        <span className="text-[9px] font-black uppercase tracking-widest">Yana</span>
                     </button>
                 </div>
             </div>

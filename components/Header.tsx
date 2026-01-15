@@ -20,20 +20,24 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, isAuthe
             className="flex items-center gap-3 cursor-pointer" 
             onClick={() => onNavigate('welcome')}
           >
-            <UzumakiLogo className="w-10 h-10 shadow-lg" />
-            <span className="text-2xl font-black tracking-tighter hidden md:block">ANILO</span>
+            <UzumakiLogo className="w-10 h-10 shadow-xl" />
+            <span className="text-xl font-black tracking-tighter hidden sm:block uppercase">Anilo</span>
           </div>
 
-          <nav className="hidden lg:flex items-center gap-8">
-            {['welcome', 'dashboard', 'search'].map((p) => (
+          <nav className="hidden lg:flex items-center gap-10">
+            {[
+              { id: 'welcome', label: 'Home' },
+              { id: 'dashboard', label: 'My Movies' },
+              { id: 'search', label: 'Discover' }
+            ].map((p) => (
               <button
-                key={p}
-                onClick={() => onNavigate(p as Page)}
-                className={`text-sm font-bold uppercase tracking-widest transition-colors ${
-                  currentPage === p ? 'text-white' : 'text-gray-400 hover:text-white'
+                key={p.id}
+                onClick={() => onNavigate(p.id as Page)}
+                className={`text-[13px] font-bold uppercase tracking-[0.15em] transition-all hover:text-white ${
+                  currentPage === p.id ? 'text-white' : 'text-gray-400'
                 }`}
               >
-                {p === 'welcome' ? 'Home' : p === 'dashboard' ? 'My Movies' : 'Discover'}
+                {p.label}
               </button>
             ))}
           </nav>
@@ -41,29 +45,25 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, isAuthe
 
         {/* Right: Actions */}
         <div className="flex items-center gap-6">
-          <button className="text-gray-300 hover:text-white transition-colors">
-            <Search size={22} strokeWidth={2.5} />
-          </button>
-          <button className="text-gray-300 hover:text-white transition-colors relative">
-            <Bell size={22} strokeWidth={2.5} />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
+          <button className="text-gray-400 hover:text-white transition-colors">
+            <Search size={20} strokeWidth={2.5} />
           </button>
           
           {isAuthenticated ? (
             <button 
               onClick={() => onNavigate('dashboard')}
-              className="w-10 h-10 rounded-full border-2 border-gray-700 overflow-hidden hover:border-white transition-all"
+              className="w-10 h-10 rounded-full border border-gray-700 p-0.5 hover:border-orange-500 transition-all"
             >
-              <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                <User size={20} className="text-gray-400" />
+              <div className="w-full h-full bg-gray-800 rounded-full flex items-center justify-center">
+                <User size={18} className="text-gray-400" />
               </div>
             </button>
           ) : (
             <button
               onClick={onLoginClick}
-              className="bg-white text-black px-6 py-2.5 rounded-full font-black text-sm uppercase tracking-wider hover:bg-gray-200 transition-all shadow-xl"
+              className="bg-white text-black px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all shadow-xl"
             >
-              Log In
+              Join
             </button>
           )}
         </div>
