@@ -101,100 +101,118 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     setReviews(prev => prev.filter(r => r.id !== id));
   };
 
-  if (isLoading) return <div className="h-screen flex items-center justify-center"><LoadingSpinner /></div>;
+  const handlePlayClick = () => {
+      if (currentEpisode) {
+          onPlay({
+              ...movie,
+              title: `${movie.title} - ${currentEpisode.title}`,
+              videoUrl: currentEpisode.source as string
+          });
+      } else {
+          onPlay(movie);
+      }
+  };
+
+  if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#0a0a0c]"><LoadingSpinner /></div>;
 
   return (
-    <div className="animate-fade-in pb-20">
+    <div className="animate-fade-in pb-20 bg-[#0a0a0c] min-h-screen text-white">
       
-      {/* HEADER SECTION */}
-      <div className="relative w-full h-[300px] md:h-[450px] overflow-hidden rounded-b-[3rem] mb-12 shadow-2xl">
-          <img src={movie.posterUrl} className="w-full h-full object-cover opacity-50 blur-sm" alt="" />
+      {/* HEADER SECTION (Stable Cinematic) */}
+      <div className="relative w-full h-[350px] md:h-[500px] overflow-hidden rounded-b-[4rem] mb-12 shadow-2xl">
+          <img src={movie.posterUrl} className="w-full h-full object-cover opacity-40 blur-[2px]" alt="" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-transparent"></div>
           
           <button 
             onClick={onBack}
-            className="absolute top-6 left-6 w-12 h-12 bg-black/40 hover:bg-orange-600 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-xl"
+            className="absolute top-6 left-6 w-12 h-12 bg-black/40 hover:bg-orange-600 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-xl z-50"
           >
             <ArrowLeft size={24} />
           </button>
 
-          <div className="absolute bottom-10 left-10 right-10 flex flex-col md:flex-row items-end gap-8">
-              <div className="w-40 h-60 flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10 hidden md:block">
+          <div className="absolute bottom-10 left-6 md:left-16 right-6 md:right-16 flex flex-col md:flex-row items-end gap-10">
+              <div className="w-44 h-64 flex-shrink-0 rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white/5 hidden md:block">
                   <img src={movie.posterUrl} className="w-full h-full object-cover" alt="" />
               </div>
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-5">
                   <div className="flex items-center gap-3">
-                      <span className="bg-orange-600 text-white text-[10px] font-black px-2 py-1 rounded">ANIME</span>
-                      <span className="text-yellow-500 font-bold flex items-center gap-1"><Star size={16} fill="currentColor"/> {movie.rating.toFixed(1)}</span>
+                      <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase">ANIME</span>
+                      <span className="text-yellow-500 font-black text-xl flex items-center gap-1.5"><Star size={20} fill="currentColor"/> {movie.rating.toFixed(1)}</span>
                   </div>
-                  <h1 className="text-4xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none">{movie.title}</h1>
-                  <div className="flex flex-wrap gap-4 text-gray-400 font-bold text-sm">
-                      <span className="flex items-center gap-1"><Calendar size={16}/> {movie.year}</span>
-                      <span className="flex items-center gap-1"><Eye size={16}/> {movie.view_count || 0}</span>
-                      <span className="bg-gray-800 px-2 py-0.5 rounded text-[10px]">{movie.quality}</span>
-                      <span className="text-orange-500 uppercase">{movie.status}</span>
+                  <h1 className="text-4xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-lg">{movie.title}</h1>
+                  <div className="flex flex-wrap items-center gap-6 text-gray-400 font-bold text-sm">
+                      <span className="flex items-center gap-2"><Calendar size={18}/> {movie.year}</span>
+                      <span className="flex items-center gap-2"><Eye size={18}/> {movie.view_count || 0}</span>
+                      <span className="bg-white/10 px-3 py-1 rounded-lg text-[10px] tracking-widest uppercase font-black">{movie.quality}</span>
+                      <span className={`uppercase font-black ${movie.status === 'ongoing' ? 'text-green-500' : 'text-blue-500'}`}>{movie.status}</span>
                   </div>
               </div>
           </div>
       </div>
 
-      <div className="container mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <div className="container mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-16">
           
           {/* LEFT: CONTENT */}
-          <div className="lg:col-span-2 space-y-12">
+          <div className="lg:col-span-2 space-y-16">
               
-              {/* Episodes */}
-              <section className="bg-white/5 p-8 rounded-[2rem] border border-white/5">
-                  <h2 className="text-xl font-black uppercase tracking-widest text-white mb-6 flex items-center gap-3">
-                      <Play size={20} className="text-orange-600"/> Qismlar
+              {/* Episodes Panel */}
+              <section className="bg-white/5 p-10 rounded-[3rem] border border-white/5 shadow-xl">
+                  <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-8 flex items-center gap-4">
+                      <div className="w-2 h-8 bg-orange-600 rounded-full"></div>
+                      Qismlar
                   </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
                       {episodes.map((ep, idx) => (
                           <button
                               key={idx}
                               onClick={() => setCurrentEpisode(ep)}
-                              className={`py-3 rounded-xl font-bold text-sm transition-all border ${
+                              className={`py-4 rounded-2xl font-bold text-sm transition-all border ${
                                   currentEpisode?.title === ep.title 
-                                  ? 'bg-orange-600 border-orange-500 text-white shadow-lg' 
+                                  ? 'bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-600/30' 
                                   : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
                               }`}
                           >
                               {ep.title}
                           </button>
                       ))}
+                      {episodes.length === 0 && <p className="text-gray-600 italic">Qismlar yuklanmoqda...</p>}
                   </div>
                   <button 
-                    onClick={() => onPlay(currentEpisode ? { ...movie, title: `${movie.title} - ${currentEpisode.title}`, videoUrl: currentEpisode.source as string } : undefined)}
-                    className="w-full mt-6 py-4 bg-white text-black hover:bg-orange-600 hover:text-white rounded-xl font-black uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-3"
+                    onClick={handlePlayClick}
+                    className="w-full mt-10 py-5 bg-white text-black hover:bg-orange-600 hover:text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-4 shadow-xl active:scale-95"
                   >
-                      <Play fill="currentColor" size={20}/> {currentEpisode ? `${currentEpisode.title}ni ko'rish` : "Hozir ko'rish"}
+                      <Play fill="currentColor" size={24}/> {currentEpisode ? `${currentEpisode.title}ni ko'rish` : "Hozir ko'rish"}
                   </button>
               </section>
 
-              {/* Plot */}
+              {/* Description */}
               <section>
-                  <h2 className="text-xl font-black uppercase tracking-widest text-gray-500 mb-6">Qisqacha Mazmun</h2>
-                  <p className="text-lg text-gray-300 leading-relaxed font-medium">
+                  <h2 className="text-xl font-black uppercase tracking-[0.2em] text-gray-500 mb-8">Qisqacha Mazmun</h2>
+                  <p className="text-xl text-gray-300 leading-relaxed font-medium pl-8 border-l-2 border-white/5">
                       {movie.plot}
                   </p>
               </section>
 
-              {/* Reviews */}
-              <section className="space-y-8">
-                  <h2 className="text-xl font-black uppercase tracking-widest text-gray-500">Reyting va Izohlar</h2>
+              {/* Review System */}
+              <section className="space-y-12">
+                  <h2 className="text-xl font-black uppercase tracking-[0.2em] text-gray-500">Reyting va Izohlar</h2>
                   
-                  {/* Rating Stats Card */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-8 bg-white/5 p-8 rounded-3xl border border-white/5">
-                      <div className="text-center">
-                          <p className="text-5xl font-black text-orange-500">{movie.rating.toFixed(1)}</p>
-                          <p className="text-[10px] text-gray-500 uppercase font-black mt-2">{reviews.length} TA REYTING</p>
+                  {/* Stats Bar */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-10 bg-white/5 p-10 rounded-[2.5rem] border border-white/5 shadow-inner">
+                      <div className="text-center flex flex-col justify-center">
+                          <p className="text-6xl font-black text-orange-500">{movie.rating.toFixed(1)}</p>
+                          <div className="flex justify-center text-yellow-500 my-3"><Star size={20} fill="currentColor"/><Star size={20} fill="currentColor"/><Star size={20} fill="currentColor"/><Star size={20} fill="currentColor"/><Star size={20} fill="currentColor"/></div>
+                          <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest">{reviews.length} TA REYTING</p>
                       </div>
-                      <div className="md:col-span-3 space-y-2">
+                      <div className="md:col-span-3 space-y-3 flex flex-col justify-center">
                           {[5, 4, 3, 2, 1].map(num => (
-                              <div key={num} className="flex items-center gap-3">
-                                  <span className="text-xs font-bold text-gray-500 w-2">{num}</span>
-                                  <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                                      <div className="h-full bg-orange-600" style={{ width: `${ratingStats.total ? (ratingStats[num as 5|4|3|2|1] / ratingStats.total) * 100 : 0}%` }}></div>
+                              <div key={num} className="flex items-center gap-4">
+                                  <span className="text-xs font-bold text-gray-500 w-4">{num}</span>
+                                  <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                      <div 
+                                        className="h-full bg-orange-600 rounded-full" 
+                                        style={{ width: `${ratingStats.total ? (ratingStats[num as 5|4|3|2|1] / ratingStats.total) * 100 : 0}%` }}
+                                      ></div>
                                   </div>
                               </div>
                           ))}
@@ -202,33 +220,42 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                   </div>
 
                   {/* Form */}
-                  <form onSubmit={handleReviewSubmit} className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-4">
-                      <div className="flex gap-2">
-                          {[1,2,3,4,5].map(s => (
-                              <button key={s} type="button" onClick={() => setUserRating(s)} className={userRating >= s ? 'text-orange-500' : 'text-gray-700'}><Star size={24} fill={userRating >= s ? 'currentColor' : 'none'}/></button>
-                          ))}
+                  <form onSubmit={handleReviewSubmit} className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 space-y-6 shadow-2xl">
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Baho:</span>
+                        <div className="flex gap-2">
+                            {[1,2,3,4,5].map(s => (
+                                <button key={s} type="button" onClick={() => setUserRating(s)} className={`transition-transform active:scale-90 ${userRating >= s ? 'text-orange-500' : 'text-gray-700'}`}><Star size={28} fill={userRating >= s ? 'currentColor' : 'none'}/></button>
+                            ))}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                          <textarea value={userComment} onChange={e => setUserComment(e.target.value)} placeholder="Fikringiz..." className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-orange-500 min-h-[100px]"></textarea>
-                          <button type="submit" disabled={isSubmitting || !userComment.trim()} className="bg-orange-600 text-white p-4 rounded-2xl self-end hover:bg-orange-500 transition-all"><Send size={20}/></button>
+                      <div className="relative">
+                          <textarea value={userComment} onChange={e => setUserComment(e.target.value)} placeholder="Anime haqida fikringiz..." className="w-full bg-black/40 border border-white/10 rounded-[2rem] p-6 text-white outline-none focus:border-orange-500 min-h-[120px] transition-all"></textarea>
+                          <button type="submit" disabled={isSubmitting || !userComment.trim()} className="absolute bottom-4 right-4 bg-orange-600 text-white p-4 rounded-2xl hover:bg-orange-500 transition-all active:scale-90 disabled:opacity-50"><Send size={20}/></button>
                       </div>
                   </form>
 
-                  {/* List */}
-                  <div className="space-y-4">
+                  {/* Comments List */}
+                  <div className="space-y-6">
+                      {reviews.length === 0 && <p className="text-center py-20 text-gray-600 italic font-bold">Hali izohlar yo'q. Birinchi bo'ling!</p>}
                       {reviews.map(r => (
-                          <div key={r.id} className="bg-white/5 p-6 rounded-3xl border border-white/5 flex justify-between items-start">
-                              <div className="space-y-2">
-                                  <div className="flex items-center gap-3">
-                                      <span className="font-bold text-orange-500 text-sm">@{r.profiles?.username || 'user'}</span>
-                                      <div className="flex text-yellow-500 scale-75">{[...Array(r.rating)].map((_, i) => <Star key={i} size={12} fill="currentColor"/>)}</div>
+                          <div key={r.id} className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 flex justify-between items-start animate-fade-in group">
+                              <div className="space-y-4">
+                                  <div className="flex items-center gap-4">
+                                      <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center font-black text-orange-500 border border-white/5">
+                                          {r.profiles?.avatar_url ? <img src={r.profiles.avatar_url} className="w-full h-full rounded-full object-cover" /> : (r.profiles?.username?.[0].toUpperCase() || 'U')}
+                                      </div>
+                                      <div>
+                                        <span className="font-black text-orange-500 text-sm">@{r.profiles?.username || 'user'}</span>
+                                        <div className="flex text-yellow-500 scale-75 -ml-4">{[...Array(r.rating)].map((_, i) => <Star key={i} size={12} fill="currentColor"/>)}</div>
+                                      </div>
                                   </div>
-                                  <p className="text-gray-300">{r.comment}</p>
+                                  <p className="text-gray-300 leading-relaxed font-medium">{r.comment}</p>
                               </div>
                               {currentUser?.id === r.user_id && (
-                                  <div className="flex gap-2">
-                                      <button onClick={() => { setEditingId(r.id); setUserComment(r.comment); setUserRating(r.rating); }} className="text-blue-400 p-2 hover:bg-blue-400/10 rounded-full"><Edit2 size={16}/></button>
-                                      <button onClick={() => handleDeleteReview(r.id)} className="text-red-400 p-2 hover:bg-red-400/10 rounded-full"><Trash2 size={16}/></button>
+                                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button onClick={() => { setEditingId(r.id); setUserComment(r.comment); setUserRating(r.rating); }} className="text-blue-400 p-3 hover:bg-blue-400/10 rounded-full transition-colors"><Edit2 size={18}/></button>
+                                      <button onClick={() => handleDeleteReview(r.id)} className="text-red-400 p-3 hover:bg-red-400/10 rounded-full transition-colors"><Trash2 size={18}/></button>
                                   </div>
                               )}
                           </div>
@@ -238,35 +265,39 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
           </div>
 
           {/* RIGHT: SIDEBAR */}
-          <div className="space-y-8">
-              <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 space-y-6">
-                  <h3 className="font-black uppercase tracking-widest text-xs text-gray-500">Anime Ma'lumotlari</h3>
-                  <div className="space-y-4 text-sm">
-                      <div className="flex justify-between border-b border-white/5 pb-3">
-                          <span className="text-gray-500">Tarjima</span>
-                          <span className="font-bold text-orange-500">{movie.translator || 'Anilo'}</span>
+          <div className="space-y-10">
+              <div className="bg-white/5 p-10 rounded-[3rem] border border-white/10 space-y-8 sticky top-24">
+                  <h3 className="font-black uppercase tracking-[0.2em] text-[10px] text-gray-500 border-b border-white/5 pb-4">Anime Ma'lumotlari</h3>
+                  <div className="space-y-6">
+                      <div className="flex justify-between border-b border-white/5 pb-4 group">
+                          <span className="text-gray-500 font-bold text-sm group-hover:text-gray-400 transition-colors">Tarjimon</span>
+                          <span className="font-black text-orange-500 text-sm text-right">{movie.translator || 'Anilo Team'}</span>
                       </div>
-                      <div className="flex justify-between border-b border-white/5 pb-3">
-                          <span className="text-gray-500">Til</span>
-                          <span className="font-bold">{movie.language}</span>
+                      <div className="flex justify-between border-b border-white/5 pb-4 group">
+                          <span className="text-gray-500 font-bold text-sm group-hover:text-gray-400 transition-colors">Til</span>
+                          <span className="font-black text-white text-sm">JP / UZ</span>
                       </div>
-                      <div className="flex justify-between border-b border-white/5 pb-3">
-                          <span className="text-gray-500">Janrlar</span>
-                          <span className="font-bold text-right">{movie.genre}</span>
+                      <div className="flex justify-between border-b border-white/5 pb-4 group">
+                          <span className="text-gray-500 font-bold text-sm group-hover:text-gray-400 transition-colors">Janrlar</span>
+                          <span className="font-black text-white text-sm text-right max-w-[150px] leading-snug">{movie.genre}</span>
+                      </div>
+                      <div className="flex justify-between group">
+                          <span className="text-gray-500 font-bold text-sm group-hover:text-gray-400 transition-colors">Holati</span>
+                          <span className={`font-black text-xs uppercase px-2 py-0.5 rounded ${movie.status === 'ongoing' ? 'bg-green-500/20 text-green-500' : 'bg-blue-500/20 text-blue-500'}`}>{movie.status}</span>
                       </div>
                   </div>
                   <button 
                     onClick={handleToggleSave}
-                    className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all ${isSaved ? 'bg-white text-black' : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'}`}
+                    className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 transition-all ${isSaved ? 'bg-white text-black' : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'}`}
                   >
-                    <Bookmark size={18} fill={isSaved ? "black" : "none"} /> {isSaved ? 'Saqlangan' : 'Saqlash'}
+                    <Bookmark size={20} fill={isSaved ? "black" : "none"} /> {isSaved ? 'Saqlangan' : 'Saqlash'}
                   </button>
               </div>
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2">
+              {/* Tag Cloud */}
+              <div className="flex flex-wrap gap-2 px-4">
                   {movie.tags?.split(',').map(t => (
-                      <span key={t} className="px-3 py-1.5 bg-white/5 rounded-lg text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1 border border-white/5"><Tag size={10}/> {t.trim()}</span>
+                      <span key={t} className="px-4 py-2 bg-white/5 rounded-xl text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 border border-white/5 hover:text-orange-500 hover:border-orange-500/30 transition-all cursor-default"><Tag size={10}/> {t.trim()}</span>
                   ))}
               </div>
           </div>

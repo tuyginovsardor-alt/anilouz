@@ -1,6 +1,3 @@
-
-
-// Fix: Added the missing ContentItem interface based on its usage in constants.ts.
 export interface ContentItem {
   id: number;
   title: string;
@@ -13,16 +10,16 @@ export interface Movie {
   year: number;
   plot: string;
   posterUrl: string;
-  videoUrl?: string; // New field for the actual video file/link
+  videoUrl?: string;
   genre: string;
   language: string;
   quality: string;
   rating: number;
-  is_archived?: boolean; // New field for archiving
-  view_count?: number; // New field for analytics
-  tags?: string; // NEW: Additional search keywords
-  status?: 'ongoing' | 'completed'; // Status field
-  translator?: string; // NEW: Translator name
+  is_archived?: boolean;
+  view_count?: number;
+  tags?: string;
+  status?: 'ongoing' | 'completed';
+  translator?: string;
 }
 
 export interface Review {
@@ -32,8 +29,7 @@ export interface Review {
   rating: number;
   comment: string;
   created_at: string;
-  profiles?: UserProfile; // Joined user data
-  movies?: Movie; // Joined movie data (optional)
+  profiles?: UserProfile;
 }
 
 export interface Episode {
@@ -46,7 +42,7 @@ export type UserRole = 'user' | 'admin' | 'manager' | 'support' | 'accountant' |
 
 export interface UserProfile {
   id: string;
-  short_id?: string; // 6 xonali ID raqam
+  short_id?: string;
   email: string;
   full_name?: string;
   username?: string;
@@ -55,33 +51,26 @@ export interface UserProfile {
   balance: number;
   phone?: string;
   created_at: string;
-  total_watch_time?: number; // Sekundlarda umumiy ko'rish vaqti (Analytics uchun qoladi)
-  free_trial_started_at?: string; // YANGI: 3 soatlik vaqt qachon boshlangani
-  subscription_end_at?: string; // Obuna tugash sanasi
-  subscription_plan?: string; // YANGI: '1-oy', '3-oy', '6-oy', '1-yil'
+  total_watch_time?: number;
+  free_trial_started_at?: string;
+  subscription_end_at?: string;
+  subscription_plan?: string;
   email_notifications?: boolean;
   push_notifications?: boolean;
   language?: string;
-  device_id?: string; // YANGI: Qurilma identifikatori
-  is_online?: boolean; // Computed: Hozir saytdami
-  last_active?: string; // Computed: Oxirgi marta qachon kirgan
+  device_id?: string;
+  is_online?: boolean;
+  last_active?: string;
 }
 
 export interface UserDevice {
     id: number;
     user_id: string;
     device_id: string;
-    device_name: string; // e.g. "Chrome on Windows"
+    device_name: string;
     last_active: string;
     is_blocked: boolean;
-    ip_address?: string;
     profiles?: UserProfile;
-}
-
-export interface DeviceRegistration {
-    device_id: string;
-    attempt_count: number;
-    last_attempt_at: string;
 }
 
 export interface PaymentRequestDB {
@@ -91,7 +80,7 @@ export interface PaymentRequestDB {
   status: 'pending' | 'approved' | 'rejected';
   screenshot_url: string;
   created_at: string;
-  profiles?: UserProfile; // Join qilinganda keladi
+  profiles?: UserProfile;
 }
 
 export interface Transaction {
@@ -101,45 +90,15 @@ export interface Transaction {
   created_at: string;
 }
 
-export interface GeminiAnalysisResult {
-  isAuthentic: boolean;
-  reasoning: string;
-  extractedAmount: number | null;
-  currency: string | null;
-  transactionDate: string | null;
-  transactionTime: string | null;
-  fingerprint: string;
-}
-
-export interface PaymentVerificationRequest {
-    id: number;
-    user: {
-        name: string;
-        email: string;
-    };
-    declaredAmount: number;
-    screenshotUrl: string;
-    geminiAnalysis: GeminiAnalysisResult;
-    status: 'pending' | 'approved' | 'rejected';
-}
-
 export interface Ad {
   id?: number;
   name: string;
   type: 'video' | 'banner'; 
   contentUrl: string;
   targetUrl: string;
-  location: 
-    | 'pre_roll_video'
-    | 'player_overlay_full' // Full screen video ad
-    | 'player_overlay_popup' // Small video popup
-    | 'player_overlay_large_banner'
-    | 'player_overlay_small_banner'
-    | 'welcome_bottom'
-    | 'search_top'
-    | 'detail_top';
+  location: string;
   status: 'active' | 'inactive';
-  view_count?: number; // New analytics
+  view_count?: number;
 }
 
 export interface Promocode {
@@ -156,13 +115,9 @@ export interface Promocode {
 export interface SupportTicket {
     id: number;
     user_id: string;
-    subject: string;
     status: 'open' | 'closed';
     created_at: string;
-    updated_at?: string;
-    description?: string;
     profiles?: UserProfile;
-    last_message?: string; // UI helper
 }
 
 export interface TicketMessage {
@@ -189,89 +144,7 @@ export interface Broadcast {
     type: 'info' | 'warning' | 'urgent';
     target_group: 'all' | 'premium' | 'user';
     created_at: string;
-    is_active: boolean;
 }
-
-export interface AppConfig {
-    key: string;
-    value: string;
-    description?: string;
-}
-
-export interface SocialLink {
-    id?: number;
-    platform: 'instagram' | 'facebook' | 'youtube' | 'telegram';
-    url: string;
-    label: string; // Masalan: "Asosiy kanal", "Zahira"
-    created_at?: string;
-}
-
-export type NotificationType = 'success' | 'error' | 'info' | 'warning';
-
-export interface Notification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-}
-
-// Chat types (AI Bot)
-export enum Sender {
-  User = 'user',
-  Bot = 'bot',
-  System = 'system'
-}
-
-export interface Message {
-  id: string;
-  text: string;
-  sender: Sender;
-  timestamp: number;
-  isError?: boolean;
-}
-
-export interface ChatSession {
-  id: string;
-  title: string;
-  messages: Message[];
-  date: number;
-}
-
-export enum AppView {
-  Chat = 'chat',
-  Settings = 'settings',
-  About = 'about'
-}
-
-export interface DashboardStats {
-    totalUsers: number;
-    totalMovies: number;
-    totalPremium: number; // Approximate based on approved payments
-    totalReviews: number;
-}
-
-export interface ActivityLog {
-    id: string | number;
-    type: 'review' | 'movie' | 'user_join' | 'payment';
-    title: string;
-    description: string;
-    time: string;
-    user?: string;
-}
-
-export interface CulturalAnalysis {
-  detectedLanguage: string;
-  isoCode: string;
-  englishTranslation: string;
-  pronunciation: string;
-  friendlyResponse: string;
-  culturalFacts: string[];
-}
-
-// --- LEGAL DOCS ---
-export type LegalDocType = 'privacy' | 'security' | 'terms';
-
-// --- CONTEST (ATC) TYPES ---
 
 export interface ATCWallet {
     user_id: string;
@@ -280,25 +153,24 @@ export interface ATCWallet {
     total_converted: number;
     active_days: number;
     last_spin_at: string | null;
-    extra_spins: number; // NEW: earned from quiz
+    extra_spins: number;
 }
 
 export interface ATCTransaction {
     id: number;
     amount: number;
-    type: 'spin' | 'task' | 'conversion' | 'bonus' | 'ad_watch' | 'quiz_win';
+    type: string;
     description: string;
     created_at: string;
 }
 
+// Added platform property to ContestTask
 export interface ContestTask {
     id: number;
-    platform: 'telegram' | 'instagram' | 'youtube' | 'facebook' | 'other';
     url: string;
     label: string;
     reward_atc: number;
-    is_active: boolean;
-    is_completed?: boolean; // UI helper
+    platform: 'telegram' | 'instagram' | 'youtube' | 'facebook' | 'other';
 }
 
 export interface ContestAd {
@@ -308,15 +180,13 @@ export interface ContestAd {
     media_url: string;
     reward_atc: number;
     duration_sec: number;
-    is_active: boolean;
-    created_at: string;
 }
 
 export interface WheelPrize {
     id: number;
     label: string;
     value: number;
-    type: 'atc' | 'uzs' | 'loss' | 'box' | 'ark'; // Added 'ark' and 'box'
+    type: 'atc' | 'uzs' | 'loss' | 'box' | 'ark';
     color: string;
     probability: number;
 }
@@ -331,28 +201,16 @@ export interface QuizQuestion {
     correct_option: 'a' | 'b' | 'c' | 'd';
 }
 
-// --- ARK (CASH CONTEST) TYPES ---
-
 export interface ArkWallet {
     user_id: string;
     balance: number;
     total_earned: number;
-    frozen_balance: number;
     available_spins: number;
-    created_at: string;
 }
 
 export interface ArkMarketData {
     id: number;
     price: number;
-    created_at: string;
-}
-
-export interface ArkTransaction {
-    id: number;
-    amount: number;
-    type: 'spin' | 'bonus' | 'trade' | 'withdraw_hold' | 'withdraw_fail' | 'withdraw_success' | 'ad_watch';
-    description: string;
     created_at: string;
 }
 
@@ -364,33 +222,7 @@ export interface ArkWithdrawal {
     card_number: string;
     card_holder: string;
     status: 'pending' | 'approved' | 'rejected';
-    admin_note?: string;
-    created_at: string;
     profiles?: UserProfile;
-}
-
-export interface ArkSettings {
-    game_status: 'active' | 'paused' | 'finished' | 'closed'; // Added 'closed'
-    current_price: number;
-    start_time?: string;
-    end_time?: string;
-    start_message?: string;
-    wheel_config?: WheelPrize[];
-    autopilot_config?: ArkAutopilotConfig; // New
-    market_schedule?: ArkSchedule; // New
-}
-
-export interface ArkAutopilotConfig {
-    unit_views: number; // e.g. 10000
-    revenue_per_unit: number; // e.g. 200000 UZS
-    market_share_percent: number; // e.g. 45%
-}
-
-export interface ArkSchedule {
-    start_date: string;
-    duration_hours: number;
-    growth_percent: number;
-    is_active: boolean;
 }
 
 export interface ArkAd {
@@ -400,8 +232,6 @@ export interface ArkAd {
     media_url: string;
     reward_ark: number;
     duration_sec: number;
-    is_active: boolean;
-    created_at: string;
 }
 
 export interface ArkQuiz {
@@ -413,5 +243,91 @@ export interface ArkQuiz {
     option_d: string;
     correct_option: 'a' | 'b' | 'c' | 'd';
     reward_spins: number;
-    created_at: string;
+}
+
+export interface ArkAutopilotConfig {
+    unit_views: number;
+    revenue_per_unit: number;
+    market_share_percent: number;
+}
+
+export interface ArkSchedule {
+    start_date: string;
+    duration_hours: number;
+    growth_percent: number;
+    is_active: boolean;
+}
+
+// Added NotificationType
+export type NotificationType = 'success' | 'error' | 'info' | 'warning';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+}
+
+export enum Sender {
+  User = 'user',
+  Bot = 'bot',
+  System = 'system'
+}
+
+export interface Message {
+  id: string;
+  text: string;
+  sender: Sender;
+  timestamp: number;
+  isError?: boolean;
+}
+
+export interface DashboardStats {
+    totalUsers: number;
+    totalMovies: number;
+    totalPremium: number;
+    totalReviews: number;
+}
+
+export interface ActivityLog {
+    id: string | number;
+    title: string;
+    description: string;
+    time: string;
+}
+
+export type LegalDocType = 'privacy' | 'security' | 'terms';
+
+// Added SocialLink
+export interface SocialLink {
+  id?: number;
+  platform: 'instagram' | 'facebook' | 'youtube' | 'telegram';
+  url: string;
+  label: string;
+  created_at?: string;
+}
+
+// Added CulturalAnalysis
+export interface CulturalAnalysis {
+  detectedLanguage: string;
+  isoCode: string;
+  englishTranslation: string;
+  pronunciation: string;
+  friendlyResponse: string;
+  culturalFacts: string[];
+}
+
+// Added AppView
+export enum AppView {
+  Chat = 'chat',
+  Settings = 'settings',
+  About = 'about'
+}
+
+// Added ChatSession
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: number;
 }
