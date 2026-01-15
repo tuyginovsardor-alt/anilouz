@@ -1,0 +1,9 @@
+{
+  "name": "Gemini Elite Studio",
+  "description": "An advanced AI workstation demonstrating the full capabilities of the Google Gemini API, including multi-modal chat, search-grounded reasoning, real-time voice interaction, and high-fidelity image generation.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

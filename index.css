@@ -1,0 +1,81 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-orange: #f97316;
+  --bg-dark: #07070a;
+  --glass: rgba(15, 15, 20, 0.8);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-dark);
+  color: #f8fafc;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Glassmorphism Effect */
+.glass-effect {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Page Transitions */
+.page-enter {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Bottom Nav Style (Mobile) */
+.bottom-nav-item {
+  @apply flex flex-col items-center justify-center text-gray-500 transition-all duration-300;
+}
+.bottom-nav-item.active {
+  @apply text-orange-500 scale-110;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: #222;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-orange);
+}
+
+.anime-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.anime-card-hover:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(249, 115, 22, 0.2);
+}
+
+/* Neon Glow Animations */
+@keyframes pulsate-glow {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.5)); }
+  50% { filter: drop-shadow(0 0 15px rgba(249, 115, 22, 0.8)); }
+}
+.animate-neon {
+  animation: pulsate-glow 3s infinite;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
