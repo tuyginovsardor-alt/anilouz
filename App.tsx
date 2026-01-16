@@ -164,28 +164,25 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {/* MOBILE BOTTOM NAVIGATION */}
+          {/* MOBILE BOTTOM NAVIGATION - YANA TUGMASI QAYTDI */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505] h-20 flex justify-around items-center px-4 border-t border-zinc-900">
                     {[
                         { id: 'welcome', label: 'Asosiy', icon: <Home size={22} />, active: page === 'welcome' },
                         { id: 'search_trigger', label: 'Qidiruv', icon: <Search size={22} />, active: isSearchOpen },
-                        { id: 'studio', label: 'Studio', icon: <Mic size={22} />, active: page === 'studio' },
                         { id: 'saved', label: 'Saved', icon: <Bookmark size={22} />, active: page === 'dashboard' && dashboardPage === 'saved' },
-                        { id: 'profile_or_dub', label: currentUserRole === 'dub' ? 'Xona' : 'Profil', icon: <User size={22} />, active: page === 'dub-dashboard' || (page === 'dashboard' && dashboardPage === 'profile') },
+                        { id: 'profile', label: 'Profil', icon: <User size={22} />, active: page === 'dashboard' && dashboardPage === 'profile' },
+                        { id: 'more', label: 'Yana', icon: <MoreHorizontal size={22} />, active: page === 'dashboard' && dashboardPage === 'more' },
                     ].map(item => (
                         <button 
                             key={item.id}
                             onClick={() => {
                                 if (item.id === 'welcome') handleNavigation('welcome');
                                 else if (item.id === 'search_trigger') setIsSearchOpen(true);
-                                else if (item.id === 'studio') handleNavigation('studio');
-                                else if (item.id === 'profile_or_dub') {
-                                    if (currentUserRole === 'dub') handleNavigation('dub-dashboard');
-                                    else { setPage('dashboard'); setDashboardPage('profile'); }
-                                }
-                                else { setPage('dashboard'); setDashboardPage(item.id as any); }
+                                else if (item.id === 'saved') { setPage('dashboard'); setDashboardPage('saved'); }
+                                else if (item.id === 'profile') { setPage('dashboard'); setDashboardPage('profile'); }
+                                else if (item.id === 'more') { setPage('dashboard'); setDashboardPage('more'); }
                             }}
                             className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600'}`}
                         >

@@ -13,7 +13,7 @@ import { getSocialLinks } from './services/dbService';
 import { 
     LogOut, Settings, CreditCard, History, ShieldCheck, 
     Instagram, Send, Youtube, Facebook, MessageCircle, 
-    Globe, ExternalLink, Mic, Star
+    Globe, ExternalLink, Mic, Star, LayoutGrid
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -73,11 +73,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     <div className="animate-fade-in space-y-10 max-w-2xl mx-auto pb-20">
                         <div className="flex flex-col gap-2">
                              <h2 className="text-3xl font-black tracking-tight text-white">Yana</h2>
-                             <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Xizmatlar va Bog'lanish</p>
+                             <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Xizmatlar va Bo'limlar</p>
                         </div>
                         
                         <div className="grid gap-4">
-                            {/* IJODKOR XONASI TUGMASI - ONLY FOR DUB ROLE */}
+                            {/* IJODKOR XONASI TUGMASI - FAQAT DUBLLYAJCHILAR UCHUN */}
                             {isDubber && (
                                 <button 
                                     onClick={() => onMainNavigate('dub-dashboard')} 
@@ -89,7 +89,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                                         </div>
                                         <div className="text-left">
                                             <p className="text-xl tracking-tight">Ijodkor Xonasi</p>
-                                            <p className="text-[10px] uppercase tracking-widest text-purple-500/60 font-black">Studio Dashboard</p>
+                                            <p className="text-[10px] uppercase tracking-widest text-purple-500/60 font-black">Shaxsiy Dashboard</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -99,6 +99,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                                 </button>
                             )}
 
+                            {/* ANILO STUDIO TUGMASI - BARCHA UCHUN (KATALOG VA ARTISTLAR) */}
+                            <button 
+                                onClick={() => onMainNavigate('studio')} 
+                                className="group w-full flex items-center justify-between p-6 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] text-orange-500 font-black transition-all hover:scale-[1.02] active:scale-95"
+                            >
+                                <div className="flex items-center gap-5">
+                                    <div className="w-14 h-14 bg-zinc-800 rounded-3xl flex items-center justify-center text-orange-500 border border-zinc-700 group-hover:bg-orange-600 group-hover:text-white transition-all">
+                                        <LayoutGrid size={28}/>
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-xl tracking-tight text-white">Anilo Studio</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black">Artistlar va Katalog</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-zinc-600">OCHISH</span>
+                                    <ExternalLink size={20} className="text-zinc-600 group-hover:text-orange-500" />
+                                </div>
+                            </button>
+
                             {isAdmin && (
                                 <button onClick={() => onSwitchRole(currentRole)} className="group w-full flex items-center justify-between p-5 bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-[2rem] text-yellow-500 font-black transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-yellow-500/5">
                                     <div className="flex items-center gap-4">
@@ -106,7 +126,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                                             <ShieldCheck size={24}/>
                                         </div>
                                         <div className="text-left">
-                                            <p className="text-base">Admin Paneli</p>
+                                            <p className="text-base text-white">Admin Paneli</p>
                                             <p className="text-[10px] opacity-60">Tizimni boshqarish</p>
                                         </div>
                                     </div>
@@ -149,7 +169,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             </div>
                         </div>
 
-                        {/* Social Links... */}
+                        {/* Social Links */}
                         <div className="space-y-6 pt-10 border-t border-white/5">
                             <p className="text-xs font-black text-gray-500 uppercase tracking-[0.3em] text-center">Biz Ijtimoiy Tarmoqlarda</p>
                             <div className="flex flex-wrap justify-center gap-4">
