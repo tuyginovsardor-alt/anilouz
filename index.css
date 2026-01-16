@@ -1,63 +1,63 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --primary: #f97316;
-  --bg-main: #0a0a0c;
+  --bg-main: #050505;
+  --bg-card: #0f0f0f;
+  --border-subtle: rgba(255, 255, 255, 0.05);
 }
 
 @layer base {
   body {
-    @apply bg-[#0a0a0c] text-white;
+    @apply bg-[#050505] text-white antialiased;
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
+/* Glass effect removed, solid dark backgrounds used instead */
 .glass-header {
-  background: rgba(10, 10, 12, 0.8);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-}
-
-/* Smooth cubic-bezier transitions */
-.cubic-bezier {
-    transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  background: #050505;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .animate-fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0a0a0c; }
-::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+/* Custom scrollbar - cleaner and minimal */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #050505; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: #f97316; }
 
 .anime-card {
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--bg-card);
 }
 
 .anime-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 20px rgba(249,115,22,0.1);
+    transform: scale(1.03);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
 }
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-/* Horizontal Carousel Snap */
-.snap-inline {
-    scroll-snap-type: inline mandatory;
-    scroll-padding-inline: 2rem;
+/* Better spacing for grids */
+.grid-standard {
+    display: grid;
+    gap: 2rem;
 }
-.snap-item {
-    scroll-snap-align: start;
+
+@media (max-width: 640px) {
+    .grid-standard {
+        gap: 1rem;
+    }
 }
