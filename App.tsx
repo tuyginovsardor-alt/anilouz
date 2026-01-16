@@ -4,7 +4,6 @@ import { WelcomePage } from './WelcomePage';
 import { SearchPage } from './SearchPage';
 import { DashboardPage } from './DashboardPage';
 import { AuthModal } from './components/AuthModal';
-// Fix: Ad and Notification are now correctly exported from types.ts
 import { Movie, UserRole, Ad, Notification } from './types';
 import { MovieDetailPage } from './MovieDetailPage';
 import { VideoPlayerPage } from './VideoPlayerPage';
@@ -16,7 +15,7 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Bookmark, User, MoreHorizontal, ShieldCheck, X, Sparkles } from 'lucide-react';
+import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles } from 'lucide-react';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
@@ -55,11 +54,8 @@ const App: React.FC = () => {
                 setIsAuthenticated(true);
                 fetchUserRole(session.user.id);
             }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsCheckingAuth(false);
-        }
+        } catch (e) { console.error(e); }
+        finally { setIsCheckingAuth(false); }
     };
     initApp();
 
@@ -139,60 +135,50 @@ const App: React.FC = () => {
           {/* SEARCH MODAL */}
           {isSearchOpen && (
               <div className="fixed inset-0 z-[200] bg-[#050505]/98 animate-fade-in flex flex-col p-6 sm:p-10">
-                  <button 
-                    onClick={() => setIsSearchOpen(false)}
-                    className="absolute top-6 right-6 sm:top-10 sm:right-10 p-3 bg-white/5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-all"
-                  >
+                  <button onClick={() => setIsSearchOpen(false)} className="absolute top-6 right-6 p-3 bg-white/5 hover:bg-white/10 rounded-full text-gray-400">
                       <X size={28} />
                   </button>
                   <div className="max-w-4xl mx-auto w-full pt-20">
                       <div className="flex items-center gap-3 mb-8">
                           <Sparkles className="text-orange-500" size={24} />
-                          <h2 className="text-4xl font-black tracking-tighter uppercase">Nima qidiramiz?</h2>
+                          <h2 className="text-4xl font-black tracking-tighter uppercase">Kashfiyot qilish vaqti</h2>
                       </div>
-                      <div className="relative group">
-                          <input 
-                            type="text" 
-                            autoFocus
-                            placeholder="Anime nomi, janr yoki kashfiyot..."
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    setCurrentQuery((e.target as HTMLInputElement).value);
-                                    setPage('search');
-                                    setIsSearchOpen(false);
-                                }
-                            }}
-                            className="w-full bg-white/5 border-b-2 border-white/10 py-6 px-4 text-2xl sm:text-4xl font-bold outline-none focus:border-orange-500 transition-all placeholder:text-gray-700"
-                          />
-                      </div>
+                      <input 
+                        type="text" autoFocus placeholder="Anime nomi yoki janr..."
+                        onKeyDown={(e) => { if (e.key === 'Enter') { setCurrentQuery((e.target as HTMLInputElement).value); setPage('search'); setIsSearchOpen(false); } }}
+                        className="w-full bg-white/5 border-b-2 border-white/10 py-6 px-4 text-2xl sm:text-4xl font-bold outline-none focus:border-orange-500 transition-all"
+                      />
                   </div>
               </div>
           )}
 
-          {/* MOBILE BOTTOM NAVIGATION - SOLID DARK STYLE */}
+          {/* MOBILE BOTTOM NAVIGATION - SOLID BLACK PREMIUM STYLE */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
-            <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-0 pb-0 pointer-events-none">
-                <div className="bottom-nav h-16 flex justify-around items-center px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] pointer-events-auto">
-                    <button onClick={() => handleNavigation('welcome')} className={`flex flex-col items-center gap-1 transition-all ${page === 'welcome' ? 'text-orange-500' : 'text-gray-500'}`}>
-                        <Home size={20} />
-                        <span className="text-[8px] font-black uppercase tracking-tighter">Asosiy</span>
-                    </button>
-                    <button onClick={() => setIsSearchOpen(true)} className={`flex flex-col items-center gap-1 text-gray-500`}>
-                        <Search size={20} />
-                        <span className="text-[8px] font-black uppercase tracking-tighter">Qidiruv</span>
-                    </button>
-                    <button onClick={() => {setPage('dashboard'); setDashboardPage('saved')}} className={`flex flex-col items-center gap-1 transition-all ${page === 'dashboard' && dashboardPage === 'saved' ? 'text-orange-500' : 'text-gray-500'}`}>
-                        <Bookmark size={20} />
-                        <span className="text-[8px] font-black uppercase tracking-tighter">Saqlangan</span>
-                    </button>
-                    <button onClick={() => {setPage('dashboard'); setDashboardPage('profile')}} className={`flex flex-col items-center gap-1 transition-all ${page === 'dashboard' && dashboardPage === 'profile' ? 'text-orange-500' : 'text-gray-500'}`}>
-                        <User size={20} />
-                        <span className="text-[8px] font-black uppercase tracking-tighter">Profil</span>
-                    </button>
-                    <button onClick={() => {setPage('dashboard'); setDashboardPage('more')}} className={`flex flex-col items-center gap-1 transition-all ${page === 'dashboard' && dashboardPage === 'more' ? 'text-orange-500' : 'text-gray-500'}`}>
-                        <MoreHorizontal size={20} />
-                        <span className="text-[8px] font-black uppercase tracking-tighter">Yana</span>
-                    </button>
+            <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
+                <div className="bg-[#050505] h-20 flex justify-around items-center px-4 border-t border-white/5 shadow-[0_-15px_40px_rgba(0,0,0,0.8)]">
+                    {[
+                        { id: 'welcome', label: 'Asosiy', icon: <Home size={22} />, active: page === 'welcome' },
+                        { id: 'search_trigger', label: 'Qidiruv', icon: <Search size={22} />, active: isSearchOpen },
+                        { id: 'saved', label: 'Sevimlilar', icon: <Bookmark size={22} />, active: page === 'dashboard' && dashboardPage === 'saved' },
+                        { id: 'profile', label: 'Profil', icon: <User size={22} />, active: page === 'dashboard' && dashboardPage === 'profile' },
+                        { id: 'more', label: 'Yana', icon: <MoreHorizontal size={22} />, active: page === 'dashboard' && dashboardPage === 'more' },
+                    ].map(item => (
+                        <button 
+                            key={item.id}
+                            onClick={() => {
+                                if (item.id === 'search_trigger') setIsSearchOpen(true);
+                                else if (item.id === 'welcome') handleNavigation('welcome');
+                                else { setPage('dashboard'); setDashboardPage(item.id as any); }
+                            }}
+                            className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600'}`}
+                        >
+                            <div className={`${item.active ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]' : ''}`}>
+                                {item.icon}
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>
+                            {item.active && <div className="w-1 h-1 bg-orange-600 rounded-full mt-0.5"></div>}
+                        </button>
+                    ))}
                 </div>
             </div>
           )}

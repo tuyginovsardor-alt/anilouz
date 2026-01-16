@@ -14,59 +14,62 @@
     @apply bg-[#050505] text-white antialiased;
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
 }
 
-/* Header styling - Solid Dark */
+/* Solid Header & Nav - No glass! */
 .glass-header {
   background: #050505;
   border-bottom: 1px solid var(--border-subtle);
 }
 
-/* Mobile Bottom Nav - Updated to Solid Dark */
 .bottom-nav {
     background: #050505;
     border-top: 1px solid var(--border-subtle);
 }
 
-.active-nav-item {
-    @apply text-orange-500 scale-110;
+/* Parallax Scrolling Effect */
+.parallax-container {
+    perspective: 1px;
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.parallax-bg {
+    transform: translateZ(-1px) scale(2);
+    z-index: -1;
+}
+
+/* Smooth transitions */
+.smooth-transition {
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .animate-fade-in {
-    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Custom scrollbar - cleaner and minimal */
+/* Custom scrollbar - Minimalist */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #050505; }
-::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #f97316; }
 
 .anime-card {
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     background: var(--bg-card);
 }
 
 .anime-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 }
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
-
-.grid-standard {
-    display: grid;
-    gap: 2rem;
-}
-
-@media (max-width: 640px) {
-    .grid-standard {
-        gap: 1rem;
-    }
-}
