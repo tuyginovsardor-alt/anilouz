@@ -137,7 +137,7 @@ const App: React.FC = () => {
                         {page === 'ai-assistant' && <AiAssistantPage />}
                         {page === 'copyright' && <CopyrightPage onBack={() => setPage('welcome')} />}
                         {page === 'dub-dashboard' && <DubDashboard />}
-                        {page === 'studio' && <StudioPage onArtistClick={handleArtistClick} />}
+                        {page === 'studio' && <StudioPage onArtistClick={handleArtistClick} onMovieClick={handleMovieClick} />}
                       </>
                     )}
                   </>
@@ -146,8 +146,8 @@ const App: React.FC = () => {
 
           {/* SEARCH MODAL */}
           {isSearchOpen && (
-              <div className="fixed inset-0 z-[200] bg-[#050505]/98 animate-fade-in flex flex-col p-6 sm:p-10">
-                  <button onClick={() => setIsSearchOpen(false)} className="absolute top-6 right-6 p-3 bg-white/5 hover:bg-white/10 rounded-full text-gray-400">
+              <div className="fixed inset-0 z-[200] bg-[#050505] animate-fade-in flex flex-col p-6 sm:p-10">
+                  <button onClick={() => setIsSearchOpen(false)} className="absolute top-6 right-6 p-3 bg-zinc-800 hover:bg-zinc-700 rounded-full text-gray-400">
                       <X size={28} />
                   </button>
                   <div className="max-w-4xl mx-auto w-full pt-20">
@@ -158,7 +158,7 @@ const App: React.FC = () => {
                       <input 
                         type="text" autoFocus placeholder="Anime nomi yoki janr..."
                         onKeyDown={(e) => { if (e.key === 'Enter') { setCurrentQuery((e.target as HTMLInputElement).value); setPage('search'); setIsSearchOpen(false); } }}
-                        className="w-full bg-white/5 border-b-2 border-white/10 py-6 px-4 text-2xl sm:text-4xl font-bold outline-none focus:border-orange-500 transition-all"
+                        className="w-full bg-zinc-900 border-b-2 border-orange-600/50 py-6 px-4 text-2xl sm:text-4xl font-bold outline-none focus:border-orange-500 transition-all text-white"
                       />
                   </div>
               </div>
@@ -167,18 +167,19 @@ const App: React.FC = () => {
           {/* MOBILE BOTTOM NAVIGATION */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
-                <div className="bg-[#050505] h-20 flex justify-around items-center px-4 border-t border-white/5 shadow-[0_-15px_40px_rgba(0,0,0,0.8)]">
+                <div className="bg-[#050505] h-20 flex justify-around items-center px-4 border-t border-zinc-900">
                     {[
                         { id: 'welcome', label: 'Asosiy', icon: <Home size={22} />, active: page === 'welcome' },
+                        { id: 'search_trigger', label: 'Qidiruv', icon: <Search size={22} />, active: isSearchOpen },
                         { id: 'studio', label: 'Studio', icon: <Mic size={22} />, active: page === 'studio' },
-                        { id: 'saved', label: 'Sevimlilar', icon: <Bookmark size={22} />, active: page === 'dashboard' && dashboardPage === 'saved' },
+                        { id: 'saved', label: 'Saved', icon: <Bookmark size={22} />, active: page === 'dashboard' && dashboardPage === 'saved' },
                         { id: 'profile_or_dub', label: currentUserRole === 'dub' ? 'Xona' : 'Profil', icon: <User size={22} />, active: page === 'dub-dashboard' || (page === 'dashboard' && dashboardPage === 'profile') },
-                        { id: 'more', label: 'Yana', icon: <MoreHorizontal size={22} />, active: page === 'dashboard' && dashboardPage === 'more' },
                     ].map(item => (
                         <button 
                             key={item.id}
                             onClick={() => {
                                 if (item.id === 'welcome') handleNavigation('welcome');
+                                else if (item.id === 'search_trigger') setIsSearchOpen(true);
                                 else if (item.id === 'studio') handleNavigation('studio');
                                 else if (item.id === 'profile_or_dub') {
                                     if (currentUserRole === 'dub') handleNavigation('dub-dashboard');
@@ -192,7 +193,6 @@ const App: React.FC = () => {
                                 {item.icon}
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>
-                            {item.active && <div className="w-1 h-1 bg-orange-600 rounded-full mt-0.5"></div>}
                         </button>
                     ))}
                 </div>
