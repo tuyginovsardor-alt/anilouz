@@ -14,6 +14,7 @@ export interface Movie {
   tags?: string;
   status?: 'ongoing' | 'completed';
   translator?: string;
+  translator_id?: string; // Link to dubbing artist profile
   access_type: 'free' | 'premium';
 }
 
@@ -25,7 +26,7 @@ export interface Episode {
   sourceType?: 'url' | 'file';
 }
 
-export type UserRole = 'user' | 'admin' | 'manager' | 'support' | 'accountant' | 'owner' | 'premium';
+export type UserRole = 'user' | 'admin' | 'manager' | 'support' | 'accountant' | 'owner' | 'premium' | 'dub';
 
 export interface UserProfile {
   id: string;
@@ -46,6 +47,9 @@ export interface UserProfile {
   email_notifications?: boolean;
   push_notifications?: boolean;
   language?: string;
+  bio?: string; // Dublyajchilar uchun ma'lumot
+  studio_name?: string;
+  fans_count?: number;
 }
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';

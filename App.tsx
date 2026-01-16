@@ -8,6 +8,8 @@ import { Movie, UserRole, Ad, Notification } from './types';
 import { MovieDetailPage } from './MovieDetailPage';
 import { VideoPlayerPage } from './VideoPlayerPage';
 import { AdminPage } from './AdminPage';
+import { DubDashboard } from './DubDashboard';
+import { StudioPage } from './StudioPage';
 import { VideoAdPlayer } from './components/VideoAdPlayer';
 import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
@@ -15,9 +17,9 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles } from 'lucide-react';
+import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic } from 'lucide-react';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 
@@ -34,6 +36,7 @@ const App: React.FC = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [isPlayerActive, setIsPlayerActive] = useState(false);
   const [activeVideoAd, setActiveVideoAd] = useState<Ad | null>(null);
 
@@ -80,6 +83,7 @@ const App: React.FC = () => {
   const handleNavigation = (targetPage: Page) => {
     setPage(targetPage);
     setSelectedMovie(null);
+    setSelectedArtistId(null);
     setIsPlayerActive(false);
     setIsSearchOpen(false);
     window.scrollTo(0, 0);
@@ -91,6 +95,12 @@ const App: React.FC = () => {
         setSelectedMovie(movie);
         window.scrollTo(0, 0);
     }
+  };
+
+  const handleArtistClick = (userId: string) => {
+      setSelectedArtistId(userId);
+      setPage('dashboard');
+      setDashboardPage('profile');
   };
 
   if (isCheckingAuth) return <div className="h-screen bg-[#050505] flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
@@ -117,15 +127,17 @@ const App: React.FC = () => {
                 {!isPlayerActive && !activeVideoAd && (
                   <>
                     {selectedMovie ? (
-                      <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} />
+                      <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} onArtistClick={handleArtistClick} />
                     ) : (
                       <>
                         {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setPage('dashboard')} />}
                         {page === 'search' && <SearchPage initialQuery={currentQuery} onNewSearch={setCurrentQuery} onMovieClick={handleMovieClick} />}
-                        {page === 'dashboard' && <DashboardPage currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
+                        {page === 'dashboard' && <DashboardPage viewUserId={selectedArtistId} currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
                         {page === 'ai-assistant' && <AiAssistantPage />}
                         {page === 'copyright' && <CopyrightPage onBack={() => setPage('welcome')} />}
+                        {page === 'dub-dashboard' && <DubDashboard />}
+                        {page === 'studio' && <StudioPage onArtistClick={handleArtistClick} />}
                       </>
                     )}
                   </>
@@ -152,22 +164,26 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {/* MOBILE BOTTOM NAVIGATION - SOLID BLACK PREMIUM STYLE */}
+          {/* MOBILE BOTTOM NAVIGATION */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505] h-20 flex justify-around items-center px-4 border-t border-white/5 shadow-[0_-15px_40px_rgba(0,0,0,0.8)]">
                     {[
                         { id: 'welcome', label: 'Asosiy', icon: <Home size={22} />, active: page === 'welcome' },
-                        { id: 'search_trigger', label: 'Qidiruv', icon: <Search size={22} />, active: isSearchOpen },
+                        { id: 'studio', label: 'Studio', icon: <Mic size={22} />, active: page === 'studio' },
                         { id: 'saved', label: 'Sevimlilar', icon: <Bookmark size={22} />, active: page === 'dashboard' && dashboardPage === 'saved' },
-                        { id: 'profile', label: 'Profil', icon: <User size={22} />, active: page === 'dashboard' && dashboardPage === 'profile' },
+                        { id: 'profile_or_dub', label: currentUserRole === 'dub' ? 'Xona' : 'Profil', icon: <User size={22} />, active: page === 'dub-dashboard' || (page === 'dashboard' && dashboardPage === 'profile') },
                         { id: 'more', label: 'Yana', icon: <MoreHorizontal size={22} />, active: page === 'dashboard' && dashboardPage === 'more' },
                     ].map(item => (
                         <button 
                             key={item.id}
                             onClick={() => {
-                                if (item.id === 'search_trigger') setIsSearchOpen(true);
-                                else if (item.id === 'welcome') handleNavigation('welcome');
+                                if (item.id === 'welcome') handleNavigation('welcome');
+                                else if (item.id === 'studio') handleNavigation('studio');
+                                else if (item.id === 'profile_or_dub') {
+                                    if (currentUserRole === 'dub') handleNavigation('dub-dashboard');
+                                    else { setPage('dashboard'); setDashboardPage('profile'); }
+                                }
                                 else { setPage('dashboard'); setDashboardPage(item.id as any); }
                             }}
                             className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600'}`}
