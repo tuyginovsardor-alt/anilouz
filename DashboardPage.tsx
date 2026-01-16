@@ -12,8 +12,8 @@ import { DashboardSupportPage } from './components/DashboardSupportPage';
 import { getSocialLinks } from './services/dbService';
 import { 
     LogOut, Settings, CreditCard, History, ShieldCheck, 
-    Instagram, Send, Youtube, Facebook, MessageCircle, HelpCircle, 
-    Globe, ExternalLink 
+    Instagram, Send, Youtube, Facebook, MessageCircle, 
+    Globe, ExternalLink, Mic, Star
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -41,6 +41,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
     const isAdmin = ['admin', 'owner', 'manager'].includes(currentRole);
+    const isDubber = currentRole === 'dub';
 
     useEffect(() => {
         if (currentPage === 'more') {
@@ -76,6 +77,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
                         
                         <div className="grid gap-4">
+                            {/* IJODKOR XONASI TUGMASI - ONLY FOR DUB ROLE */}
+                            {isDubber && (
+                                <button 
+                                    onClick={() => onMainNavigate('dub-dashboard')} 
+                                    className="group w-full flex items-center justify-between p-6 bg-gradient-to-r from-purple-600/20 via-purple-600/10 to-transparent border border-purple-500/30 rounded-[2.5rem] text-purple-400 font-black transition-all hover:scale-[1.02] active:scale-95 shadow-2xl shadow-purple-500/10"
+                                >
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-14 h-14 bg-purple-600 rounded-3xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(147,51,234,0.4)] group-hover:rotate-12 transition-transform">
+                                            <Mic size={28}/>
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-xl tracking-tight">Ijodkor Xonasi</p>
+                                            <p className="text-[10px] uppercase tracking-widest text-purple-500/60 font-black">Studio Dashboard</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity">KIRISH</span>
+                                        <ExternalLink size={20} className="opacity-40 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
+                                    </div>
+                                </button>
+                            )}
+
                             {isAdmin && (
                                 <button onClick={() => onSwitchRole(currentRole)} className="group w-full flex items-center justify-between p-5 bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-[2rem] text-yellow-500 font-black transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-yellow-500/5">
                                     <div className="flex items-center gap-4">
@@ -126,7 +149,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             </div>
                         </div>
 
-                        {/* Dynamic Social Links */}
+                        {/* Social Links... */}
                         <div className="space-y-6 pt-10 border-t border-white/5">
                             <p className="text-xs font-black text-gray-500 uppercase tracking-[0.3em] text-center">Biz Ijtimoiy Tarmoqlarda</p>
                             <div className="flex flex-wrap justify-center gap-4">

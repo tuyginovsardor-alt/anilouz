@@ -10,7 +10,7 @@ import { UserProfile, UserDevice } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
 import { VerifiedBadge } from './components/VerifiedBadge';
-import { Monitor, Hash, Phone, Mail, Award } from 'lucide-react';
+import { Monitor, Hash, Phone, Mail, Award, Mic } from 'lucide-react';
 import { Page } from './App';
 
 interface ProfilePageProps {
@@ -73,6 +73,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
   if (loading && !profile) return <div className="flex justify-center py-20"><LoadingSpinner /></div>;
 
   const isPrivileged = ['admin', 'owner', 'manager'].includes(profile?.role || '');
+  const isDubRole = profile?.role === 'dub';
 
   return (
     <div className="animate-fade-in pb-10 space-y-8">
@@ -83,7 +84,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-10">
           {/* Avatar */}
           <div className="relative group">
-            <div className={`w-32 h-32 sm:w-44 sm:h-44 bg-gray-800 rounded-full flex items-center justify-center border-4 ${isPrivileged ? 'border-orange-500 shadow-[0_0_40px_rgba(249,115,22,0.2)]' : 'border-gray-700'} overflow-hidden transition-all duration-500`}>
+            <div className={`w-32 h-32 sm:w-44 sm:h-44 bg-gray-800 rounded-full flex items-center justify-center border-4 ${isPrivileged || isDubRole ? 'border-orange-500 shadow-[0_0_40px_rgba(249,115,22,0.2)]' : 'border-gray-700'} overflow-hidden transition-all duration-500`}>
                {profile?.avatar_url ? (
                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                ) : (
@@ -91,7 +92,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                )}
             </div>
             <div className="absolute -bottom-2 -right-2 bg-[#0a0a0c] p-2 rounded-full border border-gray-800">
-                <VerifiedBadge type={isPrivileged ? 'gold' : 'silver'} className="w-8 h-8" />
+                <VerifiedBadge type={isPrivileged || isDubRole ? 'gold' : 'silver'} className="w-8 h-8" />
             </div>
           </div>
 
@@ -104,16 +105,26 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                     </h2>
                     <p className="text-orange-500 font-bold text-lg">@{profile?.username || 'username'}</p>
                 </div>
-                {!isEditing ? (
-                    <button onClick={() => setIsEditing(true)} className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all">
-                        <EditIcon className="w-4 h-4" /> Edit Profile
-                    </button>
-                ) : (
-                    <div className="flex gap-2">
-                        <button onClick={() => setIsEditing(false)} className="p-3 bg-red-500/10 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-all"><CloseIcon className="w-5 h-5"/></button>
-                        <button onClick={handleSave} className="p-3 bg-green-500/10 text-green-500 rounded-full hover:bg-green-500 hover:text-white transition-all"><CheckIcon className="w-5 h-5"/></button>
-                    </div>
-                )}
+                <div className="flex gap-3">
+                    {isDubRole && !viewUserId && (
+                        <button 
+                            onClick={() => onMainNavigate?.('dub-dashboard')}
+                            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-purple-900/40"
+                        >
+                            <Mic size={16} /> Studio Xona
+                        </button>
+                    )}
+                    {!isEditing ? (
+                        <button onClick={() => setIsEditing(true)} className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all">
+                            <EditIcon className="w-4 h-4" /> Edit Profile
+                        </button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <button onClick={() => setIsEditing(false)} className="p-3 bg-red-500/10 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-all"><CloseIcon className="w-5 h-5"/></button>
+                            <button onClick={handleSave} className="p-3 bg-green-500/10 text-green-500 rounded-full hover:bg-green-500 hover:text-white transition-all"><CheckIcon className="w-5 h-5"/></button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {isEditing ? (
@@ -130,7 +141,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                     </div>
                     <div className="bg-gray-800/30 p-4 rounded-2xl border border-gray-800">
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Award size={10}/> Status</p>
-                        <p className="text-white font-black text-[11px] uppercase truncate">{profile?.role}</p>
+                        <p className="text-white font-black text-[11px] uppercase truncate">{profile?.role === 'dub' ? 'Artist' : profile?.role}</p>
                     </div>
                     <div className="bg-gray-800/30 p-4 rounded-2xl border border-gray-800 col-span-2">
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Mail size={10}/> Email</p>
@@ -157,8 +168,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
             </div>
         </div>
       </div>
-
-      {/* Active Devices */}
+      
+      {/* Sessions and other sections remain same... */}
       <div className="bg-gray-900/40 border border-gray-800 rounded-[2.5rem] p-8">
         <h3 className="text-lg font-black tracking-widest uppercase text-white mb-6 flex items-center gap-3">
             <Monitor size={20} className="text-orange-500"/> Active Devices
@@ -177,10 +188,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
         </div>
       </div>
 
-      <div className="pt-10">
-          <h2 className="text-2xl font-black text-center text-white mb-10">Upgrade to Premium</h2>
-          <SubscriptionPlans />
-      </div>
+      {!isDubRole && (
+          <div className="pt-10">
+              <h2 className="text-2xl font-black text-center text-white mb-10">Upgrade to Premium</h2>
+              <SubscriptionPlans />
+          </div>
+      )}
     </div>
   );
 };

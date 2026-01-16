@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Page } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, User, Menu, X } from 'lucide-react';
-import { getUnreadNotificationsCount } from '../services/dbService';
+import { Search, Bell, User, Mic } from 'lucide-react';
+import { getUnreadNotificationsCount, getUserProfile } from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
+import { UserRole } from '../types';
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
@@ -15,18 +16,23 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, isAuthenticated, onLoginClick, onSearchClick }) => {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userRole, setUserRole] = useState<UserRole>('user');
 
   useEffect(() => {
       if (isAuthenticated) {
-          const fetchCounts = async () => {
+          const fetchHeaderData = async () => {
               const { data: { user } } = await supabase.auth.getUser();
               if (user) {
-                  const count = await getUnreadNotificationsCount(user.id);
+                  const [count, profile] = await Promise.all([
+                      getUnreadNotificationsCount(user.id),
+                      getUserProfile(user.id)
+                  ]);
                   setUnreadCount(count);
+                  if (profile) setUserRole(profile.role);
               }
           };
-          fetchCounts();
-          const interval = setInterval(fetchCounts, 60000);
+          fetchHeaderData();
+          const interval = setInterval(fetchHeaderData, 60000);
           return () => clearInterval(interval);
       }
   }, [isAuthenticated]);
@@ -34,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, isAuthe
   const navLinks = [
     { id: 'welcome', label: 'Asosiy' },
     { id: 'dashboard', label: 'Katalog' },
+    { id: 'studio', label: 'Studio' },
     { id: 'ai-assistant', label: 'AI Bot' }
   ];
 
@@ -58,7 +65,17 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, isAuthe
         </div>
 
         {/* Tools */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
+          {/* SPECIAL XONA BUTTON FOR DUBBERS IN HEADER */}
+          {userRole === 'dub' && (
+              <button 
+                onClick={() => onNavigate('dub-dashboard')}
+                className="hidden md:flex items-center gap-2 px-4 py-2 bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                  <Mic size={14} /> Xona
+              </button>
+          )}
+
           <button onClick={onSearchClick} className="p-2 text-zinc-400 hover:text-white transition-colors"><Search size={20} /></button>
 
           <button className="p-2 text-zinc-400 hover:text-white transition-colors relative">
