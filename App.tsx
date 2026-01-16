@@ -17,7 +17,7 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic } from 'lucide-react';
+import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu } from 'lucide-react';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
@@ -89,6 +89,12 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
+  const handleDashboardNavigation = (subPage: DashboardSubPage) => {
+      setPage('dashboard');
+      setDashboardPage(subPage);
+      window.scrollTo(0, 0);
+  }
+
   const handleMovieClick = (movie: Movie) => {
     if (!isAuthenticated) setIsAuthModalOpen(true);
     else {
@@ -113,10 +119,13 @@ const App: React.FC = () => {
           {!isPlayerActive && !activeVideoAd && (
             <Header 
               onNavigate={handleNavigation} 
+              onDashboardNavigate={handleDashboardNavigation}
               currentPage={page} 
               isAuthenticated={isAuthenticated} 
               onLoginClick={() => setIsAuthModalOpen(true)}
               onSearchClick={() => setIsSearchOpen(true)}
+              onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}}
+              onLogout={() => supabase.auth.signOut()}
             />
           )}
           
@@ -164,7 +173,7 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {/* MOBILE BOTTOM NAVIGATION - YANA TUGMASI QAYTDI */}
+          {/* MOBILE BOTTOM NAVIGATION - YANA TUGMASI ENDI HAMBURGERNI OCHADI */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505] h-20 flex justify-around items-center px-4 border-t border-zinc-900">
@@ -173,16 +182,21 @@ const App: React.FC = () => {
                         { id: 'search_trigger', label: 'Qidiruv', icon: <Search size={22} />, active: isSearchOpen },
                         { id: 'saved', label: 'Saved', icon: <Bookmark size={22} />, active: page === 'dashboard' && dashboardPage === 'saved' },
                         { id: 'profile', label: 'Profil', icon: <User size={22} />, active: page === 'dashboard' && dashboardPage === 'profile' },
-                        { id: 'more', label: 'Yana', icon: <MoreHorizontal size={22} />, active: page === 'dashboard' && dashboardPage === 'more' },
+                        { id: 'more', label: 'Yana', icon: <Menu size={22} />, active: false }, // "Yana" menyuni ochadi
                     ].map(item => (
                         <button 
                             key={item.id}
                             onClick={() => {
                                 if (item.id === 'welcome') handleNavigation('welcome');
                                 else if (item.id === 'search_trigger') setIsSearchOpen(true);
-                                else if (item.id === 'saved') { setPage('dashboard'); setDashboardPage('saved'); }
-                                else if (item.id === 'profile') { setPage('dashboard'); setDashboardPage('profile'); }
-                                else if (item.id === 'more') { setPage('dashboard'); setDashboardPage('more'); }
+                                else if (item.id === 'saved') handleDashboardNavigation('saved');
+                                else if (item.id === 'profile') handleDashboardNavigation('profile');
+                                else if (item.id === 'more') {
+                                    // Header ichidagi Gamburgerni topish uchun global state yoki prop kerak
+                                    // Lekin oson yo'li - Headerda profil tugmasi bor, lekin mobil uchun alohida ochuvchi qo'shsak ham bo'ladi.
+                                    // Hozircha App.tsx ga isMenuOpen qo'shamiz.
+                                    document.dispatchEvent(new CustomEvent('toggleMenu'));
+                                }
                             }}
                             className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600'}`}
                         >

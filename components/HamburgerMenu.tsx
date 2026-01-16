@@ -1,184 +1,168 @@
-
 import React, { useState, useEffect } from 'react';
-import { MenuIcon } from './icons/MenuIcon';
-import { CloseIcon } from './icons/CloseIcon';
-import { AdminIcon } from './icons/AdminIcon';
-import { InstagramIcon } from './icons/InstagramIcon';
-import { FacebookIcon } from './icons/FacebookIcon';
-import { YouTubeIcon } from './icons/YouTubeIcon';
-import { TelegramIcon } from './icons/TelegramIcon';
-import { DashboardSubPage } from '../App';
+import { 
+    X, Mic, LayoutGrid, CreditCard, History, Bookmark, 
+    Settings, LogOut, ShieldCheck, ChevronRight, 
+    Instagram, Send, Youtube, Facebook, User, Wallet
+} from 'lucide-react';
+import { DashboardSubPage, Page } from '../App';
 import { useNotification } from '../hooks/useNotification';
 import { supabase } from '../services/supabaseClient';
 import { getUserProfile, getSocialLinks } from '../services/dbService';
-import { UserRole, SocialLink } from '../types';
+import { UserRole, SocialLink, UserProfile } from '../types';
 
 interface HamburgerMenuProps {
+    isOpen: boolean;
+    onClose: () => void;
     onLogout: () => void;
-    onNavigate: (page: DashboardSubPage) => void;
+    onMainNavigate: (page: Page) => void;
+    onDashboardNavigate: (page: DashboardSubPage) => void;
     onSwitchRole: (role: UserRole) => void;
 }
 
-const menuItems: { name: string; page: DashboardSubPage }[] = [
-    { name: 'Boshqaruv Paneli', page: 'main' },
-    { name: 'Hisobim', page: 'account' },
-    { name: 'Hisobni to\'ldirish', page: 'billing' },
-    { name: 'Profil', page: 'profile' },
-    { name: 'Saqlanganlar', page: 'saved' },
-    { name: 'Tarix', page: 'history' },
-    { name: 'Sozlamalar', page: 'settings' },
-];
-
-export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ onLogout, onNavigate, onSwitchRole }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [realRole, setRealRole] = useState<UserRole>('user');
+export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ 
+    isOpen, onClose, onLogout, onMainNavigate, onDashboardNavigate, onSwitchRole 
+}) => {
+    const [profile, setProfile] = useState<UserProfile | null>(null);
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
     const { addNotification } = useNotification();
 
     useEffect(() => {
-        const checkRealRole = async () => {
-            try {
+        if (isOpen) {
+            const loadData = async () => {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                    const profile = await getUserProfile(user.id);
-                    if (profile && profile.role !== 'user') {
-                        setRealRole(profile.role);
-                    }
+                    const p = await getUserProfile(user.id);
+                    setProfile(p as UserProfile);
                 }
-            } catch (error) {
-                console.error("Rolni tekshirishda xatolik:", error);
-            }
-        };
-        checkRealRole();
-        
-        const loadLinks = async () => {
-            try {
                 const links = await getSocialLinks();
                 setSocialLinks(links);
-            } catch (e) {
-                console.error("Error loading social links:", e);
-            }
-        };
-        loadLinks();
-    }, []);
-
-    const handleNavigate = (page: DashboardSubPage) => {
-        onNavigate(page);
-        setIsOpen(false);
-    };
-
-    const handleAdminSwitch = () => {
-        if (realRole !== 'user') {
-            onSwitchRole(realRole);
-            setIsOpen(false);
-            addNotification({
-                type: 'info',
-                title: 'Rejim o\'zgardi',
-                message: 'Admin paneliga o\'tilmoqda...'
-            });
+            };
+            loadData();
         }
+    }, [isOpen]);
+
+    const handleAction = (type: 'main' | 'sub', target: any) => {
+        if (type === 'main') onMainNavigate(target);
+        else onDashboardNavigate(target);
+        onClose();
     };
 
     const getSocialIcon = (platform: string) => {
-        const className = "w-5 h-5";
         switch(platform) {
-            case 'instagram': return <InstagramIcon className={className} />;
-            case 'facebook': return <FacebookIcon className={className} />;
-            case 'youtube': return <YouTubeIcon className={className} />;
-            case 'telegram': return <TelegramIcon className={className} />;
-            default: return <div className="w-5 h-5 bg-gray-600 rounded-full" />;
+            case 'instagram': return <Instagram size={18}/>;
+            case 'telegram': return <Send size={18}/>;
+            case 'youtube': return <Youtube size={18}/>;
+            default: return <Facebook size={18}/>;
         }
     };
 
+    if (!isOpen) return null;
+
     return (
-        <>
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white z-50 relative"
-                aria-label="Asosiy menyuni ochish"
-            >
-                {isOpen ? <CloseIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
-            </button>
-
+        <div className="fixed inset-0 z-[200] flex justify-end animate-fade-in">
             {/* Overlay */}
-            <div
-                className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setIsOpen(false)}
-            ></div>
+            <div className="absolute inset-0 bg-black/80" onClick={onClose}></div>
 
-            {/* Sidebar */}
-            <div
-                className={`fixed top-0 right-0 h-full w-72 bg-gray-900 border-l border-gray-800 shadow-2xl z-40 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
-            >
-                <div className="p-5 flex flex-col h-full">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-orange-500">Menyu</h2>
-                        <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white">
-                            <CloseIcon className="w-6 h-6" />
-                        </button>
-                    </div>
+            {/* Menu Panel */}
+            <div className="relative w-full max-w-sm bg-[#0a0a0a] h-full border-l border-zinc-900 shadow-2xl flex flex-col overflow-hidden animate-slide-in-right">
+                
+                {/* Header */}
+                <div className="p-6 border-b border-zinc-900 flex justify-between items-center bg-[#050505]">
+                    <h2 className="text-xl font-black uppercase tracking-tighter text-white">Menyu</h2>
+                    <button onClick={onClose} className="p-2 hover:bg-zinc-900 rounded-full text-zinc-500 transition-colors">
+                        <X size={24} />
+                    </button>
+                </div>
 
-                    <nav className="flex-grow overflow-y-auto">
-                        <ul className="space-y-2">
-                            {/* Admin Button - Only visible for privileged users */}
-                            {realRole !== 'user' && (
-                                <li className="mb-4 pb-4 border-b border-gray-800">
-                                    <button 
-                                        onClick={handleAdminSwitch}
-                                        className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-lg text-base font-bold bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border border-yellow-500/30 hover:from-yellow-500/30 hover:to-orange-500/30 transition-all"
-                                    >
-                                        <AdminIcon className="w-5 h-5" />
-                                        Admin Panelga O'tish
-                                    </button>
-                                </li>
-                            )}
-
-                            {menuItems.map((item) => (
-                                <li key={item.name}>
-                                    <button onClick={() => handleNavigate(item.page)} className="w-full text-left text-gray-300 hover:bg-gray-800 hover:text-white block px-3 py-2.5 rounded-lg text-base font-medium transition-colors">
-                                        {item.name}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
-                    
-                    <div className="pt-4 border-t border-gray-800">
-                        {/* Ijtimoiy Tarmoqlar (Dinamik) */}
-                        {socialLinks.length > 0 && (
-                            <div className="flex justify-center flex-wrap gap-3 mb-4">
-                                {socialLinks.map((link) => (
-                                    <a 
-                                        key={link.id}
-                                        href={link.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="p-2 rounded-full bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-orange-500 transition-all duration-300 transform hover:scale-110"
-                                        title={link.label}
-                                    >
-                                        {getSocialIcon(link.platform)}
-                                    </a>
-                                ))}
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    {/* User Info */}
+                    {profile && (
+                        <div className="p-6 bg-gradient-to-b from-zinc-900/50 to-transparent">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-zinc-700 overflow-hidden">
+                                    {profile.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full flex items-center justify-center text-zinc-600"><User size={28}/></div>}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="font-black text-white truncate uppercase text-sm tracking-tight">{profile.full_name}</p>
+                                    <p className="text-orange-500 text-xs font-bold">@{profile.username}</p>
+                                </div>
                             </div>
+                            <div className="flex gap-2">
+                                <div className="flex-1 bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
+                                    <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-1">Balans</p>
+                                    <p className="text-sm font-black text-white flex items-center gap-1.5"><Wallet size={12} className="text-zinc-600"/> {profile.balance.toLocaleString()} <span className="text-[10px] text-zinc-500">UZS</span></p>
+                                </div>
+                                <button onClick={() => handleAction('sub', 'billing')} className="bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-xl transition-all shadow-lg shadow-orange-600/20 active:scale-95">
+                                    <CreditCard size={20}/>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="p-4 space-y-1">
+                        <p className="px-3 pb-2 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Platforma</p>
+                        
+                        {/* STUDIO BUTTON */}
+                        <button onClick={() => handleAction('main', 'studio')} className="w-full group flex items-center justify-between p-4 hover:bg-zinc-900 rounded-2xl transition-all text-left">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center text-orange-500 border border-zinc-700 group-hover:bg-orange-600 group-hover:text-white transition-all">
+                                    <LayoutGrid size={20}/>
+                                </div>
+                                <span className="text-sm font-black text-white uppercase tracking-tight">Anilo Studio</span>
+                            </div>
+                            <ChevronRight size={18} className="text-zinc-700" />
+                        </button>
+
+                        {/* DUBBER ROOM - ONLY FOR DUBS */}
+                        {profile?.role === 'dub' && (
+                            <button onClick={() => handleAction('main', 'dub-dashboard')} className="w-full group flex items-center justify-between p-4 hover:bg-zinc-900 rounded-2xl transition-all text-left">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-purple-600/10 rounded-xl flex items-center justify-center text-purple-500 border border-purple-500/20 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                                        <Mic size={20}/>
+                                    </div>
+                                    <span className="text-sm font-black text-white uppercase tracking-tight">Ijodkor Xonasi</span>
+                                </div>
+                                <ChevronRight size={18} className="text-zinc-700" />
+                            </button>
                         )}
 
-                        <button
-                            onClick={() => {
-                                addNotification({
-                                    type: 'info',
-                                    title: 'Chiqish',
-                                    message: 'Xayr, salomat bo\'ling!',
-                                });
-                                onLogout();
-                                setIsOpen(false);
-                            }}
-                            className="w-full flex items-center justify-center px-3 py-3 bg-red-600/10 text-red-400 border border-red-600/20 rounded-lg text-base font-medium hover:bg-red-600 hover:text-white transition-all duration-200"
-                        >
-                            Chiqish
-                        </button>
+                        <p className="px-3 pt-6 pb-2 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Sizning hisobingiz</p>
+                        
+                        {[
+                            { id: 'saved', label: 'Saqlanganlar', icon: <Bookmark size={18}/> },
+                            { id: 'history', label: 'Ko\'rishlar Tarixi', icon: <History size={18}/> },
+                            { id: 'settings', label: 'Sozlamalar', icon: <Settings size={18}/> },
+                        ].map(item => (
+                            <button key={item.id} onClick={() => handleAction('sub', item.id as any)} className="w-full flex items-center gap-4 p-4 hover:bg-zinc-900 rounded-2xl transition-all text-zinc-400 hover:text-white">
+                                <div className="text-zinc-600">{item.icon}</div>
+                                <span className="text-sm font-bold">{item.label}</span>
+                            </button>
+                        ))}
+
+                        {/* ADMIN SWITCH */}
+                        {['admin', 'owner'].includes(profile?.role || '') && (
+                            <button onClick={() => {onSwitchRole(profile!.role); onClose();}} className="w-full flex items-center gap-4 p-4 hover:bg-yellow-500/10 rounded-2xl transition-all text-yellow-500 mt-4 border border-yellow-500/10">
+                                <ShieldCheck size={18}/>
+                                <span className="text-sm font-black uppercase tracking-widest">Admin Panel</span>
+                            </button>
+                        )}
                     </div>
                 </div>
+
+                {/* Footer */}
+                <div className="p-6 bg-[#050505] border-t border-zinc-900">
+                    <div className="flex justify-center gap-4 mb-6">
+                        {socialLinks.map(link => (
+                            <a key={link.id} href={link.url} target="_blank" rel="noreferrer" className="w-10 h-10 bg-zinc-900 hover:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-500 hover:text-white transition-all border border-zinc-800">
+                                {getSocialIcon(link.platform)}
+                            </a>
+                        ))}
+                    </div>
+                    <button onClick={onLogout} className="w-full flex items-center justify-center gap-3 p-4 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all font-black uppercase text-[10px] tracking-[0.2em] border border-red-600/10">
+                        <LogOut size={16}/> Hisobdan chiqish
+                    </button>
+                </div>
             </div>
-        </>
+        </div>
     );
 };

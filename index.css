@@ -18,42 +18,13 @@
   }
 }
 
-/* Solid Header & Nav - No glass! */
-.glass-header {
-  background: #050505;
-  border-bottom: 1px solid var(--border-subtle);
+.animate-slide-in-right {
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.bottom-nav {
-    background: #050505;
-    border-top: 1px solid var(--border-subtle);
-}
-
-/* Parallax Scrolling Effect */
-.parallax-container {
-    perspective: 1px;
-    height: 100vh;
-    overflow-x: hidden;
-    overflow-y: auto;
-}
-
-.parallax-bg {
-    transform: translateZ(-1px) scale(2);
-    z-index: -1;
-}
-
-/* Smooth transitions */
-.smooth-transition {
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.animate-fade-in {
-    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
 }
 
 /* Custom scrollbar - Minimalist */
