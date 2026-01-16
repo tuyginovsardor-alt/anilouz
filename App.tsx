@@ -97,12 +97,12 @@ const App: React.FC = () => {
     }
   };
 
-  if (isCheckingAuth) return <div className="h-screen bg-[#0a0a0c] flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (isCheckingAuth) return <div className="h-screen bg-[#050505] flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
         <NotificationContainer />
-        <div className="min-h-screen text-gray-100 flex flex-col bg-[#0a0a0c]">
+        <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505]">
           
           {!isPlayerActive && !activeVideoAd && (
             <Header 
@@ -138,7 +138,7 @@ const App: React.FC = () => {
 
           {/* SEARCH MODAL */}
           {isSearchOpen && (
-              <div className="fixed inset-0 z-[200] bg-[#0a0a0c]/98 backdrop-blur-3xl animate-fade-in flex flex-col p-6 sm:p-10">
+              <div className="fixed inset-0 z-[200] bg-[#050505]/98 animate-fade-in flex flex-col p-6 sm:p-10">
                   <button 
                     onClick={() => setIsSearchOpen(false)}
                     className="absolute top-6 right-6 sm:top-10 sm:right-10 p-3 bg-white/5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-all"
@@ -169,29 +169,29 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {/* MOBILE BOTTOM NAVIGATION */}
+          {/* MOBILE BOTTOM NAVIGATION - SOLID DARK STYLE */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
-            <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-8 pointer-events-none">
-                <div className="bottom-nav h-20 flex justify-around items-center px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.6)] pointer-events-auto">
-                    <button onClick={() => handleNavigation('welcome')} className={`flex flex-col items-center gap-1.5 transition-all ${page === 'welcome' ? 'active-nav-item' : 'text-gray-500'}`}>
-                        <Home size={22} />
-                        <span className="text-[9px] font-bold uppercase">Asosiy</span>
+            <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-0 pb-0 pointer-events-none">
+                <div className="bottom-nav h-16 flex justify-around items-center px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] pointer-events-auto">
+                    <button onClick={() => handleNavigation('welcome')} className={`flex flex-col items-center gap-1 transition-all ${page === 'welcome' ? 'text-orange-500' : 'text-gray-500'}`}>
+                        <Home size={20} />
+                        <span className="text-[8px] font-black uppercase tracking-tighter">Asosiy</span>
                     </button>
-                    <button onClick={() => setIsSearchOpen(true)} className={`flex flex-col items-center gap-1.5 text-gray-500`}>
-                        <Search size={22} />
-                        <span className="text-[9px] font-bold uppercase">Qidiruv</span>
+                    <button onClick={() => setIsSearchOpen(true)} className={`flex flex-col items-center gap-1 text-gray-500`}>
+                        <Search size={20} />
+                        <span className="text-[8px] font-black uppercase tracking-tighter">Qidiruv</span>
                     </button>
-                    <button onClick={() => {setPage('dashboard'); setDashboardPage('saved')}} className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'saved' ? 'active-nav-item' : 'text-gray-500'}`}>
-                        <Bookmark size={22} />
-                        <span className="text-[9px] font-bold uppercase">Saqlangan</span>
+                    <button onClick={() => {setPage('dashboard'); setDashboardPage('saved')}} className={`flex flex-col items-center gap-1 transition-all ${page === 'dashboard' && dashboardPage === 'saved' ? 'text-orange-500' : 'text-gray-500'}`}>
+                        <Bookmark size={20} />
+                        <span className="text-[8px] font-black uppercase tracking-tighter">Saqlangan</span>
                     </button>
-                    <button onClick={() => {setPage('dashboard'); setDashboardPage('profile')}} className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'profile' ? 'active-nav-item' : 'text-gray-500'}`}>
-                        <User size={22} />
-                        <span className="text-[9px] font-bold uppercase">Profil</span>
+                    <button onClick={() => {setPage('dashboard'); setDashboardPage('profile')}} className={`flex flex-col items-center gap-1 transition-all ${page === 'dashboard' && dashboardPage === 'profile' ? 'text-orange-500' : 'text-gray-500'}`}>
+                        <User size={20} />
+                        <span className="text-[8px] font-black uppercase tracking-tighter">Profil</span>
                     </button>
-                    <button onClick={() => {setPage('dashboard'); setDashboardPage('more')}} className={`flex flex-col items-center gap-1.5 transition-all ${page === 'dashboard' && dashboardPage === 'more' ? 'active-nav-item' : 'text-gray-500'}`}>
-                        <MoreHorizontal size={22} />
-                        <span className="text-[9px] font-bold uppercase">Yana</span>
+                    <button onClick={() => {setPage('dashboard'); setDashboardPage('more')}} className={`flex flex-col items-center gap-1 transition-all ${page === 'dashboard' && dashboardPage === 'more' ? 'text-orange-500' : 'text-gray-500'}`}>
+                        <MoreHorizontal size={20} />
+                        <span className="text-[8px] font-black uppercase tracking-tighter">Yana</span>
                     </button>
                 </div>
             </div>

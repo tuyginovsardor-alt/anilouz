@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Star, Lock, ArrowLeft, MessageCircle, Send, User, Bookmark, Calendar, Info, Clock, Languages, Award, ChevronLeft, ChevronRight, Share2, Info as InfoIcon } from 'lucide-react';
+import { Play, Star, Lock, ArrowLeft, MessageCircle, Send, User, Bookmark, Calendar, Info, Clock, Languages, Award, ChevronLeft, ChevronRight, Share2, Info as InfoIcon, Image as ImageIcon, Maximize2 } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, getMovieEpisodes, getMovieReviews, addReview, getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
 import { Movie, UserProfile, Episode } from './types';
@@ -20,14 +20,14 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   const [relatedMovies, setRelatedMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'episodes' | 'details' | 'comments'>('episodes');
+  const [activeTab, setActiveTab] = useState<'episodes' | 'details' | 'comments' | 'gallery'>('episodes');
   
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { addNotification } = useNotification();
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     init();
@@ -118,25 +118,22 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   return (
     <div className="bg-[#050505] min-h-screen text-white pb-32">
         
-        {/* HERO SECTION - PROFESSIONAL CINEMATIC LAYOUT */}
+        {/* HERO SECTION */}
         <div className="relative w-full h-[65vh] md:h-[85vh] overflow-hidden">
-            {/* Background Image */}
             <div className="absolute inset-0">
                 <img src={movie.posterUrl} alt="" className="w-full h-full object-cover" />
-                {/* Dark Overlays */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/20 to-transparent"></div>
                 <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            {/* Top Bar Navigation */}
             <div className="absolute top-0 left-0 right-0 p-4 md:p-8 flex justify-between items-center z-50">
                 <button onClick={onBack} className="p-3 bg-black hover:bg-zinc-800 rounded-full border border-white/10 transition-all active:scale-90 shadow-xl">
                     <ArrowLeft size={24} />
                 </button>
                 <div className="flex gap-3">
-                    <button onClick={() => {}} className="p-3 bg-black hover:bg-zinc-800 rounded-full border border-white/10 transition-all active:scale-90">
-                        <Share2 size={24} />
+                    <button onClick={() => { setActiveTab('gallery'); setTimeout(() => galleryRef.current?.scrollIntoView({ behavior: 'smooth' }), 100); }} className="p-3 bg-black hover:bg-zinc-800 rounded-full border border-white/10 transition-all active:scale-90" title="Rasmni ko'rish">
+                        <Maximize2 size={24} />
                     </button>
                     <button onClick={handleToggleSave} className={`p-3 rounded-full border transition-all active:scale-90 shadow-xl ${isSaved ? 'bg-orange-600 border-orange-500' : 'bg-black border-white/10 hover:bg-zinc-800'}`}>
                         <Bookmark size={24} fill={isSaved ? 'white' : 'none'} />
@@ -144,7 +141,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 </div>
             </div>
 
-            {/* Content Overlay */}
             <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16 max-w-7xl mx-auto w-full">
                 <div className="max-w-3xl animate-fade-in space-y-6">
                     <div className="flex flex-wrap items-center gap-3">
@@ -155,21 +151,13 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                             <Star size={14} className="text-yellow-500 fill-yellow-500"/>
                             <span className="font-bold text-sm">{movie.rating?.toFixed(1) || '0.0'}</span>
                         </div>
-                        <span className="text-[10px] font-bold text-zinc-400 border border-white/10 px-3 py-1 rounded-sm uppercase tracking-widest bg-black/40">{movie.year}</span>
-                        <span className="text-[10px] font-bold text-zinc-400 border border-white/10 px-3 py-1 rounded-sm uppercase tracking-widest bg-black/40">{movie.quality}</span>
                     </div>
 
                     <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-tight drop-shadow-2xl">
                         {movie.title}
                     </h1>
                     
-                    <div className="flex flex-wrap gap-2">
-                        {movie.genre.split(',').map(g => (
-                            <span key={g} className="text-[11px] font-bold text-orange-500/80 bg-orange-500/10 border border-orange-500/20 px-3 py-1 rounded-sm uppercase tracking-wider">{g.trim()}</span>
-                        ))}
-                    </div>
-
-                    <p className="text-zinc-300 text-sm md:text-lg leading-relaxed font-medium max-w-2xl line-clamp-3 md:line-clamp-none opacity-90 drop-shadow-lg">
+                    <p className="text-zinc-300 text-sm md:text-lg leading-relaxed font-medium max-w-2xl line-clamp-3 md:line-clamp-none opacity-90">
                         {movie.plot}
                     </p>
                     
@@ -185,20 +173,20 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
             </div>
         </div>
 
-        {/* INTERACTIVE SECTION - TABS FOR BETTER SPACING */}
-        <div className="max-w-7xl mx-auto px-6 mt-12">
+        {/* TABS SECTION */}
+        <div className="max-w-7xl mx-auto px-6 mt-12" ref={galleryRef}>
             
-            {/* Tabs Header */}
-            <div className="flex border-b border-white/5 mb-10 gap-8">
+            <div className="flex border-b border-white/5 mb-10 gap-8 overflow-x-auto scrollbar-hide">
                 {[
                     { id: 'episodes', label: 'Qismlar', icon: <Play size={18}/> },
                     { id: 'details', label: 'Ma\'lumotlar', icon: <InfoIcon size={18}/> },
+                    { id: 'gallery', label: 'Galereya', icon: <ImageIcon size={18}/> },
                     { id: 'comments', label: 'Fikrlar', icon: <MessageCircle size={18}/> },
                 ].map(tab => (
                     <button 
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`pb-4 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-all relative ${activeTab === tab.id ? 'text-orange-500' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        className={`pb-4 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-orange-500' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
                         {tab.icon}
                         {tab.label}
@@ -208,7 +196,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
             </div>
 
             <div className="animate-fade-in min-h-[400px]">
-                {/* EPISODES LIST */}
+                {/* EPISODES */}
                 {activeTab === 'episodes' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {episodes.length > 0 ? episodes.map((ep, i) => (
@@ -237,7 +225,38 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     </div>
                 )}
 
-                {/* DETAILS VIEW */}
+                {/* GALLERY - NEW SECTION FOR CLEAR VIEW */}
+                {activeTab === 'gallery' && (
+                    <div className="space-y-8 animate-fade-in">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-1 h-6 bg-orange-600"></div>
+                            <h3 className="text-sm font-black uppercase tracking-widest">Anime Posteri va San'ati</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="relative group overflow-hidden rounded-lg border border-white/5">
+                                <img src={movie.posterUrl} alt="Poster" className="w-full h-auto object-contain bg-zinc-900" />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="absolute bottom-4 left-4 bg-black/80 px-4 py-2 rounded-sm text-[10px] font-black uppercase tracking-widest border border-white/10">Asosiy Poster</div>
+                            </div>
+                            <div className="flex flex-col justify-center space-y-6 p-6 bg-[#0f0f0f] border border-white/5 rounded-lg">
+                                <h4 className="text-xl font-black uppercase tracking-tighter">{movie.title}</h4>
+                                <p className="text-zinc-400 text-sm leading-relaxed">Ushbu rasm animening rasmiy posteri bo'lib, yuqori sifatda taqdim etilgan. Uni hech qanday matnlarsiz bu yerda tomosha qilishingiz mumkin.</p>
+                                <div className="grid grid-cols-2 gap-4 pt-4">
+                                    <div className="bg-zinc-900 p-4 rounded border border-white/5">
+                                        <p className="text-[10px] text-zinc-500 font-black uppercase mb-1">Format</p>
+                                        <p className="text-xs font-bold text-white">Portrait / 2:3</p>
+                                    </div>
+                                    <div className="bg-zinc-900 p-4 rounded border border-white/5">
+                                        <p className="text-[10px] text-zinc-500 font-black uppercase mb-1">Sifat</p>
+                                        <p className="text-xs font-bold text-white">High Definition</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* DETAILS */}
                 {activeTab === 'details' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
@@ -254,18 +273,10 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                                 <p className="font-bold text-lg text-white">{item.val}</p>
                             </div>
                         ))}
-                        <div className="md:col-span-2 lg:col-span-4 bg-[#0f0f0f] p-6 border border-white/5 rounded-sm">
-                            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Teglar (Tags)</p>
-                            <div className="flex flex-wrap gap-2">
-                                {movie.tags?.split(',').map(tag => (
-                                    <span key={tag} className="px-3 py-1 bg-zinc-900 text-zinc-400 text-[10px] font-bold uppercase border border-zinc-800 rounded-sm">#{tag.trim()}</span>
-                                )) || <span className="text-zinc-600 text-xs italic">Teglar mavjud emas</span>}
-                            </div>
-                        </div>
                     </div>
                 )}
 
-                {/* COMMENTS VIEW */}
+                {/* COMMENTS */}
                 {activeTab === 'comments' && (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                         <div className="lg:col-span-5 space-y-6">
@@ -299,21 +310,14 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                             </div>
                         </div>
                         <div className="lg:col-span-7 space-y-4">
-                            {reviews.length === 0 ? (
-                                <div className="py-20 text-center bg-[#0f0f0f] border border-white/5 rounded-sm">
-                                    <p className="text-zinc-600 italic text-sm">Birinchi bo'lib fikr qoldiring!</p>
-                                </div>
-                            ) : reviews.map(rev => (
+                            {reviews.map(rev => (
                                 <div key={rev.id} className="bg-[#0f0f0f] border border-white/5 p-6 rounded-sm">
                                     <div className="flex items-center gap-4 mb-4">
-                                        <div className="w-10 h-10 rounded-full bg-zinc-800 overflow-hidden flex-shrink-0">
+                                        <div className="w-10 h-10 rounded-full bg-zinc-800 overflow-hidden">
                                             {rev.profiles?.avatar_url ? <img src={rev.profiles.avatar_url} className="w-full h-full object-cover" /> : <User size={20} className="m-2.5 text-zinc-600"/>}
                                         </div>
                                         <div className="flex-1">
-                                            <div className="flex justify-between items-center">
-                                                <p className="text-xs font-black uppercase text-white tracking-wider">{rev.profiles?.full_name || 'Mehmon'}</p>
-                                                <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">{new Date(rev.created_at).toLocaleDateString()}</span>
-                                            </div>
+                                            <p className="text-xs font-black uppercase text-white tracking-wider">{rev.profiles?.full_name || 'Mehmon'}</p>
                                             <div className="flex gap-0.5 text-yellow-500 mt-0.5">
                                                 {Array.from({length: rev.rating}).map((_, i) => <Star key={i} size={8} fill="currentColor"/>)}
                                             </div>
@@ -327,22 +331,16 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 )}
             </div>
 
-            {/* RELATED SECTION - PROFESSIONAL GRID */}
+            {/* RELATED */}
             {relatedMovies.length > 0 && (
                 <section className="mt-24">
-                    <div className="flex items-center justify-between mb-10">
-                        <div className="flex items-center gap-4">
-                            <div className="w-1 h-8 bg-orange-600 rounded-full"></div>
-                            <h3 className="text-2xl font-black uppercase tracking-tighter">O'xshash Animelar</h3>
-                        </div>
+                    <div className="flex items-center gap-4 mb-10">
+                        <div className="w-1 h-8 bg-orange-600 rounded-full"></div>
+                        <h3 className="text-2xl font-black uppercase tracking-tighter">O'xshash Animelar</h3>
                     </div>
-                    
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
                         {relatedMovies.map(m => (
-                            <MovieCard key={m.id} movie={m} isActive={true} onClick={() => {
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                init();
-                            }} />
+                            <MovieCard key={m.id} movie={m} isActive={true} onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); init(); }} />
                         ))}
                     </div>
                 </section>

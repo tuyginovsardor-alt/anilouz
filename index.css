@@ -17,10 +17,20 @@
   }
 }
 
-/* Glass effect removed, solid dark backgrounds used instead */
+/* Header styling - Solid Dark */
 .glass-header {
   background: #050505;
   border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Mobile Bottom Nav - Updated to Solid Dark */
+.bottom-nav {
+    background: #050505;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.active-nav-item {
+    @apply text-orange-500 scale-110;
 }
 
 .animate-fade-in {
@@ -50,7 +60,6 @@
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-/* Better spacing for grids */
 .grid-standard {
     display: grid;
     gap: 2rem;
