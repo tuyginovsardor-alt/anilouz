@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getMovies } from './services/dbService';
+import { getMovies, getAppConfig } from './services/dbService';
 import { Movie } from './types';
-import { UzumakiLogo } from './components/icons/UzumakiLogo';
-import { Play, Sparkles, Info, ArrowRight, ShoppingBag, Gift } from 'lucide-react';
+import { Play, Sparkles, ArrowRight, ShoppingBag } from 'lucide-react';
 import { MovieCard } from './components/MovieCard';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
@@ -15,13 +14,30 @@ interface WelcomePageProps {
 export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch, onStart }) => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [customBg, setCustomBg] = useState<string | null>(null);
 
   useEffect(() => {
-    getMovies().then(res => {
-      setMovies(res.slice(0, 10));
-      setLoading(false);
-    });
+    const loadContent = async () => {
+      try {
+        const [movieRes, config] = await Promise.all([
+          getMovies(),
+          getAppConfig()
+        ]);
+        setMovies(movieRes.slice(0, 10));
+        if (config['site_background']) {
+          setCustomBg(config['site_background']);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadContent();
   }, []);
+
+  // Default fallback image if custom isn't set
+  const heroBg = customBg || (movies.length > 0 ? movies[0].posterUrl : 'https://i.imgur.com/sC56bsu.jpg');
 
   return (
     <div className="space-y-16 pb-10">
@@ -30,16 +46,14 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0c] via-[#0a0a0c]/60 to-transparent z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-[#0a0a0c]/30 z-10"></div>
         
-        {/* Background Movie Poster */}
-        {movies.length > 0 && (
-            <img 
-              src={movies[0].posterUrl} 
-              alt="Hero BG" 
-              className="absolute inset-0 w-full h-full object-cover opacity-40 scale-110 blur-sm sm:blur-none"
-            />
-        )}
+        {/* Background Dynamically set from Admin Panel or Movie Poster */}
+        <img 
+          src={heroBg} 
+          alt="Hero BG" 
+          className="absolute inset-0 w-full h-full object-cover opacity-40 scale-110 blur-sm sm:blur-none transition-opacity duration-1000"
+        />
 
-        <div className="relative z-20 max-w-4xl px-6 md:px-16 xl:px-24">
+        <div className="relative z-20 max-w-4xl px-6 md:px-16 xl:px-24 animate-fade-in-up">
            <div className="mb-6 flex items-center gap-3">
               <span className="px-3 py-1 bg-orange-600 text-white font-black text-[10px] uppercase tracking-widest rounded-full">New Season</span>
               <span className="flex items-center gap-1 text-gray-400 font-bold text-xs"><Sparkles size={14} className="text-yellow-500" /> TOP TRENDING</span>
@@ -87,7 +101,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch
                       <ShoppingBag size={14}/> Anilo Shop is LIVE
                   </div>
                   <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-white">
-                      Sevimli animelaringiz <br/> <span className="text-orange-600">endit kiyimingizda!</span>
+                      Sevimli animelaringiz <br/> <span className="text-orange-600">endi kiyimingizda!</span>
                   </h2>
                   <p className="text-zinc-500 text-sm md:text-base font-medium max-w-md">
                       Aksessuarlar, futbolkalar va haykalchalar - barchasi do'konimizda. Homiy bo'ling va Aniloni qo'llab-quvvatlang!

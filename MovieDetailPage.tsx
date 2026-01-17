@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Star, Lock, ArrowLeft, MessageCircle, User, Bookmark, Calendar, Info, Clock, Languages, Award, Share2, Info as InfoIcon, Image as ImageIcon, Maximize2, ChevronDown, Mic } from 'lucide-react';
+import { Play, Star, Lock, ArrowLeft, MessageCircle, User, Bookmark, Calendar, Info, Clock, Languages, Award, Share2, Info as InfoIcon, Image as ImageIcon, ChevronDown, Mic, Send } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, getMovieEpisodes, getMovieReviews, addReview, getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
 import { Movie, UserProfile, Episode } from './types';
@@ -25,8 +25,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   const [scrollY, setScrollY] = useState(0);
 
   const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const { addNotification } = useNotification();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -70,6 +70,28 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
       finally { setIsLoading(false); }
   };
 
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!userProfile) return addNotification({ type: 'warning', title: 'Kirish kerak', message: 'Sharh yozish uchun avval tizimga kiring.' });
+      if (!commentText.trim()) return;
+
+      setIsSubmittingReview(true);
+      try {
+          await addReview(movie.id!, userProfile.id, rating, commentText);
+          setCommentText('');
+          setRating(5);
+          // Refresh reviews
+          const revs = await getMovieReviews(movie.id!);
+          setReviews(revs);
+          addNotification({ type: 'success', title: 'Rahmat!', message: 'Sharhingiz qabul qilindi.' });
+      } catch (e) {
+          console.error(e);
+          addNotification({ type: 'error', title: 'Xatolik', message: 'Sharhni saqlashda xatolik yuz berdi.' });
+      } finally {
+          setIsSubmittingReview(false);
+      }
+  };
+
   const isPremiumUser = useMemo(() => {
       if (!userProfile) return false;
       const hasSubscription = userProfile.subscription_end_at && new Date(userProfile.subscription_end_at) > new Date();
@@ -80,7 +102,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
   const handlePlayClick = () => {
       if (!canWatch) {
-          addNotification({ type: 'warning', title: 'Premium Kerak', message: 'Obuna bo\'lishingiz shart.' });
+          addNotification({ type: 'warning', title: 'Premium Kerak', message: 'Ushbu animeni ko\'rish uchun obuna bo\'lishingiz shart.' });
           return;
       }
       onPlay();
@@ -123,7 +145,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     <ArrowLeft size={24} />
                 </button>
                 <div className="flex gap-3">
-                    <button onClick={() => {}} className="p-3 bg-black/60 hover:bg-zinc-800 rounded-full border border-white/10 transition-all">
+                    <button className="p-3 bg-black/60 hover:bg-zinc-800 rounded-full border border-white/10 transition-all">
                         <Share2 size={24} />
                     </button>
                     <button onClick={handleToggleSave} className={`p-3 rounded-full border transition-all ${isSaved ? 'bg-orange-600 border-orange-500' : 'bg-black/60 border-white/10 hover:bg-zinc-800'}`}>
@@ -244,7 +266,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     </div>
                 )}
                 
-                {/* ... other tabs remain same ... */}
                 {activeTab === 'gallery' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
                         <div className="relative group overflow-hidden rounded-sm border border-white/5 shadow-2xl">
@@ -252,16 +273,88 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         </div>
                         <div className="flex flex-col justify-center space-y-8 p-10 bg-[#0f0f0f] border border-white/5 rounded-sm">
                             <h4 className="text-3xl font-black uppercase tracking-tighter text-orange-500">{movie.title}</h4>
+                            <p className="text-zinc-400 leading-relaxed text-lg">{movie.plot}</p>
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'comments' && (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-fade-in">
+                        {/* FORM SECTION */}
                         <div className="lg:col-span-5">
-                            <div className="bg-[#0f0f0f] p-10 border border-white/5 rounded-sm sticky top-32">
-                                <h3 className="text-base font-black uppercase tracking-[0.3em] mb-8 text-orange-500">Sharh yozish</h3>
+                            <div className="bg-[#0f0f0f] p-10 border border-white/5 rounded-[2rem] sticky top-32">
+                                <h3 className="text-base font-black uppercase tracking-[0.3em] mb-8 text-orange-500">Sharh qoldirish</h3>
+                                <form onSubmit={handleReviewSubmit} className="space-y-6">
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Baholang</p>
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                <button 
+                                                    key={s} 
+                                                    type="button" 
+                                                    onClick={() => setRating(s)}
+                                                    className={`p-2 transition-all ${s <= rating ? 'text-yellow-500 scale-110' : 'text-zinc-700 hover:text-zinc-500'}`}
+                                                >
+                                                    <Star size={24} fill={s <= rating ? 'currentColor' : 'none'} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Xabar</label>
+                                        <textarea 
+                                            value={commentText}
+                                            onChange={e => setCommentText(e.target.value)}
+                                            placeholder="Anime haqida fikringizni yozing..."
+                                            className="w-full bg-black border border-white/5 rounded-2xl p-5 h-32 text-sm text-white focus:border-orange-500 outline-none transition-all"
+                                            required
+                                        />
+                                    </div>
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSubmittingReview}
+                                        className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-2xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                                    >
+                                        {isSubmittingReview ? <LoadingSpinner /> : <><Send size={16}/> Sharhni yuborish</>}
+                                    </button>
+                                </form>
                             </div>
+                        </div>
+
+                        {/* REVIEWS LIST */}
+                        <div className="lg:col-span-7 space-y-6">
+                            <h3 className="text-xl font-black uppercase tracking-tight text-white mb-8">Sharhlar ({reviews.length})</h3>
+                            {reviews.length === 0 ? (
+                                <div className="text-center py-20 bg-[#0f0f0f] border border-dashed border-zinc-800 rounded-[2rem]">
+                                    <MessageCircle size={48} className="mx-auto text-zinc-800 mb-4" />
+                                    <p className="text-zinc-600 font-bold uppercase tracking-widest">Hali sharhlar yo'q. Birinchi bo'ling!</p>
+                                </div>
+                            ) : (
+                                reviews.map((rev) => (
+                                    <div key={rev.id} className="bg-[#0f0f0f] border border-white/5 p-8 rounded-[2rem] flex gap-6 hover:border-orange-500/20 transition-all">
+                                        <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-white/5 overflow-hidden flex-shrink-0">
+                                            {rev.profiles?.avatar_url ? (
+                                                <img src={rev.profiles.avatar_url} className="w-full h-full object-cover" alt="" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-zinc-700"><User size={28}/></div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 space-y-3">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-black text-white text-sm uppercase">{rev.profiles?.full_name || 'Foydalanuvchi'}</p>
+                                                    <p className="text-[10px] text-zinc-500 mt-0.5">{new Date(rev.created_at).toLocaleDateString()}</p>
+                                                </div>
+                                                <div className="flex items-center gap-1 text-yellow-500 bg-yellow-500/10 px-3 py-1 rounded-full">
+                                                    <Star size={12} fill="currentColor" />
+                                                    <span className="text-[10px] font-black">{rev.rating}.0</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-zinc-400 text-sm leading-relaxed">{rev.comment}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 )}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Page, DashboardSubPage } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, User, Mic, Menu } from 'lucide-react';
-import { getUnreadNotificationsCount, getUserProfile } from '../services/dbService';
+import { Search, Bell, Menu } from 'lucide-react';
+import { getUnreadNotificationsCount, getUserProfile, getAppConfig } from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
 import { HamburgerMenu } from './HamburgerMenu';
@@ -25,8 +25,14 @@ export const Header: React.FC<HeaderProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
 
   useEffect(() => {
+      // Fetch dynamic logo from config
+      getAppConfig().then(config => {
+          if (config['site_logo']) setCustomLogo(config['site_logo']);
+      });
+
       if (isAuthenticated) {
           const fetchHeaderData = async () => {
               const { data: { user } } = await supabase.auth.getUser();
@@ -54,13 +60,17 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-        <header className="fixed top-0 left-0 right-0 z-[110] bg-[#050505] border-b border-white/5">
+        <header className="fixed top-0 left-0 right-0 z-[110] bg-[#050505]/80 backdrop-blur-xl border-b border-white/5">
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
             
             {/* Logo & Links */}
             <div className="flex items-center gap-10">
             <div className="flex items-center gap-2 cursor-pointer group" onClick={() => onNavigate('welcome')}>
-                <UzumakiLogo className="w-10 h-10" />
+                {customLogo ? (
+                    <img src={customLogo} alt="Logo" className="w-10 h-10 object-contain" />
+                ) : (
+                    <UzumakiLogo className="w-10 h-10" />
+                )}
                 <span className="text-xl md:text-2xl font-black uppercase text-white tracking-tighter">ANILO</span>
             </div>
 
