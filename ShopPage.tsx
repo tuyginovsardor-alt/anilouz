@@ -72,6 +72,43 @@ export const ShopPage: React.FC = () => {
         } finally { setIsBuying(false); }
     };
 
+    // Added handleTopup function
+    const handleTopup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!topupAmount || !screenshot) {
+            addNotification({ type: 'warning', title: 'Diqqat', message: "Barcha maydonlarni to'ldiring." });
+            return;
+        }
+
+        setIsTopupLoading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Foydalanuvchi aniqlanmadi");
+
+            // 1. Upload Screenshot to 'posters' (or dedicated receipts bucket if available)
+            const publicUrl = await uploadFile(screenshot, 'posters');
+
+            // 2. Create DB Record
+            await createShopPaymentRequest(user.id, Number(topupAmount), publicUrl);
+
+            addNotification({
+                type: 'success',
+                title: 'So\'rov yuborildi',
+                message: 'To\'lov cheki tekshirishga yuborildi. Tez orada balansingiz yangilanadi.',
+            });
+            
+            // Reset
+            setTopupAmount('');
+            setScreenshot(null);
+            setActiveTab('browse');
+        } catch (err: any) {
+            console.error(err);
+            addNotification({ type: 'error', title: 'Xatolik', message: err.message || "Yuklashda xatolik yuz berdi." });
+        } finally {
+            setIsTopupLoading(false);
+        }
+    };
+
     if (loading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
 
     const filteredProducts = selectedCategory === 'all' ? products : products.filter(p => p.category === selectedCategory);
