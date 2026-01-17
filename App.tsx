@@ -10,6 +10,8 @@ import { VideoPlayerPage } from './VideoPlayerPage';
 import { AdminPage } from './AdminPage';
 import { DubDashboard } from './DubDashboard';
 import { StudioPage } from './StudioPage';
+import { ShopPage } from './ShopPage';
+import { ShopAdminPage } from './ShopAdminPage';
 import { VideoAdPlayer } from './components/VideoAdPlayer';
 import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
@@ -17,9 +19,9 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu } from 'lucide-react';
+import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag } from 'lucide-react';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 
@@ -124,7 +126,7 @@ const App: React.FC = () => {
               isAuthenticated={isAuthenticated} 
               onLoginClick={() => setIsAuthModalOpen(true)}
               onSearchClick={() => setIsSearchOpen(true)}
-              onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}}
+              onSwitchRole={(r) => {if(['admin','owner','shop'].includes(r)) setPage('admin')}}
               onLogout={() => supabase.auth.signOut()}
             />
           )}
@@ -147,6 +149,8 @@ const App: React.FC = () => {
                         {page === 'copyright' && <CopyrightPage onBack={() => setPage('welcome')} />}
                         {page === 'dub-dashboard' && <DubDashboard />}
                         {page === 'studio' && <StudioPage onArtistClick={handleArtistClick} onMovieClick={handleMovieClick} />}
+                        {page === 'shop' && <ShopPage />}
+                        {page === 'shop-admin' && <ShopAdminPage />}
                       </>
                     )}
                   </>
@@ -173,30 +177,25 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {/* MOBILE BOTTOM NAVIGATION - YANA TUGMASI ENDI HAMBURGERNI OCHADI */}
+          {/* MOBILE BOTTOM NAVIGATION */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505] h-20 flex justify-around items-center px-4 border-t border-zinc-900">
                     {[
                         { id: 'welcome', label: 'Asosiy', icon: <Home size={22} />, active: page === 'welcome' },
-                        { id: 'search_trigger', label: 'Qidiruv', icon: <Search size={22} />, active: isSearchOpen },
+                        { id: 'shop', label: 'Shop', icon: <ShoppingBag size={22} />, active: page === 'shop' },
                         { id: 'saved', label: 'Saved', icon: <Bookmark size={22} />, active: page === 'dashboard' && dashboardPage === 'saved' },
                         { id: 'profile', label: 'Profil', icon: <User size={22} />, active: page === 'dashboard' && dashboardPage === 'profile' },
-                        { id: 'more', label: 'Yana', icon: <Menu size={22} />, active: false }, // "Yana" menyuni ochadi
+                        { id: 'more', label: 'Yana', icon: <Menu size={22} />, active: false },
                     ].map(item => (
                         <button 
                             key={item.id}
                             onClick={() => {
                                 if (item.id === 'welcome') handleNavigation('welcome');
-                                else if (item.id === 'search_trigger') setIsSearchOpen(true);
+                                else if (item.id === 'shop') handleNavigation('shop');
                                 else if (item.id === 'saved') handleDashboardNavigation('saved');
                                 else if (item.id === 'profile') handleDashboardNavigation('profile');
-                                else if (item.id === 'more') {
-                                    // Header ichidagi Gamburgerni topish uchun global state yoki prop kerak
-                                    // Lekin oson yo'li - Headerda profil tugmasi bor, lekin mobil uchun alohida ochuvchi qo'shsak ham bo'ladi.
-                                    // Hozircha App.tsx ga isMenuOpen qo'shamiz.
-                                    document.dispatchEvent(new CustomEvent('toggleMenu'));
-                                }
+                                else if (item.id === 'more') document.dispatchEvent(new CustomEvent('toggleMenu'));
                             }}
                             className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600'}`}
                         >

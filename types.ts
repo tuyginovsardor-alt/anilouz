@@ -1,78 +1,119 @@
+// --- USER & AUTH TYPES ---
+export type UserRole = 'user' | 'admin' | 'owner' | 'manager' | 'shop' | 'dub' | 'support' | 'accountant';
+
+export interface UserProfile {
+    id: string;
+    email: string;
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    role: UserRole;
+    balance: number;
+    phone?: string;
+    short_id?: string;
+    created_at: string;
+    last_active?: string;
+    is_online?: boolean;
+    subscription_end_at?: string;
+    subscription_plan?: string;
+    free_trial_started_at?: string;
+    bio?: string;
+    fans_count?: number;
+    email_notifications?: boolean;
+    push_notifications?: boolean;
+    language?: string;
+}
+
+export interface UserDevice {
+    id: number;
+    user_id: string;
+    device_id: string;
+    device_name: string;
+    last_active: string;
+    is_blocked: boolean;
+    profiles?: UserProfile;
+}
+
+// --- MOVIE & MEDIA TYPES ---
 export interface Movie {
-  id?: number;
-  title: string;
-  year: number;
-  plot: string;
-  posterUrl: string;
-  videoUrl?: string;
-  genre: string;
-  language: string;
-  quality: string;
-  rating: number;
-  is_archived?: boolean;
-  view_count?: number;
-  tags?: string;
-  status?: 'ongoing' | 'completed';
-  translator?: string;
-  translator_id?: string; // Link to dubbing artist profile
-  access_type: 'free' | 'premium';
+    id?: number;
+    title: string;
+    year: number;
+    plot: string;
+    posterUrl: string;
+    videoUrl?: string;
+    genre: string;
+    language: string;
+    quality: string;
+    rating: number;
+    view_count?: number;
+    status?: 'ongoing' | 'completed';
+    translator?: string;
+    translator_id?: string;
+    tags?: string;
+    access_type?: 'free' | 'premium';
+    is_archived?: boolean;
 }
 
 export interface Episode {
-  id?: number;
-  movie_id: number;
-  title: string;
-  source: string | File;
-  sourceType?: 'url' | 'file';
+    id: number;
+    movie_id: number;
+    title: string;
+    source: string | File;
+    sourceType?: 'url' | 'file';
 }
 
-export type UserRole = 'user' | 'admin' | 'manager' | 'support' | 'accountant' | 'owner' | 'premium' | 'dub';
-
-export interface UserProfile {
-  id: string;
-  short_id?: string;
-  email: string;
-  full_name?: string;
-  username?: string;
-  avatar_url?: string;
-  role: UserRole;
-  balance: number;
-  phone?: string;
-  created_at: string;
-  subscription_end_at?: string;
-  subscription_plan?: string;
-  is_online?: boolean;
-  last_active?: string;
-  free_trial_started_at?: string;
-  email_notifications?: boolean;
-  push_notifications?: boolean;
-  language?: string;
-  bio?: string; // Dublyajchilar uchun ma'lumot
-  studio_name?: string;
-  fans_count?: number;
+export interface ContentItem {
+    id: number;
+    title: string;
+    imageUrl: string;
 }
 
+// --- ADVERTISEMENT TYPES ---
+export interface Ad {
+    id?: number;
+    name: string;
+    type: 'video' | 'banner';
+    contentUrl: string;
+    targetUrl: string;
+    location: 'welcome_bottom' | 'search_top' | 'detail_top' | 'player_overlay_small_banner' | 'player_overlay_large_banner' | 'player_overlay_full' | 'pre_roll_video';
+    status: 'active' | 'inactive';
+    view_count: number;
+}
+
+export interface ContestAd {
+    id: number;
+    title: string;
+    media_url: string;
+    media_type: 'video' | 'image';
+    reward_atc: number;
+    duration_sec: number;
+}
+
+export interface ArkAd {
+    id: number;
+    title: string;
+    media_url: string;
+    media_type: 'video' | 'image';
+    reward_ark: number;
+    duration_sec: number;
+    is_active: boolean;
+    view_count?: number;
+}
+
+// --- NOTIFICATION TYPES ---
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 export interface Notification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-}
-
-export interface DBNotification {
-    id: number;
-    user_id: string;
+    id: string;
+    type: NotificationType;
     title: string;
     message: string;
-    type: NotificationType;
-    is_read: boolean;
-    created_at: string;
 }
 
+// --- ATC GAME TYPES ---
 export interface ATCWallet {
-    id: string;
+    user_id: string;
     balance: number;
     total_earned: number;
     total_converted: number;
@@ -117,47 +158,18 @@ export interface QuizQuestion {
     correct_option: string;
 }
 
-export interface ContestAd {
-    id: number;
-    title: string;
-    media_type: 'video' | 'image';
-    media_url: string;
-    reward_atc: number;
-    duration_sec: number;
-    is_active?: boolean;
-}
-
-export interface Ad {
-  id?: number;
-  name: string;
-  type: 'video' | 'banner';
-  contentUrl: string;
-  targetUrl: string;
-  location: string;
-  status: 'active' | 'inactive';
-  view_count?: number;
-}
-
+// --- ARK TRADING TYPES ---
 export interface ArkWallet {
-    id: string;
+    user_id: string;
     balance: number;
-    available_spins: number;
     total_earned: number;
+    available_spins: number;
 }
 
 export interface ArkMarketData {
+    id: number;
     price: number;
     timestamp: string;
-}
-
-export interface ArkAd {
-    id: number;
-    title: string;
-    media_type: 'video' | 'image';
-    media_url: string;
-    reward_ark: number;
-    duration_sec: number;
-    is_active?: boolean;
 }
 
 export interface ArkQuiz {
@@ -169,15 +181,6 @@ export interface ArkQuiz {
     option_d: string;
     correct_option: string;
     reward_spins: number;
-}
-
-export interface Broadcast {
-    id: number;
-    title: string;
-    message: string;
-    type: 'info' | 'warning' | 'urgent';
-    target_group: 'all' | 'premium' | 'user';
-    created_at: string;
 }
 
 export interface ArkWithdrawal {
@@ -205,19 +208,7 @@ export interface ArkSchedule {
     is_active: boolean;
 }
 
-export interface ContentItem {
-    id: number;
-    title: string;
-    imageUrl: string;
-}
-
-export interface SocialLink {
-    id?: number;
-    platform: 'instagram' | 'telegram' | 'youtube' | 'facebook' | 'other';
-    url: string;
-    label: string;
-}
-
+// --- FINANCIAL & ADMIN TYPES ---
 export interface PaymentRequestDB {
     id: number;
     user_id: string;
@@ -225,16 +216,6 @@ export interface PaymentRequestDB {
     screenshot_url: string;
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
-    profiles?: UserProfile;
-}
-
-export interface UserDevice {
-    id: number;
-    user_id: string;
-    device_id: string;
-    device_name: string;
-    last_active: string;
-    is_blocked: boolean;
     profiles?: UserProfile;
 }
 
@@ -249,6 +230,38 @@ export interface Promocode {
     status: 'active' | 'inactive' | 'expired';
 }
 
+export interface Broadcast {
+    id: number;
+    title: string;
+    message: string;
+    type: 'info' | 'warning' | 'urgent';
+    target_group: 'all' | 'premium' | 'user';
+    created_at: string;
+}
+
+export interface DashboardStats {
+    totalUsers: number;
+    totalMovies: number;
+    totalPremium: number;
+    totalReviews: number;
+}
+
+export interface ActivityLog {
+    id: number;
+    title: string;
+    description: string;
+    time: string;
+}
+
+export interface Transaction {
+    id: number;
+    user_id: string;
+    amount: number;
+    description: string;
+    created_at: string;
+}
+
+// --- SUPPORT & NEWS TYPES ---
 export interface SupportTicket {
     id: number;
     user_id: string;
@@ -273,6 +286,48 @@ export interface News {
     created_at: string;
 }
 
+// --- SHOP TYPES ---
+export interface ShopProduct {
+    id: number;
+    title: string;
+    description: string;
+    price: number;
+    image_url: string;
+    category: 'clothing' | 'accessory' | 'figure' | 'other';
+    stock_count: number;
+    is_active: boolean;
+}
+
+export interface ShopWallet {
+    user_id: string;
+    balance: number;
+    total_spent: number;
+}
+
+export interface ShopOrder {
+    id: number;
+    user_id: string;
+    product_id: number;
+    amount_paid: number;
+    delivery_address: string;
+    phone_number: string;
+    status: 'processing' | 'shipped' | 'delivered' | 'cancelled';
+    created_at: string;
+    products?: ShopProduct;
+    profiles?: UserProfile;
+}
+
+export interface ShopPayment {
+    id: number;
+    user_id: string;
+    amount: number;
+    screenshot_url: string;
+    status: 'pending' | 'approved' | 'rejected';
+    created_at: string;
+    profiles?: UserProfile;
+}
+
+// --- AI & SYSTEM TYPES ---
 export enum Sender {
   User = 'user',
   Bot = 'bot',
@@ -280,11 +335,11 @@ export enum Sender {
 }
 
 export interface Message {
-  id: string;
-  text: string;
-  sender: Sender;
-  timestamp: number;
-  isError?: boolean;
+    id: string;
+    text: string;
+    sender: Sender;
+    timestamp: number;
+    isError?: boolean;
 }
 
 export enum AppView {
@@ -296,9 +351,11 @@ export enum AppView {
 export interface ChatSession {
     id: string;
     title: string;
-    lastMessage?: string;
-    timestamp: number;
+    messages: Message[];
+    createdAt: number;
 }
+
+export type LegalDocType = 'privacy' | 'security' | 'terms';
 
 export interface CulturalAnalysis {
     detectedLanguage: string;
@@ -309,26 +366,11 @@ export interface CulturalAnalysis {
     culturalFacts: string[];
 }
 
-export interface DashboardStats {
-    totalUsers: number;
-    totalMovies: number;
-    totalPremium: number;
-    totalReviews: number;
-}
-
-export interface ActivityLog {
+export interface SocialLink {
     id: number;
-    title: string;
-    description: string;
-    time: string;
+    platform: 'instagram' | 'telegram' | 'youtube' | 'facebook' | 'globe';
+    url: string;
+    label: string;
 }
 
-export type LegalDocType = 'privacy' | 'security' | 'terms';
-
-export interface Transaction {
-    id: number;
-    user_id: string;
-    amount: number;
-    description: string;
-    created_at: string;
-}
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin';

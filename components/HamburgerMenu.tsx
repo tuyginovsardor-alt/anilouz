@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, Mic, LayoutGrid, CreditCard, History, Bookmark, 
     Settings, LogOut, ShieldCheck, ChevronRight, 
-    Instagram, Send, Youtube, Facebook, User, Wallet
+    Instagram, Send, Youtube, Facebook, User, Wallet, ShoppingBag
 } from 'lucide-react';
 import { DashboardSubPage, Page } from '../App';
 import { useNotification } from '../hooks/useNotification';
 import { supabase } from '../services/supabaseClient';
-import { getUserProfile, getSocialLinks } from '../services/dbService';
-import { UserRole, SocialLink, UserProfile } from '../types';
+import { getUserProfile, getSocialLinks, getShopWallet } from '../services/dbService';
+import { UserRole, SocialLink, UserProfile, ShopWallet } from '../types';
 
 interface HamburgerMenuProps {
     isOpen: boolean;
@@ -23,6 +23,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     isOpen, onClose, onLogout, onMainNavigate, onDashboardNavigate, onSwitchRole 
 }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [shopWallet, setShopWallet] = useState<ShopWallet | null>(null);
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
     const { addNotification } = useNotification();
 
@@ -31,8 +32,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
             const loadData = async () => {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                    const p = await getUserProfile(user.id);
+                    const [p, w] = await Promise.all([
+                        getUserProfile(user.id),
+                        getShopWallet(user.id)
+                    ]);
                     setProfile(p as UserProfile);
+                    setShopWallet(w);
                 }
                 const links = await getSocialLinks();
                 setSocialLinks(links);
@@ -87,14 +92,15 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                                     <p className="text-orange-500 text-xs font-bold">@{profile.username}</p>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <div className="flex-1 bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
-                                    <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-1">Balans</p>
-                                    <p className="text-sm font-black text-white flex items-center gap-1.5"><Wallet size={12} className="text-zinc-600"/> {profile.balance.toLocaleString()} <span className="text-[10px] text-zinc-500">UZS</span></p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
+                                    <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Anime Balance</p>
+                                    <p className="text-[11px] font-black text-white"> {profile.balance.toLocaleString()} UZS</p>
                                 </div>
-                                <button onClick={() => handleAction('sub', 'billing')} className="bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-xl transition-all shadow-lg shadow-orange-600/20 active:scale-95">
-                                    <CreditCard size={20}/>
-                                </button>
+                                <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl border-orange-500/20">
+                                    <p className="text-[8px] text-orange-500 font-black uppercase tracking-widest mb-1">Shop Balance</p>
+                                    <p className="text-[11px] font-black text-white"> {(shopWallet?.balance || 0).toLocaleString()} UZS</p>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -102,7 +108,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                     <div className="p-4 space-y-1">
                         <p className="px-3 pb-2 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Platforma</p>
                         
-                        {/* STUDIO BUTTON */}
+                        <button onClick={() => handleAction('main', 'shop')} className="w-full group flex items-center justify-between p-4 hover:bg-orange-600/10 rounded-2xl transition-all text-left">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-600/20">
+                                    <ShoppingBag size={20}/>
+                                </div>
+                                <span className="text-sm font-black text-white uppercase tracking-tight">Anilo Shop</span>
+                            </div>
+                            <ChevronRight size={18} className="text-zinc-700" />
+                        </button>
+
                         <button onClick={() => handleAction('main', 'studio')} className="w-full group flex items-center justify-between p-4 hover:bg-zinc-900 rounded-2xl transition-all text-left">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center text-orange-500 border border-zinc-700 group-hover:bg-orange-600 group-hover:text-white transition-all">
@@ -113,7 +128,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             <ChevronRight size={18} className="text-zinc-700" />
                         </button>
 
-                        {/* DUBBER ROOM - ONLY FOR DUBS */}
                         {profile?.role === 'dub' && (
                             <button onClick={() => handleAction('main', 'dub-dashboard')} className="w-full group flex items-center justify-between p-4 hover:bg-zinc-900 rounded-2xl transition-all text-left">
                                 <div className="flex items-center gap-4">
@@ -140,8 +154,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         ))}
 
                         {/* ADMIN SWITCH */}
-                        {['admin', 'owner'].includes(profile?.role || '') && (
-                            <button onClick={() => {onSwitchRole(profile!.role); onClose();}} className="w-full flex items-center gap-4 p-4 hover:bg-yellow-500/10 rounded-2xl transition-all text-yellow-500 mt-4 border border-yellow-500/10">
+                        {['admin', 'owner', 'shop'].includes(profile?.role || '') && (
+                            <button onClick={() => {
+                                if (profile?.role === 'shop') handleAction('main', 'shop-admin');
+                                else onSwitchRole(profile!.role); 
+                                onClose();
+                            }} className="w-full flex items-center gap-4 p-4 hover:bg-yellow-500/10 rounded-2xl transition-all text-yellow-500 mt-4 border border-yellow-500/10">
                                 <ShieldCheck size={18}/>
                                 <span className="text-sm font-black uppercase tracking-widest">Admin Panel</span>
                             </button>

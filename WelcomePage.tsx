@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getMovies } from './services/dbService';
 import { Movie } from './types';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
-import { Play, Sparkles, Info, ArrowRight } from 'lucide-react';
+import { Play, Sparkles, Info, ArrowRight, ShoppingBag, Gift } from 'lucide-react';
 import { MovieCard } from './components/MovieCard';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
@@ -30,7 +30,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0c] via-[#0a0a0c]/60 to-transparent z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-[#0a0a0c]/30 z-10"></div>
         
-        {/* Background Movie Poster (Placeholder) */}
+        {/* Background Movie Poster */}
         {movies.length > 0 && (
             <img 
               src={movies[0].posterUrl} 
@@ -69,6 +69,34 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch
               </button>
            </div>
         </div>
+      </div>
+
+      {/* ANILO SHOP AD PROMO CARD */}
+      <div className="container mx-auto px-4 md:px-8">
+          <div 
+            onClick={() => window.location.href = '/?page=shop'}
+            className="group relative h-64 md:h-80 bg-zinc-900 border border-white/5 rounded-[3rem] overflow-hidden cursor-pointer hover:border-orange-500/30 transition-all duration-500 shadow-2xl"
+          >
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 via-transparent to-transparent"></div>
+              <div className="absolute right-0 top-0 h-full w-1/2 opacity-20 group-hover:opacity-40 transition-opacity duration-700">
+                  <img src="https://i.imgur.com/uN8fD3A.png" alt="Merch" className="h-full w-full object-cover translate-x-10 group-hover:translate-x-0 transition-transform duration-700" />
+              </div>
+
+              <div className="relative h-full flex flex-col justify-center p-10 md:p-16 space-y-6 max-w-2xl">
+                  <div className="inline-flex items-center gap-2 px-4 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-orange-500">
+                      <ShoppingBag size={14}/> Anilo Shop is LIVE
+                  </div>
+                  <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-white">
+                      Sevimli animelaringiz <br/> <span className="text-orange-600">endit kiyimingizda!</span>
+                  </h2>
+                  <p className="text-zinc-500 text-sm md:text-base font-medium max-w-md">
+                      Aksessuarlar, futbolkalar va haykalchalar - barchasi do'konimizda. Homiy bo'ling va Aniloni qo'llab-quvvatlang!
+                  </p>
+                  <button className="flex items-center gap-2 text-white font-black uppercase tracking-widest text-xs group-hover:text-orange-500 transition-colors">
+                      DO'KONGA O'TISH <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
+                  </button>
+              </div>
+          </div>
       </div>
 
       {/* Trending Section */}

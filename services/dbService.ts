@@ -1,12 +1,118 @@
-
 import { supabase } from './supabaseClient';
 import { 
     Movie, UserProfile, ATCTransaction, ATCWallet, ContestTask, 
     QuizQuestion, ContestAd, Broadcast, ArkWithdrawal, ArkAd, 
     ArkQuiz, ArkSchedule, SocialLink, PaymentRequestDB, UserDevice, 
     Promocode, SupportTicket, TicketMessage, News, DashboardStats, 
-    ActivityLog, Transaction, WheelPrize, Ad, ArkWallet, ArkMarketData 
+    ActivityLog, Transaction, WheelPrize, Ad, ArkWallet, ArkMarketData,
+    ShopProduct, ShopWallet, ShopOrder, ShopPayment 
 } from '../types';
+
+// --- Xavfsiz JSON Parse yordamchisi ---
+const safeJsonParse = (val: any, fallback: any = {}) => {
+    if (!val) return fallback;
+    if (typeof val === 'object') return val;
+    try {
+        return JSON.parse(val);
+    } catch (e) {
+        console.warn("JSON Parse xatosi:", e, val);
+        return fallback;
+    }
+};
+
+// --- ANILO SHOP SERVICES ---
+
+export const getShopProducts = async (): Promise<ShopProduct[]> => {
+    const { data, error } = await supabase.from('shop_products').select('*').eq('is_active', true).order('id', { ascending: false });
+    if (error) throw error;
+    return data || [];
+};
+
+export const getAdminShopProducts = async (): Promise<ShopProduct[]> => {
+    const { data, error } = await supabase.from('shop_products').select('*').order('id', { ascending: false });
+    if (error) throw error;
+    return data || [];
+};
+
+export const createShopProduct = async (product: Partial<ShopProduct>) => {
+    const { data, error } = await supabase.from('shop_products').insert(product).select().single();
+    if (error) throw error;
+    return data;
+};
+
+export const updateShopProduct = async (id: number, updates: Partial<ShopProduct>) => {
+    const { error } = await supabase.from('shop_products').update(updates).eq('id', id);
+    if (error) throw error;
+};
+
+export const getShopWallet = async (userId: string): Promise<ShopWallet | null> => {
+    const { data, error } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
+    if (!data && !error) {
+        // Create wallet if not exists
+        const { data: newWallet } = await supabase.from('shop_wallets').insert({ user_id: userId, balance: 0 }).select().single();
+        return newWallet;
+    }
+    return data;
+};
+
+export const createShopPaymentRequest = async (userId: string, amount: number, screenshotUrl: string) => {
+    const { error } = await supabase.from('shop_payments').insert({ user_id: userId, amount, screenshot_url: screenshotUrl });
+    if (error) throw error;
+};
+
+export const getShopPayments = async (): Promise<ShopPayment[]> => {
+    const { data, error } = await supabase.from('shop_payments').select('*, profiles(*)').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+};
+
+export const approveShopPayment = async (paymentId: number, userId: string, amount: number) => {
+    // 1. Update Payment Status
+    await supabase.from('shop_payments').update({ status: 'approved' }).eq('id', paymentId);
+    // 2. Increment Wallet Balance (using RPC or manual update)
+    const { data: wallet } = await supabase.from('shop_wallets').select('balance').eq('user_id', userId).single();
+    const newBalance = (wallet?.balance || 0) + amount;
+    await supabase.from('shop_wallets').update({ balance: newBalance }).eq('user_id', userId);
+};
+
+export const placeShopOrder = async (userId: string, productId: number, price: number, address: string, phone: string) => {
+    // 1. Check Balance
+    const wallet = await getShopWallet(userId);
+    if (!wallet || wallet.balance < price) throw new Error("Mablag' yetarli emas");
+
+    // 2. Create Order
+    const { error: orderError } = await supabase.from('shop_orders').insert({
+        user_id: userId,
+        product_id: productId,
+        amount_paid: price,
+        delivery_address: address,
+        phone_number: phone
+    });
+    if (orderError) throw orderError;
+
+    // 3. Deduct Balance
+    await supabase.from('shop_wallets').update({ 
+        balance: wallet.balance - price,
+        total_spent: wallet.total_spent + price 
+    }).eq('user_id', userId);
+};
+
+export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
+    const { data, error } = await supabase.from('shop_orders').select('*, shop_products(*)').eq('user_id', userId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+};
+
+export const getAllShopOrders = async (): Promise<ShopOrder[]> => {
+    const { data, error } = await supabase.from('shop_orders').select('*, shop_products(*), profiles(*)').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+};
+
+export const updateOrderStatus = async (id: number, status: string) => {
+    await supabase.from('shop_orders').update({ status }).eq('id', id);
+};
+
 
 // --- Mappers ---
 const mapMovie = (m: any): Movie => {
@@ -187,7 +293,7 @@ export const getContestSettings = async () => {
     const { data } = await supabase.from('app_config').select('*').in('key', ['exchange_rate', 'daily_free_spins', 'wheel_config', 'quiz_reward_spins', 'quiz_questions_count', 'quiz_passing_score']);
     const settings: any = {};
     data?.forEach(d => {
-        try { settings[d.key] = JSON.parse(d.value); } catch { settings[d.key] = d.value; }
+        settings[d.key] = safeJsonParse(d.value, d.value);
     });
     return settings;
 };
@@ -233,13 +339,11 @@ export const rewardExtraSpin = async (userId: string, amount: number) => {
 };
 
 // --- Ark Trading ---
-// Added missing ArkWallet import above to fix errors on lines 236 and 238
 export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
     const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).single();
     return data as ArkWallet;
 };
 
-// Added missing ArkMarketData import above to fix errors on lines 241 and 243
 export const getArkMarketHistory = async (): Promise<ArkMarketData[]> => {
     const { data } = await supabase.from('ark_market_history').select('*').order('timestamp', { ascending: true });
     return (data || []) as ArkMarketData[];
@@ -249,7 +353,7 @@ export const getArkSettings = async () => {
     const { data } = await supabase.from('ark_settings').select('*');
     const settings: any = {};
     data?.forEach(d => {
-        try { settings[d.key] = JSON.parse(d.value); } catch { settings[d.key] = d.value; }
+        settings[d.key] = safeJsonParse(d.value, d.value);
     });
     return settings;
 };
@@ -404,7 +508,7 @@ export const setAdminPin = async (pin: string) => {
 
 export const getProtectedRoutes = async (): Promise<string[]> => {
     const { data } = await supabase.from('app_config').select('value').eq('key', 'protected_routes').single();
-    try { return JSON.parse(data?.value || '[]'); } catch { return []; }
+    return safeJsonParse(data?.value, []);
 };
 
 export const setProtectedRoutes = async (routes: string[]) => {
@@ -417,13 +521,13 @@ export const saveRecoveryCodes = async (codes: string[]) => {
 
 export const verifyRecoveryCode = async (code: string): Promise<boolean> => {
     const { data } = await supabase.from('app_config').select('value').eq('key', 'admin_recovery_codes').single();
-    const codes: string[] = JSON.parse(data?.value || '[]');
+    const codes: string[] = safeJsonParse(data?.value, []);
     return codes.includes(code);
 };
 
 export const getRecoveryCodesStatus = async (): Promise<boolean> => {
     const { data } = await supabase.from('app_config').select('value').eq('key', 'admin_recovery_codes').single();
-    const codes = JSON.parse(data?.value || '[]');
+    const codes = safeJsonParse(data?.value, []);
     return codes.length > 0;
 };
 
@@ -558,8 +662,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 
 export const getRecentActivity = async (): Promise<ActivityLog[]> => {
     return [
-        { id: 1, title: 'Yangi foydalanuvchi', description: 'Ali ro\'yxatdan o\'tdi', time: '2 daqiqa oldin' },
-        { id: 2, title: 'To\'lov', description: 'Vali Premium sotib oldi', time: '10 daqiqa oldin' }
+        { id: 1, title: 'Yangi foydalanuvchi', description: 'Ali ro\'yxatdan o\'tdi', time: '2 daqiqa oldi' },
+        { id: 2, title: 'To\'lov', description: 'Vali Premium sotib oldi', time: '10 daqiqa oldi' }
     ];
 };
 
