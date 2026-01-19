@@ -119,7 +119,8 @@ const App: React.FC = () => {
         <NotificationContainer />
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505]">
           
-          {!isPlayerActive && !activeVideoAd && (
+          {/* Header faqat authenticated bo'lsa yoki welcome page bo'lmasa ko'rinadi */}
+          {!isPlayerActive && !activeVideoAd && page !== 'welcome' && (
             <Header 
               onNavigate={handleNavigation} 
               onDashboardNavigate={handleDashboardNavigation}
@@ -132,7 +133,7 @@ const App: React.FC = () => {
             />
           )}
           
-          <main className={`flex-1 ${selectedMovie || isPlayerActive ? '' : 'pt-20 pb-32 md:pb-20'}`}>
+          <main className={`flex-1 ${selectedMovie || isPlayerActive || page === 'welcome' ? '' : 'pt-20 pb-32 md:pb-20'}`}>
                 {activeVideoAd && selectedMovie && <VideoAdPlayer ad={activeVideoAd} onFinish={() => {setActiveVideoAd(null); setIsPlayerActive(true);}} />}
                 {isPlayerActive && selectedMovie && !activeVideoAd && <VideoPlayerPage movie={selectedMovie} onBack={() => setIsPlayerActive(false)} />}
                 
@@ -142,7 +143,8 @@ const App: React.FC = () => {
                       <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} onArtistClick={handleArtistClick} />
                     ) : (
                       <>
-                        {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setPage('dashboard')} />}
+                        {/* onStart prop endi AuthModalni ochadi */}
+                        {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}
                         {page === 'search' && <SearchPage initialQuery={currentQuery} onNewSearch={setCurrentQuery} onMovieClick={handleMovieClick} />}
                         {page === 'dashboard' && <DashboardPage viewUserId={selectedArtistId} currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
@@ -179,20 +181,20 @@ const App: React.FC = () => {
           )}
 
           {/* MOBILE BOTTOM NAVIGATION */}
-          {!selectedMovie && !isPlayerActive && page !== 'admin' && (
+          {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505] h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
                     {[
-                        { id: 'welcome', label: 'Asosiy', icon: <Home size={22} />, active: page === 'welcome' },
+                        { id: 'dashboard', label: 'Asosiy', icon: <Home size={22} />, active: page === 'dashboard' && dashboardPage === 'main' },
                         { id: 'shop', label: 'Shop', icon: <ShoppingBag size={22} />, active: page === 'shop' },
-                        { id: 'studio', label: 'Studio', icon: <LayoutGrid size={22} />, active: page === 'studio' }, // Added Studio
+                        { id: 'studio', label: 'Studio', icon: <LayoutGrid size={22} />, active: page === 'studio' }, 
                         { id: 'profile', label: 'Profil', icon: <User size={22} />, active: page === 'dashboard' && dashboardPage === 'profile' },
                         { id: 'more', label: 'Yana', icon: <Menu size={22} />, active: false },
                     ].map(item => (
                         <button 
                             key={item.id}
                             onClick={() => {
-                                if (item.id === 'welcome') handleNavigation('welcome');
+                                if (item.id === 'dashboard') handleNavigation('dashboard');
                                 else if (item.id === 'shop') handleNavigation('shop');
                                 else if (item.id === 'studio') handleNavigation('studio');
                                 else if (item.id === 'profile') handleDashboardNavigation('profile');
@@ -210,7 +212,7 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {!selectedMovie && !isPlayerActive && page !== 'admin' && <Footer onNavigate={handleNavigation} />}
+          {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && <Footer onNavigate={handleNavigation} />}
           {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} onAuthSuccess={() => {setIsAuthModalOpen(false); setPage('dashboard');}} />}
         </div>
     </NotificationContext.Provider>
