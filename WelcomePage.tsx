@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMovies, getAppConfig } from './services/dbService';
 import { Movie } from './types';
-import { Play, Sparkles, ArrowRight, ShoppingBag, Crown, Star, Clock } from 'lucide-react';
+import { Play, ArrowRight, ShoppingBag, Crown, Star, Flame } from 'lucide-react';
 import { MovieCard } from './components/MovieCard';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { TrendingSlider } from './components/TrendingSlider';
@@ -40,33 +40,39 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch
     loadContent();
   }, []);
 
+  // Default fallback image agar admin panelda rasm bo'lmasa
   const heroBg = customBg || 'https://i.imgur.com/sC56bsu.jpg';
 
   const handleExplorePremium = () => {
       setShowPremiumModal(true);
   };
 
-  const newArrivals = movies.slice(0, 10).sort((a, b) => (b.year - a.year)); // Mock sorting
-  const topRated = movies.filter(m => m.rating >= 4.5).slice(0, 10);
+  // Content for sections
+  const trendingMovies = movies.slice(0, 10);
+  const newArrivals = [...movies].sort((a, b) => (b.year - a.year)).slice(0, 10); // Simple sort by year
+  const topRated = movies.filter(m => m.rating >= 4.5).slice(0, 12);
 
   return (
-    <div className="space-y-16 pb-32">
-      {/* Cinematic Hero Section */}
-      <div className="relative h-[90vh] min-h-[600px] flex items-center overflow-hidden -mt-24 sm:-mt-20">
+    <div className="space-y-16 pb-32 font-sans">
+      {/* 1. CINEMATIC HERO SECTION */}
+      <div className="relative h-[85vh] min-h-[600px] flex items-center overflow-hidden -mt-24 sm:-mt-20">
+        
+        {/* Background Image */}
         <div className="absolute inset-0 z-0">
             <img 
               src={heroBg} 
               alt="Hero BG" 
               className="w-full h-full object-cover transition-opacity duration-1000 animate-fade-in"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/50 to-transparent"></div>
+            {/* Gradient Overlays */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent"></div>
             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent"></div>
         </div>
 
         <div className="relative z-20 max-w-4xl px-6 md:px-16 xl:px-24 animate-slide-in-up mt-20">
            <div className="mb-6 flex items-center gap-3">
-              <span className="px-4 py-1.5 bg-orange-600/90 backdrop-blur-md text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-[0_0_15px_rgba(249,115,22,0.5)] border border-orange-400/30">
-                  #1 O'zbek Anime Portali
+              <span className="px-4 py-1.5 bg-orange-600/90 backdrop-blur-md text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-[0_0_15px_rgba(249,115,22,0.5)] border border-orange-400/30 flex items-center gap-2">
+                  <Flame size={12} fill="white" /> #1 O'zbek Anime Portali
               </span>
            </div>
            
@@ -80,16 +86,17 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch
            </p>
            
            <div className="flex flex-col sm:flex-row gap-5">
+              {/* Explore Free Trial -> Premiumga yo'naltiradi */}
               <button 
                 onClick={handleExplorePremium}
                 className="px-10 py-5 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3 group border border-orange-400/30"
               >
-                <Crown size={20} className="text-yellow-300" />
+                <Crown size={20} className="text-yellow-300 fill-yellow-300" />
                 Explore Free Trial
               </button>
               
               <button 
-                onClick={onStart}
+                onClick={onStart} // Opens Auth Modal via App.tsx logic
                 className="px-10 py-5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-2xl font-bold text-sm uppercase tracking-widest backdrop-blur-xl transition-all flex items-center justify-center gap-3 hover:scale-105"
               >
                 Kirish <ArrowRight size={18} />
@@ -98,25 +105,31 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch
         </div>
       </div>
 
-      {/* TRENDING CAROUSEL (Hand Scrollable) */}
+      {/* 2. TRENDING SLIDER (Romb/Oval Shakl - Qaytarildi) */}
       <div className="-mt-32 relative z-30 pl-4 md:pl-8">
-          <TrendingSlider movies={movies.slice(0, 10)} onMovieClick={onMovieClick} />
+          <TrendingSlider movies={trendingMovies} onMovieClick={onMovieClick} />
       </div>
 
-      {/* NEW SECTION: TOP RATED */}
+      {/* 3. NEW ARRIVALS (Yangi Qo'shilganlar - Boyitish) */}
       <div className="container mx-auto px-4 md:px-8">
-          <div className="flex items-center gap-4 mb-8">
-              <div className="w-1.5 h-10 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.8)]"></div>
-              <h2 className="text-3xl font-black tracking-tighter uppercase text-white">Eng Sara Animelar</h2>
+          <div className="flex items-center justify-between mb-8">
+             <div className="flex items-center gap-4">
+                <div className="w-1.5 h-10 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]"></div>
+                <h2 className="text-3xl font-black tracking-tighter uppercase text-white">Yangi Qo'shilganlar</h2>
+             </div>
+             <button onClick={() => window.location.href = '/?page=catalog'} className="text-xs font-bold text-zinc-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">Barchasi <ArrowRight size={14}/></button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {topRated.map(movie => (
-                  <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+          
+          <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide">
+              {newArrivals.map(movie => (
+                  <div key={movie.id} className="min-w-[160px] md:min-w-[200px]">
+                      <MovieCard movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                  </div>
               ))}
           </div>
       </div>
 
-      {/* ANILO SHOP AD PROMO CARD */}
+      {/* 4. ANILO SHOP AD PROMO CARD */}
       <div className="container mx-auto px-4 md:px-8">
           <div 
             onClick={() => window.location.href = '/?page=shop'}
@@ -141,23 +154,22 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onMovieClick, onSearch
           </div>
       </div>
 
-      {/* NEW SECTION: FRESH ARRIVALS */}
-      <div className="container mx-auto px-4 md:px-8">
-          <div className="flex items-center justify-between mb-8">
+      {/* 5. TOP RATED (Eng Sara - Boyitish) */}
+      <div className="px-4 md:px-8 space-y-10 container mx-auto">
+          <div className="flex items-center justify-between">
              <div className="flex items-center gap-4">
-                <div className="w-1.5 h-10 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]"></div>
-                <h2 className="text-3xl font-black tracking-tighter uppercase text-white">Yangi Qo'shilganlar</h2>
+                <div className="w-1.5 h-10 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.8)]"></div>
+                <h2 className="text-3xl font-black tracking-tighter uppercase text-white">Eng Sara Animelar</h2>
              </div>
-             <button onClick={onStart} className="text-xs font-bold text-zinc-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">Ko'proq <ArrowRight size={14}/></button>
           </div>
           
-          <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide">
-              {newArrivals.map(movie => (
-                  <div key={movie.id} className="min-w-[160px] md:min-w-[200px]">
-                      <MovieCard movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
-                  </div>
-              ))}
-          </div>
+          {loading ? <div className="py-20 flex justify-center"><LoadingSpinner /></div> : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                {topRated.map(movie => (
+                    <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                ))}
+            </div>
+          )}
       </div>
 
       {/* Premium Modal Popup */}
