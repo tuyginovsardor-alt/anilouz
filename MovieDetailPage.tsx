@@ -138,27 +138,29 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 }}
             >
                 <img src={movie.posterUrl} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent"></div>
+                {/* Gradient faqat pastdan, tepasi ochiq qoladi rasm ko'rinishi uchun */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent"></div>
+                {/* Tepadagi gradient faqat ikonkalarni ko'rsatish uchun juda yupqa */}
+                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
             </div>
 
-            {/* Glassmorphism Header Buttons */}
+            {/* Transparent Header Icons (No Background Frame) */}
             <div className="fixed top-0 left-0 right-0 p-4 md:p-6 flex justify-between items-center z-[100] animate-fade-in">
                 <button 
                     onClick={onBack} 
-                    className="p-3 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-full border border-white/10 transition-all active:scale-90 text-white shadow-lg"
+                    className="p-2 text-white hover:text-orange-500 transition-colors active:scale-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
                 >
-                    <ArrowLeft size={22} />
+                    <ArrowLeft size={28} strokeWidth={2.5} />
                 </button>
-                <div className="flex gap-3">
-                    <button className="p-3 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-full border border-white/10 transition-all active:scale-90 text-white shadow-lg">
-                        <Share2 size={22} />
+                <div className="flex gap-4">
+                    <button className="p-2 text-white hover:text-orange-500 transition-colors active:scale-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                        <Share2 size={26} strokeWidth={2.5} />
                     </button>
                     <button 
                         onClick={handleToggleSave} 
-                        className={`p-3 rounded-full border backdrop-blur-md transition-all active:scale-90 shadow-lg ${isSaved ? 'bg-orange-600/80 border-orange-500 text-white' : 'bg-white/10 border-white/10 text-white hover:bg-white/20'}`}
+                        className={`p-2 transition-colors active:scale-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${isSaved ? 'text-orange-500' : 'text-white hover:text-orange-500'}`}
                     >
-                        <Bookmark size={22} fill={isSaved ? 'white' : 'none'} />
+                        <Bookmark size={26} strokeWidth={2.5} fill={isSaved ? 'currentColor' : 'none'} />
                     </button>
                 </div>
             </div>

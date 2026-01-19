@@ -55,14 +55,17 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
       <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-12 flex flex-col items-center text-center animate-slide-in-up">
           
           {/* LOGO & TITLE BLOCK (Yonma-yon, dumaloq ramka, kichikroq format) */}
-          <div className="mb-10 flex flex-row items-center gap-5 bg-black/40 backdrop-blur-sm p-4 pr-8 rounded-full border border-white/10 shadow-2xl">
-              <div className="w-16 h-16 rounded-full bg-black border-2 border-orange-500 overflow-hidden shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center p-1 shrink-0">
+          <div className="mb-10 flex flex-row items-center gap-5">
+              {/* Logo Frame: Circular cutout */}
+              <div className="w-16 h-16 rounded-full bg-black border-2 border-orange-500 overflow-hidden shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center shrink-0">
                   {customLogo ? (
-                      <img src={customLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
+                      <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
-                      <UzumakiLogo className="w-full h-full text-orange-500 drop-shadow-md" />
+                      <UzumakiLogo className="w-full h-full p-1 text-orange-500 drop-shadow-md" />
                   )}
               </div>
+              
+              {/* Text */}
               <div className="text-left">
                   <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-xl" style={{ fontFamily: 'Impact, sans-serif' }}>
                       ANILO<span className="text-orange-500">.UZ</span>
