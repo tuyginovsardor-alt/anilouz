@@ -13,6 +13,7 @@ import { DubDashboard } from './DubDashboard';
 import { StudioPage } from './StudioPage';
 import { ShopPage } from './ShopPage';
 import { ShopAdminPage } from './ShopAdminPage';
+import { CatalogPage } from './CatalogPage'; // Import CatalogPage
 import { VideoAdPlayer } from './components/VideoAdPlayer';
 import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
@@ -20,9 +21,9 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag, LayoutGrid } from 'lucide-react';
+import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag, LayoutGrid, Layers } from 'lucide-react';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 
@@ -146,6 +147,7 @@ const App: React.FC = () => {
                         {/* onStart prop endi AuthModalni ochadi */}
                         {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}
                         {page === 'search' && <SearchPage initialQuery={currentQuery} onNewSearch={setCurrentQuery} onMovieClick={handleMovieClick} />}
+                        {page === 'catalog' && <CatalogPage onMovieClick={handleMovieClick} />} {/* New Catalog Page */}
                         {page === 'dashboard' && <DashboardPage viewUserId={selectedArtistId} currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
                         {page === 'ai-assistant' && <AiAssistantPage />}
@@ -180,29 +182,27 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {/* MOBILE BOTTOM NAVIGATION */}
+          {/* MOBILE BOTTOM NAVIGATION - UPDATED */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
-                <div className="bg-[#050505] h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
+                <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-4 border-t border-zinc-900 pb-2">
                     {[
-                        { id: 'dashboard', label: 'Asosiy', icon: <Home size={22} />, active: page === 'dashboard' && dashboardPage === 'main' },
-                        { id: 'shop', label: 'Shop', icon: <ShoppingBag size={22} />, active: page === 'shop' },
-                        { id: 'studio', label: 'Studio', icon: <LayoutGrid size={22} />, active: page === 'studio' }, 
-                        { id: 'profile', label: 'Profil', icon: <User size={22} />, active: page === 'dashboard' && dashboardPage === 'profile' },
-                        { id: 'more', label: 'Yana', icon: <Menu size={22} />, active: false },
+                        { id: 'dashboard', label: 'Asosiy', icon: <Home size={24} />, active: page === 'dashboard' && dashboardPage === 'main' },
+                        { id: 'catalog', label: 'Katalog', icon: <Layers size={24} />, active: page === 'catalog' }, // Replaced Shop with Catalog
+                        { id: 'studio', label: 'Studio', icon: <LayoutGrid size={24} />, active: page === 'studio' }, 
+                        { id: 'profile', label: 'Profil', icon: <User size={24} />, active: page === 'dashboard' && dashboardPage === 'profile' },
                     ].map(item => (
                         <button 
                             key={item.id}
                             onClick={() => {
                                 if (item.id === 'dashboard') handleNavigation('dashboard');
-                                else if (item.id === 'shop') handleNavigation('shop');
+                                else if (item.id === 'catalog') handleNavigation('catalog');
                                 else if (item.id === 'studio') handleNavigation('studio');
                                 else if (item.id === 'profile') handleDashboardNavigation('profile');
-                                else if (item.id === 'more') document.dispatchEvent(new CustomEvent('toggleMenu'));
                             }}
-                            className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/5 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600'}`}
+                            className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
                         >
-                            <div className={`${item.active ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]' : ''}`}>
+                            <div className={`${item.active ? 'drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]' : ''}`}>
                                 {item.icon}
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>

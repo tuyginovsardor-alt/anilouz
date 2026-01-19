@@ -1,3 +1,4 @@
+
 // --- USER & AUTH TYPES ---
 // Added 'premium' to UserRole
 export type UserRole = 'user' | 'admin' | 'owner' | 'manager' | 'shop' | 'dub' | 'support' | 'accountant' | 'premium';
@@ -376,5 +377,5 @@ export interface CulturalAnalysis {
     culturalFacts: string[];
 }
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog';
 export type LegalDocType = 'privacy' | 'security' | 'terms';

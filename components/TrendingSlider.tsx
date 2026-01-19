@@ -30,7 +30,7 @@ export const TrendingSlider: React.FC<TrendingSliderProps> = ({ movies, onMovieC
                 <span>TOPLAM</span>
             </h2>
 
-            {/* Navigation Arrows */}
+            {/* Navigation Arrows (Desktop) */}
             <button onClick={() => scroll('left')} className="absolute left-2 top-1/2 z-20 bg-black/50 p-3 rounded-full text-white backdrop-blur-md border border-white/10 hidden md:block hover:bg-orange-600 transition-colors">
                 ←
             </button>
@@ -38,25 +38,28 @@ export const TrendingSlider: React.FC<TrendingSliderProps> = ({ movies, onMovieC
                 →
             </button>
 
+            {/* Scroll Container */}
             <div 
                 ref={scrollRef}
-                className="flex gap-6 overflow-x-auto px-8 pb-10 scrollbar-hide pt-4"
-                style={{ perspective: '1000px' }}
+                className="flex gap-6 overflow-x-auto px-8 pb-10 pt-4 scrollbar-hide snap-x snap-mandatory"
+                style={{ 
+                    perspective: '1000px',
+                    WebkitOverflowScrolling: 'touch', // Smooth touch scroll on iOS
+                }}
             >
                 {movies.map((movie, index) => (
                     <div 
                         key={movie.id}
                         onClick={() => onMovieClick(movie)}
-                        className="relative flex-shrink-0 w-48 md:w-64 h-72 md:h-96 cursor-pointer group transition-all duration-500 hover:scale-105 hover:z-10"
+                        className="relative flex-shrink-0 w-48 md:w-64 h-72 md:h-96 cursor-pointer group transition-all duration-500 hover:scale-105 hover:z-10 snap-center"
                         style={{
-                            // Romb/Qiya shakl berish uchun transform
                             transform: 'skewX(-6deg)',
                             borderRadius: '20px',
                             overflow: 'hidden',
                             boxShadow: '10px 10px 30px rgba(0,0,0,0.5)'
                         }}
                     >
-                        {/* Rasm (Ichidagi rasm to'g'ri turishi uchun teskari skew beramiz) */}
+                        {/* Image Layer - Counter Skew */}
                         <div className="absolute inset-0 bg-zinc-800" style={{ transform: 'skewX(6deg) scale(1.2)' }}>
                             <img 
                                 src={movie.posterUrl} 
@@ -69,13 +72,13 @@ export const TrendingSlider: React.FC<TrendingSliderProps> = ({ movies, onMovieC
                         {/* Content Overlay */}
                         <div 
                             className="absolute bottom-0 left-0 right-0 p-6 flex flex-col justify-end h-full"
-                            style={{ transform: 'skewX(6deg)' }} // Matnni to'g'rilash
+                            style={{ transform: 'skewX(6deg)' }} 
                         >
                             <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                                 <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center mb-3 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-orange-600/50">
                                     <Play size={18} fill="white" className="ml-1"/>
                                 </div>
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight leading-none drop-shadow-md">
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight leading-none drop-shadow-md line-clamp-2">
                                     {movie.title}
                                 </h3>
                                 <p className="text-orange-400 text-xs font-bold mt-1 uppercase tracking-widest">
