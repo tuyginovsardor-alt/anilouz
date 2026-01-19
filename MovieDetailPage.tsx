@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Play, Star, Lock, ArrowLeft, MessageCircle, User, Bookmark, Calendar, Info, Clock, Languages, Award, Share2, Info as InfoIcon, Image as ImageIcon, ChevronDown, Mic, Send } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
@@ -127,7 +128,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     <div className="bg-[#050505] min-h-screen text-white pb-32 overflow-x-hidden">
         
         {/* PARALLAX HERO SECTION */}
-        <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden">
+        <div className="relative w-full h-[85vh] md:h-[95vh] overflow-hidden">
+            {/* Background Image - Full Coverage */}
             <div 
                 className="absolute inset-0 z-0 will-change-transform"
                 style={{ 
@@ -136,65 +138,79 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 }}
             >
                 <img src={movie.posterUrl} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent"></div>
-                <div className="absolute inset-0 bg-black/30"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent"></div>
             </div>
 
-            <div className={`fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-[100] transition-all duration-500 ${scrollY > 100 ? 'bg-[#050505] border-b border-white/5 py-4 shadow-2xl' : ''}`}>
-                <button onClick={onBack} className="p-3 bg-black/60 hover:bg-orange-600 rounded-full border border-white/10 transition-all active:scale-90">
-                    <ArrowLeft size={24} />
+            {/* Glassmorphism Header Buttons */}
+            <div className="fixed top-0 left-0 right-0 p-4 md:p-6 flex justify-between items-center z-[100] animate-fade-in">
+                <button 
+                    onClick={onBack} 
+                    className="p-3 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-full border border-white/10 transition-all active:scale-90 text-white shadow-lg"
+                >
+                    <ArrowLeft size={22} />
                 </button>
                 <div className="flex gap-3">
-                    <button className="p-3 bg-black/60 hover:bg-zinc-800 rounded-full border border-white/10 transition-all">
-                        <Share2 size={24} />
+                    <button className="p-3 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-full border border-white/10 transition-all active:scale-90 text-white shadow-lg">
+                        <Share2 size={22} />
                     </button>
-                    <button onClick={handleToggleSave} className={`p-3 rounded-full border transition-all ${isSaved ? 'bg-orange-600 border-orange-500' : 'bg-black/60 border-white/10 hover:bg-zinc-800'}`}>
-                        <Bookmark size={24} fill={isSaved ? 'white' : 'none'} />
+                    <button 
+                        onClick={handleToggleSave} 
+                        className={`p-3 rounded-full border backdrop-blur-md transition-all active:scale-90 shadow-lg ${isSaved ? 'bg-orange-600/80 border-orange-500 text-white' : 'bg-white/10 border-white/10 text-white hover:bg-white/20'}`}
+                    >
+                        <Bookmark size={22} fill={isSaved ? 'white' : 'none'} />
                     </button>
                 </div>
             </div>
 
-            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-20 max-w-7xl mx-auto w-full z-10">
+            {/* Content Overlay */}
+            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16 max-w-7xl mx-auto w-full z-10 pb-20">
                 <div 
                     className="max-w-4xl space-y-6 animate-fade-in"
                     style={{ transform: `translateY(${scrollY * -0.1}px)` }}
                 >
                     <div className="flex flex-wrap items-center gap-3">
-                        <span className="bg-orange-600 text-white text-[10px] font-black px-4 py-1.5 rounded-sm uppercase tracking-widest">
+                        <span className="bg-orange-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(249,115,22,0.6)]">
                             {movie.access_type === 'premium' ? 'PREMIUM' : 'BEPUL'}
                         </span>
-                        <div className="flex items-center gap-1.5 bg-black/80 border border-white/10 px-3 py-1.5 rounded-sm">
-                            <Star size={14} className="text-yellow-500 fill-yellow-500"/>
-                            <span className="font-bold text-sm">{movie.rating?.toFixed(1) || '0.0'}</span>
+                        <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full">
+                            <Star size={14} className="text-yellow-400 fill-yellow-400"/>
+                            <span className="font-bold text-sm text-white">{movie.rating?.toFixed(1) || '0.0'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-xs font-bold text-white">
+                            <span className="uppercase">{movie.quality}</span>
                         </div>
                     </div>
 
-                    <h1 className="text-4xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9] drop-shadow-2xl">
+                    <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-[0.95] drop-shadow-2xl text-white">
                         {movie.title}
                     </h1>
                     
-                    <p className="text-zinc-300 text-sm md:text-xl leading-relaxed font-medium max-w-2xl line-clamp-3 md:line-clamp-none opacity-90 drop-shadow-lg border-l-4 border-orange-600 pl-6">
-                        {movie.plot}
-                    </p>
+                    <div className="pt-2">
+                        <p className="text-gray-200 text-sm md:text-lg leading-relaxed font-medium max-w-3xl line-clamp-4 md:line-clamp-none opacity-90 drop-shadow-lg border-l-4 border-orange-500 pl-5">
+                            {movie.plot}
+                        </p>
+                    </div>
                     
-                    <div className="flex flex-col sm:flex-row gap-4 pt-8">
+                    <div className="flex flex-col sm:flex-row gap-4 pt-6">
                         <button 
                             onClick={handlePlayClick}
-                            className={`px-16 py-6 rounded-sm font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-95 ${canWatch ? 'bg-white text-black hover:bg-orange-600 hover:text-white' : 'bg-zinc-800 text-zinc-500'}`}
+                            className={`h-14 px-10 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,255,255,0.2)] active:scale-95 border border-white/20 ${canWatch ? 'bg-white text-black hover:bg-gray-200' : 'bg-zinc-800/80 backdrop-blur text-zinc-400 border-zinc-700'}`}
                         >
-                            {canWatch ? <><Play fill="currentColor" size={20}/> HOZIR KO'RISH</> : <><Lock size={20}/> FAQAT PREMIUM</>}
+                            {canWatch ? <><Play fill="currentColor" size={24}/> Tomosha Qilish</> : <><Lock size={20}/> Premium Obuna</>}
                         </button>
                     </div>
-
-                    <div className="flex justify-center pt-10 animate-bounce opacity-40">
-                        <ChevronDown size={32} />
-                    </div>
                 </div>
+            </div>
+            
+            {/* Scroll Down Indicator */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce opacity-50 z-20">
+                <ChevronDown size={32} />
             </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-6" ref={contentRef}>
-            <div className="flex border-b border-white/5 mb-12 gap-10 overflow-x-auto scrollbar-hide pt-10 sticky top-16 bg-[#050505] z-50">
+            <div className="flex border-b border-white/5 mb-12 gap-10 overflow-x-auto scrollbar-hide pt-4 sticky top-0 bg-[#050505] z-50">
                 {[
                     { id: 'episodes', label: 'Qismlar', icon: <Play size={18}/> },
                     { id: 'details', label: 'Ma\'lumotlar', icon: <InfoIcon size={18}/> },
@@ -220,23 +236,25 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                             <div 
                                 key={ep.id} 
                                 onClick={handlePlayClick}
-                                className="group flex items-center justify-between p-6 bg-[#0f0f0f] border border-white/5 hover:border-orange-500/40 transition-all cursor-pointer rounded-sm hover:translate-y-[-4px] shadow-lg"
+                                className="group flex items-center justify-between p-6 bg-[#0f0f0f] border border-white/5 hover:border-orange-500/40 transition-all cursor-pointer rounded-2xl hover:translate-y-[-4px] shadow-lg"
                             >
                                 <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-zinc-900 flex items-center justify-center font-black text-zinc-600 group-hover:bg-orange-600 group-hover:text-white transition-all text-sm rounded-sm">
+                                    <div className="w-12 h-12 bg-zinc-900 rounded-xl flex items-center justify-center font-black text-zinc-600 group-hover:bg-orange-600 group-hover:text-white transition-all text-sm shadow-inner">
                                         {i + 1}
                                     </div>
                                     <div>
-                                        <span className="block font-black text-sm uppercase tracking-wider group-hover:text-orange-500 transition-colors">{ep.title}</span>
+                                        <span className="block font-black text-sm uppercase tracking-wider group-hover:text-orange-500 transition-colors text-white">{ep.title}</span>
                                         <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">24 min • FULL HD</span>
                                     </div>
                                 </div>
-                                <Play size={18} className="text-zinc-700 group-hover:text-orange-500 transition-colors" />
+                                <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-colors">
+                                    <Play size={16} fill="currentColor" className="ml-0.5" />
+                                </div>
                             </div>
                         )) : (
-                            <div className="col-span-full py-32 text-center bg-[#0f0f0f] border border-dashed border-zinc-800 rounded-sm">
+                            <div className="col-span-full py-32 text-center bg-[#0f0f0f] border border-dashed border-zinc-800 rounded-3xl">
                                 <p className="text-zinc-500 font-black uppercase tracking-[0.3em] text-sm">Pleyer orqali to'liq tomosha qiling</p>
-                                <button onClick={handlePlayClick} className="mt-6 px-10 py-4 bg-orange-600 text-white font-black text-[11px] uppercase tracking-widest hover:bg-orange-700 transition-all rounded-sm">Pleyerni ochish</button>
+                                <button onClick={handlePlayClick} className="mt-6 px-10 py-4 bg-orange-600 text-white font-black text-[11px] uppercase tracking-widest hover:bg-orange-700 transition-all rounded-xl shadow-lg">Pleyerni ochish</button>
                             </div>
                         )}
                     </div>
@@ -255,9 +273,9 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                             <div 
                                 key={idx} 
                                 onClick={() => item.isArtist && item.artistId && onArtistClick?.(item.artistId)}
-                                className={`bg-[#0f0f0f] p-8 border border-white/5 rounded-sm group transition-all ${item.isArtist ? 'hover:border-orange-500/50 cursor-pointer scale-105 shadow-xl' : ''}`}
+                                className={`bg-[#0f0f0f] p-8 border border-white/5 rounded-3xl group transition-all ${item.isArtist ? 'hover:border-orange-500/50 cursor-pointer scale-105 shadow-xl' : ''}`}
                             >
-                                <div className="text-orange-600 mb-4 group-hover:scale-110 transition-transform">{item.icon}</div>
+                                <div className="text-orange-600 mb-4 group-hover:scale-110 transition-transform bg-orange-600/10 w-12 h-12 rounded-full flex items-center justify-center">{item.icon}</div>
                                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">{item.label}</p>
                                 <p className={`font-black text-xl text-white uppercase tracking-tighter ${item.isArtist ? 'text-orange-500' : ''}`}>{item.val}</p>
                                 {item.isArtist && <span className="text-[8px] text-blue-400 font-bold mt-2 inline-block">PROFILNI KO'RISH &rarr;</span>}
@@ -266,12 +284,13 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     </div>
                 )}
                 
+                {/* Other tabs remain same */}
                 {activeTab === 'gallery' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
-                        <div className="relative group overflow-hidden rounded-sm border border-white/5 shadow-2xl">
+                        <div className="relative group overflow-hidden rounded-3xl border border-white/5 shadow-2xl">
                             <img src={movie.posterUrl} alt="Poster" className="w-full h-auto object-contain bg-zinc-900 transition-transform duration-1000 group-hover:scale-105" />
                         </div>
-                        <div className="flex flex-col justify-center space-y-8 p-10 bg-[#0f0f0f] border border-white/5 rounded-sm">
+                        <div className="flex flex-col justify-center space-y-8 p-10 bg-[#0f0f0f] border border-white/5 rounded-3xl">
                             <h4 className="text-3xl font-black uppercase tracking-tighter text-orange-500">{movie.title}</h4>
                             <p className="text-zinc-400 leading-relaxed text-lg">{movie.plot}</p>
                         </div>
@@ -280,9 +299,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
                 {activeTab === 'comments' && (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-fade-in">
-                        {/* FORM SECTION */}
                         <div className="lg:col-span-5">
-                            <div className="bg-[#0f0f0f] p-10 border border-white/5 rounded-[2rem] sticky top-32">
+                            <div className="bg-[#0f0f0f] p-10 border border-white/5 rounded-[2.5rem] sticky top-32">
                                 <h3 className="text-base font-black uppercase tracking-[0.3em] mb-8 text-orange-500">Sharh qoldirish</h3>
                                 <form onSubmit={handleReviewSubmit} className="space-y-6">
                                     <div className="space-y-3">
@@ -321,17 +339,16 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                             </div>
                         </div>
 
-                        {/* REVIEWS LIST */}
                         <div className="lg:col-span-7 space-y-6">
                             <h3 className="text-xl font-black uppercase tracking-tight text-white mb-8">Sharhlar ({reviews.length})</h3>
                             {reviews.length === 0 ? (
-                                <div className="text-center py-20 bg-[#0f0f0f] border border-dashed border-zinc-800 rounded-[2rem]">
+                                <div className="text-center py-20 bg-[#0f0f0f] border border-dashed border-zinc-800 rounded-[2.5rem]">
                                     <MessageCircle size={48} className="mx-auto text-zinc-800 mb-4" />
                                     <p className="text-zinc-600 font-bold uppercase tracking-widest">Hali sharhlar yo'q. Birinchi bo'ling!</p>
                                 </div>
                             ) : (
                                 reviews.map((rev) => (
-                                    <div key={rev.id} className="bg-[#0f0f0f] border border-white/5 p-8 rounded-[2rem] flex gap-6 hover:border-orange-500/20 transition-all">
+                                    <div key={rev.id} className="bg-[#0f0f0f] border border-white/5 p-8 rounded-[2.5rem] flex gap-6 hover:border-orange-500/20 transition-all">
                                         <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-white/5 overflow-hidden flex-shrink-0">
                                             {rev.profiles?.avatar_url ? (
                                                 <img src={rev.profiles.avatar_url} className="w-full h-full object-cover" alt="" />

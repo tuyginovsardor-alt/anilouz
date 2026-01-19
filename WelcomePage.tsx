@@ -47,34 +47,38 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
             alt="Background" 
             className="w-full h-full object-cover opacity-80"
           />
-          {/* Gradient Overlay: Pastdan tepaga qorayib borishi uchun */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/95"></div>
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/95"></div>
       </div>
 
       {/* 2. CONTENT (BOTTOM ALIGNED) */}
       <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-12 flex flex-col items-center text-center animate-slide-in-up">
           
-          {/* Logo & Text - No Frames/Borders on Logo */}
-          <div className="mb-8 max-w-md mx-auto">
-              <div className="flex justify-center mb-6">
+          {/* LOGO & TITLE BLOCK (Yonma-yon, dumaloq ramka, kichikroq format) */}
+          <div className="mb-10 flex flex-row items-center gap-5 bg-black/40 backdrop-blur-sm p-4 pr-8 rounded-full border border-white/10 shadow-2xl">
+              <div className="w-16 h-16 rounded-full bg-black border-2 border-orange-500 overflow-hidden shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center p-1 shrink-0">
                   {customLogo ? (
-                      <img src={customLogo} alt="Logo" className="w-24 h-24 object-contain drop-shadow-2xl" />
+                      <img src={customLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
                   ) : (
-                      <UzumakiLogo className="w-20 h-20 text-orange-500 drop-shadow-2xl" />
+                      <UzumakiLogo className="w-full h-full text-orange-500 drop-shadow-md" />
                   )}
               </div>
-              <h1 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tighter uppercase drop-shadow-xl">
-                  Anilo.uz
-              </h1>
-              <p className="text-gray-200 text-sm md:text-base font-bold leading-relaxed drop-shadow-md opacity-90">
-                  Sevimli animelaringiz. Barchasi bitta joyda. <br/>
-                  Cheksiz tomosha va yuqori sifat.
-              </p>
+              <div className="text-left">
+                  <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-xl" style={{ fontFamily: 'Impact, sans-serif' }}>
+                      ANILO<span className="text-orange-500">.UZ</span>
+                  </h1>
+                  <p className="text-[10px] text-gray-300 font-bold uppercase tracking-[0.3em] mt-1 opacity-90">
+                      Anime Olami
+                  </p>
+              </div>
           </div>
+
+          <p className="text-gray-200 text-xs md:text-sm font-bold leading-relaxed drop-shadow-md opacity-80 max-w-sm mb-8">
+              Sevimli animelaringiz. Barchasi bitta joyda. Cheksiz tomosha va yuqori sifat.
+          </p>
 
           {/* Buttons Container */}
           <div className="w-full max-w-xs space-y-4">
-              
               {/* Explore Free Trial */}
               <button 
                 onClick={() => setShowPremiumModal(true)}
@@ -86,7 +90,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
 
               {/* Log In Button */}
               <button 
-                onClick={onStart} // App.tsx da bu AuthModal ni ochadi
+                onClick={onStart} 
                 className="w-full py-4 bg-transparent border-2 border-white/20 text-white font-extrabold text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all active:scale-95 backdrop-blur-sm"
               >
                 Log In
