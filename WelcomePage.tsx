@@ -15,14 +15,17 @@ interface WelcomePageProps {
 export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
   const [customBg, setCustomBg] = useState<string | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
 
   useEffect(() => {
     const loadContent = async () => {
       try {
         const config = await getAppConfig();
-        // Admin paneldan "site_background" ni olish
         if (config['site_background']) {
           setCustomBg(config['site_background']);
+        }
+        if (config['site_logo']) {
+            setCustomLogo(config['site_logo']);
         }
       } catch (e) {
         console.error(e);
@@ -31,13 +34,13 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
     loadContent();
   }, []);
 
-  // Default fallback image (Agar bazada rasm bo'lmasa)
+  // Default fallback image
   const heroBg = customBg || 'https://i.imgur.com/sC56bsu.jpg';
 
   return (
     <div className="relative h-screen w-full bg-[#000000] overflow-hidden font-sans">
       
-      {/* 1. FULL SCREEN BACKGROUND IMAGE */}
+      {/* 1. FULL SCREEN BACKGROUND IMAGE (No Borders) */}
       <div className="absolute inset-0 z-0">
           <img 
             src={heroBg} 
@@ -45,52 +48,56 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
             className="w-full h-full object-cover opacity-80"
           />
           {/* Gradient Overlay: Pastdan tepaga qorayib borishi uchun */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/95"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/95"></div>
       </div>
 
-      {/* 2. CONTENT (BOTTOM CENTERED) */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-16 md:pb-24 flex flex-col items-center text-center animate-slide-in-up">
+      {/* 2. CONTENT (BOTTOM ALIGNED) */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-12 flex flex-col items-center text-center animate-slide-in-up">
           
-          {/* Logo & Text */}
-          <div className="mb-10 max-w-md mx-auto">
+          {/* Logo & Text - No Frames/Borders on Logo */}
+          <div className="mb-8 max-w-md mx-auto">
               <div className="flex justify-center mb-6">
-                  <UzumakiLogo className="w-20 h-20 text-orange-500" />
+                  {customLogo ? (
+                      <img src={customLogo} alt="Logo" className="w-24 h-24 object-contain drop-shadow-2xl" />
+                  ) : (
+                      <UzumakiLogo className="w-20 h-20 text-orange-500 drop-shadow-2xl" />
+                  )}
               </div>
-              <h1 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tighter uppercase drop-shadow-xl">
+              <h1 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tighter uppercase drop-shadow-xl">
                   Anilo.uz
               </h1>
-              <p className="text-gray-200 text-base md:text-lg font-medium leading-relaxed drop-shadow-md">
+              <p className="text-gray-200 text-sm md:text-base font-bold leading-relaxed drop-shadow-md opacity-90">
                   Sevimli animelaringiz. Barchasi bitta joyda. <br/>
                   Cheksiz tomosha va yuqori sifat.
               </p>
           </div>
 
           {/* Buttons Container */}
-          <div className="w-full max-w-sm space-y-4">
+          <div className="w-full max-w-xs space-y-4">
               
-              {/* Explore Free Trial (Premium Modal) */}
+              {/* Explore Free Trial */}
               <button 
                 onClick={() => setShowPremiumModal(true)}
-                className="w-full py-4 bg-[#f4b308] hover:bg-[#eab308] text-black font-extrabold text-sm uppercase tracking-widest transition-transform active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-yellow-500/20 clip-path-slant"
-                style={{ clipPath: 'polygon(2% 0, 100% 0, 98% 100%, 0% 100%)' }}
+                className="w-full py-4 bg-[#f4b308] hover:bg-[#eab308] text-black font-extrabold text-xs uppercase tracking-widest transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(244,179,8,0.4)] clip-path-slant"
+                style={{ clipPath: 'polygon(4% 0, 100% 0, 96% 100%, 0% 100%)' }}
               >
-                <Crown size={20} fill="black" /> Explore Free Trial
+                <Crown size={18} fill="black" /> Explore Free Trial
               </button>
 
               {/* Log In Button */}
               <button 
                 onClick={onStart} // App.tsx da bu AuthModal ni ochadi
-                className="w-full py-4 bg-black/60 backdrop-blur-md border border-white/30 text-white font-extrabold text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all active:scale-95"
+                className="w-full py-4 bg-transparent border-2 border-white/20 text-white font-extrabold text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all active:scale-95 backdrop-blur-sm"
               >
                 Log In
               </button>
           </div>
 
           {/* Create Account Link */}
-          <div className="mt-8">
+          <div className="mt-6">
               <button 
                 onClick={onStart} 
-                className="text-orange-500 text-xs font-bold hover:text-orange-400 transition-colors uppercase tracking-[0.2em]"
+                className="text-orange-500 text-[10px] font-black hover:text-orange-400 transition-colors uppercase tracking-[0.2em]"
               >
                 Create Account
               </button>

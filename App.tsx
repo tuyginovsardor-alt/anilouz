@@ -22,6 +22,7 @@ import { supabase } from './services/supabaseClient';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
 import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag, LayoutGrid, Layers } from 'lucide-react';
+import { getAppConfig } from './services/dbService';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
@@ -37,7 +38,7 @@ const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAppReady, setIsAppReady] = useState(false); // Global Loading State
 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -56,13 +57,20 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
         try {
+            // 1. Config va Logo yuklash
+            await getAppConfig(); 
+            
+            // 2. Auth tekshirish
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 setIsAuthenticated(true);
-                fetchUserRole(session.user.id);
+                await fetchUserRole(session.user.id);
             }
         } catch (e) { console.error(e); }
-        finally { setIsCheckingAuth(false); }
+        finally { 
+            // Hammasi yuklangach, App ni ochamiz
+            setIsAppReady(true); 
+        }
     };
     initApp();
 
@@ -86,6 +94,12 @@ const App: React.FC = () => {
 
   const handleNavigation = (targetPage: Page) => {
     setPage(targetPage);
+    
+    // Agar Dashboardga o'tilayotgan bo'lsa, uni bosh sahifasiga (main) reset qilamiz
+    if (targetPage === 'dashboard') {
+        setDashboardPage('main');
+    }
+
     setSelectedMovie(null);
     setSelectedArtistId(null);
     setIsPlayerActive(false);
@@ -113,7 +127,15 @@ const App: React.FC = () => {
       setDashboardPage('profile');
   };
 
-  if (isCheckingAuth) return <div className="h-screen bg-[#050505] flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  // GLOBAL LOADING SCREEN
+  if (!isAppReady) return (
+      <div className="h-screen bg-[#000000] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+              {/* <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest animate-pulse">Yuklanmoqda...</p> */}
+          </div>
+      </div>
+  );
 
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
@@ -188,14 +210,17 @@ const App: React.FC = () => {
                 <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-4 border-t border-zinc-900 pb-2">
                     {[
                         { id: 'dashboard', label: 'Asosiy', icon: <Home size={24} />, active: page === 'dashboard' && dashboardPage === 'main' },
-                        { id: 'catalog', label: 'Katalog', icon: <Layers size={24} />, active: page === 'catalog' }, // Replaced Shop with Catalog
+                        { id: 'catalog', label: 'Katalog', icon: <Layers size={24} />, active: page === 'catalog' },
                         { id: 'studio', label: 'Studio', icon: <LayoutGrid size={24} />, active: page === 'studio' }, 
                         { id: 'profile', label: 'Profil', icon: <User size={24} />, active: page === 'dashboard' && dashboardPage === 'profile' },
                     ].map(item => (
                         <button 
                             key={item.id}
                             onClick={() => {
-                                if (item.id === 'dashboard') handleNavigation('dashboard');
+                                if (item.id === 'dashboard') {
+                                    handleNavigation('dashboard');
+                                    setDashboardPage('main'); // FORCE RESET TO MAIN
+                                }
                                 else if (item.id === 'catalog') handleNavigation('catalog');
                                 else if (item.id === 'studio') handleNavigation('studio');
                                 else if (item.id === 'profile') handleDashboardNavigation('profile');
