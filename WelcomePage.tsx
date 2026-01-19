@@ -7,22 +7,26 @@ import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 
 interface WelcomePageProps {
-  onMovieClick: (movie: Movie) => void; // Kechiktirilgan (hozircha ishlatilmaydi, lekin prop qolishi kerak)
+  onMovieClick: (movie: Movie) => void;
   onSearch: (query: string) => void;
-  onStart: () => void; // Bu Login modalni ochish uchun ishlatiladi (App.tsx da bog'lanadi)
+  onStart: () => void;
 }
 
 export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
   const [customBg, setCustomBg] = useState<string | null>(null);
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
     const loadContent = async () => {
       try {
         const config = await getAppConfig();
-        // Admin paneldan "site_background" ni olish
+        // Admin paneldan "site_background" va "site_logo" ni olish
         if (config['site_background']) {
           setCustomBg(config['site_background']);
+        }
+        if (config['site_logo']) {
+          setCustomLogo(config['site_logo']);
         }
       } catch (e) {
         console.error(e);
@@ -31,7 +35,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
     loadContent();
   }, []);
 
-  // Default fallback image agar admin panelda rasm bo'lmasa
+  // Default fallback image
   const heroBg = customBg || 'https://i.imgur.com/sC56bsu.jpg';
 
   const handleExplorePremium = () => {
@@ -46,63 +50,74 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
           <img 
             src={heroBg} 
             alt="Background" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover animate-fade-in"
           />
-          {/* Gradient Overlay: Pastdan qorayib kelishi uchun */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90"></div>
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/95"></div>
       </div>
 
       {/* 2. CONTENT (BOTTOM) */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-12 flex flex-col items-center text-center animate-slide-in-up">
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-16 flex flex-col items-center text-center animate-slide-in-up">
           
-          {/* Logo & Text */}
-          <div className="mb-8">
-              <div className="flex justify-center mb-4">
-                  <UzumakiLogo className="w-16 h-16 text-orange-500" />
+          {/* Logo & Text Section */}
+          <div className="mb-10 flex flex-col items-center">
+              <div className="flex items-center gap-3 mb-2">
+                  {/* Logotip (Bazadan yoki Default) */}
+                  {customLogo ? (
+                      <img src={customLogo} alt="Logo" className="w-12 h-12 object-contain drop-shadow-lg" />
+                  ) : (
+                      <div className="w-12 h-12">
+                          <UzumakiLogo />
+                      </div>
+                  )}
+                  
+                  <h1 className="text-4xl font-black text-white tracking-tighter drop-shadow-xl uppercase italic">
+                      Anilo.uz
+                  </h1>
               </div>
-              <h1 className="text-3xl font-black text-white mb-2 tracking-wide">Anilo.uz</h1>
-              <p className="text-gray-300 text-sm font-medium">
-                  Sevimli animelaringiz. Barchasi bitta joyda.
+              
+              <p className="text-gray-300 text-sm font-medium tracking-wide max-w-xs leading-relaxed">
+                  Sevimli animelaringiz. <br/> Barchasi bitta joyda.
               </p>
           </div>
 
           {/* Buttons */}
-          <div className="w-full max-w-sm space-y-3">
+          <div className="w-full max-w-xs space-y-4">
               {/* Explore Free Trial (Premium) */}
               <button 
                 onClick={handleExplorePremium}
-                className="w-full py-3.5 bg-[#f4b308] hover:bg-[#eab308] text-black font-bold text-sm uppercase tracking-wider rounded-none clip-path-slant transition-transform active:scale-95 flex items-center justify-center gap-2"
-                style={{ clipPath: 'polygon(5% 0, 100% 0, 95% 100%, 0% 100%)' }} // Qiya burchakli stil (Crunchyroll style)
+                className="w-full py-4 bg-[#f4b308] hover:bg-[#eab308] text-black font-black text-sm uppercase tracking-widest transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(244,179,8,0.4)] clip-path-slant"
+                style={{ clipPath: 'polygon(5% 0, 100% 0, 95% 100%, 0% 100%)' }}
               >
                 <Crown size={18} fill="black" /> Explore Free Trial
               </button>
 
               {/* Log In Button */}
               <button 
-                onClick={onStart} // App.tsx da bu AuthModal ni ochadi
-                className="w-full py-3.5 bg-transparent border-2 border-white text-white font-bold text-sm uppercase tracking-wider hover:bg-white hover:text-black transition-all active:scale-95"
+                onClick={onStart}
+                className="w-full py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-black text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all active:scale-95"
               >
-                Log In
+                Tizimga Kirish
               </button>
           </div>
 
           {/* Create Account Link */}
           <button 
             onClick={onStart} 
-            className="mt-6 text-orange-500 text-sm font-bold hover:text-orange-400 transition-colors uppercase tracking-widest"
+            className="mt-8 text-white/50 text-xs font-bold hover:text-white transition-colors uppercase tracking-widest border-b border-transparent hover:border-white pb-0.5"
           >
-            Create Account
+            Ro'yxatdan o'tish
           </button>
       </div>
 
       {/* Premium Modal Popup */}
       {showPremiumModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in" onClick={() => setShowPremiumModal(false)}>
-              <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setShowPremiumModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white">✕</button>
-                  <div className="p-6">
-                      <h2 className="text-2xl font-black text-white text-center mb-6 flex items-center justify-center gap-2">
-                          <Crown className="text-[#f4b308]" /> Premium
+              <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => setShowPremiumModal(false)} className="absolute top-4 right-4 p-2 bg-white/10 rounded-full text-zinc-400 hover:text-white transition-colors">✕</button>
+                  <div className="p-8">
+                      <h2 className="text-3xl font-black text-white text-center mb-8 flex items-center justify-center gap-2">
+                          <Crown className="text-[#f4b308] fill-current" /> Premium
                       </h2>
                       <SubscriptionPlans />
                   </div>
