@@ -127,8 +127,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   return (
     <div className="bg-[#050505] min-h-screen text-white pb-32 overflow-x-hidden">
         
-        {/* PARALLAX HERO SECTION */}
-        <div className="relative w-full h-[85vh] md:h-[95vh] overflow-hidden">
+        {/* HERO SECTION - FULL HEIGHT */}
+        <div className="relative w-full h-[100vh] overflow-hidden">
             {/* Background Image - Full Coverage */}
             <div 
                 className="absolute inset-0 z-0 will-change-transform"
@@ -138,35 +138,35 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 }}
             >
                 <img src={movie.posterUrl} alt="" className="w-full h-full object-cover" />
-                {/* Gradient faqat pastdan, tepasi ochiq qoladi rasm ko'rinishi uchun */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent"></div>
-                {/* Tepadagi gradient faqat ikonkalarni ko'rsatish uchun juda yupqa */}
-                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
+                {/* Gradient faqat pastdan */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent"></div>
+                {/* Gradient tepadan juda yupqa, matn o'qilishi uchun emas, shunchaki estetika */}
+                <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/40 to-transparent pointer-events-none"></div>
             </div>
 
-            {/* Transparent Header Icons (No Background Frame) */}
-            <div className="fixed top-0 left-0 right-0 p-4 md:p-6 flex justify-between items-center z-[100] animate-fade-in">
+            {/* Transparent Header Icons (Absolute Positioning at Top) */}
+            <div className="absolute top-0 left-0 right-0 pt-6 px-4 md:px-8 flex justify-between items-center z-[100] animate-fade-in">
                 <button 
                     onClick={onBack} 
-                    className="p-2 text-white hover:text-orange-500 transition-colors active:scale-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                    className="p-2 text-white hover:text-orange-500 transition-colors active:scale-90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                 >
-                    <ArrowLeft size={28} strokeWidth={2.5} />
+                    <ArrowLeft size={32} strokeWidth={2.5} />
                 </button>
                 <div className="flex gap-4">
-                    <button className="p-2 text-white hover:text-orange-500 transition-colors active:scale-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                        <Share2 size={26} strokeWidth={2.5} />
+                    <button className="p-2 text-white hover:text-orange-500 transition-colors active:scale-90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                        <Share2 size={28} strokeWidth={2.5} />
                     </button>
                     <button 
                         onClick={handleToggleSave} 
-                        className={`p-2 transition-colors active:scale-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${isSaved ? 'text-orange-500' : 'text-white hover:text-orange-500'}`}
+                        className={`p-2 transition-colors active:scale-90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] ${isSaved ? 'text-orange-500' : 'text-white hover:text-orange-500'}`}
                     >
-                        <Bookmark size={26} strokeWidth={2.5} fill={isSaved ? 'currentColor' : 'none'} />
+                        <Bookmark size={28} strokeWidth={2.5} fill={isSaved ? 'currentColor' : 'none'} />
                     </button>
                 </div>
             </div>
 
             {/* Content Overlay */}
-            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16 max-w-7xl mx-auto w-full z-10 pb-20">
+            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16 max-w-7xl mx-auto w-full z-10 pb-32">
                 <div 
                     className="max-w-4xl space-y-6 animate-fade-in"
                     style={{ transform: `translateY(${scrollY * -0.1}px)` }}
@@ -184,12 +184,12 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         </div>
                     </div>
 
-                    <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-[0.95] drop-shadow-2xl text-white">
+                    <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9] drop-shadow-2xl text-white">
                         {movie.title}
                     </h1>
                     
                     <div className="pt-2">
-                        <p className="text-gray-200 text-sm md:text-lg leading-relaxed font-medium max-w-3xl line-clamp-4 md:line-clamp-none opacity-90 drop-shadow-lg border-l-4 border-orange-500 pl-5">
+                        <p className="text-gray-200 text-sm md:text-lg leading-relaxed font-medium max-w-3xl line-clamp-3 md:line-clamp-none opacity-90 drop-shadow-lg pl-1">
                             {movie.plot}
                         </p>
                     </div>
@@ -197,7 +197,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     <div className="flex flex-col sm:flex-row gap-4 pt-6">
                         <button 
                             onClick={handlePlayClick}
-                            className={`h-14 px-10 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,255,255,0.2)] active:scale-95 border border-white/20 ${canWatch ? 'bg-white text-black hover:bg-gray-200' : 'bg-zinc-800/80 backdrop-blur text-zinc-400 border-zinc-700'}`}
+                            className={`h-14 px-12 rounded-full font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,255,255,0.3)] active:scale-95 border-2 ${canWatch ? 'bg-white text-black border-white hover:bg-gray-200' : 'bg-black/60 backdrop-blur text-white border-white/30'}`}
                         >
                             {canWatch ? <><Play fill="currentColor" size={24}/> Tomosha Qilish</> : <><Lock size={20}/> Premium Obuna</>}
                         </button>
@@ -206,8 +206,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
             </div>
             
             {/* Scroll Down Indicator */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce opacity-50 z-20">
-                <ChevronDown size={32} />
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce opacity-60 z-20">
+                <ChevronDown size={36} />
             </div>
         </div>
 
@@ -231,6 +231,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 ))}
             </div>
 
+            {/* TAB CONTENTS (Same as before) */}
             <div className="animate-fade-in min-h-[500px]">
                 {activeTab === 'episodes' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -286,7 +287,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     </div>
                 )}
                 
-                {/* Other tabs remain same */}
                 {activeTab === 'gallery' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
                         <div className="relative group overflow-hidden rounded-3xl border border-white/5 shadow-2xl">

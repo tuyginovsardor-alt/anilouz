@@ -17,6 +17,11 @@ interface SearchPageProps {
 
 const ITEMS_PER_PAGE = 20;
 
+const SEARCH_CATEGORIES = [
+    'Action', 'Sarguzasht', 'Komediya', 'Drama', 'Fantastika', 
+    'Romantika', 'Qo\'rqinchli', 'Detektiv', 'Sport', 'Psixologik', 'Triller', 'Musiqiy'
+];
+
 export const SearchPage: React.FC<SearchPageProps> = ({ initialQuery, onNewSearch, onMovieClick }) => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -70,6 +75,11 @@ export const SearchPage: React.FC<SearchPageProps> = ({ initialQuery, onNewSearc
       fetchAd();
   }, []);
 
+  const handleCategoryClick = (category: string) => {
+      onNewSearch(category);
+      performSearch(category);
+  };
+
   // Pagination Logic
   const totalPages = Math.ceil(movies.length / ITEMS_PER_PAGE);
   const currentMovies = movies.slice(
@@ -84,14 +94,32 @@ export const SearchPage: React.FC<SearchPageProps> = ({ initialQuery, onNewSearc
 
   return (
     <>
-      <div className="max-w-2xl mx-auto mb-10 mt-4 px-4">
-        <SearchBar onSearch={onNewSearch} isLoading={isLoading} />
+      <div className="max-w-2xl mx-auto mt-4 px-4">
+        <SearchBar onSearch={performSearch} isLoading={isLoading} />
       </div>
+      
+      {/* GENRES / CATEGORIES GRID */}
+      {!searched && !isLoading && (
+          <div className="max-w-3xl mx-auto px-4 mt-8">
+              <h3 className="text-white font-bold text-lg mb-4 pl-2 border-l-4 border-orange-500">Kategoriyalar</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {SEARCH_CATEGORIES.map((cat) => (
+                      <button
+                          key={cat}
+                          onClick={() => handleCategoryClick(cat)}
+                          className="bg-[#1a1a1a] hover:bg-orange-600/20 hover:border-orange-500/50 border border-white/5 rounded-xl py-3 px-4 text-center text-sm font-bold text-gray-300 hover:text-white transition-all active:scale-95"
+                      >
+                          {cat}
+                      </button>
+                  ))}
+              </div>
+          </div>
+      )}
       
       {ad && <AdBanner ad={ad} onClose={() => setAd(null)} />}
 
       {searched && !isLoading && (
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 mt-8">
             <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
                 Qidiruv Natijalari
             </h2>
@@ -113,7 +141,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ initialQuery, onNewSearc
 
       {!isLoading && movies.length > 0 && (
         <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-6 md:gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-6 md:gap-8 px-4 mt-6">
                 {currentMovies.map((movie) => (
                 <MovieCard
                     key={`${movie.title}-${movie.id}-search`}

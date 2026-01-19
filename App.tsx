@@ -23,6 +23,7 @@ import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
 import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag, LayoutGrid, Layers } from 'lucide-react';
 import { getAppConfig } from './services/dbService';
+import { UzumakiLogo } from './components/icons/UzumakiLogo'; // Import logo
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
@@ -68,8 +69,8 @@ const App: React.FC = () => {
             }
         } catch (e) { console.error(e); }
         finally { 
-            // Hammasi yuklangach, App ni ochamiz
-            setIsAppReady(true); 
+            // Simulate minimal splash duration for better UX
+            setTimeout(() => setIsAppReady(true), 1500); 
         }
     };
     initApp();
@@ -127,13 +128,26 @@ const App: React.FC = () => {
       setDashboardPage('profile');
   };
 
-  // GLOBAL LOADING SCREEN
+  // GLOBAL LOADING SCREEN (CRUNCHYROLL STYLE)
   if (!isAppReady) return (
-      <div className="h-screen bg-[#000000] flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-4 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-              {/* <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest animate-pulse">Yuklanmoqda...</p> */}
+      <div className="h-screen w-full bg-[#000000] flex flex-col items-center justify-center relative overflow-hidden">
+          {/* Central Logo */}
+          <div className="flex flex-col items-center gap-4 animate-fade-in">
+              <UzumakiLogo className="w-20 h-20 text-orange-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse" />
+              <h1 className="text-3xl font-black text-white tracking-widest uppercase mt-2">ANILO</h1>
           </div>
+          
+          {/* Bottom Loading Bar */}
+          <div className="absolute bottom-20 w-48 h-1 bg-zinc-900 rounded-full overflow-hidden">
+              <div className="h-full bg-orange-600 animate-[loading_1.5s_ease-in-out_infinite]"></div>
+          </div>
+          
+          <style>{`
+            @keyframes loading {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+          `}</style>
       </div>
   );
 
