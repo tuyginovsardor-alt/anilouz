@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Mic, Search, Star, ChevronRight, Film, TrendingUp, Sparkles } from 'lucide-react';
+import { Mic, Search, Star, ChevronRight, Film, TrendingUp, Sparkles, User, Play } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { UserProfile, Movie } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -22,11 +23,10 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onArtistClick, onMovieCl
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [artistsRes, moviesRes] = await Promise.all([
-                    supabase.from('profiles').select('*').eq('role', 'dub'),
-                    getMovies()
-                ]);
-                setArtists((artistsRes.data || []) as UserProfile[]);
+                // Fetch users with 'dub' role
+                const { data: artistsData } = await supabase.from('profiles').select('*').eq('role', 'dub');
+                const moviesRes = await getMovies();
+                setArtists((artistsData || []) as UserProfile[]);
                 setAllMovies(moviesRes);
             } catch (e) {
                 console.error(e);
@@ -50,98 +50,105 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onArtistClick, onMovieCl
     if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
 
     return (
-        <div className="bg-[#050505] min-h-screen text-white pb-32 animate-fade-in">
-            {/* HERO SECTION - SOLID & BOLD */}
-            <div className="bg-zinc-900 border-b border-zinc-800 py-16 md:py-24 px-6 mb-16">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
-                    <div className="space-y-6 text-center md:text-left">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-                            <Sparkles size={14} /> Creative Community
+        <div className="bg-[#050505] min-h-screen text-white pb-32 animate-fade-in font-sans">
+            {/* STUDIO HEADER */}
+            <div className="relative h-[300px] flex items-center bg-[#0a0a0a] border-b border-white/5 overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://i.imgur.com/8y9q1Xh.jpg')] bg-cover bg-center opacity-20"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
+                
+                <div className="container mx-auto px-6 relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+                    <div className="text-center md:text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-600/20 text-purple-400 rounded-full border border-purple-600/30 text-[10px] font-black uppercase tracking-widest mb-4">
+                            <Mic size={14} /> Professional Dublyaj
                         </div>
-                        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter leading-none">
-                            ANILO <span className="text-orange-600">STUDIO</span>
+                        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white mb-2">
+                            Fundublar <span className="text-purple-600">Studio</span>
                         </h1>
-                        <p className="text-zinc-500 font-bold uppercase tracking-[0.4em] text-xs">O'zbek dublyaj ustalari va ijodkorlar maskani</p>
+                        <p className="text-zinc-400 font-bold uppercase tracking-[0.2em] text-xs">O'zbek tilidagi eng sara ovozlar</p>
                     </div>
-
-                    <div className="w-full md:w-96 bg-black border border-zinc-700 p-8 rounded-3xl shadow-2xl">
-                        <p className="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4">Ustalarni qidiring</p>
+                    
+                    {/* Search Artists Widget */}
+                    <div className="bg-black/50 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] w-full md:w-96 shadow-2xl">
                         <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
                             <input 
                                 type="text" 
                                 value={artistSearch}
                                 onChange={e => setArtistSearch(e.target.value)}
-                                placeholder="Ism yoki username..."
-                                className="w-full bg-zinc-900 border border-zinc-800 py-4 pl-12 pr-6 rounded-2xl text-white focus:border-orange-500 outline-none transition-all"
+                                placeholder="Dublyaj ustasini qidirish..."
+                                className="w-full bg-[#151515] border border-white/10 py-4 pl-12 pr-6 rounded-xl text-white text-sm focus:border-purple-500 outline-none transition-all placeholder:text-zinc-600 font-medium"
                             />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 space-y-24">
+            <div className="container mx-auto px-4 mt-16 space-y-20">
                 
-                {/* ARTISTS LIST */}
+                {/* ARTISTS GRID */}
                 <section>
-                    <div className="flex items-center gap-4 mb-10">
-                        <div className="w-1.5 h-10 bg-orange-600 rounded-full"></div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter">Ovoz Ustalarimiz</h2>
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
+                            <User size={20} />
+                        </div>
+                        <h2 className="text-2xl font-black uppercase tracking-tighter">Bizning Jamoa</h2>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {filteredArtists.length === 0 && (
+                            <div className="col-span-full py-10 text-center text-zinc-500 text-sm font-bold uppercase">Hozircha artistlar yo'q</div>
+                        )}
                         {filteredArtists.map(artist => (
                             <div 
                                 key={artist.id}
                                 onClick={() => onArtistClick(artist.id)}
-                                className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-orange-600/50 transition-all cursor-pointer group"
+                                className="group relative bg-[#0f0f0f] border border-white/5 rounded-[2.5rem] overflow-hidden cursor-pointer hover:border-purple-500/50 transition-all hover:-translate-y-2 shadow-xl"
                             >
-                                <div className="flex items-center gap-5">
-                                    <div className="w-16 h-16 rounded-2xl bg-black border border-zinc-800 overflow-hidden group-hover:scale-105 transition-transform">
-                                        {artist.avatar_url ? (
-                                            <img src={artist.avatar_url} className="w-full h-full object-cover" alt="" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-zinc-800"><Mic className="text-zinc-600"/></div>
-                                        )}
+                                <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
+                                <div className="p-8 flex flex-col items-center text-center relative z-10">
+                                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-purple-500 to-blue-500 mb-4 shadow-xl">
+                                        <div className="w-full h-full rounded-full bg-black overflow-hidden p-1">
+                                            {artist.avatar_url ? (
+                                                <img src={artist.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-600"><User size={32}/></div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <h3 className="font-black text-white uppercase tracking-tight truncate">{artist.full_name}</h3>
-                                        <p className="text-orange-500 text-xs font-bold">@{artist.username}</p>
+                                    <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1">{artist.full_name}</h3>
+                                    <p className="text-purple-500 text-[10px] font-bold uppercase tracking-widest">@{artist.username}</p>
+                                    
+                                    <div className="mt-6 flex items-center gap-4 text-xs font-bold text-zinc-500 bg-black/40 px-4 py-2 rounded-full border border-white/5">
+                                        <div className="flex items-center gap-1"><Star size={12} className="text-yellow-500 fill-yellow-500"/> 4.9</div>
+                                        <div className="w-1 h-3 bg-zinc-700 rounded-full"></div>
+                                        <div>{artist.fans_count || 0} Fans</div>
                                     </div>
-                                </div>
-                                <div className="mt-6 pt-6 border-t border-zinc-800 flex justify-between items-center">
-                                    <div className="flex items-center gap-1.5 text-zinc-500">
-                                        <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">4.9</span>
-                                    </div>
-                                    <ChevronRight size={18} className="text-zinc-700 group-hover:text-orange-500 transition-colors" />
                                 </div>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                {/* DUBBED CONTENT CATALOGUE */}
-                <section id="catalogue" className="pb-20">
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
-                        <div>
-                            <div className="flex items-center gap-4 mb-2">
-                                <div className="w-1.5 h-10 bg-blue-600 rounded-full"></div>
-                                <h2 className="text-3xl font-black uppercase tracking-tighter">Dublyaj Katalogi</h2>
+                {/* WORK CATALOGUE */}
+                <section>
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                                <Play size={20} fill="white" />
                             </div>
-                            <p className="text-zinc-500 font-bold uppercase tracking-[0.2em] text-[10px]">Barcha o'zbek tilidagi animelar</p>
+                            <div>
+                                <h2 className="text-2xl font-black uppercase tracking-tighter">Dublyaj Katalogi</h2>
+                                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Studiya tomonidan tayyorlangan</p>
+                            </div>
                         </div>
-
-                        <div className="relative w-full md:w-80">
-                            <input 
-                                type="text" 
-                                value={movieSearch}
-                                onChange={e => setMovieSearch(e.target.value)}
-                                placeholder="Katalogni qidirish..."
-                                className="w-full bg-zinc-900 border border-zinc-800 py-3 px-12 rounded-full text-sm focus:border-blue-500 outline-none transition-all"
-                            />
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                        </div>
+                        
+                        <input 
+                            type="text" 
+                            value={movieSearch}
+                            onChange={e => setMovieSearch(e.target.value)}
+                            placeholder="Katalogni qidirish..."
+                            className="w-full md:w-64 bg-[#0f0f0f] border border-zinc-800 py-3 px-6 rounded-full text-white text-xs font-bold focus:border-blue-500 outline-none"
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12">
@@ -153,12 +160,6 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onArtistClick, onMovieCl
                                 onClick={() => onMovieClick(movie)} 
                             />
                         ))}
-                        {filteredMovies.length === 0 && (
-                            <div className="col-span-full py-20 text-center bg-zinc-900/50 rounded-3xl border-2 border-dashed border-zinc-800">
-                                <Film size={48} className="mx-auto text-zinc-800 mb-4" />
-                                <p className="text-zinc-600 font-black uppercase tracking-widest">Hech nima topilmadi</p>
-                            </div>
-                        )}
                     </div>
                 </section>
             </div>

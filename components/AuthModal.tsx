@@ -7,6 +7,7 @@ import { GoogleIcon } from './icons/GoogleIcon';
 import { supabase } from '../services/supabaseClient';
 import { checkAndTrackRegistration, logDeviceLogin } from '../services/dbService';
 import { LegalDocs } from './LegalDocs';
+import { Eye, EyeOff, Lock, Mail, User, ShieldCheck } from 'lucide-react';
 
 interface AuthModalProps {
     onClose: () => void;
@@ -17,31 +18,26 @@ type AuthMode = 'login' | 'register';
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) => {
     const [mode, setMode] = useState<AuthMode>('login');
-    const [registerStep, setRegisterStep] = useState(1); // 1: Creds, 2: OTP, 3: Profile
+    const [registerStep, setRegisterStep] = useState(1); 
     const [loading, setLoading] = useState(false);
     
     // Form States
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [verificationCode, setVerificationCode] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [username, setUsername] = useState('');
     
-    // Agreement States
+    // Legal
     const [agreePrivacy, setAgreePrivacy] = useState(false);
     const [agreeSecurity, setAgreeSecurity] = useState(false);
     const [agreeTerms, setAgreeTerms] = useState(false);
-
-    // Document Viewer State
     const [viewingDoc, setViewingDoc] = useState<LegalDocType | null>(null);
 
-    // Resend Timer
     const [resendTimer, setResendTimer] = useState(0);
-    
-    // Device Identifier
     const [deviceId, setDeviceId] = useState('');
-    
     const { addNotification } = useNotification();
 
     useEffect(() => {
@@ -68,7 +64,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
             if (error) throw error;
             await finalizeLogin(data.user.id);
         } catch (error: any) {
-            addNotification({ type: 'error', title: 'Kirishda xatolik', message: error.message || 'Email yoki parol noto\'g\'ri.' });
+            addNotification({ type: 'error', title: 'Xatolik', message: error.message || 'Email yoki parol noto\'g\'ri.' });
         } finally {
             setLoading(false);
         }
@@ -78,14 +74,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: {
-                    redirectTo: window.location.origin
-                }
+                options: { redirectTo: window.location.origin }
             });
             if (error) throw error;
-            // Redirect happens automatically
         } catch (error: any) {
-            console.error("Google login error:", error);
             addNotification({ type: 'error', title: 'Google Xatolik', message: 'Google orqali kirishda xatolik yuz berdi.' });
         }
     };
@@ -94,14 +86,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single();
         try {
             await logDeviceLogin(userId, deviceId);
-            addNotification({ type: 'info', title: 'Yangi Seans', message: 'Qurilma ro\'yxatga olindi.' });
         } catch (logError: any) {
             if (logError.message.includes('bloklangan')) {
                 await supabase.auth.signOut();
                 throw logError;
             }
         }
-        // Fix: Use optional chaining and cast to any for role access as profile might be null or have missing fields in type Database
         const role = (profile as any)?.role || 'user';
         onAuthSuccess(role);
         addNotification({ type: 'success', title: 'Muvaffaqiyatli!', message: `Xush kelibsiz!` });
@@ -109,58 +99,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
 
     const handleRegisterStep1 = async (e: React.FormEvent) => {
         e.preventDefault();
-        
         if (!agreePrivacy || !agreeSecurity || !agreeTerms) {
-            addNotification({ type: 'warning', title: 'Rozilik Kerak', message: 'Iltimos, barcha qoidalar va shartlarga rozilik bildiring.' });
+            addNotification({ type: 'warning', title: 'Rozilik Kerak', message: 'Barcha qoidalarga rozilik bildiring.' });
             return;
         }
-
-        if (!email || password.length < 6) {
-            addNotification({ type: 'warning', title: 'Diqqat', message: 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak.' });
-            return;
-        }
+        if (!email || password.length < 6) return;
 
         setLoading(true);
         try {
-            // 1. Device Check
             const { count } = await checkAndTrackRegistration(deviceId);
-            if (count >= 3) {
-                addNotification({ type: 'warning', title: 'Ogohlantirish', message: 'Juda ko\'p hisob ochishga urinish. Admin xabardor qilindi.' });
-            }
+            if (count >= 3) addNotification({ type: 'warning', title: 'Limit', message: 'Ko\'p hisob ochishga urinish.' });
 
-            // 2. Attempt Sign Up
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-            });
-            
+            const { data, error } = await supabase.auth.signUp({ email, password });
             if (error) throw error;
-
-            // Check if user exists (Supabase sometimes returns success even if user exists but unconfirmed)
             if (data.user && data.user.identities?.length === 0) {
-                 addNotification({ type: 'warning', title: 'Email Band', message: 'Bu email allaqachon ro\'yxatdan o\'tgan. Iltimos, kirish oynasidan foydalaning.' });
+                 addNotification({ type: 'warning', title: 'Band', message: 'Email ro\'yxatdan o\'tgan. Kirishga o\'ting.' });
                  return;
             }
-
             setRegisterStep(2);
             setResendTimer(60);
-            addNotification({ type: 'info', title: 'Kod yuborildi', message: 'Tasdiqlash kodi emailingizga yuborildi.' });
-
-        } catch (error: any) {
-            addNotification({ type: 'error', title: 'Xatolik', message: error.message });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleResendCode = async () => {
-        if (resendTimer > 0) return;
-        setLoading(true);
-        try {
-            const { error } = await supabase.auth.resend({ type: 'signup', email: email });
-            if (error) throw error;
-            setResendTimer(60);
-            addNotification({ type: 'success', title: 'Yuborildi', message: 'Yangi kod yuborildi.' });
+            addNotification({ type: 'info', title: 'Kod yuborildi', message: 'Tasdiqlash kodi emailingizga ketdi.' });
         } catch (error: any) {
             addNotification({ type: 'error', title: 'Xatolik', message: error.message });
         } finally {
@@ -175,7 +133,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
             const { error } = await supabase.auth.verifyOtp({ email, token: verificationCode, type: 'signup' });
             if (error) throw error;
             setRegisterStep(3);
-            addNotification({ type: 'success', title: 'Tasdiqlandi', message: 'Email tasdiqlandi.' });
         } catch (error: any) {
             addNotification({ type: 'error', title: 'Xatolik', message: 'Kod noto\'g\'ri.' });
         } finally {
@@ -188,16 +145,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("Foydalanuvchi topilmadi");
-
+            if (!user) throw new Error("User not found");
             const fullName = `${firstName} ${lastName}`.trim();
-            // Fix: Added explicit cast to any for profiles table as Database type does not contain username or device_id
             const { error } = await supabase.from('profiles').update({ username, full_name: fullName, device_id: deviceId } as any).eq('id', user.id);
             if (error) throw error;
-
             await logDeviceLogin(user.id, deviceId);
             onAuthSuccess('user');
-            addNotification({ type: 'success', title: 'Tabriklaymiz!', message: 'Muvaffaqiyatli ro\'yxatdan o\'tdingiz.' });
         } catch (error: any) {
              addNotification({ type: 'error', title: 'Xatolik', message: error.message });
         } finally {
@@ -205,124 +158,130 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
         }
     };
 
-    const toggleMode = () => {
-        setMode(mode === 'login' ? 'register' : 'login');
-        setRegisterStep(1);
-    };
-
-    const renderProgressBar = () => (
-        <div className="flex gap-2 mb-6 justify-center">
-            {[1, 2, 3].map((step) => (
-                <div key={step} className={`h-2 rounded-full transition-all duration-300 ${step <= registerStep ? 'bg-orange-500 w-8' : 'bg-gray-700 w-4'}`} />
-            ))}
-        </div>
-    );
-
     return (
         <>
             {viewingDoc && <LegalDocs type={viewingDoc} onClose={() => setViewingDoc(null)} />}
             
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
-                <div className="bg-gray-900 border border-orange-500/30 rounded-2xl shadow-2xl w-full max-w-md m-4 p-8 relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors z-10">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
+                
+                <div className="relative w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden animate-slide-in-up" onClick={e => e.stopPropagation()}>
+                    
+                    {/* Decorative Top Gradient */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-600 via-red-500 to-purple-600"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
-                    {mode === 'register' && registerStep > 1 && (
-                        <button onClick={() => setRegisterStep(prev => prev - 1)} className="absolute top-4 left-4 text-gray-400 hover:text-white transition-colors flex items-center gap-1">
-                            <ChevronLeftIcon className="w-5 h-5" /> <span className="text-sm">Orqaga</span>
-                        </button>
-                    )}
-
-                    <h2 className="text-3xl font-bold text-center text-white mb-2">{mode === 'login' ? 'Xush Kelibsiz' : "Ro'yxatdan o'tish"}</h2>
-                    <p className="text-center text-gray-400 text-sm mb-6">{mode === 'login' ? 'Hisobingizga kiring.' : 'Yangi hisob yarating.'}</p>
-
-                    {mode === 'register' && renderProgressBar()}
+                    {/* Header */}
+                    <div className="text-center mb-10 mt-4">
+                        <h2 className="text-3xl font-black text-white tracking-tighter mb-1">
+                            {mode === 'login' ? 'Kirish' : 'Ro\'yxatdan o\'tish'}
+                        </h2>
+                        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                            {mode === 'login' ? 'Profilingizga xush kelibsiz' : 'Yangi hisob yarating'}
+                        </p>
+                    </div>
 
                     {mode === 'login' ? (
-                        <div className="space-y-5">
-                            <form onSubmit={handleLogin} className="space-y-4">
-                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Email" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-orange-500 outline-none" />
-                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Parol" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-orange-500 outline-none" />
-                                <button type="submit" disabled={loading} className="w-full py-3.5 bg-orange-600 hover:bg-orange-700 rounded-xl font-bold text-white transition-all flex items-center justify-center">
-                                    {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : 'Kirish'}
-                                </button>
-                            </form>
-                            
-                            <div className="relative flex py-2 items-center">
-                                <div className="flex-grow border-t border-gray-700"></div>
-                                <span className="flex-shrink-0 mx-4 text-gray-500 text-xs">YOKI</span>
-                                <div className="flex-grow border-t border-gray-700"></div>
+                        <form onSubmit={handleLogin} className="space-y-5">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Email (Gmail)</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18}/>
+                                    <input 
+                                        type="email" 
+                                        value={email} 
+                                        onChange={e => setEmail(e.target.value)} 
+                                        required 
+                                        placeholder="example@gmail.com" 
+                                        className="w-full bg-[#151515] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white text-sm focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700 font-medium" 
+                                    />
+                                </div>
                             </div>
 
-                            <button onClick={handleGoogleLogin} className="w-full py-3 bg-white text-black hover:bg-gray-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
-                                <GoogleIcon /> Google orqali kirish
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Parol</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18}/>
+                                    <input 
+                                        type={showPassword ? "text" : "password"} 
+                                        value={password} 
+                                        onChange={e => setPassword(e.target.value)} 
+                                        required 
+                                        placeholder="••••••••" 
+                                        className="w-full bg-[#151515] border border-white/5 rounded-2xl py-4 pl-12 pr-12 text-white text-sm focus:border-orange-500 outline-none transition-all placeholder:text-zinc-700 font-medium" 
+                                    />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors">
+                                        {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
+                                    </button>
+                                </div>
+                                <div className="text-right">
+                                    <button type="button" className="text-[10px] font-bold text-zinc-500 hover:text-orange-500 transition-colors">Parolni unutdingizmi?</button>
+                                </div>
+                            </div>
+
+                            <button type="submit" disabled={loading} className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-zinc-200 transition-all active:scale-95 shadow-lg mt-4 disabled:opacity-50">
+                                {loading ? 'KIRILMOQDA...' : 'KIRISH'}
                             </button>
-                        </div>
+                        </form>
                     ) : (
                         <div className="space-y-5">
                             {registerStep === 1 && (
-                                <form onSubmit={handleRegisterStep1} className="space-y-5 animate-fade-in">
-                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Email" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-orange-500 outline-none" />
-                                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} placeholder="Parol" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-orange-500 outline-none" />
+                                <form onSubmit={handleRegisterStep1} className="space-y-5">
+                                    <div className="relative">
+                                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18}/>
+                                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Email" className="w-full bg-[#151515] border border-white/5 rounded-2xl py-4 pl-12 text-white text-sm focus:border-orange-500 outline-none placeholder:text-zinc-700" />
+                                    </div>
+                                    <div className="relative">
+                                        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18}/>
+                                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Parol (min 6)" className="w-full bg-[#151515] border border-white/5 rounded-2xl py-4 pl-12 text-white text-sm focus:border-orange-500 outline-none placeholder:text-zinc-700" />
+                                    </div>
                                     
-                                    <div className="space-y-3 bg-gray-800/50 p-4 rounded-lg border border-gray-700 text-sm text-gray-300">
-                                        <label className="flex items-start gap-3 cursor-pointer group">
-                                            <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)} className="mt-1 w-4 h-4 accent-orange-500" />
-                                            <span>Men <span onClick={(e) => {e.preventDefault(); setViewingDoc('privacy')}} className="text-orange-400 hover:underline font-bold">Maxfiylik Siyosati</span> bilan tanishib chiqdim va roziman.</span>
-                                        </label>
-                                        <label className="flex items-start gap-3 cursor-pointer group">
-                                            <input type="checkbox" checked={agreeSecurity} onChange={e => setAgreeSecurity(e.target.checked)} className="mt-1 w-4 h-4 accent-orange-500" />
-                                            <span>Men <span onClick={(e) => {e.preventDefault(); setViewingDoc('security')}} className="text-orange-400 hover:underline font-bold">Xavfsizlik Qoidalari</span> ga rozilik bildiraman.</span>
-                                        </label>
-                                        <label className="flex items-start gap-3 cursor-pointer group">
-                                            <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} className="mt-1 w-4 h-4 accent-orange-500" />
-                                            <span>Men <span onClick={(e) => {e.preventDefault(); setViewingDoc('terms')}} className="text-orange-400 hover:underline font-bold">Foydalanish Shartlari (Javobgarlik)</span> ni qabul qilaman.</span>
-                                        </label>
+                                    <div className="space-y-3 p-4 bg-zinc-900/50 rounded-2xl border border-white/5 text-[10px] text-zinc-400">
+                                        {[{l: 'Maxfiylik Siyosati', s: setAgreePrivacy, v: agreePrivacy, d: 'privacy'}, {l: 'Xavfsizlik Qoidalari', s: setAgreeSecurity, v: agreeSecurity, d: 'security'}, {l: 'Foydalanish Shartlari', s: setAgreeTerms, v: agreeTerms, d: 'terms'}].map((item, i) => (
+                                            <label key={i} className="flex items-center gap-3 cursor-pointer">
+                                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${item.v ? 'bg-orange-600 border-orange-600' : 'border-zinc-600'}`}>
+                                                    <input type="checkbox" checked={item.v} onChange={e => item.s(e.target.checked)} className="hidden" />
+                                                    {item.v && <ShieldCheck size={10} className="text-white"/>}
+                                                </div>
+                                                <span><strong onClick={(e) => {e.preventDefault(); setViewingDoc(item.d as any)}} className="text-white hover:text-orange-500 underline">{item.l}</strong> ga roziman.</span>
+                                            </label>
+                                        ))}
                                     </div>
 
-                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 rounded-xl font-bold text-white transition-all flex items-center justify-center">
-                                        {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : 'Davom etish'}
-                                    </button>
-
-                                    <div className="relative flex py-2 items-center">
-                                        <div className="flex-grow border-t border-gray-700"></div>
-                                        <span className="flex-shrink-0 mx-4 text-gray-500 text-xs">YOKI</span>
-                                        <div className="flex-grow border-t border-gray-700"></div>
-                                    </div>
-
-                                    <button type="button" onClick={handleGoogleLogin} className="w-full py-3 bg-white text-black hover:bg-gray-200 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
-                                        <GoogleIcon /> Google orqali (Avtomatik Rozilik)
-                                    </button>
+                                    <button type="submit" disabled={loading} className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-zinc-200 transition-all">{loading ? '...' : 'DAVOM ETISH'}</button>
                                 </form>
                             )}
 
                             {registerStep === 2 && (
-                                <form onSubmit={handleRegisterStep2} className="space-y-5 animate-fade-in">
-                                    <div className="text-center mb-4"><span className="text-orange-400 font-semibold">{email}</span><p className="text-xs text-gray-500 mt-1">manziliga kod yuborildi.</p></div>
-                                    <input type="text" value={verificationCode} onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} required placeholder="000000" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-center text-2xl tracking-widest font-mono text-white focus:ring-2 focus:ring-orange-500 outline-none" />
-                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-orange-600 hover:bg-orange-700 rounded-xl font-bold text-white flex items-center justify-center">{loading ? '...' : 'Tasdiqlash'}</button>
-                                    <div className="text-center mt-2"><button type="button" onClick={handleResendCode} disabled={resendTimer > 0 || loading} className="text-sm text-gray-400 hover:text-white underline">{resendTimer > 0 ? `Qayta yuborish: ${resendTimer}s` : "Kodni qayta yuborish"}</button></div>
+                                <form onSubmit={handleRegisterStep2} className="space-y-5 text-center">
+                                    <p className="text-zinc-400 text-sm">Biz <span className="text-white font-bold">{email}</span> ga kod yubordik.</p>
+                                    <input type="text" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} required placeholder="000000" className="w-full bg-[#151515] border border-white/5 rounded-2xl py-4 text-center text-white text-2xl tracking-[0.5em] font-mono focus:border-orange-500 outline-none" />
+                                    <button type="submit" disabled={loading} className="w-full bg-orange-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-orange-500 transition-all">{loading ? '...' : 'TASDIQLASH'}</button>
                                 </form>
                             )}
 
                             {registerStep === 3 && (
-                                <form onSubmit={handleRegisterStep3} className="space-y-5 animate-fade-in">
-                                    <input type="text" value={username} onChange={e => setUsername(e.target.value.replace(/\s/g, '').toLowerCase())} required placeholder="@username" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-orange-500 outline-none" />
+                                <form onSubmit={handleRegisterStep3} className="space-y-5">
+                                    <input type="text" value={username} onChange={e => setUsername(e.target.value)} required placeholder="@username" className="w-full bg-[#151515] border border-white/5 rounded-2xl py-4 px-6 text-white text-sm focus:border-orange-500 outline-none" />
                                     <div className="grid grid-cols-2 gap-4">
-                                        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} required placeholder="Ism" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-orange-500 outline-none" />
-                                        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} required placeholder="Familiya" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-orange-500 outline-none" />
+                                        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} required placeholder="Ism" className="w-full bg-[#151515] border border-white/5 rounded-2xl py-4 px-6 text-white text-sm focus:border-orange-500 outline-none" />
+                                        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} required placeholder="Familiya" className="w-full bg-[#151515] border border-white/5 rounded-2xl py-4 px-6 text-white text-sm focus:border-orange-500 outline-none" />
                                     </div>
-                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-green-600 hover:bg-green-700 rounded-xl font-bold text-white flex items-center justify-center">{loading ? '...' : 'Tugatish'}</button>
+                                    <button type="submit" disabled={loading} className="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-green-500 transition-all">TUGATISH</button>
                                 </form>
                             )}
                         </div>
                     )}
 
-                    <div className="text-center mt-8 pt-4 border-t border-gray-800">
-                        <p className="text-gray-400 text-sm">{mode === 'login' ? "Hisobingiz yo'qmi?" : "Hisobingiz bormi?"}</p>
-                        <button onClick={toggleMode} className="mt-1 text-orange-400 hover:text-orange-300 font-semibold transition-colors text-sm">{mode === 'login' ? "Ro'yxatdan o'tish" : "Tizimga kirish"}</button>
-                    </div>
+                    {registerStep === 1 && (
+                        <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                            {mode === 'login' ? (
+                                <p className="text-zinc-500 text-xs font-bold">Hisobingiz yo'qmi? <button onClick={() => {setMode('register'); setRegisterStep(1)}} className="text-white hover:text-orange-500 ml-1 transition-colors uppercase tracking-wider">Ro'yxatdan o'tish</button></p>
+                            ) : (
+                                <p className="text-zinc-500 text-xs font-bold">Hisobingiz bormi? <button onClick={() => setMode('login')} className="text-white hover:text-orange-500 ml-1 transition-colors uppercase tracking-wider">Kirish</button></p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </>

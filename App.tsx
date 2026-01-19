@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { WelcomePage } from './WelcomePage';
@@ -19,7 +20,7 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag } from 'lucide-react';
+import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag, LayoutGrid } from 'lucide-react';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
@@ -180,11 +181,11 @@ const App: React.FC = () => {
           {/* MOBILE BOTTOM NAVIGATION */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
-                <div className="bg-[#050505] h-20 flex justify-around items-center px-4 border-t border-zinc-900">
+                <div className="bg-[#050505] h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
                     {[
                         { id: 'welcome', label: 'Asosiy', icon: <Home size={22} />, active: page === 'welcome' },
                         { id: 'shop', label: 'Shop', icon: <ShoppingBag size={22} />, active: page === 'shop' },
-                        { id: 'saved', label: 'Saved', icon: <Bookmark size={22} />, active: page === 'dashboard' && dashboardPage === 'saved' },
+                        { id: 'studio', label: 'Studio', icon: <LayoutGrid size={22} />, active: page === 'studio' }, // Added Studio
                         { id: 'profile', label: 'Profil', icon: <User size={22} />, active: page === 'dashboard' && dashboardPage === 'profile' },
                         { id: 'more', label: 'Yana', icon: <Menu size={22} />, active: false },
                     ].map(item => (
@@ -193,11 +194,11 @@ const App: React.FC = () => {
                             onClick={() => {
                                 if (item.id === 'welcome') handleNavigation('welcome');
                                 else if (item.id === 'shop') handleNavigation('shop');
-                                else if (item.id === 'saved') handleDashboardNavigation('saved');
+                                else if (item.id === 'studio') handleNavigation('studio');
                                 else if (item.id === 'profile') handleDashboardNavigation('profile');
                                 else if (item.id === 'more') document.dispatchEvent(new CustomEvent('toggleMenu'));
                             }}
-                            className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600'}`}
+                            className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/5 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600'}`}
                         >
                             <div className={`${item.active ? 'drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]' : ''}`}>
                                 {item.icon}
