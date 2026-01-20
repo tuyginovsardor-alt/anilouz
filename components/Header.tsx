@@ -16,8 +16,8 @@ interface HeaderProps {
   onSearchClick: () => void;
   onSwitchRole: (role: UserRole) => void;
   onLogout: () => void;
-  isMenuOpen: boolean; // Add prop
-  setIsMenuOpen: (isOpen: boolean) => void; // Add prop
+  isMenuOpen: boolean; 
+  setIsMenuOpen: (isOpen: boolean) => void; 
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -59,13 +59,22 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'ai-assistant', label: 'AI Bot' }
   ];
 
+  // Modified logo click handler
+  const handleLogoClick = () => {
+      if (isAuthenticated) {
+          onNavigate('dashboard');
+      } else {
+          onNavigate('welcome');
+      }
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
         <div className="container mx-auto px-4 md:px-8 h-16 flex items-center justify-between pointer-events-auto">
             
             {/* Logo & Links */}
             <div className="flex items-center gap-10">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onNavigate('welcome')}>
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleLogoClick}>
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
                     {customLogo ? (
                         <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />

@@ -21,7 +21,7 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag } from 'lucide-react';
 import { getAppConfig } from './services/dbService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
@@ -31,6 +31,16 @@ export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin'
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 export type LegalDocType = 'privacy' | 'terms';
+
+// Helper for image preloading
+const preloadImage = (src: string) => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = resolve;
+        img.onerror = resolve; // Don't block app if image fails
+    });
+};
 
 const App: React.FC = () => {
   const [page, setPage] = useState<Page>('welcome');
@@ -43,6 +53,9 @@ const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
+  
+  // Custom Branding State for Loader
+  const [loaderLogo, setLoaderLogo] = useState<string | null>(null);
   
   // Menu State
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -67,15 +80,34 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
         try {
-            await getAppConfig(); 
+            // 1. Fetch Config First
+            const config = await getAppConfig();
+            
+            // 2. Set branding states
+            if (config['site_logo']) setLoaderLogo(config['site_logo']);
+            
+            // 3. Preload Critical Assets ("Shimini kiyish")
+            const assetsToLoad = [];
+            if (config['site_logo']) assetsToLoad.push(preloadImage(config['site_logo']));
+            if (config['site_background']) assetsToLoad.push(preloadImage(config['site_background']));
+            
+            // Wait for assets to be cached by browser
+            await Promise.all(assetsToLoad);
+
+            // 4. Check Session
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 setIsAuthenticated(true);
                 await fetchUserRole(session.user.id);
+                setPage('dashboard'); // Redirect to dashboard immediately if logged in
+            } else {
+                setPage('welcome');
             }
-        } catch (e) { console.error(e); }
-        finally { 
-            setTimeout(() => setIsAppReady(true), 1500); 
+        } catch (e) { 
+            console.error(e); 
+        } finally { 
+            // 5. Reveal App
+            setTimeout(() => setIsAppReady(true), 800); 
         }
     };
     initApp();
@@ -131,17 +163,38 @@ const App: React.FC = () => {
   };
 
   if (!isAppReady) return (
-      <div className="h-screen w-full bg-[#000000] flex flex-col items-center justify-center relative overflow-hidden">
-          <div className="flex flex-col items-center gap-4 animate-fade-in">
-              <UzumakiLogo className="w-20 h-20 text-orange-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse" />
-              <h1 className="text-3xl font-black text-white tracking-widest uppercase mt-2">ANILO</h1>
+      <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center relative overflow-hidden z-[9999]">
+          <div className="flex flex-col items-center gap-6 animate-fade-in relative z-10">
+              {/* Dynamic Logo Loader */}
+              <div className="relative w-24 h-24">
+                  {/* Spinning Ring */}
+                  <div className="absolute inset-0 rounded-full border-4 border-t-orange-500 border-r-transparent border-b-orange-500 border-l-transparent animate-spin"></div>
+                  
+                  {/* Logo Center */}
+                  <div className="absolute inset-2 rounded-full overflow-hidden bg-black flex items-center justify-center border-2 border-white/10">
+                      {loaderLogo ? (
+                          <img src={loaderLogo} alt="Logo" className="w-full h-full object-cover animate-pulse" />
+                      ) : (
+                          <UzumakiLogo className="w-12 h-12 text-orange-500 animate-pulse" />
+                      )}
+                  </div>
+              </div>
+              
+              <div className="text-center">
+                  <h1 className="text-2xl font-black text-white tracking-[0.3em] uppercase">ANILO.UZ</h1>
+                  <p className="text-[10px] text-zinc-500 font-bold mt-1">YUKLANMOQDA...</p>
+              </div>
           </div>
-          <div className="absolute bottom-20 w-48 h-1 bg-zinc-900 rounded-full overflow-hidden">
-              <div className="h-full bg-orange-600 animate-[loading_1.5s_ease-in-out_infinite]"></div>
+
+          {/* Loading Bar */}
+          <div className="absolute bottom-20 w-64 h-1 bg-zinc-900 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-orange-600 via-yellow-500 to-orange-600 w-full animate-[loading_1.5s_ease-in-out_infinite] origin-left"></div>
           </div>
+          
           <style>{`
             @keyframes loading {
                 0% { transform: translateX(-100%); }
+                50% { transform: translateX(0%); }
                 100% { transform: translateX(100%); }
             }
           `}</style>
@@ -217,36 +270,47 @@ const App: React.FC = () => {
 
           {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
-                <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-4 border-t border-zinc-900 pb-2">
+                <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
                     <button 
                         onClick={() => { handleNavigation('dashboard'); setDashboardPage('main'); }}
-                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
+                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
                     >
-                        <Home size={24} />
+                        <Home size={22} />
                         <span className="text-[9px] font-black uppercase tracking-tighter">Asosiy</span>
                     </button>
 
                     <button 
                         onClick={() => handleNavigation('catalog')}
-                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${page === 'catalog' ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
+                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 ${page === 'catalog' ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
                     >
-                        <Layers size={24} />
+                        <Layers size={22} />
                         <span className="text-[9px] font-black uppercase tracking-tighter">Katalog</span>
+                    </button>
+
+                    {/* CENTERED SHOP ICON */}
+                    <button 
+                        onClick={() => handleNavigation('shop')}
+                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 -mt-6 group`}
+                    >
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400 group-hover:bg-zinc-700'}`}>
+                            <ShoppingBag size={20} fill={page === 'shop' ? 'currentColor' : 'none'} />
+                        </div>
+                        <span className={`text-[9px] font-black uppercase tracking-tighter ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span>
                     </button>
 
                     <button 
                         onClick={() => handleNavigation('studio')}
-                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${page === 'studio' ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
+                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
                     >
-                        <LayoutGrid size={24} />
+                        <LayoutGrid size={22} />
                         <span className="text-[9px] font-black uppercase tracking-tighter">Fandub</span>
                     </button>
 
                     <button 
                         onClick={() => setIsMenuOpen(true)}
-                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${isMenuOpen ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
+                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
                     >
-                        <User size={24} />
+                        <User size={22} />
                         <span className="text-[9px] font-black uppercase tracking-tighter">Profil</span>
                     </button>
                 </div>
