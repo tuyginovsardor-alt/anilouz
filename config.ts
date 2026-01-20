@@ -4,42 +4,39 @@
 // Vite environment variables
 const viteEnv = (import.meta as any).env || {};
 
-// Vercel yoki Local .env dan olingan o'zgaruvchilar.
-// vite.config.ts dagi `define` orqali bu yerga kelib tushadi.
-const procEnv = (typeof process !== 'undefined' && process.env) ? process.env : {};
-
-// Supabase
+// Supabase Configuration
+// 1. Vite env (standart)
+// 2. Process env (vite.config.ts da define qilingan fallback)
 export const SUPABASE_URL = 
     viteEnv.VITE_SUPABASE_URL || 
-    procEnv.VITE_SUPABASE_URL || 
-    procEnv.SUPABASE_URL || 
+    process.env.SUPABASE_URL || 
     "";
 
 export const SUPABASE_ANON_KEY = 
     viteEnv.VITE_SUPABASE_ANON_KEY || 
-    procEnv.VITE_SUPABASE_ANON_KEY || 
-    procEnv.SUPABASE_KEY || 
+    process.env.SUPABASE_KEY || 
     "";
 
 // --- TSPAY CONFIGURATION ---
-// Endi Vercel-da shunchaki 'TSPAY_URL' va 'TSPAY_API' deb yozsangiz ham ishlaydi.
-
+// Vercel Environment Variables dan o'qish
 export const TSPAY_BASE_URL = 
     viteEnv.VITE_TSPAY_URL || 
-    procEnv.TSPAY_URL || 
-    'https://tspay.uz/api/v1'; // Fallback
+    process.env.TSPAY_URL || 
+    'https://tspay.uz/api/v1';
 
 export const TSPAY_MERCHANT_TOKEN = 
     viteEnv.VITE_TSPAY_API || 
-    procEnv.TSPAY_API || 
+    process.env.TSPAY_API || 
     ""; 
 
-// Debugging (Console da tekshirish uchun, ishlab chiqarishda o'chirib qo'yish mumkin)
-console.log("TsPay Config Loaded:", {
-    url: TSPAY_BASE_URL ? "Set" : "Not Set",
-    token: TSPAY_MERCHANT_TOKEN ? "Set (Hidden)" : "Not Set"
-});
+// Debugging (faqat developmentda ko'rinadi)
+if (import.meta.env.DEV) {
+    console.log("Config Loaded:", {
+        supabase: !!SUPABASE_URL,
+        tspay: !!TSPAY_MERCHANT_TOKEN
+    });
+}
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error("Supabase kalitlari topilmadi!");
+    console.error("Supabase kalitlari topilmadi! Iltimos .env yoki Vercel sozlamalarini tekshiring.");
 }

@@ -6,8 +6,7 @@ import autoprefixer from 'autoprefixer';
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-  const env = loadEnv(mode, (process as any).cwd(), '');
+  const env = loadEnv(mode, process.cwd(), '');
 
   return {
     server: {
@@ -24,11 +23,14 @@ export default defineConfig(({ mode }) => {
       },
     },
     // Define global constants replacements
+    // MUHIM: Faqat kerakli o'zgaruvchilarni alohida 'define' qilamiz.
+    // 'process.env': ... deb butun obyektni yozish xatolik keltirib chiqaradi.
     define: {
       'process.env.TSPAY_API': JSON.stringify(env.TSPAY_API),
       'process.env.TSPAY_URL': JSON.stringify(env.TSPAY_URL),
-      // Fallback for other standard envs
-      'process.env': JSON.stringify(env)
+      // Agar Vercel-da VITE_ prefiksi unutilgan bo'lsa, ularni ham qo'lda tanitamiz
+      'process.env.SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || env.SUPABASE_URL),
+      'process.env.SUPABASE_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || env.SUPABASE_KEY),
     },
     build: {
       outDir: 'dist',
