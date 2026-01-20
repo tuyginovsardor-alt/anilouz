@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Page, DashboardSubPage } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, User } from 'lucide-react'; // User ikonkasini qo'shdik
+import { Search, Bell, User, Menu } from 'lucide-react';
 import { getUnreadNotificationsCount, getUserProfile, getAppConfig } from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
@@ -27,10 +27,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [customLogo, setCustomLogo] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // Avatar uchun state
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-      // Fetch dynamic logo from config
       getAppConfig().then(config => {
           if (config['site_logo']) setCustomLogo(config['site_logo']);
       });
@@ -46,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setUnreadCount(count);
                   if (profile) {
                       setUserRole(profile.role);
-                      setAvatarUrl(profile.avatar_url); // Avatarni yuklash
+                      setAvatarUrl(profile.avatar_url);
                   }
               }
           };
@@ -65,14 +64,12 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-        {/* Background is lighter gradient to make transparent icons visible but blending */}
         <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
         <div className="container mx-auto px-4 md:px-8 h-16 flex items-center justify-between pointer-events-auto">
             
             {/* Logo & Links */}
             <div className="flex items-center gap-10">
             <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onNavigate('welcome')}>
-                {/* Circular Logo, No Text */}
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
                     {customLogo ? (
                         <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -91,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
             </nav>
             </div>
 
-            {/* Tools - RAMKASIZ (No Borders/Backgrounds) */}
+            {/* Tools */}
             <div className="flex items-center gap-3 sm:gap-5">
                 <button onClick={onSearchClick} className="p-2 text-white hover:text-orange-500 transition-colors drop-shadow-md active:scale-95">
                     <Search size={26} strokeWidth={2.5} />
@@ -107,21 +104,30 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 
                 {isAuthenticated ? (
-                    <div className="flex items-center ml-2">
-                        {/* PROFILE AVATAR BUTTON - Replaces Hamburger Menu */}
-                        <button 
-                            onClick={() => setIsMenuOpen(true)} 
-                            className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden hover:border-orange-500 transition-all shadow-lg active:scale-95"
-                        >
-                            {avatarUrl ? (
-                                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-400">
-                                    <User size={20} />
-                                </div>
-                            )}
-                        </button>
-                    </div>
+                    <>
+                        {/* Hamburger Icon - FAQAT KATTA EKRANDA (lg) ko'rinadi */}
+                        <div className="hidden lg:flex items-center ml-1">
+                            <button onClick={() => setIsMenuOpen(true)} className="p-2 text-white hover:text-orange-500 transition-colors drop-shadow-md active:scale-95">
+                                <Menu size={28} strokeWidth={2.5} />
+                            </button>
+                        </div>
+
+                        {/* Profile Avatar - HAMMA EKRANDA ko'rinadi va menyuni ochadi */}
+                        <div className="flex items-center ml-2">
+                            <button 
+                                onClick={() => setIsMenuOpen(true)} 
+                                className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden hover:border-orange-500 transition-all shadow-lg active:scale-95"
+                            >
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-400">
+                                        <User size={20} />
+                                    </div>
+                                )}
+                            </button>
+                        </div>
+                    </>
                 ) : (
                     <button onClick={onLoginClick} className="ml-2 bg-white text-black px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all shadow-lg">Kirish</button>
                 )}
