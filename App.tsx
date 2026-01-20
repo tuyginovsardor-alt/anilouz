@@ -14,7 +14,7 @@ import { StudioPage } from './StudioPage';
 import { ShopPage } from './ShopPage';
 import { ShopAdminPage } from './ShopAdminPage';
 import { CatalogPage } from './CatalogPage'; 
-import { FandubDashboard } from './FandubDashboard'; // Import new component
+import { FandubDashboard } from './FandubDashboard';
 import { VideoAdPlayer } from './components/VideoAdPlayer';
 import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
@@ -25,6 +25,7 @@ import { CopyrightPage } from './CopyrightPage';
 import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag, LayoutGrid, Layers } from 'lucide-react';
 import { getAppConfig } from './services/dbService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
+import { HamburgerMenu } from './components/HamburgerMenu'; // Import HamburgerMenu
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
@@ -41,6 +42,9 @@ const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
+  
+  // Menu State lifted up
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -155,6 +159,9 @@ const App: React.FC = () => {
               onSearchClick={() => setIsSearchOpen(true)}
               onSwitchRole={(r) => {if(['admin','owner','shop'].includes(r)) setPage('admin')}}
               onLogout={() => supabase.auth.signOut()}
+              // New Props for Menu Control
+              isMenuOpen={isMenuOpen}
+              setIsMenuOpen={setIsMenuOpen}
             />
           )}
           
@@ -205,40 +212,58 @@ const App: React.FC = () => {
               </div>
           )}
 
+          {/* BOTTOM NAVIGATION (MOBILE) */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-4 border-t border-zinc-900 pb-2">
-                    {[
-                        { id: 'dashboard', label: 'Asosiy', icon: <Home size={24} />, active: page === 'dashboard' && dashboardPage === 'main' },
-                        { id: 'catalog', label: 'Katalog', icon: <Layers size={24} />, active: page === 'catalog' },
-                        { id: 'studio', label: 'Fandub', icon: <LayoutGrid size={24} />, active: page === 'studio' }, 
-                        { id: 'profile', label: 'Profil', icon: <User size={24} />, active: page === 'dashboard' && dashboardPage === 'profile' },
-                    ].map(item => (
-                        <button 
-                            key={item.id}
-                            onClick={() => {
-                                if (item.id === 'dashboard') {
-                                    handleNavigation('dashboard');
-                                    setDashboardPage('main');
-                                }
-                                else if (item.id === 'catalog') handleNavigation('catalog');
-                                else if (item.id === 'studio') handleNavigation('studio');
-                                else if (item.id === 'profile') handleDashboardNavigation('profile');
-                            }}
-                            className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${item.active ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
-                        >
-                            <div className={`${item.active ? 'drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]' : ''}`}>
-                                {item.icon}
-                            </div>
-                            <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>
-                        </button>
-                    ))}
+                    <button 
+                        onClick={() => { handleNavigation('dashboard'); setDashboardPage('main'); }}
+                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
+                    >
+                        <Home size={24} />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">Asosiy</span>
+                    </button>
+
+                    <button 
+                        onClick={() => handleNavigation('catalog')}
+                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${page === 'catalog' ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
+                    >
+                        <Layers size={24} />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">Katalog</span>
+                    </button>
+
+                    <button 
+                        onClick={() => handleNavigation('studio')}
+                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${page === 'studio' ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
+                    >
+                        <LayoutGrid size={24} />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">Fandub</span>
+                    </button>
+
+                    {/* PROFILE BUTTON - OPENS HAMBURGER MENU */}
+                    <button 
+                        onClick={() => setIsMenuOpen(true)}
+                        className={`flex flex-col items-center gap-1.5 transition-all duration-300 w-1/4 ${isMenuOpen ? 'text-orange-500 scale-110' : 'text-zinc-600 hover:text-zinc-400'}`}
+                    >
+                        <User size={24} />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">Profil</span>
+                    </button>
                 </div>
             </div>
           )}
 
           {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && <Footer onNavigate={handleNavigation} />}
           {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} onAuthSuccess={() => {setIsAuthModalOpen(false); setPage('dashboard');}} />}
+          
+          {/* HAMBURGER MENU (Global) */}
+          <HamburgerMenu 
+            isOpen={isMenuOpen} 
+            onClose={() => setIsMenuOpen(false)} 
+            onLogout={() => { supabase.auth.signOut(); setIsMenuOpen(false); }}
+            onMainNavigate={handleNavigation}
+            onDashboardNavigate={handleDashboardNavigation}
+            onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}}
+          />
         </div>
     </NotificationContext.Provider>
   );

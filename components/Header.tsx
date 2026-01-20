@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Page, DashboardSubPage } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, User, Menu } from 'lucide-react';
+import { Search, Bell, User } from 'lucide-react';
 import { getUnreadNotificationsCount, getUserProfile, getAppConfig } from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
-import { HamburgerMenu } from './HamburgerMenu';
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
@@ -17,15 +16,16 @@ interface HeaderProps {
   onSearchClick: () => void;
   onSwitchRole: (role: UserRole) => void;
   onLogout: () => void;
+  isMenuOpen: boolean; // Add prop
+  setIsMenuOpen: (isOpen: boolean) => void; // Add prop
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
     onNavigate, onDashboardNavigate, currentPage, isAuthenticated, 
-    onLoginClick, onSearchClick, onSwitchRole, onLogout 
+    onLoginClick, onSearchClick, onSwitchRole, onLogout,
+    isMenuOpen, setIsMenuOpen 
 }) => {
   const [unreadCount, setUnreadCount] = useState(0);
-  const [userRole, setUserRole] = useState<UserRole>('user');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [customLogo, setCustomLogo] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -44,14 +44,11 @@ export const Header: React.FC<HeaderProps> = ({
                   ]);
                   setUnreadCount(count);
                   if (profile) {
-                      setUserRole(profile.role);
                       setAvatarUrl(profile.avatar_url);
                   }
               }
           };
           fetchHeaderData();
-          const interval = setInterval(fetchHeaderData, 60000);
-          return () => clearInterval(interval);
       }
   }, [isAuthenticated]);
 
@@ -63,8 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   return (
-    <>
-        <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
         <div className="container mx-auto px-4 md:px-8 h-16 flex items-center justify-between pointer-events-auto">
             
             {/* Logo & Links */}
@@ -105,15 +101,8 @@ export const Header: React.FC<HeaderProps> = ({
                 
                 {isAuthenticated ? (
                     <>
-                        {/* Hamburger Icon - FAQAT KATTA EKRANDA (lg) ko'rinadi */}
-                        <div className="hidden lg:flex items-center ml-1">
-                            <button onClick={() => setIsMenuOpen(true)} className="p-2 text-white hover:text-orange-500 transition-colors drop-shadow-md active:scale-95">
-                                <Menu size={28} strokeWidth={2.5} />
-                            </button>
-                        </div>
-
-                        {/* Profile Avatar - HAMMA EKRANDA ko'rinadi va menyuni ochadi */}
-                        <div className="flex items-center ml-2">
+                        {/* Profile Avatar - ONLY DESKTOP (Hidden on mobile) */}
+                        <div className="hidden md:flex items-center ml-2">
                             <button 
                                 onClick={() => setIsMenuOpen(true)} 
                                 className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden hover:border-orange-500 transition-all shadow-lg active:scale-95"
@@ -133,16 +122,6 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
             </div>
         </div>
-        </header>
-
-        <HamburgerMenu 
-            isOpen={isMenuOpen} 
-            onClose={() => setIsMenuOpen(false)} 
-            onLogout={onLogout}
-            onMainNavigate={onNavigate}
-            onDashboardNavigate={onDashboardNavigate}
-            onSwitchRole={onSwitchRole}
-        />
-    </>
+    </header>
   );
 };
