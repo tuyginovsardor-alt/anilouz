@@ -32,7 +32,9 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
     }
 
     try {
-        const endpoint = `${TSPAY_BASE_URL}/transactions/create`; 
+        // MUHIM: Ba'zi versiyalarda 'transaction' (birlik), ba'zilarida 'transactions' (ko'plik).
+        // Shuningdek, oxirida '/' belgisi bo'lishi kerak.
+        const endpoint = `${TSPAY_BASE_URL}/transaction/create/`; 
 
         console.log("To'lov yaratilmoqda...", { 
             url: endpoint, 
@@ -44,12 +46,12 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json' // Biz faqat JSON kutamiz deb serverga aytamiz
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 amount: amount,
                 access_token: TSPAY_MERCHANT_TOKEN,
-                redirect_url: window.location.origin, // Hozirgi domen (anilo.uz)
+                redirect_url: window.location.origin, 
                 comment: `Anilo User: ${userId}`
             })
         });
@@ -57,26 +59,31 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
         // Javob turi JSON ekanligini tekshirish
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") === -1) {
-            // Agar JSON bo'lmasa (masalan HTML), demak proksi noto'g'ri ishlayapti
             const text = await response.text();
             console.error("Non-JSON response from TsPay Proxy:", text.substring(0, 500));
             
             if (text.includes("<!DOCTYPE html>")) {
-                 throw new Error("Tizim Xatosi: API Proksi ishlamayapti (Sayt HTMLi qaytdi). Dasturchi bilan bog'laning.");
+                 throw new Error("Tizim Xatosi: API Proksi manzilni topolmadi (404). URL noto'g'ri bo'lishi mumkin.");
             }
             throw new Error(`Serverdan kutilmagan javob keldi: ${response.status}`);
         }
 
-        // Agar server xato kod qaytarsa (4xx, 5xx)
         if (!response.ok) {
             const errorText = await response.text();
             console.error("TsPay Server Error:", response.status, errorText);
+            
+            if (response.status === 405) {
+                throw new Error("Xatolik 405: To'lov tizimi metodga ruxsat bermadi. Iltimos admin bilan bog'laning.");
+            }
+            if (response.status === 404) {
+                throw new Error("Xatolik 404: To'lov manzili topilmadi. Tizim sozlamalarini tekshiring.");
+            }
+            
             throw new Error(`To'lov tizimi xatosi: ${response.status}`);
         }
 
         const data = await response.json();
         
-        // Agar status error bo'lsa
         if (data.status === 'error') {
             console.error("TsPay API Error:", data);
             throw new Error(data.message || "To'lov yaratishda noma'lum xatolik.");
@@ -85,9 +92,8 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
         return data;
     } catch (error: any) {
         console.error("TsPay Create Catch:", error);
-        // Foydalanuvchiga tushunarliroq xabar qaytarish
         const msg = error.message.includes('Failed to fetch') 
-            ? "Server bilan aloqa yo'q (CORS yoki Internet muammosi)." 
+            ? "Server bilan aloqa yo'q (Internet yoki CORS muammosi)." 
             : error.message;
         throw new Error(msg);
     }
@@ -100,8 +106,7 @@ export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResp
     }
 
     try {
-        // GET so'rovda token parametr sifatida ketadi
-        const response = await fetch(`${TSPAY_BASE_URL}/transactions/${chequeId}/?access_token=${TSPAY_MERCHANT_TOKEN}`, {
+        const response = await fetch(`${TSPAY_BASE_URL}/transaction/${chequeId}/?access_token=${TSPAY_MERCHANT_TOKEN}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
