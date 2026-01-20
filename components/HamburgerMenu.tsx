@@ -1,15 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-    X, Mic, LayoutGrid, CreditCard, History, Bookmark, 
-    Settings, LogOut, ShieldCheck, ChevronRight, 
-    Instagram, Send, Youtube, Facebook, User, Wallet, ShoppingBag, Store
+    X, Mic, CreditCard, History, Bookmark, 
+    Settings, LogOut, ChevronRight, User, 
+    ShoppingBag, Star, ShieldCheck, Edit3, Globe, Lock
 } from 'lucide-react';
 import { DashboardSubPage, Page } from '../App';
-import { useNotification } from '../hooks/useNotification';
 import { supabase } from '../services/supabaseClient';
-import { getUserProfile, getSocialLinks, getShopWallet } from '../services/dbService';
-import { UserRole, SocialLink, UserProfile, ShopWallet } from '../types';
+import { getUserProfile, getShopWallet } from '../services/dbService';
+import { UserRole, UserProfile, ShopWallet } from '../types';
 
 interface HamburgerMenuProps {
     isOpen: boolean;
@@ -20,13 +19,45 @@ interface HamburgerMenuProps {
     onSwitchRole: (role: UserRole) => void;
 }
 
+const MenuItem: React.FC<{ 
+    icon?: React.ReactNode; 
+    label: string; 
+    value?: string; 
+    onClick: () => void; 
+    isDestructive?: boolean;
+    hasArrow?: boolean;
+}> = ({ icon, label, value, onClick, isDestructive = false, hasArrow = true }) => (
+    <button 
+        onClick={onClick}
+        className="w-full flex items-center justify-between py-4 border-b border-white/5 active:bg-white/5 transition-colors group"
+    >
+        <div className="flex items-center gap-3">
+            {icon && <span className={isDestructive ? "text-red-500" : "text-zinc-400 group-hover:text-white transition-colors"}>{icon}</span>}
+            <span className={`text-sm font-medium ${isDestructive ? "text-red-500" : "text-white"}`}>
+                {label}
+            </span>
+        </div>
+        <div className="flex items-center gap-2">
+            {value && <span className="text-xs text-zinc-500 font-medium">{value}</span>}
+            {hasArrow && <ChevronRight size={16} className="text-zinc-600 group-hover:text-zinc-400" />}
+        </div>
+    </button>
+);
+
+const MenuSection: React.FC<{ title?: string; children: React.ReactNode }> = ({ title, children }) => (
+    <div className="mb-6">
+        {title && <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 px-1">{title}</h4>}
+        <div className="flex flex-col">
+            {children}
+        </div>
+    </div>
+);
+
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ 
     isOpen, onClose, onLogout, onMainNavigate, onDashboardNavigate, onSwitchRole 
 }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [shopWallet, setShopWallet] = useState<ShopWallet | null>(null);
-    const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
-    const { addNotification } = useNotification();
 
     useEffect(() => {
         if (isOpen) {
@@ -40,8 +71,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                     setProfile(p as UserProfile);
                     setShopWallet(w);
                 }
-                const links = await getSocialLinks();
-                setSocialLinks(links);
             };
             loadData();
         }
@@ -53,141 +82,113 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         onClose();
     };
 
-    const getSocialIcon = (platform: string) => {
-        switch(platform) {
-            case 'instagram': return <Instagram size={18}/>;
-            case 'telegram': return <Send size={18}/>;
-            case 'youtube': return <Youtube size={18}/>;
-            default: return <Facebook size={18}/>;
-        }
-    };
-
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[200] flex justify-end animate-fade-in">
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/80" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
 
             {/* Menu Panel */}
-            <div className="relative w-full max-w-sm bg-[#0a0a0a] h-full border-l border-zinc-900 shadow-2xl flex flex-col overflow-hidden animate-slide-in-right">
+            <div className="relative w-full max-w-sm bg-[#0a0a0a] h-full border-l border-white/10 shadow-2xl flex flex-col overflow-hidden animate-slide-in-right">
                 
-                {/* Header */}
-                <div className="p-6 border-b border-zinc-900 flex justify-between items-center bg-[#050505]">
-                    <h2 className="text-xl font-black uppercase tracking-tighter text-white">Menyu</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-zinc-900 rounded-full text-zinc-500 transition-colors">
-                        <X size={24} />
+                {/* Header with Close Button */}
+                <div className="absolute top-4 right-4 z-20">
+                    <button onClick={onClose} className="p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all">
+                        <X size={20} />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    {/* User Info */}
-                    {profile && (
-                        <div className="p-6 bg-gradient-to-b from-zinc-900/50 to-transparent">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-zinc-700 overflow-hidden">
-                                    {profile.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" alt=""/> : <div className="w-full h-full flex items-center justify-center text-zinc-600"><User size={28}/></div>}
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="font-black text-white truncate uppercase text-sm tracking-tight">{profile.full_name}</p>
-                                    <p className="text-orange-500 text-xs font-bold">@{profile.username}</p>
+                    
+                    {/* 1. Profile Header (Big Avatar) */}
+                    <div className="pt-16 pb-8 px-6 flex flex-col items-center bg-gradient-to-b from-orange-900/20 to-transparent">
+                        <div className="relative mb-4 group cursor-pointer" onClick={() => handleAction('sub', 'profile')}>
+                            <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-orange-500 to-red-600 shadow-[0_0_30px_rgba(249,115,22,0.3)]">
+                                <div className="w-full h-full rounded-full bg-black overflow-hidden border-2 border-black">
+                                    {profile?.avatar_url ? (
+                                        <img src={profile.avatar_url} className="w-full h-full object-cover" alt="" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500"><User size={40}/></div>
+                                    )}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl">
-                                    <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Anime Balance</p>
-                                    <p className="text-[11px] font-black text-white"> {profile.balance.toLocaleString()} UZS</p>
-                                </div>
-                                <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl border-orange-500/20">
-                                    <p className="text-[8px] text-orange-500 font-black uppercase tracking-widest mb-1">Shop Balance</p>
-                                    <p className="text-[11px] font-black text-white"> {(shopWallet?.balance || 0).toLocaleString()} UZS</p>
-                                </div>
+                            <div className="absolute bottom-0 right-0 bg-white text-black p-1.5 rounded-full shadow-lg border-2 border-black">
+                                <Edit3 size={14} />
                             </div>
                         </div>
-                    )}
+                        
+                        <h2 className="text-xl font-black text-white uppercase tracking-tight mb-1">
+                            {profile?.full_name || 'Foydalanuvchi'}
+                        </h2>
+                        <p className="text-sm font-bold text-orange-500">@{profile?.username}</p>
 
-                    <div className="p-4 space-y-1">
-                        {/* SPECIAL FANDUB ENTRY - PURPLE STYLE */}
+                        {/* Balance Badge */}
+                        <div className="mt-4 flex gap-3">
+                            <div className="bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                                <CreditCard size={14} className="text-zinc-400"/>
+                                <span className="text-xs font-mono text-white">{(profile?.balance || 0).toLocaleString()} UZS</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 2. Menu Items */}
+                    <div className="px-6 pb-10">
+                        {/* Fandub Special Section */}
                         {profile?.role === 'fandub' && (
-                            <div className="px-2 pb-2 pt-2">
+                            <div className="mb-6">
                                 <button 
                                     onClick={() => handleAction('main', 'fandub-dashboard')}
-                                    className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-purple-600 to-purple-900 rounded-[2rem] border border-purple-500/30 shadow-2xl shadow-purple-600/20 group"
+                                    className="w-full p-4 rounded-2xl bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/30 flex items-center justify-between group hover:border-purple-500/60 transition-all"
                                 >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
-                                            <Mic size={22} />
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
+                                            <Mic size={20} />
                                         </div>
                                         <div className="text-left">
-                                            <p className="text-sm font-black text-white uppercase tracking-tight">Fandub Studio</p>
-                                            <p className="text-[8px] text-white/60 font-bold uppercase tracking-widest">Ijodkor Paneli</p>
+                                            <p className="text-sm font-black text-white uppercase">Fandub Studio</p>
+                                            <p className="text-[10px] text-zinc-400">Ijodkor paneli</p>
                                         </div>
                                     </div>
-                                    <ChevronRight size={18} className="text-white/60 group-hover:translate-x-1 transition-transform" />
+                                    <ChevronRight size={18} className="text-purple-400" />
                                 </button>
                             </div>
                         )}
 
-                        <p className="px-3 pb-2 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Platforma</p>
-                        
-                        <button onClick={() => handleAction('main', 'shop')} className="w-full group flex items-center justify-between p-4 hover:bg-orange-600/10 rounded-2xl transition-all text-left">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-600/20">
-                                    <ShoppingBag size={20}/>
-                                </div>
-                                <span className="text-sm font-black text-white uppercase tracking-tight">Anilo Shop</span>
-                            </div>
-                            <ChevronRight size={18} className="text-zinc-700" />
-                        </button>
+                        <MenuSection title="Mening Profilim">
+                            <MenuItem icon={<User size={20}/>} label="Profilni tahrirlash" onClick={() => handleAction('sub', 'profile')} />
+                            <MenuItem icon={<Bookmark size={20}/>} label="Saqlanganlar" onClick={() => handleAction('sub', 'saved')} />
+                            <MenuItem icon={<History size={20}/>} label="Ko'rishlar tarixi" onClick={() => handleAction('sub', 'history')} />
+                            <MenuItem icon={<Star size={20}/>} label="Obuna (Premium)" value={profile?.subscription_plan || "Yo'q"} onClick={() => handleAction('sub', 'billing')} />
+                        </MenuSection>
 
-                        <button onClick={() => handleAction('main', 'studio')} className="w-full group flex items-center justify-between p-4 hover:bg-zinc-900 rounded-2xl transition-all text-left">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center text-orange-500 border border-zinc-700 group-hover:bg-orange-600 group-hover:text-white transition-all">
-                                    <Mic size={20}/>
-                                </div>
-                                <span className="text-sm font-black text-white uppercase tracking-tight">Fandub Loyihalar</span>
-                            </div>
-                            <ChevronRight size={18} className="text-zinc-700" />
-                        </button>
+                        <MenuSection title="Ilova Sozlamalari">
+                            <MenuItem icon={<Globe size={20}/>} label="Ilova tili" value="O'zbekcha" onClick={() => handleAction('sub', 'settings')} />
+                            <MenuItem icon={<Lock size={20}/>} label="Parol va Xavfsizlik" onClick={() => handleAction('sub', 'settings')} />
+                            <MenuItem icon={<ShoppingBag size={20}/>} label="Anilo Shop" onClick={() => handleAction('main', 'shop')} />
+                        </MenuSection>
 
-                        <p className="px-3 pt-6 pb-2 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Sizning hisobingiz</p>
-                        
-                        {[
-                            { id: 'saved', label: 'Saqlanganlar', icon: <Bookmark size={18}/> },
-                            { id: 'history', label: 'Ko\'rishlar Tarixi', icon: <History size={18}/> },
-                            { id: 'settings', label: 'Sozlamalar', icon: <Settings size={18}/> },
-                        ].map(item => (
-                            <button key={item.id} onClick={() => handleAction('sub', item.id as any)} className="w-full flex items-center gap-4 p-4 hover:bg-zinc-900 rounded-2xl transition-all text-zinc-400 hover:text-white">
-                                <div className="text-zinc-600">{item.icon}</div>
-                                <span className="text-sm font-bold">{item.label}</span>
-                            </button>
-                        ))}
-
-                        {/* GLOBAL ADMIN SWITCH */}
+                        {/* Admin Section */}
                         {['admin', 'owner'].includes(profile?.role || '') && (
-                            <button onClick={() => {
-                                onSwitchRole(profile!.role); 
-                                onClose();
-                            }} className="w-full flex items-center gap-4 p-4 hover:bg-yellow-500/10 rounded-2xl transition-all text-yellow-500 mt-4 border border-yellow-500/10">
-                                <ShieldCheck size={18}/>
-                                <span className="text-sm font-black uppercase tracking-widest">Global Admin</span>
-                            </button>
+                            <MenuSection title="Administrator">
+                                <MenuItem icon={<ShieldCheck size={20}/>} label="Admin Panelga o'tish" onClick={() => { onSwitchRole(profile!.role); onClose(); }} />
+                            </MenuSection>
                         )}
-                    </div>
-                </div>
 
-                {/* Footer */}
-                <div className="p-6 bg-[#050505] border-t border-zinc-900">
-                    <div className="flex justify-center gap-4 mb-6">
-                        {socialLinks.map(link => (
-                            <a key={link.id} href={link.url} target="_blank" rel="noreferrer" className="w-10 h-10 bg-zinc-900 hover:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-500 hover:text-white transition-all border border-zinc-800">
-                                {getSocialIcon(link.platform)}
-                            </a>
-                        ))}
+                        <div className="mt-8 pt-6 border-t border-white/10">
+                            <MenuItem 
+                                icon={<LogOut size={20}/>} 
+                                label="Hisobdan chiqish" 
+                                isDestructive={true} 
+                                hasArrow={false}
+                                onClick={onLogout} 
+                            />
+                        </div>
+                        
+                        <div className="mt-8 text-center">
+                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Anilo v1.0.2</p>
+                        </div>
                     </div>
-                    <button onClick={onLogout} className="w-full flex items-center justify-center gap-3 p-4 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all font-black uppercase text-[10px] tracking-[0.2em] border border-red-600/10">
-                        <LogOut size={16}/> Hisobdan chiqish
-                    </button>
                 </div>
             </div>
         </div>
