@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Page, DashboardSubPage } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, Menu } from 'lucide-react';
+import { Search, Bell, User } from 'lucide-react'; // User ikonkasini qo'shdik
 import { getUnreadNotificationsCount, getUserProfile, getAppConfig } from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
@@ -27,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [customLogo, setCustomLogo] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // Avatar uchun state
 
   useEffect(() => {
       // Fetch dynamic logo from config
@@ -43,7 +44,10 @@ export const Header: React.FC<HeaderProps> = ({
                       getUserProfile(user.id)
                   ]);
                   setUnreadCount(count);
-                  if (profile) setUserRole(profile.role);
+                  if (profile) {
+                      setUserRole(profile.role);
+                      setAvatarUrl(profile.avatar_url); // Avatarni yuklash
+                  }
               }
           };
           fetchHeaderData();
@@ -88,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Tools - RAMKASIZ (No Borders/Backgrounds) */}
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-5">
                 <button onClick={onSearchClick} className="p-2 text-white hover:text-orange-500 transition-colors drop-shadow-md active:scale-95">
                     <Search size={26} strokeWidth={2.5} />
                 </button>
@@ -103,9 +107,19 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 
                 {isAuthenticated ? (
-                    <div className="flex items-center ml-1">
-                        <button onClick={() => setIsMenuOpen(true)} className="p-2 text-white hover:text-orange-500 transition-colors drop-shadow-md active:scale-95">
-                            <Menu size={28} strokeWidth={2.5} />
+                    <div className="flex items-center ml-2">
+                        {/* PROFILE AVATAR BUTTON - Replaces Hamburger Menu */}
+                        <button 
+                            onClick={() => setIsMenuOpen(true)} 
+                            className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden hover:border-orange-500 transition-all shadow-lg active:scale-95"
+                        >
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-400">
+                                    <User size={20} />
+                                </div>
+                            )}
                         </button>
                     </div>
                 ) : (
