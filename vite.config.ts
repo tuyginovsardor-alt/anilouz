@@ -22,15 +22,10 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
-    // Define global constants replacements
-    // MUHIM: Faqat kerakli o'zgaruvchilarni alohida 'define' qilamiz.
-    // 'process.env': ... deb butun obyektni yozish xatolik keltirib chiqaradi.
+    // Endi VITE_ prefiksi borligi uchun maxsus define shart emas, 
+    // lekin ba'zi kutubxonalar (legacy) uchun process.env ni bo'sh obyekt qilib qo'yamiz.
     define: {
-      'process.env.TSPAY_API': JSON.stringify(env.TSPAY_API),
-      'process.env.TSPAY_URL': JSON.stringify(env.TSPAY_URL),
-      // Agar Vercel-da VITE_ prefiksi unutilgan bo'lsa, ularni ham qo'lda tanitamiz
-      'process.env.SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || env.SUPABASE_URL),
-      'process.env.SUPABASE_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || env.SUPABASE_KEY),
+      'process.env': {} 
     },
     build: {
       outDir: 'dist',
