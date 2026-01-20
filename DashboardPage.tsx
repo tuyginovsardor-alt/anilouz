@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DashboardSubPage, Page } from './App';
 import { ProfilePage } from './ProfilePage';
@@ -205,7 +206,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
 
     return (
-        <div className="container mx-auto px-4 pt-4">
+        <div className={currentPage === 'main' ? "w-full" : "container mx-auto px-4 pt-4"}>
             {renderContent()}
         </div>
     );
