@@ -2,8 +2,8 @@
 {
   "rewrites": [
     {
-      "source": "/api-tspay/:match*",
-      "destination": "https://tspay.uz/api/v1/:match*"
+      "source": "/api-tspay/(.*)",
+      "destination": "https://tspay.uz/api/v1/$1"
     },
     {
       "source": "/(.*)",
