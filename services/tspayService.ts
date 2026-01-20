@@ -24,10 +24,11 @@ export interface TsPayCheckResponse {
 }
 
 /**
- * MUHIM: Server redirect (301/302) muammosini oldini olish uchun 
- * endpoint oxiriga '/' belgisi qo'shildi.
+ * MUHIM: 405 (Method Not Allowed) xatosini oldini olish uchun 
+ * endpoint oxiridagi '/' belgisi olib tashlandi. 
+ * Ko'pgina API'lar POST so'rovini faqat aniq resurs manziliga qabul qiladi.
  */
-const CREATE_ENDPOINT = `${TSPAY_BASE_URL}/transactions/create/`; 
+const CREATE_ENDPOINT = `${TSPAY_BASE_URL}/transactions/create`; 
 
 // 1. Tranzaksiya yaratish
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayCreateResponse> => {
@@ -36,8 +37,8 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
     }
 
     try {
-        console.log("--- TSPAY DEBUG START ---");
-        console.log("URL:", CREATE_ENDPOINT);
+        console.log("--- TSPAY REQUEST START ---");
+        console.log("Endpoint:", CREATE_ENDPOINT);
 
         const response = await fetch(CREATE_ENDPOINT, {
             method: 'POST',
@@ -53,24 +54,21 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             })
         });
 
-        console.log("HTTP Status:", response.status);
-        if (response.redirected) {
-            console.log("Redirected to:", response.url);
-        }
+        console.log("Server Status:", response.status);
 
         const responseText = await response.text();
         
-        // Agar HTML qaytsa (bu bizda catch-all rewrite sababli bo'ladi)
+        // Agar HTML qaytsa (redirect yoki xato sahifasi)
         if (responseText.includes("<!DOCTYPE html>")) {
-            console.error("DEBUG: Server JSON o'rniga HTML qaytardi. Vercel rewrite qoidalarini tekshiring.");
-            throw new Error(`Serverdan kutilmagan javob keldi (HTML). Status: ${response.status}`);
+            console.error("Server kutilmaganda HTML qaytardi (405 yoki 404 bo'lishi mumkin).");
+            throw new Error(`Server JSON o'rniga HTML sahifa qaytardi (Status: ${response.status})`);
         }
 
         let data: any;
         try {
             data = JSON.parse(responseText.trim());
         } catch (e) {
-            console.error("JSON Parse Error. Raw Response:", responseText);
+            console.error("JSON Parse Error. Serverdan kelgan xom javob:", responseText);
             throw new Error("Server javobini o'qib bo'lmadi (JSON xatosi).");
         }
 
@@ -83,13 +81,13 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
         }
 
         if (!data.transaction || !data.transaction.url) {
-            throw new Error("To'lov havolasi topilmadi.");
+            throw new Error("To'lov havolasi (URL) topilmadi.");
         }
 
         return data;
     } catch (error: any) {
-        console.error("TsPay Create Catch:", error);
-        throw new Error(error.message || "TsPay serveriga ulanishda xatolik.");
+        console.error("TsPay Catch Error:", error);
+        throw new Error(error.message || "TsPay xizmatiga ulanishda xatolik.");
     }
 };
 
@@ -100,7 +98,9 @@ export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResp
     }
 
     try {
-        const endpoint = `${TSPAY_BASE_URL}/transactions/${chequeId}/?access_token=${TSPAY_MERCHANT_TOKEN}`;
+        // Holatni tekshirish uchun GET so'rovi oxirida slash bo'lishi yoki bo'lmasligi serverga bog'liq,
+        // lekin odatda slashsiz ishlash xavfsizroq.
+        const endpoint = `${TSPAY_BASE_URL}/transactions/${chequeId}?access_token=${TSPAY_MERCHANT_TOKEN}`;
         
         const response = await fetch(endpoint, {
             method: 'GET',
