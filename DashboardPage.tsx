@@ -10,6 +10,7 @@ import { AccountPage } from './AccountPage';
 import { BillingPage } from './BillingPage';
 import { SavedPage } from './SavedPage';
 import { DashboardSupportPage } from './components/DashboardSupportPage';
+import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { getSocialLinks } from './services/dbService';
 import { 
     LogOut, Settings, CreditCard, History, ShieldCheck, 
@@ -68,6 +69,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             case 'saved': return <SavedPage onMovieClick={onMovieClick} viewUserId={viewUserId} />;
             case 'account': return <AccountPage onNavigate={onNavigate} />;
             case 'billing': return <BillingPage />;
+            case 'plans': 
+                return (
+                    <div className="animate-fade-in pb-20">
+                        <h2 className="text-3xl font-black text-center text-white mb-2 uppercase tracking-tight">Premium Tariflar</h2>
+                        <p className="text-zinc-500 text-xs font-bold text-center uppercase tracking-widest mb-8">Eng qulayini tanlang</p>
+                        <SubscriptionPlans />
+                    </div>
+                );
             case 'support': return <DashboardSupportPage onBack={() => onNavigate('more')} />;
             case 'more':
                 return (
@@ -136,11 +145,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             )}
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <button onClick={() => onNavigate('billing')} className="group w-full flex flex-col p-6 bg-white/5 border border-white/5 rounded-[2.5rem] hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95">
+                                <button onClick={() => onNavigate('account')} className="group w-full flex flex-col p-6 bg-white/5 border border-white/5 rounded-[2.5rem] hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95">
                                     <div className="w-12 h-12 bg-orange-600/20 text-orange-500 rounded-2xl flex items-center justify-center mb-4">
                                         <CreditCard size={24}/>
                                     </div>
-                                    <p className="text-white font-bold text-lg">To'lov</p>
+                                    <p className="text-white font-bold text-lg">Moliya</p>
                                     <p className="text-gray-500 text-xs mt-1">Hisobni to'ldirish</p>
                                 </button>
 

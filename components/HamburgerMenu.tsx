@@ -17,7 +17,7 @@ interface HamburgerMenuProps {
     onMainNavigate: (page: Page) => void;
     onDashboardNavigate: (page: DashboardSubPage) => void;
     onSwitchRole: (role: UserRole) => void;
-    onOpenLegal: (type: LegalDocType) => void; // Yangi prop
+    onOpenLegal: (type: LegalDocType) => void;
 }
 
 const MenuItem: React.FC<{ 
@@ -157,7 +157,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                                 icon={<Crown size={20}/>} 
                                 label="Premium Obuna" 
                                 value={profile?.subscription_plan || "Yo'q"} 
-                                onClick={() => handleAction('sub', 'billing')} 
+                                onClick={() => handleAction('sub', 'plans')} 
                             />
                             <MenuItem icon={<Bookmark size={20}/>} label="Saqlanganlar" onClick={() => handleAction('sub', 'saved')} />
                             <MenuItem icon={<History size={20}/>} label="Ko'rishlar tarixi" onClick={() => handleAction('sub', 'history')} />

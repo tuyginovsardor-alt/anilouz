@@ -25,10 +25,10 @@ import { Home, Search, Sparkles, User, X, Layers, LayoutGrid } from 'lucide-reac
 import { getAppConfig } from './services/dbService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
-import { LegalDocs } from './components/LegalDocs'; // Yangi komponent
+import { LegalDocs } from './components/LegalDocs';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard';
-export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
+export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 export type LegalDocType = 'privacy' | 'terms';
 
@@ -215,7 +215,6 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {/* BOTTOM NAVIGATION */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-4 border-t border-zinc-900 pb-2">
@@ -253,8 +252,6 @@ const App: React.FC = () => {
                 </div>
             </div>
           )}
-
-          {/* Footer removed here */}
 
           {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} onAuthSuccess={() => {setIsAuthModalOpen(false); setPage('dashboard');}} />}
           
