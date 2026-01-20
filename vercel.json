@@ -1,0 +1,13 @@
+
+{
+  "rewrites": [
+    {
+      "source": "/api-tspay/:match*",
+      "destination": "https://tspay.uz/api/v1/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

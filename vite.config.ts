@@ -6,12 +6,21 @@ import autoprefixer from 'autoprefixer';
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, (process as any).cwd(), '');
 
   return {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      proxy: {
+        // Lokal kompyuterda '/api-tspay' ga kelgan so'rovlarni 'tspay.uz' ga yo'naltiramiz
+        '/api-tspay': {
+          target: env.VITE_TSPAY_URL || 'https://tspay.uz/api/v1',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api-tspay/, '')
+        }
+      }
     },
     plugins: [react()],
     css: {
@@ -22,8 +31,6 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
-    // Endi VITE_ prefiksi borligi uchun maxsus define shart emas, 
-    // lekin ba'zi kutubxonalar (legacy) uchun process.env ni bo'sh obyekt qilib qo'yamiz.
     define: {
       'process.env': {} 
     },

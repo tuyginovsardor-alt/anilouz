@@ -1,37 +1,37 @@
 
 // --- BU KONFIGURATSIYA FAYLI ---
 
-// Vite environment variables (VITE_ bilan boshlanadiganlar avtomatik keladi)
-const viteEnv = import.meta.env;
+// Vite environment variables
+const viteEnv = (import.meta as any).env;
 
 // Supabase Configuration
 export const SUPABASE_URL = viteEnv.VITE_SUPABASE_URL || "";
 export const SUPABASE_ANON_KEY = viteEnv.VITE_SUPABASE_KEY || viteEnv.VITE_SUPABASE_ANON_KEY || "";
 
 // --- TSPAY CONFIGURATION ---
-// Endi Vercel-da VITE_TSPAY_URL va VITE_TSPAY_API deb yozilgan bo'lishi shart.
+// MUHIM: CORS xatoligini oldini olish uchun biz to'g'ridan-to'g'ri URL emas,
+// balki o'zimiz yaratgan '/api-tspay' proksi yo'lini ishlatamiz.
+// Bu yo'l vite.config.ts (lokal) va vercel.json (prod) orqali haqiqiy manzilga ulanadi.
 
-export const TSPAY_BASE_URL = 
-    viteEnv.VITE_TSPAY_URL || 
-    'https://tspay.uz/api/v1'; // Fallback
+export const TSPAY_BASE_URL = '/api-tspay'; 
 
 export const TSPAY_MERCHANT_TOKEN = 
     viteEnv.VITE_TSPAY_API || 
     ""; 
 
-// Debugging (Console da tekshirish uchun)
+// Debugging
 if (viteEnv.DEV) {
-    console.log("Config Loaded (Vite Standard):", {
+    console.log("Config Loaded:", {
         supabase: !!SUPABASE_URL,
-        tspay: !!TSPAY_MERCHANT_TOKEN,
-        tspay_url: TSPAY_BASE_URL
+        tspay_token_set: !!TSPAY_MERCHANT_TOKEN,
+        tspay_proxy_path: TSPAY_BASE_URL
     });
 }
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error("Supabase kalitlari topilmadi! .env faylida VITE_SUPABASE_URL va VITE_SUPABASE_KEY borligini tekshiring.");
+    console.error("Supabase kalitlari topilmadi!");
 }
 
 if (!TSPAY_MERCHANT_TOKEN) {
-    console.warn("TsPay API kaliti topilmadi (VITE_TSPAY_API). To'lov tizimi ishlamasligi mumkin.");
+    console.warn("TsPay API kaliti topilmadi (VITE_TSPAY_API).");
 }
