@@ -32,15 +32,12 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
     }
 
     try {
-        // MUHIM: Ba'zi versiyalarda 'transaction' (birlik), ba'zilarida 'transactions' (ko'plik).
-        // Shuningdek, oxirida '/' belgisi bo'lishi kerak.
-        const endpoint = `${TSPAY_BASE_URL}/transaction/create/`; 
+        // TAHMIN: 405 xatosi Redirect tufayli bo'lishi mumkin. 
+        // Shuning uchun slashsiz 'transaction/create' ishlatamiz.
+        // Agar bu ham ishlamasa, 'transactions/create' (ko'plik) bo'lishi mumkin.
+        const endpoint = `${TSPAY_BASE_URL}/transaction/create`; 
 
-        console.log("To'lov yaratilmoqda...", { 
-            url: endpoint, 
-            amount, 
-            userId 
-        });
+        console.log(`POST so'rov yuborilmoqda: ${endpoint}`);
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -56,14 +53,22 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             })
         });
 
+        // Redirect bo'lganini tekshirish (URL o'zgargan bo'lsa)
+        if (response.redirected) {
+            console.warn("Server redirect qildi:", response.url);
+        }
+
         // Javob turi JSON ekanligini tekshirish
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") === -1) {
             const text = await response.text();
-            console.error("Non-JSON response from TsPay Proxy:", text.substring(0, 500));
+            console.error(`Non-JSON response (${response.status}):`, text.substring(0, 500));
             
-            if (text.includes("<!DOCTYPE html>")) {
-                 throw new Error("Tizim Xatosi: API Proksi manzilni topolmadi (404). URL noto'g'ri bo'lishi mumkin.");
+            if (response.status === 404) {
+                 throw new Error("Tizim Xatosi: To'lov manzili topilmadi (404).");
+            }
+            if (response.status === 405) {
+                 throw new Error("Tizim Xatosi: 405 (Method Not Allowed). Server POST so'rovni qabul qilmadi. Ehtimol manzil noto'g'ri.");
             }
             throw new Error(`Serverdan kutilmagan javob keldi: ${response.status}`);
         }
@@ -71,14 +76,6 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
         if (!response.ok) {
             const errorText = await response.text();
             console.error("TsPay Server Error:", response.status, errorText);
-            
-            if (response.status === 405) {
-                throw new Error("Xatolik 405: To'lov tizimi metodga ruxsat bermadi. Iltimos admin bilan bog'laning.");
-            }
-            if (response.status === 404) {
-                throw new Error("Xatolik 404: To'lov manzili topilmadi. Tizim sozlamalarini tekshiring.");
-            }
-            
             throw new Error(`To'lov tizimi xatosi: ${response.status}`);
         }
 
