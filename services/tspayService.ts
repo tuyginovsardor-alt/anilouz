@@ -23,6 +23,12 @@ export interface TsPayCheckResponse {
     message?: string;
 }
 
+/**
+ * MUHIM: Server redirect (301/302) qilayotgani sababli endpoint oxiriga '/' qo'shildi.
+ * Bu brauzer so'rovni noto'g'ri manzilga yo'naltirishini oldini oladi.
+ */
+const CREATE_ENDPOINT = `${TSPAY_BASE_URL}/transactions/create/`; 
+
 // 1. Tranzaksiya yaratish
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayCreateResponse> => {
     if (!TSPAY_MERCHANT_TOKEN) {
@@ -30,12 +36,10 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
     }
 
     try {
-        // Status 200 kelgan bo'lsa, demak bu endpoint to'g'ri.
-        const endpoint = `${TSPAY_BASE_URL}/transactions/create`; 
+        console.log("--- TSPAY REQUEST START ---");
+        console.log("Endpoint:", CREATE_ENDPOINT);
 
-        console.log(`So'rov yuborilmoqda: ${endpoint}, Summa: ${amount}`);
-
-        const response = await fetch(endpoint, {
+        const response = await fetch(CREATE_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -49,35 +53,40 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             })
         });
 
-        // Raw textni olamiz, chunki server sarlavhani noto'g'ri yuborishi mumkin
+        console.log("Server Status:", response.status);
+
         const responseText = await response.text();
-        console.log("Serverdan kelgan javob (raw):", responseText);
+        
+        // Agar HTML qaytsa (redirect yoki xato sahifasi)
+        if (responseText.includes("<!DOCTYPE html>")) {
+            console.error("Server HTML qaytardi. Ehtimol manzil noto'g'ri yoki proksi ishlamayapti.");
+            throw new Error(`Server JSON o'rniga HTML sahifa qaytardi (Status: ${response.status})`);
+        }
 
         let data: any;
         try {
-            data = JSON.parse(responseText);
+            data = JSON.parse(responseText.trim());
         } catch (e) {
-            // Agar JSON emas HTML qaytsa
-            if (responseText.includes("<!DOCTYPE html>")) {
-                throw new Error(`Server tizim sahifasini qaytardi (HTML). Status: ${response.status}`);
-            }
-            throw new Error(`Server javobini o'qib bo'lmadi (JSON xatosi). Status: ${response.status}`);
+            console.error("JSON Parse Error. Serverdan kelgan xom javob:", responseText);
+            throw new Error("Server javobini o'qib bo'lmadi (JSON xatosi).");
         }
 
         if (!response.ok) {
-            console.error("TsPay Server Error Data:", data);
             throw new Error(data.message || `To'lov tizimi xatosi: ${response.status}`);
         }
         
         if (data.status === 'error') {
-            console.error("TsPay API Logic Error:", data);
-            throw new Error(data.message || "To'lov yaratishda xatolik.");
+            throw new Error(data.message || "TsPay xatolik qaytardi.");
+        }
+
+        if (!data.transaction || !data.transaction.url) {
+            throw new Error("To'lov havolasi (URL) topilmadi.");
         }
 
         return data;
     } catch (error: any) {
-        console.error("TsPay Create Catch:", error);
-        throw new Error(error.message || "Ulanishda xatolik yuz berdi.");
+        console.error("TsPay Catch Error:", error);
+        throw new Error(error.message || "TsPay xizmatiga ulanishda xatolik.");
     }
 };
 
@@ -88,7 +97,10 @@ export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResp
     }
 
     try {
-        const response = await fetch(`${TSPAY_BASE_URL}/transactions/${chequeId}/?access_token=${TSPAY_MERCHANT_TOKEN}`, {
+        // Holatni tekshirishda ham oxiriga '/' qo'shish xavfsizroq
+        const endpoint = `${TSPAY_BASE_URL}/transactions/${chequeId}/?access_token=${TSPAY_MERCHANT_TOKEN}`;
+        
+        const response = await fetch(endpoint, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json'
@@ -96,10 +108,9 @@ export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResp
         });
 
         const responseText = await response.text();
-        const data = JSON.parse(responseText);
-        return data;
+        return JSON.parse(responseText.trim());
     } catch (error) {
-        console.error("TsPay Check Error:", error);
+        console.error("TsPay Check Status Error:", error);
         throw new Error("To'lov holatini tekshirib bo'lmadi.");
     }
 };
