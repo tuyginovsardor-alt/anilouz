@@ -1,3 +1,4 @@
+
 import { supabase } from './supabaseClient';
 import { 
     Movie, UserProfile, ATCTransaction, ATCWallet, ContestTask, 
@@ -18,6 +19,25 @@ const safeJsonParse = (val: any, fallback: any = {}) => {
         console.warn("JSON Parse xatosi:", e, val);
         return fallback;
     }
+};
+
+// --- TS-PAY INTEGRATION HELPER ---
+export const recordTsPaySuccess = async (userId: string, amount: number, transactionId: number) => {
+    // Bizda "To'lov muvaffaqiyatli" bo'lsa, admin tasdiqlashi uchun PaymentRequest yaratamiz.
+    // Screenshot o'rniga maxsus belgi qo'yamiz.
+    const note = `TSPAY_AUTO_ID:${transactionId}`;
+    
+    // Agar "completed" statusini birdaniga berish imkoni bo'lsa (RPC orqali), shuni ishlatamiz.
+    // Hozircha xavfsizlik uchun "pending" qilamiz va admin panelda "TsPay" deb ko'rinadi.
+    // Yoki, agar admin panelda avto-tasdiqlash logikasi bo'lmasa, 'approved' deb yozishga urinib ko'ramiz (agar RLS ruxsat bersa).
+    
+    // Eng yaxshi variant: Oddiy request yaratish, lekin screenshot_url da ID bo'ladi.
+    await supabase.from('payment_requests').insert({
+        user_id: userId,
+        amount: amount,
+        screenshot_url: `https://tspay.uz/check/${transactionId}`, // Fake URL for visuals
+        status: 'pending' // Admin baribir tekshirib 'approve' bosishi kerak yoki keyinchalik webhook orqali avtomatlashadi
+    } as any);
 };
 
 // --- ANILO SHOP SERVICES ---

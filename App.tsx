@@ -22,7 +22,8 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
 import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag } from 'lucide-react';
-import { getAppConfig } from './services/dbService';
+import { getAppConfig, recordTsPaySuccess } from './services/dbService';
+import { checkTsPayStatus } from './services/tspayService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
@@ -99,7 +100,34 @@ const App: React.FC = () => {
             if (session) {
                 setIsAuthenticated(true);
                 await fetchUserRole(session.user.id);
-                setPage('dashboard'); // Redirect to dashboard immediately if logged in
+                setPage('dashboard'); 
+                
+                // --- TSPAY CHECK LOGIC ---
+                const tspayId = localStorage.getItem('tspay_pending_id');
+                const tspayAmount = localStorage.getItem('tspay_pending_amount');
+                
+                if (tspayId && tspayAmount) {
+                    addNotification({ type: 'info', title: 'Tekshirilmoqda', message: 'To\'lov holati tekshirilmoqda...' });
+                    try {
+                        const status = await checkTsPayStatus(Number(tspayId));
+                        if (status.status === 'success' && status.data.pay_status === 'paid') {
+                            // Muvaffaqiyatli!
+                            await recordTsPaySuccess(session.user.id, Number(tspayAmount), Number(tspayId));
+                            addNotification({ type: 'success', title: 'To\'lov Qabul qilindi', message: 'Hisobingiz muvaffaqiyatli to\'ldirildi!' });
+                        } else {
+                            addNotification({ type: 'warning', title: 'Kutilmoqda', message: 'To\'lov hali tasdiqlanmagan yoki bekor qilingan.' });
+                        }
+                    } catch (e) {
+                        console.error("Payment check failed", e);
+                        addNotification({ type: 'error', title: 'Xatolik', message: 'To\'lovni tekshirishda xatolik.' });
+                    } finally {
+                        // Clean up
+                        localStorage.removeItem('tspay_pending_id');
+                        localStorage.removeItem('tspay_pending_amount');
+                    }
+                }
+                // --- END TSPAY CHECK ---
+
             } else {
                 setPage('welcome');
             }

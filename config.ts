@@ -1,3 +1,4 @@
+
 // --- BU KONFIGURATSIYA FAYLI ---
 // Vercel yoki boshqa hostinglarda Environment Variables orqali ishlaydi.
 
@@ -17,9 +18,25 @@ export const SUPABASE_ANON_KEY =
     procEnv.VITE_SUPABASE_KEY || 
     "";
 
+// --- TSPAY CONFIGURATION ---
+// Vercelda 'TSPAY_URL' va 'TSPAY_API' deb kiritasiz.
+// Vite uchun 'VITE_' prefiksi bilan ham ishlataverasiz.
+
+export const TSPAY_BASE_URL = 
+    viteEnv.VITE_TSPAY_URL || 
+    procEnv.TSPAY_URL || 
+    'https://tspay.uz/api/v1'; // Agar kiritilmasa, default qiymat
+
+export const TSPAY_MERCHANT_TOKEN = 
+    viteEnv.VITE_TSPAY_API || 
+    procEnv.TSPAY_API || 
+    ""; // Bu yer bo'sh qoladi, Verceldan o'qishi kerak
+
 // Debugging help (faqat dev rejimda yoki kalitlar bo'lmasa ko'rinadi)
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.error("Supabase kalitlari topilmadi! Vercel Settings -> Environment Variables qismini tekshiring.");
-    console.log("URL mavjudligi:", !!SUPABASE_URL);
-    console.log("KEY mavjudligi:", !!SUPABASE_ANON_KEY);
+}
+
+if (!TSPAY_MERCHANT_TOKEN) {
+    console.warn("TsPay API kaliti topilmadi! Vercel Settings -> Environment Variables da 'TSPAY_API' ni tekshiring.");
 }
