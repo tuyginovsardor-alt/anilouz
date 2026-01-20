@@ -25,18 +25,15 @@ export interface TsPayCheckResponse {
 
 // 1. Tranzaksiya yaratish
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayCreateResponse> => {
-    // API kalit borligini tekshirish
     if (!TSPAY_MERCHANT_TOKEN) {
-        console.error("VITE_TSPAY_API topilmadi. Config:", TSPAY_MERCHANT_TOKEN);
-        throw new Error("Tizimda TsPay API kaliti sozlanmagan. Admin bilan bog'laning.");
+        throw new Error("Tizimda TsPay API kaliti sozlanmagan.");
     }
 
     try {
-        // TUZATISH: 404 xatosi 'transaction' (birlik) noto'g'ri ekanligini bildiradi.
-        // Ko'p ehtimol bilan to'g'ri manzil 'transactions' (ko'plik).
+        // Status 200 kelgan bo'lsa, demak bu endpoint to'g'ri.
         const endpoint = `${TSPAY_BASE_URL}/transactions/create`; 
 
-        console.log(`POST so'rov yuborilmoqda: ${endpoint}`);
+        console.log(`So'rov yuborilmoqda: ${endpoint}, Summa: ${amount}`);
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -52,46 +49,35 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             })
         });
 
-        // Redirect bo'lganini tekshirish
-        if (response.redirected) {
-            console.warn("Server redirect qildi:", response.url);
-        }
+        // Raw textni olamiz, chunki server sarlavhani noto'g'ri yuborishi mumkin
+        const responseText = await response.text();
+        console.log("Serverdan kelgan javob (raw):", responseText);
 
-        // Javob turi JSON ekanligini tekshirish
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") === -1) {
-            const text = await response.text();
-            console.error(`Non-JSON response (${response.status}):`, text.substring(0, 500));
-            
-            if (response.status === 404) {
-                 throw new Error("Tizim Xatosi: 404 (Not Found). Manzil topilmadi. API URL xato bo'lishi mumkin.");
+        let data: any;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            // Agar JSON emas HTML qaytsa
+            if (responseText.includes("<!DOCTYPE html>")) {
+                throw new Error(`Server tizim sahifasini qaytardi (HTML). Status: ${response.status}`);
             }
-            if (response.status === 405) {
-                 throw new Error("Tizim Xatosi: 405 (Method Not Allowed).");
-            }
-            throw new Error(`Serverdan kutilmagan javob keldi: ${response.status}`);
+            throw new Error(`Server javobini o'qib bo'lmadi (JSON xatosi). Status: ${response.status}`);
         }
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error("TsPay Server Error:", response.status, errorText);
-            throw new Error(`To'lov tizimi xatosi: ${response.status}`);
+            console.error("TsPay Server Error Data:", data);
+            throw new Error(data.message || `To'lov tizimi xatosi: ${response.status}`);
         }
-
-        const data = await response.json();
         
         if (data.status === 'error') {
-            console.error("TsPay API Error:", data);
-            throw new Error(data.message || "To'lov yaratishda noma'lum xatolik.");
+            console.error("TsPay API Logic Error:", data);
+            throw new Error(data.message || "To'lov yaratishda xatolik.");
         }
 
         return data;
     } catch (error: any) {
         console.error("TsPay Create Catch:", error);
-        const msg = error.message.includes('Failed to fetch') 
-            ? "Server bilan aloqa yo'q (Internet yoki CORS muammosi)." 
-            : error.message;
-        throw new Error(msg);
+        throw new Error(error.message || "Ulanishda xatolik yuz berdi.");
     }
 };
 
@@ -102,25 +88,15 @@ export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResp
     }
 
     try {
-        // Bu yerda ham 'transactions' ga o'zgartiramiz
         const response = await fetch(`${TSPAY_BASE_URL}/transactions/${chequeId}/?access_token=${TSPAY_MERCHANT_TOKEN}`, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
                 'Accept': 'application/json'
             }
         });
 
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") === -1) {
-             throw new Error("API Proksi xatosi (HTML response).");
-        }
-
-        if (!response.ok) {
-             throw new Error(`Server xatosi: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const responseText = await response.text();
+        const data = JSON.parse(responseText);
         return data;
     } catch (error) {
         console.error("TsPay Check Error:", error);
