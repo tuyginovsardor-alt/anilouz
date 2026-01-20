@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Movie } from './types';
-import { getMovies } from './services/dbService';
+import { getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
+import { supabase } from './services/supabaseClient';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { MovieCard } from './components/MovieCard';
-import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight, Bookmark } from 'lucide-react';
+import { useNotification } from './hooks/useNotification';
 
 interface DashboardHomePageProps {
   onSearch: (query: string) => void;
@@ -16,16 +18,40 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
     const [isLoading, setIsLoading] = useState(true);
     const [heroIndex, setHeroIndex] = useState(0);
     const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [isHeroSaved, setIsHeroSaved] = useState(false);
+    
+    // Elastic Pull State
+    const [pullY, setPullY] = useState(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const startY = useRef(0);
+    const { addNotification } = useNotification();
     const timerRef = useRef<number | null>(null);
 
     useEffect(() => {
-        getMovies().then(movies => {
+        const fetch = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if(user) setUserId(user.id);
+            const movies = await getMovies();
             setAllMovies(movies);
             setIsLoading(false);
-        });
+        };
+        fetch();
     }, []);
 
     const heroMovies = allMovies.slice(0, 6);
+    const currentHeroMovie = heroMovies[heroIndex];
+
+    // Check save status for current hero movie
+    useEffect(() => {
+        const checkSaved = async () => {
+            if (userId && currentHeroMovie?.id) {
+                const saved = await isMovieSaved(userId, currentHeroMovie.id);
+                setIsHeroSaved(saved);
+            }
+        }
+        checkSaved();
+    }, [userId, currentHeroMovie, heroIndex]);
 
     const nextHero = useCallback(() => {
         if (heroMovies.length === 0) return;
@@ -53,14 +79,67 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
         setTimeout(() => setIsAutoPlaying(true), 10000);
     };
 
+    const handleHeroSave = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!userId || !currentHeroMovie?.id) {
+            addNotification({type: 'warning', title: 'Kirish kerak', message: 'Saqlash uchun tizimga kiring.'});
+            return;
+        }
+        const newState = await toggleSaveMovie(userId, currentHeroMovie.id);
+        setIsHeroSaved(newState);
+        addNotification({
+            type: 'success', 
+            title: newState ? 'Saqlandi' : 'O\'chirildi',
+            message: newState ? 'Anime saqlanganlarga qo\'shildi' : 'Anime saqlanganlardan olib tashlandi'
+        });
+    };
+
+    // --- ELASTIC PULL LOGIC ---
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (window.scrollY === 0) {
+            startY.current = e.touches[0].clientY;
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (window.scrollY === 0 && startY.current > 0) {
+            const currentY = e.touches[0].clientY;
+            const delta = currentY - startY.current;
+            if (delta > 0) {
+                // Logarithmic resistance for rubber feel
+                const dampened = Math.pow(delta, 0.8); 
+                setPullY(Math.min(dampened, 150)); // Max stretch
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        startY.current = 0;
+        setPullY(0); // Snap back
+    };
+
     if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
 
     return (
-        <div className="pb-32 bg-[#050505] animate-fade-in">
+        <div 
+            ref={containerRef}
+            className="pb-32 bg-[#050505] animate-fade-in transition-transform duration-300 ease-out will-change-transform"
+            style={{ transform: `translateY(${pullY}px)` }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
             
             {/* HERO CAROUSEL - Edge to Edge, Behind Header */}
-            {/* -mt-20 pulls it up to cover the header area (since header is transparent) */}
             <div className="relative w-full h-[65vh] md:h-[800px] group overflow-hidden mb-16 shadow-2xl -mt-20">
+                
+                {/* Pull Indicator (Optional visual cue when pulling) */}
+                {pullY > 20 && (
+                    <div className="absolute top-10 left-0 right-0 z-50 flex justify-center items-center opacity-50">
+                        <div className="w-8 h-8 rounded-full bg-white/20 animate-spin"></div>
+                    </div>
+                )}
+
                 <div 
                     className="flex h-full transition-transform duration-1000 cubic-bezier(0.23, 1, 0.32, 1)"
                     style={{ transform: `translateX(-${heroIndex * 100}%)` }}
@@ -109,6 +188,14 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                                             className="px-8 md:px-10 py-4 md:py-5 bg-black/40 backdrop-blur-md text-white rounded-xl font-black uppercase tracking-widest text-[10px] md:text-[11px] hover:bg-zinc-800 transition-all border border-white/10 flex items-center justify-center gap-3"
                                         >
                                             <Info size={20} /> Batafsil
+                                        </button>
+                                        
+                                        {/* YELLOW BOOKMARK BUTTON */}
+                                        <button 
+                                            onClick={handleHeroSave}
+                                            className={`w-14 md:w-16 h-full rounded-xl flex items-center justify-center transition-all shadow-lg active:scale-95 border ${isHeroSaved ? 'bg-yellow-500 text-black border-yellow-500 shadow-yellow-500/30' : 'bg-black/40 backdrop-blur-md text-yellow-500 border-yellow-500/50 hover:bg-yellow-500/10'}`}
+                                        >
+                                            <Bookmark size={24} fill={isHeroSaved ? "currentColor" : "none"} />
                                         </button>
                                     </div>
                                 </div>

@@ -1,7 +1,7 @@
 
 // --- USER & AUTH TYPES ---
-// Added 'premium' to UserRole
-export type UserRole = 'user' | 'admin' | 'owner' | 'manager' | 'shop' | 'dub' | 'support' | 'accountant' | 'premium';
+// Added 'premium' and 'fandub' to UserRole
+export type UserRole = 'user' | 'admin' | 'owner' | 'manager' | 'shop' | 'dub' | 'support' | 'accountant' | 'premium' | 'fandub';
 
 export interface UserProfile {
     id: string;
@@ -21,7 +21,6 @@ export interface UserProfile {
     free_trial_started_at?: string;
     bio?: string;
     fans_count?: number;
-    // Added language field to UserProfile
     language?: string;
 }
 
@@ -62,6 +61,20 @@ export interface Episode {
     title: string;
     source: string | File;
     sourceType?: 'url' | 'file';
+}
+
+export interface FandubUpload {
+    id: number;
+    user_id: string;
+    title: string;
+    description: string;
+    poster_url: string;
+    video_url: string;
+    genre: string;
+    status: 'pending' | 'approved' | 'rejected';
+    admin_comment?: string;
+    created_at: string;
+    profiles?: UserProfile;
 }
 
 export interface ContentItem {
@@ -367,7 +380,6 @@ export interface SocialLink {
     label: string;
 }
 
-// Added CulturalAnalysis interface
 export interface CulturalAnalysis {
     detectedLanguage: string;
     isoCode: string;
@@ -377,5 +389,5 @@ export interface CulturalAnalysis {
     culturalFacts: string[];
 }
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard';
 export type LegalDocType = 'privacy' | 'security' | 'terms';

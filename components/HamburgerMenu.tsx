@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
     X, Mic, LayoutGrid, CreditCard, History, Bookmark, 
@@ -106,20 +107,20 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                     )}
 
                     <div className="p-4 space-y-1">
-                        {/* SPECIAL SHOP ADMIN ENTRY - PINK STYLE */}
-                        {profile?.role === 'shop' && (
-                            <div className="px-2 pb-6 pt-2 animate-pulse">
+                        {/* SPECIAL FANDUB ENTRY - PURPLE STYLE */}
+                        {profile?.role === 'fandub' && (
+                            <div className="px-2 pb-2 pt-2">
                                 <button 
-                                    onClick={() => handleAction('main', 'shop-admin')}
-                                    className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-pink-600 to-pink-900 rounded-[2rem] border border-pink-500/30 shadow-2xl shadow-pink-600/20 group"
+                                    onClick={() => handleAction('main', 'fandub-dashboard')}
+                                    className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-purple-600 to-purple-900 rounded-[2rem] border border-purple-500/30 shadow-2xl shadow-purple-600/20 group"
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
-                                            <Store size={22} />
+                                            <Mic size={22} />
                                         </div>
                                         <div className="text-left">
-                                            <p className="text-sm font-black text-white uppercase tracking-tight">Shop Boshqaruvi</p>
-                                            <p className="text-[8px] text-white/60 font-bold uppercase tracking-widest">Admin Panelga O'tish</p>
+                                            <p className="text-sm font-black text-white uppercase tracking-tight">Fandub Studio</p>
+                                            <p className="text-[8px] text-white/60 font-bold uppercase tracking-widest">Ijodkor Paneli</p>
                                         </div>
                                     </div>
                                     <ChevronRight size={18} className="text-white/60 group-hover:translate-x-1 transition-transform" />
@@ -142,14 +143,13 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         <button onClick={() => handleAction('main', 'studio')} className="w-full group flex items-center justify-between p-4 hover:bg-zinc-900 rounded-2xl transition-all text-left">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center text-orange-500 border border-zinc-700 group-hover:bg-orange-600 group-hover:text-white transition-all">
-                                    <LayoutGrid size={20}/>
+                                    <Mic size={20}/>
                                 </div>
-                                <span className="text-sm font-black text-white uppercase tracking-tight">Anilo Studio</span>
+                                <span className="text-sm font-black text-white uppercase tracking-tight">Fandub Loyihalar</span>
                             </div>
                             <ChevronRight size={18} className="text-zinc-700" />
                         </button>
 
-                        {/* ... (qolgan menyu elementlari) ... */}
                         <p className="px-3 pt-6 pb-2 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Sizning hisobingiz</p>
                         
                         {[

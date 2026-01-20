@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   const navLinks = [
     { id: 'welcome', label: 'Asosiy' },
     { id: 'dashboard', label: 'Katalog' },
-    { id: 'studio', label: 'Studio' },
+    { id: 'studio', label: 'Fandub' },
     { id: 'ai-assistant', label: 'AI Bot' }
   ];
 
@@ -68,12 +68,14 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Logo & Links */}
             <div className="flex items-center gap-10">
             <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onNavigate('welcome')}>
-                {customLogo ? (
-                    <img src={customLogo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-lg" />
-                ) : (
-                    <UzumakiLogo className="w-9 h-9 text-orange-500 drop-shadow-md" />
-                )}
-                <span className="text-xl md:text-2xl font-black uppercase text-white tracking-tighter drop-shadow-md">ANILO</span>
+                {/* Circular Logo, No Text */}
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
+                    {customLogo ? (
+                        <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                        <UzumakiLogo className="w-full h-full p-1 text-orange-500 bg-black" />
+                    )}
+                </div>
             </div>
 
             <nav className="hidden xl:flex items-center gap-8">

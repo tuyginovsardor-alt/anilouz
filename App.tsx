@@ -13,7 +13,8 @@ import { DubDashboard } from './DubDashboard';
 import { StudioPage } from './StudioPage';
 import { ShopPage } from './ShopPage';
 import { ShopAdminPage } from './ShopAdminPage';
-import { CatalogPage } from './CatalogPage'; // Import CatalogPage
+import { CatalogPage } from './CatalogPage'; 
+import { FandubDashboard } from './FandubDashboard'; // Import new component
 import { VideoAdPlayer } from './components/VideoAdPlayer';
 import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
@@ -23,9 +24,9 @@ import { Footer } from './components/Footer';
 import { CopyrightPage } from './CopyrightPage';
 import { Home, Search, Bookmark, User, MoreHorizontal, X, Sparkles, Mic, Menu, ShoppingBag, LayoutGrid, Layers } from 'lucide-react';
 import { getAppConfig } from './services/dbService';
-import { UzumakiLogo } from './components/icons/UzumakiLogo'; // Import logo
+import { UzumakiLogo } from './components/icons/UzumakiLogo';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 
@@ -39,7 +40,7 @@ const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAppReady, setIsAppReady] = useState(false); // Global Loading State
+  const [isAppReady, setIsAppReady] = useState(false);
 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -58,10 +59,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
         try {
-            // 1. Config va Logo yuklash
             await getAppConfig(); 
-            
-            // 2. Auth tekshirish
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 setIsAuthenticated(true);
@@ -69,7 +67,6 @@ const App: React.FC = () => {
             }
         } catch (e) { console.error(e); }
         finally { 
-            // Simulate minimal splash duration for better UX
             setTimeout(() => setIsAppReady(true), 1500); 
         }
     };
@@ -95,12 +92,9 @@ const App: React.FC = () => {
 
   const handleNavigation = (targetPage: Page) => {
     setPage(targetPage);
-    
-    // Agar Dashboardga o'tilayotgan bo'lsa, uni bosh sahifasiga (main) reset qilamiz
     if (targetPage === 'dashboard') {
         setDashboardPage('main');
     }
-
     setSelectedMovie(null);
     setSelectedArtistId(null);
     setIsPlayerActive(false);
@@ -128,20 +122,15 @@ const App: React.FC = () => {
       setDashboardPage('profile');
   };
 
-  // GLOBAL LOADING SCREEN (CRUNCHYROLL STYLE)
   if (!isAppReady) return (
       <div className="h-screen w-full bg-[#000000] flex flex-col items-center justify-center relative overflow-hidden">
-          {/* Central Logo */}
           <div className="flex flex-col items-center gap-4 animate-fade-in">
               <UzumakiLogo className="w-20 h-20 text-orange-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.6)] animate-pulse" />
               <h1 className="text-3xl font-black text-white tracking-widest uppercase mt-2">ANILO</h1>
           </div>
-          
-          {/* Bottom Loading Bar */}
           <div className="absolute bottom-20 w-48 h-1 bg-zinc-900 rounded-full overflow-hidden">
               <div className="h-full bg-orange-600 animate-[loading_1.5s_ease-in-out_infinite]"></div>
           </div>
-          
           <style>{`
             @keyframes loading {
                 0% { transform: translateX(-100%); }
@@ -156,7 +145,6 @@ const App: React.FC = () => {
         <NotificationContainer />
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505]">
           
-          {/* Header faqat authenticated bo'lsa yoki welcome page bo'lmasa ko'rinadi */}
           {!isPlayerActive && !activeVideoAd && page !== 'welcome' && (
             <Header 
               onNavigate={handleNavigation} 
@@ -180,10 +168,9 @@ const App: React.FC = () => {
                       <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} onArtistClick={handleArtistClick} />
                     ) : (
                       <>
-                        {/* onStart prop endi AuthModalni ochadi */}
                         {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}
                         {page === 'search' && <SearchPage initialQuery={currentQuery} onNewSearch={setCurrentQuery} onMovieClick={handleMovieClick} />}
-                        {page === 'catalog' && <CatalogPage onMovieClick={handleMovieClick} />} {/* New Catalog Page */}
+                        {page === 'catalog' && <CatalogPage onMovieClick={handleMovieClick} />}
                         {page === 'dashboard' && <DashboardPage viewUserId={selectedArtistId} currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
                         {page === 'ai-assistant' && <AiAssistantPage />}
@@ -192,13 +179,13 @@ const App: React.FC = () => {
                         {page === 'studio' && <StudioPage onArtistClick={handleArtistClick} onMovieClick={handleMovieClick} />}
                         {page === 'shop' && <ShopPage />}
                         {page === 'shop-admin' && <ShopAdminPage />}
+                        {page === 'fandub-dashboard' && <FandubDashboard />}
                       </>
                     )}
                   </>
                 )}
           </main>
 
-          {/* SEARCH MODAL */}
           {isSearchOpen && (
               <div className="fixed inset-0 z-[200] bg-[#050505] animate-fade-in flex flex-col p-6 sm:p-10">
                   <button onClick={() => setIsSearchOpen(false)} className="absolute top-6 right-6 p-3 bg-zinc-800 hover:bg-zinc-700 rounded-full text-gray-400">
@@ -218,14 +205,13 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {/* MOBILE BOTTOM NAVIGATION - UPDATED */}
           {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-4 border-t border-zinc-900 pb-2">
                     {[
                         { id: 'dashboard', label: 'Asosiy', icon: <Home size={24} />, active: page === 'dashboard' && dashboardPage === 'main' },
                         { id: 'catalog', label: 'Katalog', icon: <Layers size={24} />, active: page === 'catalog' },
-                        { id: 'studio', label: 'Studio', icon: <LayoutGrid size={24} />, active: page === 'studio' }, 
+                        { id: 'studio', label: 'Fandub', icon: <LayoutGrid size={24} />, active: page === 'studio' }, 
                         { id: 'profile', label: 'Profil', icon: <User size={24} />, active: page === 'dashboard' && dashboardPage === 'profile' },
                     ].map(item => (
                         <button 
@@ -233,7 +219,7 @@ const App: React.FC = () => {
                             onClick={() => {
                                 if (item.id === 'dashboard') {
                                     handleNavigation('dashboard');
-                                    setDashboardPage('main'); // FORCE RESET TO MAIN
+                                    setDashboardPage('main');
                                 }
                                 else if (item.id === 'catalog') handleNavigation('catalog');
                                 else if (item.id === 'studio') handleNavigation('studio');
