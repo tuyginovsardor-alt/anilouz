@@ -32,23 +32,25 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
     }
 
     try {
+        // O'ZGARISH: Oxiridagi '/' belgisini olib tashladik.
+        // /transactions/create/ -> /transactions/create
+        const endpoint = `${TSPAY_BASE_URL}/transactions/create`; 
+
         console.log("To'lov yaratilmoqda...", { 
-            url: `${TSPAY_BASE_URL}/transactions/create/`, 
+            url: endpoint, 
             amount, 
             userId 
         });
 
-        const response = await fetch(`${TSPAY_BASE_URL}/transactions/create/`, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Agar proksi ishlatilmasa, ba'zan Authorization header kerak bo'lishi mumkin, 
-                // lekin TsPay body ichida access_token so'raydi.
             },
             body: JSON.stringify({
                 amount: amount,
                 access_token: TSPAY_MERCHANT_TOKEN,
-                redirect_url: window.location.origin, // Hozirgi domen (anilo.uz yoki vercel.app)
+                redirect_url: window.location.origin, // Hozirgi domen (anilo.uz)
                 comment: `Anilo User: ${userId}`
             })
         });
