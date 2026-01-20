@@ -32,10 +32,9 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
     }
 
     try {
-        // TAHMIN: 405 xatosi Redirect tufayli bo'lishi mumkin. 
-        // Shuning uchun slashsiz 'transaction/create' ishlatamiz.
-        // Agar bu ham ishlamasa, 'transactions/create' (ko'plik) bo'lishi mumkin.
-        const endpoint = `${TSPAY_BASE_URL}/transaction/create`; 
+        // TUZATISH: 404 xatosi 'transaction' (birlik) noto'g'ri ekanligini bildiradi.
+        // Ko'p ehtimol bilan to'g'ri manzil 'transactions' (ko'plik).
+        const endpoint = `${TSPAY_BASE_URL}/transactions/create`; 
 
         console.log(`POST so'rov yuborilmoqda: ${endpoint}`);
 
@@ -53,7 +52,7 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             })
         });
 
-        // Redirect bo'lganini tekshirish (URL o'zgargan bo'lsa)
+        // Redirect bo'lganini tekshirish
         if (response.redirected) {
             console.warn("Server redirect qildi:", response.url);
         }
@@ -65,10 +64,10 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             console.error(`Non-JSON response (${response.status}):`, text.substring(0, 500));
             
             if (response.status === 404) {
-                 throw new Error("Tizim Xatosi: To'lov manzili topilmadi (404).");
+                 throw new Error("Tizim Xatosi: 404 (Not Found). Manzil topilmadi. API URL xato bo'lishi mumkin.");
             }
             if (response.status === 405) {
-                 throw new Error("Tizim Xatosi: 405 (Method Not Allowed). Server POST so'rovni qabul qilmadi. Ehtimol manzil noto'g'ri.");
+                 throw new Error("Tizim Xatosi: 405 (Method Not Allowed).");
             }
             throw new Error(`Serverdan kutilmagan javob keldi: ${response.status}`);
         }
@@ -103,7 +102,8 @@ export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResp
     }
 
     try {
-        const response = await fetch(`${TSPAY_BASE_URL}/transaction/${chequeId}/?access_token=${TSPAY_MERCHANT_TOKEN}`, {
+        // Bu yerda ham 'transactions' ga o'zgartiramiz
+        const response = await fetch(`${TSPAY_BASE_URL}/transactions/${chequeId}/?access_token=${TSPAY_MERCHANT_TOKEN}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
