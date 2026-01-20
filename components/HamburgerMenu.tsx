@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-    X, Mic, CreditCard, History, Bookmark, 
+    X, CreditCard, History, Bookmark, 
     Settings, LogOut, ChevronRight, User, 
-    ShoppingBag, Star, ShieldCheck, Edit3, Globe, Lock
+    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic
 } from 'lucide-react';
-import { DashboardSubPage, Page } from '../App';
+import { DashboardSubPage, Page, LegalDocType } from '../App';
 import { supabase } from '../services/supabaseClient';
-import { getUserProfile, getShopWallet } from '../services/dbService';
-import { UserRole, UserProfile, ShopWallet } from '../types';
+import { getUserProfile } from '../services/dbService';
+import { UserRole, UserProfile } from '../types';
 
 interface HamburgerMenuProps {
     isOpen: boolean;
@@ -17,6 +17,7 @@ interface HamburgerMenuProps {
     onMainNavigate: (page: Page) => void;
     onDashboardNavigate: (page: DashboardSubPage) => void;
     onSwitchRole: (role: UserRole) => void;
+    onOpenLegal: (type: LegalDocType) => void; // Yangi prop
 }
 
 const MenuItem: React.FC<{ 
@@ -26,7 +27,8 @@ const MenuItem: React.FC<{
     onClick: () => void; 
     isDestructive?: boolean;
     hasArrow?: boolean;
-}> = ({ icon, label, value, onClick, isDestructive = false, hasArrow = true }) => (
+    badge?: string;
+}> = ({ icon, label, value, onClick, isDestructive = false, hasArrow = true, badge }) => (
     <button 
         onClick={onClick}
         className="w-full flex items-center justify-between py-4 border-b border-white/5 active:bg-white/5 transition-colors group"
@@ -36,6 +38,7 @@ const MenuItem: React.FC<{
             <span className={`text-sm font-medium ${isDestructive ? "text-red-500" : "text-white"}`}>
                 {label}
             </span>
+            {badge && <span className="px-2 py-0.5 bg-orange-600 text-[9px] font-black uppercase rounded text-white ml-2">{badge}</span>}
         </div>
         <div className="flex items-center gap-2">
             {value && <span className="text-xs text-zinc-500 font-medium">{value}</span>}
@@ -46,7 +49,7 @@ const MenuItem: React.FC<{
 
 const MenuSection: React.FC<{ title?: string; children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
-        {title && <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 px-1">{title}</h4>}
+        {title && <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 px-1">{title}</h4>}
         <div className="flex flex-col">
             {children}
         </div>
@@ -54,22 +57,17 @@ const MenuSection: React.FC<{ title?: string; children: React.ReactNode }> = ({ 
 );
 
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ 
-    isOpen, onClose, onLogout, onMainNavigate, onDashboardNavigate, onSwitchRole 
+    isOpen, onClose, onLogout, onMainNavigate, onDashboardNavigate, onSwitchRole, onOpenLegal 
 }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [shopWallet, setShopWallet] = useState<ShopWallet | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             const loadData = async () => {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                    const [p, w] = await Promise.all([
-                        getUserProfile(user.id),
-                        getShopWallet(user.id)
-                    ]);
+                    const p = await getUserProfile(user.id);
                     setProfile(p as UserProfile);
-                    setShopWallet(w);
                 }
             };
             loadData();
@@ -122,14 +120,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             {profile?.full_name || 'Foydalanuvchi'}
                         </h2>
                         <p className="text-sm font-bold text-orange-500">@{profile?.username}</p>
-
-                        {/* Balance Badge */}
-                        <div className="mt-4 flex gap-3">
-                            <div className="bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg flex items-center gap-2">
-                                <CreditCard size={14} className="text-zinc-400"/>
-                                <span className="text-xs font-mono text-white">{(profile?.balance || 0).toLocaleString()} UZS</span>
-                            </div>
-                        </div>
                     </div>
 
                     {/* 2. Menu Items */}
@@ -157,15 +147,35 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
                         <MenuSection title="Mening Profilim">
                             <MenuItem icon={<User size={20}/>} label="Profilni tahrirlash" onClick={() => handleAction('sub', 'profile')} />
+                            <MenuItem 
+                                icon={<Wallet size={20}/>} 
+                                label="Mening Hisobim" 
+                                value={`${(profile?.balance || 0).toLocaleString()} UZS`}
+                                onClick={() => handleAction('sub', 'account')} 
+                            />
+                            <MenuItem 
+                                icon={<Crown size={20}/>} 
+                                label="Premium Obuna" 
+                                value={profile?.subscription_plan || "Yo'q"} 
+                                onClick={() => handleAction('sub', 'billing')} 
+                            />
                             <MenuItem icon={<Bookmark size={20}/>} label="Saqlanganlar" onClick={() => handleAction('sub', 'saved')} />
                             <MenuItem icon={<History size={20}/>} label="Ko'rishlar tarixi" onClick={() => handleAction('sub', 'history')} />
-                            <MenuItem icon={<Star size={20}/>} label="Obuna (Premium)" value={profile?.subscription_plan || "Yo'q"} onClick={() => handleAction('sub', 'billing')} />
                         </MenuSection>
 
-                        <MenuSection title="Ilova Sozlamalari">
-                            <MenuItem icon={<Globe size={20}/>} label="Ilova tili" value="O'zbekcha" onClick={() => handleAction('sub', 'settings')} />
-                            <MenuItem icon={<Lock size={20}/>} label="Parol va Xavfsizlik" onClick={() => handleAction('sub', 'settings')} />
-                            <MenuItem icon={<ShoppingBag size={20}/>} label="Anilo Shop" onClick={() => handleAction('main', 'shop')} />
+                        <MenuSection title="Yordam va Sozlamalar">
+                            <MenuItem 
+                                icon={<HelpCircle size={20}/>} 
+                                label="Yordam Markazi (AI)" 
+                                badge="BOT"
+                                onClick={() => handleAction('main', 'ai-assistant')} 
+                            />
+                            <MenuItem icon={<Settings size={20}/>} label="Ilova Sozlamalari" onClick={() => handleAction('sub', 'settings')} />
+                        </MenuSection>
+
+                        <MenuSection title="Hujjatlar">
+                            <MenuItem icon={<FileText size={20}/>} label="Ommaviy Oferta" hasArrow={false} onClick={() => {onOpenLegal('terms'); onClose();}} />
+                            <MenuItem icon={<Lock size={20}/>} label="Maxfiylik Siyosati" hasArrow={false} onClick={() => {onOpenLegal('privacy'); onClose();}} />
                         </MenuSection>
 
                         {/* Admin Section */}
@@ -186,7 +196,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         </div>
                         
                         <div className="mt-8 text-center">
-                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Anilo v1.0.2</p>
+                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Anilo v1.0.3</p>
                         </div>
                     </div>
                 </div>

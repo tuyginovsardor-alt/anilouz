@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { X } from 'lucide-react';
-import { LegalDocType } from '../types';
+import { LegalDocType } from '../App';
 
 interface LegalDocsProps {
   type: LegalDocType;
@@ -64,34 +64,6 @@ const PrivacyContent = () => (
     </div>
 );
 
-const SecurityContent = () => (
-    <div className="space-y-4 text-sm text-gray-800 leading-relaxed">
-        <h3 className="text-center font-bold text-lg mb-6 uppercase border-b pb-2">Xavfsizlik Qoidalari</h3>
-        
-        <p><strong>1. HISOB XAVFSIZLIGI</strong></p>
-        <p>1.1. Foydalanuvchi o'zining login va parolini uchinchi shaxslarga bermaslik majburiyatini oladi.</p>
-        <p>1.2. Parol kamida 6 ta belgidan iborat bo'lishi va murakkab kombinatsiyalarni o'z ichiga olishi tavsiya etiladi.</p>
-        <p>1.3. Bir hisobdan (akkauntdan) faqat bitta shaxs foydalanishi mumkin. Hisobni boshqalarga sotish yoki ijaraga berish qat'iyan man etiladi va bu hisobning bloklanishiga olib keladi.</p>
-
-        <p><strong>2. QURILMALAR NAZORATI</strong></p>
-        <p>2.1. Tizim foydalanuvchi kirgan qurilmalarni (Device ID) qayd etib boradi. Shubhali faollik aniqlanganda (masalan, turli joylardan bir vaqtda kirish), hisob vaqtincha muzlatilishi mumkin.</p>
-
-        <p><strong>3. TAQIQLANGAN HARAKATLAR</strong></p>
-        <p>3.1. Quyidagi harakatlar qat'iyan man etiladi:</p>
-        <ul className="list-disc pl-5">
-            <li>Saytga hakerlik hujumi uyushtirish (DDoS, SQL Injection);</li>
-            <li>Avtomatlashtirilgan botlardan foydalanish (ayniqsa Konkurs va O'yinlarda);</li>
-            <li>Boshqa foydalanuvchilarning shaxsiy ma'lumotlarini o'g'irlashga urinish.</li>
-        </ul>
-
-        <p><strong>4. JAVOBGARLIK</strong></p>
-        <p>4.1. Foydalanuvchi o'z hisobi orqali amalga oshirilgan barcha harakatlar uchun to'liq javobgardir.</p>
-        <p>4.2. Xavfsizlik qoidalarini buzgan foydalanuvchilarning IP manzillari bloklanadi va qonuniy chora ko'rish uchun tegishli organlarga ma'lumot berilishi mumkin.</p>
-
-        <Seal />
-    </div>
-);
-
 const TermsContent = () => (
     <div className="space-y-4 text-sm text-gray-800 leading-relaxed">
         <h3 className="text-center font-bold text-lg mb-6 uppercase border-b pb-2">Foydalanish Shartlari (Ommaviy Oferta)</h3>
@@ -124,7 +96,6 @@ export const LegalDocs: React.FC<LegalDocsProps> = ({ type, onClose }) => {
     
     switch (type) {
         case 'privacy': content = <PrivacyContent />; break;
-        case 'security': content = <SecurityContent />; break;
         case 'terms': content = <TermsContent />; break;
         default: content = null;
     }
