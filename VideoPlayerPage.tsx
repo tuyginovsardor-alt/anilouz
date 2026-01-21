@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Movie, Ad } from './types';
+import { Movie, Ad, Episode } from './types';
 import { getPlayerAds } from './services/adService';
 import { BackArrowIcon } from './components/icons/BackArrowIcon';
 import { PlayIcon } from './components/icons/PlayIcon';
@@ -21,6 +21,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 
 interface VideoPlayerPageProps {
   movie: Movie;
+  episode?: Episode | null; // Added prop for episodes
   onBack: () => void;
 }
 
@@ -61,7 +62,7 @@ const AniloPlayButton = () => (
     </div>
 );
 
-export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, onBack }) => {
+export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode, onBack }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const controlsTimeoutRef = useRef<number | null>(null);
@@ -92,7 +93,9 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, onBack 
     const [showPremiumModal, setShowPremiumModal] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
 
-    const videoSrc = movie.videoUrl;
+    // Determine Source
+    const videoSrc = episode ? episode.source : movie.videoUrl;
+    const displayTitle = episode ? `${movie.title} - ${episode.title}` : movie.title;
 
     useEffect(() => {
         const initPlayer = async () => {
@@ -327,6 +330,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, onBack 
                             <li>Havola eskirgan yoki noto'g'ri.</li>
                             <li>Tashqi server (Google Drive, YouTube) ruxsat bermayapti.</li>
                             <li>Fayl .mp4 yoki .m3u8 formatida emas.</li>
+                            {!episode && <li>Bu serial bo'lishi mumkin. Qismlar bo'limidan birini tanlab ko'ring.</li>}
                         </ul>
                     </div>
                 );
@@ -483,6 +487,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, onBack 
                 <h2 className="text-2xl font-bold text-white mb-2">Video topilmadi</h2>
                 <p className="text-gray-400 max-w-md mb-8">
                     Ushbu film uchun video fayl (URL) bazada mavjud emas.
+                    Agarda bu Serial bo'lsa, iltimos "Qismlar" bo'limidan birini tanlang.
                 </p>
                 <button onClick={onBack} className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2">
                     <BackArrowIcon className="w-5 h-5" /> Orqaga
@@ -594,7 +599,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, onBack 
                         <button onClick={onBack} className="bg-black/50 p-2 rounded-full hover:bg-black/80 transition-colors">
                             <BackArrowIcon className="w-6 h-6 text-white" />
                         </button>
-                        <h1 className="text-lg sm:text-xl font-bold text-white truncate">{movie.title}</h1>
+                        <h1 className="text-lg sm:text-xl font-bold text-white truncate">{displayTitle}</h1>
                         
                         {isTimePremium ? (
                             <div className="ml-auto flex items-center gap-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 px-4 py-1.5 rounded-full">

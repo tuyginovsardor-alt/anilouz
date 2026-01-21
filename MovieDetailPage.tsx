@@ -12,10 +12,11 @@ interface MovieDetailPageProps {
   movie: Movie;
   onBack: () => void;
   onPlay: () => void;
+  onEpisodePlay?: (episode: Episode) => void; // New Prop
   onArtistClick?: (userId: string) => void;
 }
 
-export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack, onPlay, onArtistClick }) => {
+export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack, onPlay, onEpisodePlay, onArtistClick }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -108,6 +109,18 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
       }
       onPlay();
   };
+
+  const handleEpisodeClick = (episode: Episode) => {
+      if (!canWatch) {
+          addNotification({ type: 'warning', title: 'Premium Kerak', message: 'Serialni ko\'rish uchun obuna bo\'lishingiz shart.' });
+          return;
+      }
+      if (onEpisodePlay) {
+          onEpisodePlay(episode);
+      } else {
+          onPlay();
+      }
+  }
 
   const handleToggleSave = async () => {
       if (!userProfile) return addNotification({ type: 'warning', title: 'Kirish kerak', message: 'Saqlash uchun tizimga kiring.' });
@@ -231,14 +244,14 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 ))}
             </div>
 
-            {/* TAB CONTENTS (Same as before) */}
+            {/* TAB CONTENTS */}
             <div className="animate-fade-in min-h-[500px]">
                 {activeTab === 'episodes' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {episodes.length > 0 ? episodes.map((ep, i) => (
                             <div 
                                 key={ep.id} 
-                                onClick={handlePlayClick}
+                                onClick={() => handleEpisodeClick(ep)}
                                 className="group flex items-center justify-between p-6 bg-[#0f0f0f] border border-white/5 hover:border-orange-500/40 transition-all cursor-pointer rounded-2xl hover:translate-y-[-4px] shadow-lg"
                             >
                                 <div className="flex items-center gap-5">

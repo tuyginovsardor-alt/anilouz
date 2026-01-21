@@ -5,7 +5,7 @@ import { WelcomePage } from './WelcomePage';
 import { SearchPage } from './SearchPage';
 import { DashboardPage } from './DashboardPage';
 import { AuthModal } from './components/AuthModal';
-import { Movie, UserRole, Ad, Notification } from './types';
+import { Movie, UserRole, Ad, Notification, Episode } from './types';
 import { MovieDetailPage } from './MovieDetailPage';
 import { VideoPlayerPage } from './VideoPlayerPage';
 import { AdminPage } from './AdminPage';
@@ -65,6 +65,7 @@ const App: React.FC = () => {
   const [legalDocType, setLegalDocType] = useState<LegalDocType | null>(null);
 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null); // NEW: Track selected episode
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [isPlayerActive, setIsPlayerActive] = useState(false);
   const [activeVideoAd, setActiveVideoAd] = useState<Ad | null>(null);
@@ -164,6 +165,7 @@ const App: React.FC = () => {
         setDashboardPage('main');
     }
     setSelectedMovie(null);
+    setActiveEpisode(null);
     setSelectedArtistId(null);
     setIsPlayerActive(false);
     setIsSearchOpen(false);
@@ -180,6 +182,7 @@ const App: React.FC = () => {
     if (!isAuthenticated) setIsAuthModalOpen(true);
     else {
         setSelectedMovie(movie);
+        setActiveEpisode(null); // Reset episode when opening a new movie
         window.scrollTo(0, 0);
     }
   };
@@ -251,12 +254,24 @@ const App: React.FC = () => {
           
           <main className={`flex-1 ${selectedMovie || isPlayerActive || page === 'welcome' ? '' : 'pt-20 pb-32 md:pb-20'}`}>
                 {activeVideoAd && selectedMovie && <VideoAdPlayer ad={activeVideoAd} onFinish={() => {setActiveVideoAd(null); setIsPlayerActive(true);}} />}
-                {isPlayerActive && selectedMovie && !activeVideoAd && <VideoPlayerPage movie={selectedMovie} onBack={() => setIsPlayerActive(false)} />}
+                {isPlayerActive && selectedMovie && !activeVideoAd && (
+                    <VideoPlayerPage 
+                        movie={selectedMovie} 
+                        episode={activeEpisode} // Pass active episode
+                        onBack={() => setIsPlayerActive(false)} 
+                    />
+                )}
                 
                 {!isPlayerActive && !activeVideoAd && (
                   <>
                     {selectedMovie ? (
-                      <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} onArtistClick={handleArtistClick} />
+                      <MovieDetailPage 
+                        movie={selectedMovie} 
+                        onBack={() => setSelectedMovie(null)} 
+                        onPlay={() => setIsPlayerActive(true)} 
+                        onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} // Handle episode play
+                        onArtistClick={handleArtistClick} 
+                      />
                     ) : (
                       <>
                         {page === 'welcome' && <WelcomePage onSearch={(q) => {setCurrentQuery(q); setPage('search');}} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}
