@@ -319,25 +319,21 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, onBack 
             if (code === 2) msg = "Tarmoq xatoligi. Internetni tekshiring.";
             if (code === 3) msg = "Video formati qo'llab-quvvatlanmaydi (Format error).";
             if (code === 4) {
-                // Detailed guide for R2 403/CORS
                 msg = (
                     <div className="text-left text-sm">
-                        <p className="font-bold text-red-400 mb-2">Ruxsat Xatoligi (403 Forbidden) yoki CORS.</p>
-                        <p className="mb-2">Cloudflare R2 da quyidagilarni tekshiring:</p>
-                        <ol className="list-decimal list-inside space-y-1 text-gray-300">
-                            <li>Cloudflare Dashboard {'>'} R2 {'>'} Bucket {'>'} Settings.</li>
-                            <li><b>Public Access:</b> Yoqilganmi? (Allow Access).</li>
-                            <li><b>CORS Policy:</b> Qo'shilganmi? (Edit CORS Policy).</li>
-                        </ol>
-                        <div className="mt-2 bg-gray-900 p-2 rounded text-xs font-mono text-green-400 border border-gray-700">
-                            {`[{"AllowedOrigins":["*"],"AllowedMethods":["GET","HEAD"],"AllowedHeaders":["*"]}]`}
-                        </div>
+                        <p className="font-bold text-red-400 mb-2">Video manbasi ochilmadi (404/403).</p>
+                        <p className="mb-2">Sabablari:</p>
+                        <ul className="list-disc list-inside space-y-1 text-gray-300">
+                            <li>Havola eskirgan yoki noto'g'ri.</li>
+                            <li>Tashqi server (Google Drive, YouTube) ruxsat bermayapti.</li>
+                            <li>Fayl .mp4 yoki .m3u8 formatida emas.</li>
+                        </ul>
                     </div>
                 );
             }
             setVideoError(msg);
         } else {
-            setVideoError("Video manbasi noto'g'ri yoki CORS bloklamoqda.");
+            setVideoError("Video manbasi noto'g'ri.");
         }
     };
 
@@ -509,9 +505,9 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, onBack 
                 className="w-full h-full object-contain" 
                 onClick={overlayAd || showPremiumModal ? undefined : togglePlay}
                 playsInline
-                crossOrigin="anonymous" // Important for catching detailed errors
-                controlsList="nodownload" // Disable native download button
-                onContextMenu={(e) => e.preventDefault()} // Disable right click
+                // crossOrigin="anonymous" olib tashlandi, tashqi havolalar ishlashi uchun
+                controlsList="nodownload" 
+                onContextMenu={(e) => e.preventDefault()} 
             >
                 Sizning brauzeringiz video formatini qo'llab-quvvatlamaydi.
             </video>

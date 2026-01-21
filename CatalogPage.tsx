@@ -70,8 +70,8 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({ onMovieClick }) => {
     return (
         <div className="min-h-screen bg-[#050505] pb-32 animate-fade-in pt-4">
             
-            {/* Header & Search */}
-            <div className="container mx-auto px-4 sticky top-20 z-40 bg-[#050505]/95 backdrop-blur-md pb-4 pt-2">
+            {/* Header & Search - STICKY OLIB TASHLANDI */}
+            <div className="container mx-auto px-4 pb-4 pt-6">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">KATALOG</span>
