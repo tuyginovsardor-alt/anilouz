@@ -94,7 +94,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({ onMovieClick }) => {
 
                 {/* Filter Controls */}
                 <div className="flex flex-col gap-4">
-                    {/* Access Type Toggle */}
+                    {/* Access Type Toggle - FIX: Padding reduced for mobile */}
                     <div className="flex bg-zinc-900 p-1 rounded-xl w-full sm:w-auto self-start">
                         {[
                             { id: 'all', label: 'Barchasi' },
@@ -104,7 +104,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({ onMovieClick }) => {
                             <button
                                 key={type.id}
                                 onClick={() => setAccessFilter(type.id as any)}
-                                className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                                className={`flex-1 sm:flex-none px-2 sm:px-6 py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-tight sm:tracking-widest flex items-center justify-center gap-1 sm:gap-2 transition-all whitespace-nowrap ${
                                     accessFilter === type.id 
                                     ? 'bg-white text-black shadow-lg' 
                                     : 'text-zinc-500 hover:text-white'
