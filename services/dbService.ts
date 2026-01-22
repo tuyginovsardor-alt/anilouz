@@ -9,16 +9,83 @@ import {
     DashboardStats, ActivityLog, ATCTransaction
 } from '../types';
 
+// --- DASHBOARD STATISTICS & ACTIVITY ---
+
+export interface AdminDetailedStats extends DashboardStats {
+    premiumUsers: number;
+    freeUsers: number;
+    recentUsers: UserProfile[];
+    recentComments: any[];
+}
+
+/**
+ * Admin panel uchun barcha hisob-kitoblarni olish
+ */
+export const getDashboardStats = async (): Promise<AdminDetailedStats> => {
+    try {
+        // Parallel so'rovlar - tezlik uchun
+        const [uCount, mCount, pCount, rCount, freeCount] = await Promise.all([
+            supabase.from('profiles').select('*', { count: 'exact', head: true }),
+            supabase.from('movies').select('*', { count: 'exact', head: true }),
+            supabase.from('profiles').select('*', { count: 'exact', head: true }).not('subscription_end_at', 'is', null).gt('subscription_end_at', new Date().toISOString()),
+            supabase.from('movie_reviews').select('*', { count: 'exact', head: true }),
+            supabase.from('profiles').select('*', { count: 'exact', head: true }).or('subscription_end_at.is.null,subscription_end_at.lt.' + new Date().toISOString())
+        ]);
+
+        // Yaqinda kirganlar va so'nggi izohlarni alohida olamiz
+        const { data: recentUsers } = await supabase.from('profiles').select('*').order('last_active', { ascending: false }).limit(6);
+        const { data: recentComments } = await supabase.from('movie_reviews').select('*, profiles(full_name, avatar_url), movies(title)').order('created_at', { ascending: false }).limit(5);
+
+        return {
+            totalUsers: uCount.count || 0,
+            totalMovies: mCount.count || 0,
+            totalPremium: pCount.count || 0,
+            totalReviews: rCount.count || 0,
+            premiumUsers: pCount.count || 0,
+            freeUsers: freeCount.count || 0,
+            recentUsers: (recentUsers || []) as UserProfile[],
+            recentComments: (recentComments || [])
+        };
+    } catch (e) {
+        console.error("Dashboard stats error:", e);
+        return { 
+            totalUsers: 0, totalMovies: 0, totalPremium: 0, totalReviews: 0, 
+            premiumUsers: 0, freeUsers: 0, recentUsers: [], recentComments: [] 
+        };
+    }
+};
+
+/**
+ * So'nggi harakatlar (Log)
+ */
+export const getRecentActivity = async (): Promise<ActivityLog[]> => {
+    try {
+        const { data: users } = await supabase.from('profiles').select('full_name, created_at').order('created_at', { ascending: false }).limit(3);
+        const { data: payments } = await supabase.from('payment_requests').select('profiles(full_name), amount, created_at').eq('status', 'approved').order('created_at', { ascending: false }).limit(3);
+
+        const logs: ActivityLog[] = [];
+        
+        (users || []).forEach((u, i) => {
+            logs.push({ id: 100 + i, title: 'Yangi foydalanuvchi', description: `${u.full_name || 'Noma\'lum'} qo'shildi`, time: new Date(u.created_at).toLocaleTimeString() });
+        });
+
+        (payments || []).forEach((p: any, i) => {
+            logs.push({ id: 200 + i, title: 'To\'lov', description: `${p.profiles?.full_name || 'User'} ${p.amount} UZS to'ladi`, time: new Date(p.created_at).toLocaleTimeString() });
+        });
+
+        return logs.sort((a, b) => b.id - a.id).slice(0, 10);
+    } catch (e) {
+        return [{ id: 1, title: 'Tizim', description: 'Harakatlar yuklanmadi', time: 'Hozir' }];
+    }
+};
+
 // --- CORE MOVIE SERVICES ---
 export const getMovies = async (): Promise<Movie[]> => {
     try {
         const { data, error } = await supabase.from('movies').select('*').eq('is_archived', false).order('id', { ascending: false });
         if (error) throw error;
         return data || [];
-    } catch (e) {
-        console.error("getMovies error:", e);
-        return [];
-    }
+    } catch (e) { return []; }
 };
 
 export const getAdminMovies = async (): Promise<Movie[]> => {
@@ -26,9 +93,7 @@ export const getAdminMovies = async (): Promise<Movie[]> => {
         const { data, error } = await supabase.from('movies').select('*').order('id', { ascending: false });
         if (error) throw error;
         return data || [];
-    } catch (e) {
-        return [];
-    }
+    } catch (e) { return []; }
 };
 
 export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
@@ -39,9 +104,7 @@ export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
             .eq('is_archived', false);
         if (error) throw error;
         return data || [];
-    } catch (e) {
-        return [];
-    }
+    } catch (e) { return []; }
 };
 
 export const addMovieToDB = async (movie: Partial<Movie>) => {
@@ -70,9 +133,7 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
         const { data, error } = await supabase.from('episodes').select('*').eq('movie_id', movieId).order('id', { ascending: true });
         if (error) throw error;
         return data || [];
-    } catch (e) {
-        return [];
-    }
+    } catch (e) { return []; }
 };
 
 // --- PROFILE & AUTH ---
@@ -81,9 +142,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
         if (error) return null;
         return data;
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 };
 
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>) => {
@@ -96,9 +155,7 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
         const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         return data || [];
-    } catch (e) {
-        return [];
-    }
+    } catch (e) { return []; }
 };
 
 export const deleteUser = async (id: string) => {
@@ -127,54 +184,6 @@ export const uploadFile = async (file: File, bucket: string): Promise<string> =>
 
 export const uploadPoster = async (file: File) => uploadFile(file, 'posters');
 export const uploadVideo = async (file: File) => uploadFile(file, 'videos');
-
-// --- ANILO SHOP SERVICES ---
-export const getShopProducts = async (
-    category: string = 'all', 
-    sort: 'newest' | 'price_asc' | 'price_desc' | 'popular' = 'newest',
-    searchQuery: string = ''
-): Promise<ShopProduct[]> => {
-    try {
-        let query = supabase.from('shop_products').select('*').eq('is_active', true);
-        if (category !== 'all') query = query.eq('category', category);
-        if (searchQuery) query = query.ilike('title', `%${searchQuery}%`);
-        if (sort === 'price_asc') query = query.order('price', { ascending: true });
-        else if (sort === 'price_desc') query = query.order('price', { ascending: false });
-        else if (sort === 'popular') query = query.order('sales_count', { ascending: false });
-        else query = query.order('id', { ascending: false });
-        const { data, error } = await query;
-        if (error) throw error;
-        return data || [];
-    } catch (e) { return []; }
-};
-
-export const getShopWallet = async (userId: string): Promise<ShopWallet> => {
-    const { data, error } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
-    if (!data) {
-        const { data: nW } = await supabase.from('shop_wallets').insert({ user_id: userId, balance: 0 }).select().single();
-        return nW;
-    }
-    return data;
-};
-
-export const placeShopOrder = async (userId: string, productId: number, amount: number, address: string, phone: string) => {
-    const { error } = await supabase.rpc('place_shop_order', {
-        p_user_id: userId, p_product_id: productId, p_amount: amount, p_address: address, p_phone: phone
-    });
-    if (error) throw error;
-};
-
-export const getAdminShopProducts = async () => {
-    const { data, error } = await supabase.from('shop_products').select('*').order('id', { ascending: false });
-    if (error) throw error;
-    return data || [];
-};
-
-export const createShopProduct = async (product: Partial<ShopProduct>) => {
-    const { data, error } = await supabase.from('shop_products').insert(product).select().single();
-    if (error) throw error;
-    return data;
-};
 
 // --- APP CONFIG & ADMIN SECURITY ---
 export const getAppConfig = async (): Promise<Record<string, string>> => {
@@ -223,7 +232,6 @@ export const verifyRecoveryCode = async (code: string): Promise<boolean> => {
     try {
         const codes = JSON.parse(data?.value || '[]');
         if (codes.includes(code)) {
-            // Remove code after use for security
             const newCodes = codes.filter((c: string) => c !== code);
             await saveRecoveryCodes(newCodes);
             return true;
@@ -265,15 +273,19 @@ export const rejectPaymentRequest = async (requestId: number) => {
 };
 
 export const getPaymentRequests = async () => {
-    const { data, error } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const getPremiumUsers = async () => {
-    const { data, error } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const adminAdjustUserBalance = async (userId: string, amount: number, type: 'add' | 'deduct', desc: string) => {
@@ -367,9 +379,11 @@ export const getMyTickets = async (userId: string) => {
 };
 
 export const getAllTickets = async () => {
-    const { data, error } = await supabase.from('support_tickets').select('*, profiles(full_name, email)').order('status', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('support_tickets').select('*, profiles(full_name, email)').order('status', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const getTicketMessages = async (ticketId: number) => {
@@ -409,9 +423,11 @@ export const deleteNews = async (id: number) => {
 
 // --- ADVERTISING & SOCIAL ---
 export const getAds = async () => {
-    const { data, error } = await supabase.from('ads').select('*').order('id', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('ads').select('*').order('id', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const saveAd = async (ad: Partial<Ad>) => {
@@ -429,9 +445,11 @@ export const incrementAdView = async (id: number) => {
 };
 
 export const getSocialLinks = async (): Promise<SocialLink[]> => {
-    const { data, error } = await supabase.from('social_links').select('*');
-    if (error) return [];
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('social_links').select('*');
+        if (error) return [];
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const addSocialLink = async (link: Partial<SocialLink>) => {
@@ -446,15 +464,19 @@ export const deleteSocialLink = async (id: number) => {
 
 // --- SESSIONS & BROADCASTS ---
 export const getAllSessions = async (): Promise<UserDevice[]> => {
-    const { data, error } = await supabase.from('user_sessions').select('*, profiles(full_name, email, role)').order('last_active', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('user_sessions').select('*, profiles(full_name, email, role)').order('last_active', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const getUserSessions = async (userId: string): Promise<UserDevice[]> => {
-    const { data, error } = await supabase.from('user_sessions').select('*').eq('user_id', userId).order('last_active', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('user_sessions').select('*').eq('user_id', userId).order('last_active', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const toggleDeviceBlock = async (id: number, status: boolean) => {
@@ -473,9 +495,11 @@ export const checkAndTrackRegistration = async (deviceId: string) => {
 };
 
 export const getBroadcasts = async () => {
-    const { data, error } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const createBroadcast = async (b: any) => {
@@ -490,9 +514,11 @@ export const deleteBroadcast = async (id: number) => {
 
 // --- PROMOCODES ---
 export const getPromocodes = async (): Promise<Promocode[]> => {
-    const { data, error } = await supabase.from('promocodes').select('*').order('id', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    try {
+        const { data, error } = await supabase.from('promocodes').select('*').order('id', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const savePromocode = async (p: Partial<Promocode>) => {
@@ -542,10 +568,12 @@ export const rewardExtraSpin = async (userId: string, spins: number) => {
 };
 
 export const getContestSettings = async () => {
-    const { data } = await supabase.from('app_config').select('*').ilike('key', 'contest_%');
-    const settings: any = {};
-    (data || []).forEach(item => { settings[item.key.replace('contest_', '')] = item.value; });
-    return settings;
+    try {
+        const { data } = await supabase.from('app_config').select('*').ilike('key', 'contest_%');
+        const settings: any = {};
+        (data || []).forEach(item => { settings[item.key.replace('contest_', '')] = item.value; });
+        return settings;
+    } catch (e) { return {}; }
 };
 
 export const updateContestSetting = async (key: string, value: string) => {
@@ -553,8 +581,10 @@ export const updateContestSetting = async (key: string, value: string) => {
 };
 
 export const getContestTasks = async () => {
-    const { data } = await supabase.from('contest_tasks').select('*').order('id', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('contest_tasks').select('*').order('id', { ascending: false });
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const createContestTask = async (task: any) => {
@@ -566,8 +596,10 @@ export const deleteContestTask = async (id: number) => {
 };
 
 export const getContestAds = async () => {
-    const { data } = await supabase.from('contest_ads').select('*').eq('is_active', true).order('id', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('contest_ads').select('*').eq('is_active', true).order('id', { ascending: false });
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const createContestAd = async (ad: any) => {
@@ -579,25 +611,33 @@ export const deleteContestAd = async (id: number) => {
 };
 
 export const getQuizQuestions = async (count: number) => {
-    const { data } = await supabase.from('contest_quizzes').select('*').limit(count);
-    return data || [];
+    try {
+        const { data } = await supabase.from('contest_quizzes').select('*').limit(count);
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const getArkWallet = async (userId: string) => {
-    const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
-    return data;
+    try {
+        const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
+        return data;
+    } catch (e) { return null; }
 };
 
 export const getArkMarketHistory = async () => {
-    const { data } = await supabase.from('ark_market_history').select('*').order('created_at', { ascending: true });
-    return data || [];
+    try {
+        const { data } = await supabase.from('ark_market_history').select('*').order('created_at', { ascending: true });
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const getArkSettings = async () => {
-    const { data } = await supabase.from('ark_settings').select('*');
-    const s: any = {};
-    (data || []).forEach(i => { s[i.key] = i.value; });
-    return s;
+    try {
+        const { data } = await supabase.from('ark_settings').select('*');
+        const s: any = {};
+        (data || []).forEach(i => { s[i.key] = i.value; });
+        return s;
+    } catch (e) { return {}; }
 };
 
 export const updateArkSettings = async (key: string, value: string) => {
@@ -610,8 +650,10 @@ export const requestArkWithdrawal = async (uid: string, ark: number, card: strin
 };
 
 export const getArkWithdrawals = async () => {
-    const { data } = await supabase.from('ark_withdrawals').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('ark_withdrawals').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const approveArkWithdrawal = async (id: number) => {
@@ -619,8 +661,10 @@ export const approveArkWithdrawal = async (id: number) => {
 };
 
 export const getArkAds = async () => {
-    const { data } = await supabase.from('ark_ads').select('*').eq('is_active', true).order('id', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('ark_ads').select('*').eq('is_active', true).order('id', { ascending: false });
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const createArkAd = async (ad: any) => {
@@ -636,8 +680,10 @@ export const claimArkAdReward = async (uid: string, ark: number, title: string) 
 };
 
 export const getArkQuizzes = async () => {
-    const { data } = await supabase.from('ark_quizzes').select('*');
-    return data || [];
+    try {
+        const { data } = await supabase.from('ark_quizzes').select('*');
+        return data || [];
+    } catch (e) { return []; }
 };
 
 export const createArkQuiz = async (q: any) => {
@@ -674,6 +720,7 @@ export const runArkAutopilot = async () => {
     return data;
 };
 
+// --- SUBSCRIPTIONS ---
 export const buySubscription = async (userId: string, plan: string, price: number) => {
     const { error } = await supabase.rpc('buy_subscription', { p_user_id: userId, p_plan: plan, p_price: price });
     if (error) throw error;
@@ -685,51 +732,82 @@ export const startFreeTrial = async (userId: string) => {
     return now;
 };
 
-// --- ADDED MISSING FUNCTIONS ---
-
-/**
- * Fetches general dashboard statistics for administrators.
- */
-export const getDashboardStats = async (): Promise<DashboardStats> => {
-    const [u, m, p, r] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('movies').select('*', { count: 'exact', head: true }),
-        supabase.from('payment_requests').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
-        supabase.from('movie_reviews').select('*', { count: 'exact', head: true })
-    ]);
-
-    return {
-        totalUsers: u.count || 0,
-        totalMovies: m.count || 0,
-        totalPremium: p.count || 0,
-        totalReviews: r.count || 0
-    };
-};
-
-/**
- * Fetches recent activity logs for the admin dashboard.
- */
-export const getRecentActivity = async (): Promise<ActivityLog[]> => {
-    // Note: This is a placeholder as activity logs are managed via Supabase's realtime features
-    // or specific audit tables. Returning static data for now.
-    return [
-        { id: 1, title: 'Yangi foydalanuvchi', description: 'Ro\'yxatdan o\'tdi', time: 'Hozir' },
-        { id: 2, title: 'To\'lov', description: 'Tasdiqlandi', time: '5 daqiqa oldin' },
-        { id: 3, title: 'Yangi kino', description: 'Katalogga qo\'shildi', time: '10 daqiqa oldin' }
-    ];
-};
-
-/**
- * Specifically handles shop-related top-up requests.
- * Reuses the base createPaymentRequest logic.
- */
+// --- SHOP SERVICES RE-EXPORT & FIX ---
 export const createShopPaymentRequest = async (userId: string, amount: number, screenshotUrl: string) => {
     return createPaymentRequest(userId, amount, screenshotUrl);
 };
 
-/**
- * Fetches orders for a specific user, including product details.
- */
+// Added missing shop functions
+export const getShopProducts = async (category: string = 'all', sortBy: string = 'newest', searchQuery: string = ''): Promise<ShopProduct[]> => {
+    try {
+        let query = supabase.from('shop_products').select('*').eq('is_active', true);
+        
+        if (category !== 'all') {
+            query = query.eq('category', category);
+        }
+        
+        if (searchQuery) {
+            query = query.ilike('title', `%${searchQuery}%`);
+        }
+        
+        switch (sortBy) {
+            case 'price_asc': query = query.order('price', { ascending: true }); break;
+            case 'price_desc': query = query.order('price', { ascending: false }); break;
+            case 'popular': query = query.order('sales_count', { ascending: false }); break;
+            default: query = query.order('created_at', { ascending: false });
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data || []) as ShopProduct[];
+    } catch (e) {
+        console.error("getShopProducts error:", e);
+        return [];
+    }
+};
+
+// Added missing shop function
+export const getShopWallet = async (userId: string): Promise<ShopWallet | null> => {
+    try {
+        const { data, error } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
+        if (error) throw error;
+        return data as ShopWallet;
+    } catch (e) {
+        console.error("getShopWallet error:", e);
+        return null;
+    }
+};
+
+// Added missing shop function
+export const placeShopOrder = async (userId: string, productId: number, amount: number, address: string, phone: string) => {
+    const { error } = await supabase.rpc('place_shop_order', {
+        p_user_id: userId,
+        p_product_id: productId,
+        p_amount: amount,
+        p_address: address,
+        p_phone: phone
+    });
+    if (error) throw error;
+};
+
+// Added missing shop function
+export const getAdminShopProducts = async (): Promise<ShopProduct[]> => {
+    try {
+        const { data, error } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []) as ShopProduct[];
+    } catch (e) {
+        console.error("getAdminShopProducts error:", e);
+        return [];
+    }
+};
+
+// Added missing shop function
+export const createShopProduct = async (product: Partial<ShopProduct>) => {
+    const { error } = await supabase.from('shop_products').insert(product);
+    if (error) throw error;
+};
+
 export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
     try {
         const { data, error } = await supabase
