@@ -1,168 +1,198 @@
 
 import React, { useState, useEffect } from 'react';
-import { Mic, Search, Star, ChevronRight, Film, TrendingUp, Sparkles, User, Play } from 'lucide-react';
+import { Mic, Search, Star, ChevronRight, Film, TrendingUp, Sparkles, User, Play, Heart, Users, Eye } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
-import { UserProfile, Movie } from './types';
+import { UserProfile, Movie, FandubChannel, FandubStory } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { getMovies } from './services/dbService';
+import { getMovies, getFandubChannels, getActiveStories, toggleFollowChannel } from './services/dbService';
 import { MovieCard } from './components/MovieCard';
+import { useNotification } from './hooks/useNotification';
 
-interface StudioPageProps {
-    onArtistClick: (userId: string) => void;
-    onMovieClick: (movie: Movie) => void;
-}
-
-export const StudioPage: React.FC<StudioPageProps> = ({ onArtistClick, onMovieClick }) => {
-    const [artists, setArtists] = useState<UserProfile[]>([]);
+export const StudioPage: React.FC<{ onArtistClick: (id: string) => void, onMovieClick: (m: Movie) => void }> = ({ onArtistClick, onMovieClick }) => {
+    const [channels, setChannels] = useState<FandubChannel[]>([]);
+    const [stories, setStories] = useState<any[]>([]);
     const [allMovies, setAllMovies] = useState<Movie[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [artistSearch, setArtistSearch] = useState('');
-    const [movieSearch, setMovieSearch] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [selectedChannel, setSelectedChannel] = useState<FandubChannel | null>(null);
+    const { addNotification } = useNotification();
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                // Fetch users with 'dub' role
-                const { data: artistsData } = await supabase.from('profiles').select('*').eq('role', 'dub');
-                const moviesRes = await getMovies();
-                setArtists((artistsData || []) as UserProfile[]);
-                setAllMovies(moviesRes);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
-    const filteredArtists = artists.filter(a => 
-        a.full_name?.toLowerCase().includes(artistSearch.toLowerCase()) || 
-        a.username?.toLowerCase().includes(artistSearch.toLowerCase())
-    );
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const [c, s, m] = await Promise.all([
+                getFandubChannels(user?.id),
+                getActiveStories(),
+                getMovies()
+            ]);
+            setChannels(c);
+            setStories(s);
+            setAllMovies(m.filter(movie => movie.is_fandub));
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
+    };
 
-    const filteredMovies = allMovies.filter(m => 
-        m.title.toLowerCase().includes(movieSearch.toLowerCase()) ||
-        m.translator?.toLowerCase().includes(movieSearch.toLowerCase())
-    );
+    const handleFollow = async (e: React.MouseEvent, ch: FandubChannel) => {
+        e.stopPropagation();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return alert("Kirish kerak");
+        try {
+            const isNowFollowing = await toggleFollowChannel(user.id, ch.id);
+            setChannels(prev => prev.map(c => c.id === ch.id ? { ...c, is_following: isNowFollowing, subscriber_count: c.subscriber_count + (isNowFollowing ? 1 : -1) } : c));
+            if (selectedChannel?.id === ch.id) setSelectedChannel({ ...selectedChannel, is_following: isNowFollowing });
+            addNotification({ type: 'success', title: isNowFollowing ? 'Obuna bo\'lindi' : 'Obuna bekor qilindi', message: ch.name });
+        } catch (e) { console.error(e); }
+    };
 
-    if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
+    if (loading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
 
     return (
-        <div className="bg-[#050505] min-h-screen text-white pb-32 animate-fade-in font-sans">
-            {/* STUDIO HEADER */}
-            <div className="relative h-[300px] flex items-center bg-[#0a0a0a] border-b border-white/5 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://i.imgur.com/8y9q1Xh.jpg')] bg-cover bg-center opacity-20"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
-                
-                <div className="container mx-auto px-6 relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div className="text-center md:text-left">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-600/20 text-purple-400 rounded-full border border-purple-600/30 text-[10px] font-black uppercase tracking-widest mb-4">
-                            <Mic size={14} /> Professional Dublyaj
+        <div className="min-h-screen bg-[#050505] text-white pb-32 animate-fade-in font-sans">
+            
+            {/* 1. STORIES SECTION (Creator Avatars) */}
+            <div className="container mx-auto px-6 pt-10 mb-12">
+                <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
+                    {/* Your Story or Add Action */}
+                    <div className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer">
+                        <div className="w-20 h-20 rounded-full border-2 border-dashed border-zinc-800 flex items-center justify-center text-zinc-500 hover:border-purple-600 hover:text-purple-600 transition-all">
+                            <Plus size={32}/>
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white mb-2">
-                            Fundublar <span className="text-purple-600">Studio</span>
-                        </h1>
-                        <p className="text-zinc-400 font-bold uppercase tracking-[0.2em] text-xs">O'zbek tilidagi eng sara ovozlar</p>
+                        <span className="text-[10px] font-black uppercase text-zinc-600">Mening Storyim</span>
                     </div>
-                    
-                    {/* Search Artists Widget */}
-                    <div className="bg-black/50 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] w-full md:w-96 shadow-2xl">
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                            <input 
-                                type="text" 
-                                value={artistSearch}
-                                onChange={e => setArtistSearch(e.target.value)}
-                                placeholder="Dublyaj ustasini qidirish..."
-                                className="w-full bg-[#151515] border border-white/10 py-4 pl-12 pr-6 rounded-xl text-white text-sm focus:border-purple-500 outline-none transition-all placeholder:text-zinc-600 font-medium"
-                            />
+
+                    {stories.map(story => (
+                        <div key={story.id} className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group">
+                            <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-600 shadow-xl group-active:scale-95 transition-transform">
+                                <div className="w-full h-full rounded-full bg-black border-2 border-black overflow-hidden">
+                                    <img src={story.profiles?.avatar_url} className="w-full h-full object-cover" />
+                                </div>
+                            </div>
+                            <span className="text-[10px] font-black uppercase text-white truncate max-w-[80px]">{story.profiles?.username}</span>
                         </div>
-                    </div>
+                    ))}
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 mt-16 space-y-20">
+            <div className="container mx-auto px-6 space-y-20">
                 
-                {/* ARTISTS GRID */}
+                {/* 2. CHANNELS LIST */}
                 <section>
                     <div className="flex items-center gap-4 mb-8">
-                        <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
-                            <User size={20} />
-                        </div>
-                        <h2 className="text-2xl font-black uppercase tracking-tighter">Bizning Jamoa</h2>
+                        <div className="w-1.5 h-8 bg-purple-600 rounded-full shadow-[0_0_15px_rgba(147,51,234,0.5)]"></div>
+                        <h2 className="text-3xl font-black uppercase tracking-tighter">Ommabop Kanallar</h2>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {filteredArtists.length === 0 && (
-                            <div className="col-span-full py-10 text-center text-zinc-500 text-sm font-bold uppercase">Hozircha artistlar yo'q</div>
-                        )}
-                        {filteredArtists.map(artist => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {channels.map(ch => (
                             <div 
-                                key={artist.id}
-                                onClick={() => onArtistClick(artist.id)}
-                                className="group relative bg-[#0f0f0f] border border-white/5 rounded-[2.5rem] overflow-hidden cursor-pointer hover:border-purple-500/50 transition-all hover:-translate-y-2 shadow-xl"
+                                key={ch.id} 
+                                onClick={() => setSelectedChannel(ch)}
+                                className="group relative bg-zinc-900 border border-white/5 rounded-[2.5rem] overflow-hidden cursor-pointer hover:border-purple-500/30 transition-all shadow-2xl"
                             >
-                                <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
-                                <div className="p-8 flex flex-col items-center text-center relative z-10">
-                                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-purple-500 to-blue-500 mb-4 shadow-xl">
-                                        <div className="w-full h-full rounded-full bg-black overflow-hidden p-1">
-                                            {artist.avatar_url ? (
-                                                <img src={artist.avatar_url} className="w-full h-full rounded-full object-cover" alt="" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-600"><User size={32}/></div>
-                                            )}
+                                {/* Channel Banner */}
+                                <div className="h-32 bg-zinc-800 relative">
+                                    <img src={ch.banner_url || 'https://i.imgur.com/8y9q1Xh.jpg'} className="w-full h-full object-cover opacity-60" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent"></div>
+                                </div>
+
+                                <div className="p-8 pt-0 flex flex-col items-center -mt-12 relative z-10">
+                                    <div className="w-24 h-24 rounded-[2rem] p-1 bg-zinc-900 mb-4 shadow-2xl">
+                                        <div className="w-full h-full rounded-[1.8rem] bg-black border-2 border-zinc-800 overflow-hidden">
+                                            <img src={ch.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full object-cover" />
                                         </div>
                                     </div>
-                                    <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1">{artist.full_name}</h3>
-                                    <p className="text-purple-500 text-[10px] font-bold uppercase tracking-widest">@{artist.username}</p>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tight">{ch.name}</h3>
+                                    <p className="text-purple-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">@{ch.username}</p>
                                     
-                                    <div className="mt-6 flex items-center gap-4 text-xs font-bold text-zinc-500 bg-black/40 px-4 py-2 rounded-full border border-white/5">
-                                        <div className="flex items-center gap-1"><Star size={12} className="text-yellow-500 fill-yellow-500"/> 4.9</div>
-                                        <div className="w-1 h-3 bg-zinc-700 rounded-full"></div>
-                                        <div>{artist.fans_count || 0} Fans</div>
+                                    <div className="flex gap-6 mb-6">
+                                        <div className="text-center">
+                                            <p className="text-sm font-black">{ch.subscriber_count}</p>
+                                            <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">A'zolar</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-sm font-black">{ch.total_views}</p>
+                                            <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Ko'rishlar</p>
+                                        </div>
                                     </div>
+
+                                    <button 
+                                        onClick={(e) => handleFollow(e, ch)}
+                                        className={`w-full py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${ch.is_following ? 'bg-zinc-800 text-zinc-400' : 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 active:scale-95'}`}
+                                    >
+                                        {ch.is_following ? 'Obuna bo\'lindi' : 'Obuna bo\'lish'}
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                {/* WORK CATALOGUE */}
+                {/* 3. FANDUB PROJECTS GRID */}
                 <section>
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-                                <Play size={20} fill="white" />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-black uppercase tracking-tighter">Dublyaj Katalogi</h2>
-                                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Studiya tomonidan tayyorlangan</p>
-                            </div>
-                        </div>
-                        
-                        <input 
-                            type="text" 
-                            value={movieSearch}
-                            onChange={e => setMovieSearch(e.target.value)}
-                            placeholder="Katalogni qidirish..."
-                            className="w-full md:w-64 bg-[#0f0f0f] border border-zinc-800 py-3 px-6 rounded-full text-white text-xs font-bold focus:border-blue-500 outline-none"
-                        />
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-1.5 h-8 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
+                        <h2 className="text-3xl font-black uppercase tracking-tighter">Barcha Fandublar</h2>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12">
-                        {filteredMovies.map(movie => (
-                            <MovieCard 
-                                key={movie.id} 
-                                movie={movie} 
-                                isActive={true} 
-                                onClick={() => onMovieClick(movie)} 
-                            />
+                        {allMovies.map(movie => (
+                            <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
                         ))}
                     </div>
                 </section>
             </div>
+
+            {/* CHANNEL DETAIL OVERLAY (MODAL) */}
+            {selectedChannel && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setSelectedChannel(null)}></div>
+                    <div className="relative bg-zinc-900 w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl animate-slide-in-up max-h-[90vh] flex flex-col border border-white/5">
+                        {/* Header Banner */}
+                        <div className="h-56 bg-zinc-800 relative flex-shrink-0">
+                            <img src={selectedChannel.banner_url || 'https://i.imgur.com/8y9q1Xh.jpg'} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent"></div>
+                            <button onClick={() => setSelectedChannel(null)} className="absolute top-6 right-6 p-2 bg-black/50 rounded-full text-white hover:bg-black transition-colors"><X size={24}/></button>
+                        </div>
+
+                        {/* Profile Info */}
+                        <div className="px-10 pb-8 flex flex-col md:flex-row gap-8 -mt-20 relative z-10 flex-shrink-0">
+                            <div className="w-40 h-40 rounded-[2.5rem] p-1.5 bg-zinc-900 shadow-2xl">
+                                <img src={selectedChannel.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full rounded-[2.3rem] object-cover border-4 border-zinc-800" />
+                            </div>
+                            <div className="flex-1 md:pt-20">
+                                <h2 className="text-3xl font-black uppercase tracking-tighter mb-1">{selectedChannel.name}</h2>
+                                <p className="text-purple-500 font-bold text-sm mb-4">@{selectedChannel.username}</p>
+                                <p className="text-zinc-400 text-sm leading-relaxed max-w-xl">{selectedChannel.bio || 'Bu kanal haqida ma\'lumot kiritilmagan.'}</p>
+                            </div>
+                            <div className="md:pt-20 flex flex-col gap-4">
+                                <button onClick={(e) => handleFollow(e, selectedChannel)} className={`px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all ${selectedChannel.is_following ? 'bg-zinc-800 text-zinc-500' : 'bg-purple-600 text-white shadow-xl shadow-purple-600/20'}`}>
+                                    {selectedChannel.is_following ? 'Obuna bo\'lindi' : 'Obuna bo\'lish'}
+                                </button>
+                                <div className="flex justify-center gap-8 text-center bg-black/20 p-4 rounded-2xl border border-white/5">
+                                    <div><p className="font-black">{selectedChannel.subscriber_count}</p><p className="text-[8px] text-zinc-500 font-bold uppercase">Muxlislar</p></div>
+                                    <div><p className="font-black">{selectedChannel.total_views}</p><p className="text-[8px] text-zinc-500 font-bold uppercase">Tomoshalar</p></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Projects from this channel */}
+                        <div className="flex-1 overflow-y-auto p-10 pt-4 custom-scrollbar">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-8 flex items-center gap-2"> <Film size={14}/> Loyihalar Katalogi</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                                {allMovies.filter(m => m.channel_id === selectedChannel.id).map(movie => (
+                                    <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+
+const X = ({ size }: { size: number }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+);
