@@ -33,13 +33,12 @@ export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'sa
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'contest' | 'cash_contest';
 export type LegalDocType = 'privacy' | 'terms';
 
-// Helper for image preloading
 const preloadImage = (src: string) => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const img = new Image();
         img.src = src;
         img.onload = resolve;
-        img.onerror = resolve; // Don't block app if image fails
+        img.onerror = resolve; 
     });
 };
 
@@ -55,17 +54,12 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
   
-  // Custom Branding State for Loader
   const [loaderLogo, setLoaderLogo] = useState<string | null>(null);
-  
-  // Menu State
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
-  // Legal Docs State
   const [legalDocType, setLegalDocType] = useState<LegalDocType | null>(null);
 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null); // NEW: Track selected episode
+  const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [isPlayerActive, setIsPlayerActive] = useState(false);
   const [activeVideoAd, setActiveVideoAd] = useState<Ad | null>(null);
@@ -82,61 +76,45 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
         try {
-            // 1. Fetch Config First
-            const config = await getAppConfig();
-            
-            // 2. Set branding states
+            // 1. Configni xavfsiz yuklash
+            const config = await getAppConfig().catch(() => ({}));
             if (config['site_logo']) setLoaderLogo(config['site_logo']);
             
-            // 3. Preload Critical Assets ("Shimini kiyish")
-            const assetsToLoad = [];
-            if (config['site_logo']) assetsToLoad.push(preloadImage(config['site_logo']));
-            if (config['site_background']) assetsToLoad.push(preloadImage(config['site_background']));
-            
-            // Wait for assets to be cached by browser
-            await Promise.all(assetsToLoad);
+            // 2. Preload (faqat bitta muhim rasm uchun, ilovani sekinlashtirmaslik kerak)
+            if (config['site_logo']) await preloadImage(config['site_logo']).catch(() => {});
 
-            // 4. Check Session
-            const { data: { session } } = await supabase.auth.getSession();
+            // 3. Sessiyani xavfsiz tekshirish
+            const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+            
             if (session) {
                 setIsAuthenticated(true);
-                await fetchUserRole(session.user.id);
+                await fetchUserRole(session.user.id).catch(() => {});
                 setPage('dashboard'); 
                 
-                // --- TSPAY CHECK LOGIC ---
                 const tspayId = localStorage.getItem('tspay_pending_id');
                 const tspayAmount = localStorage.getItem('tspay_pending_amount');
                 
                 if (tspayId && tspayAmount) {
-                    addNotification({ type: 'info', title: 'Tekshirilmoqda', message: 'To\'lov holati tekshirilmoqda...' });
                     try {
                         const status = await checkTsPayStatus(Number(tspayId));
                         if (status.status === 'success' && status.data.pay_status === 'paid') {
-                            // Muvaffaqiyatli!
                             await recordTsPaySuccess(session.user.id, Number(tspayAmount), Number(tspayId));
-                            addNotification({ type: 'success', title: 'To\'lov Qabul qilindi', message: 'Hisobingiz muvaffaqiyatli to\'ldirildi!' });
-                        } else {
-                            addNotification({ type: 'warning', title: 'Kutilmoqda', message: 'To\'lov hali tasdiqlanmagan yoki bekor qilingan.' });
+                            addNotification({ type: 'success', title: 'To\'lov Qabul qilindi', message: 'Hisobingiz to\'ldirildi!' });
                         }
-                    } catch (e) {
-                        console.error("Payment check failed", e);
-                        addNotification({ type: 'error', title: 'Xatolik', message: 'To\'lovni tekshirishda xatolik.' });
-                    } finally {
-                        // Clean up
+                    } catch (e) {} finally {
                         localStorage.removeItem('tspay_pending_id');
                         localStorage.removeItem('tspay_pending_amount');
                     }
                 }
-                // --- END TSPAY CHECK ---
-
             } else {
                 setPage('welcome');
             }
         } catch (e) { 
-            console.error(e); 
+            console.error("Critical Init Error:", e);
+            setPage('welcome');
         } finally { 
-            // 5. Reveal App
-            setTimeout(() => setIsAppReady(true), 800); 
+            // 4. Har qanday holatda ham ilovani ochish (maksimum 1.5 sek)
+            setTimeout(() => setIsAppReady(true), 500); 
         }
     };
     initApp();
@@ -155,15 +133,15 @@ const App: React.FC = () => {
   }, []);
 
   const fetchUserRole = async (userId: string) => {
-      const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-      if (data) setCurrentUserRole((data as any).role);
+      try {
+          const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+          if (data) setCurrentUserRole((data as any).role);
+      } catch (e) {}
   };
 
   const handleNavigation = (targetPage: Page) => {
     setPage(targetPage);
-    if (targetPage === 'dashboard') {
-        setDashboardPage('main');
-    }
+    if (targetPage === 'dashboard') setDashboardPage('main');
     setSelectedMovie(null);
     setActiveEpisode(null);
     setSelectedArtistId(null);
@@ -182,7 +160,7 @@ const App: React.FC = () => {
     if (!isAuthenticated) setIsAuthModalOpen(true);
     else {
         setSelectedMovie(movie);
-        setActiveEpisode(null); // Reset episode when opening a new movie
+        setActiveEpisode(null);
         window.scrollTo(0, 0);
     }
   };
@@ -196,39 +174,20 @@ const App: React.FC = () => {
   if (!isAppReady) return (
       <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center relative overflow-hidden z-[9999]">
           <div className="flex flex-col items-center gap-6 animate-fade-in relative z-10">
-              {/* Dynamic Logo Loader */}
-              <div className="relative w-24 h-24">
-                  {/* Spinning Ring */}
+              <div className="relative w-20 h-20">
                   <div className="absolute inset-0 rounded-full border-4 border-t-orange-500 border-r-transparent border-b-orange-500 border-l-transparent animate-spin"></div>
-                  
-                  {/* Logo Center */}
                   <div className="absolute inset-2 rounded-full overflow-hidden bg-black flex items-center justify-center border-2 border-white/10">
                       {loaderLogo ? (
                           <img src={loaderLogo} alt="Logo" className="w-full h-full object-cover animate-pulse" />
                       ) : (
-                          <UzumakiLogo className="w-12 h-12 text-orange-500 animate-pulse" />
+                          <UzumakiLogo className="w-10 h-10 text-orange-500 animate-pulse" />
                       )}
                   </div>
               </div>
-              
               <div className="text-center">
-                  <h1 className="text-2xl font-black text-white tracking-[0.3em] uppercase">ANILO.UZ</h1>
-                  <p className="text-[10px] text-zinc-500 font-bold mt-1">YUKLANMOQDA...</p>
+                  <h1 className="text-xl font-black text-white tracking-[0.3em] uppercase">ANILO.UZ</h1>
               </div>
           </div>
-
-          {/* Loading Bar */}
-          <div className="absolute bottom-20 w-64 h-1 bg-zinc-900 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-orange-600 via-yellow-500 to-orange-600 w-full animate-[loading_1.5s_ease-in-out_infinite] origin-left"></div>
-          </div>
-          
-          <style>{`
-            @keyframes loading {
-                0% { transform: translateX(-100%); }
-                50% { transform: translateX(0%); }
-                100% { transform: translateX(100%); }
-            }
-          `}</style>
       </div>
   );
 
@@ -257,7 +216,7 @@ const App: React.FC = () => {
                 {isPlayerActive && selectedMovie && !activeVideoAd && (
                     <VideoPlayerPage 
                         movie={selectedMovie} 
-                        episode={activeEpisode} // Pass active episode
+                        episode={activeEpisode} 
                         onBack={() => setIsPlayerActive(false)} 
                     />
                 )}
@@ -269,7 +228,7 @@ const App: React.FC = () => {
                         movie={selectedMovie} 
                         onBack={() => setSelectedMovie(null)} 
                         onPlay={() => setIsPlayerActive(true)} 
-                        onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} // Handle episode play
+                        onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} 
                         onArtistClick={handleArtistClick} 
                       />
                     ) : (
@@ -300,10 +259,10 @@ const App: React.FC = () => {
                   <div className="max-w-4xl mx-auto w-full pt-20">
                       <div className="flex items-center gap-3 mb-8">
                           <Sparkles className="text-orange-500" size={24} />
-                          <h2 className="text-4xl font-black tracking-tighter uppercase">Kashfiyot qilish vaqti</h2>
+                          <h2 className="text-4xl font-black tracking-tighter uppercase">Kashfiyot</h2>
                       </div>
                       <input 
-                        type="text" autoFocus placeholder="Anime nomi yoki janr..."
+                        type="text" autoFocus placeholder="Anime nomi..."
                         onKeyDown={(e) => { if (e.key === 'Enter') { setCurrentQuery((e.target as HTMLInputElement).value); setPage('search'); setIsSearchOpen(false); } }}
                         className="w-full bg-zinc-900 border-b-2 border-orange-600/50 py-6 px-4 text-2xl sm:text-4xl font-bold outline-none focus:border-orange-500 transition-all text-white"
                       />
@@ -314,48 +273,11 @@ const App: React.FC = () => {
           {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
-                    <button 
-                        onClick={() => { handleNavigation('dashboard'); setDashboardPage('main'); }}
-                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
-                    >
-                        <Home size={22} />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">Asosiy</span>
-                    </button>
-
-                    <button 
-                        onClick={() => handleNavigation('catalog')}
-                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 ${page === 'catalog' ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
-                    >
-                        <Layers size={22} />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">Katalog</span>
-                    </button>
-
-                    {/* CENTERED SHOP ICON */}
-                    <button 
-                        onClick={() => handleNavigation('shop')}
-                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 -mt-6 group`}
-                    >
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400 group-hover:bg-zinc-700'}`}>
-                            <ShoppingBag size={20} fill={page === 'shop' ? 'currentColor' : 'none'} />
-                        </div>
-                        <span className={`text-[9px] font-black uppercase tracking-tighter ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span>
-                    </button>
-
-                    <button 
-                        onClick={() => handleNavigation('studio')}
-                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
-                    >
-                        <LayoutGrid size={22} />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">Fandub</span>
-                    </button>
-
-                    <button 
-                        onClick={() => setIsMenuOpen(true)}
-                        className={`flex flex-col items-center gap-1 transition-all duration-300 w-1/5 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600 hover:text-zinc-400'}`}
-                    >
-                        <User size={22} />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">Profil</span>
-                    </button>
+                    <button onClick={() => handleNavigation('dashboard')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'dashboard' ? 'text-orange-500' : 'text-zinc-600'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Asosiy</span></button>
+                    <button onClick={() => handleNavigation('catalog')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'catalog' ? 'text-orange-500' : 'text-zinc-600'}`}><Layers size={22} /><span className="text-[9px] font-black uppercase">Katalog</span></button>
+                    <button onClick={() => handleNavigation('shop')} className={`flex flex-col items-center gap-1 w-1/5 -mt-6 group`}><div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}><ShoppingBag size={20} /></div><span className={`text-[9px] font-black uppercase ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span></button>
+                    <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}><LayoutGrid size={22} /><span className="text-[9px] font-black uppercase">Fandub</span></button>
+                    <button onClick={() => setIsMenuOpen(true)} className={`flex flex-col items-center gap-1 w-1/5 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600'}`}><User size={22} /><span className="text-[9px] font-black uppercase">Profil</span></button>
                 </div>
             </div>
           )}
