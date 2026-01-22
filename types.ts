@@ -41,11 +41,12 @@ export interface Movie {
   is_archived?: boolean;
   access_type?: 'free' | 'premium';
   status?: 'ongoing' | 'completed';
+  is_fandub?: boolean; // Fandub ekanini ajratish uchun
 }
 
 export interface Episode {
     id: number;
-    movie_id: number;
+    movie_id?: number;
     title: string;
     source: string;
     sourceType?: 'url' | 'file';
@@ -363,13 +364,18 @@ export interface FandubUpload {
     poster_url: string;
     video_url: string;
     genre: string;
+    year: number;
     access_type: 'free' | 'premium';
     status: 'pending' | 'approved' | 'rejected';
     view_count: number;
     earnings_usd: number;
+    revenue_share_percent: number;
+    episodes: Episode[];
+    quality: string;
+    tags: string;
+    language: string;
     admin_comment?: string;
     created_at: string;
-    revenue_share_percent: number;
 }
 
 export interface MonetizationRate {

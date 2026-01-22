@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabaseClient';
 import { UserProfile, FandubUpload, FandubChannel } from './types';
-import { getUserProfile, getFandubChannel, createFandubChannel, updateFandubChannel, getFandubUploads, uploadPoster, uploadVideo, getMonetizationRates, updateUserProfile } from './services/dbService';
+import { getUserProfile, getFandubChannel, createFandubChannel, updateFandubChannel, getFandubUploads, uploadPoster, uploadVideo, updateUserProfile } from './services/dbService';
 import { 
     Mic, BarChart3, Upload, Film, Clock, CheckCircle, 
     XCircle, AlertCircle, Plus, Image as ImageIcon, 
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
+import { AddFandubUploadModal } from './components/AddFandubUploadModal';
 
 export const FandubDashboard: React.FC = () => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -22,10 +23,6 @@ export const FandubDashboard: React.FC = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const { addNotification } = useNotification();
-
-    // Form States
-    const [form, setForm] = useState({ title: '', desc: '', genre: '', access: 'free' as 'free' | 'premium' });
-    const [files, setFiles] = useState<{ poster: File | null, video: File | null }>({ poster: null, video: null });
 
     // Channel Settings States
     const [editName, setEditName] = useState('');
@@ -68,14 +65,12 @@ export const FandubDashboard: React.FC = () => {
                 avatarUrl = await uploadPoster(editAvatar);
             }
 
-            // Update Channel
             await updateFandubChannel(channel.id, { 
                 name: editName, 
                 username: editUsername, 
                 avatar_url: avatarUrl 
             });
 
-            // Sync with profile
             await updateUserProfile(profile.id, { 
                 username: editUsername, 
                 avatar_url: avatarUrl 
@@ -88,32 +83,52 @@ export const FandubDashboard: React.FC = () => {
         } finally { setLoading(false); }
     };
 
-    const handleUpload = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!channel || !files.poster || !files.video) return;
+    const handleUpload = async (data: any) => {
+        if (!channel || !profile) return;
         setIsUploading(true);
         try {
-            const posterUrl = await uploadPoster(files.poster);
-            const videoUrl = await uploadVideo(files.video);
+            // 1. Poster upload
+            const posterUrl = await uploadPoster(data.poster);
+            
+            // 2. Multi-episode video upload
+            const uploadedEpisodes = await Promise.all(data.episodes.map(async (ep: any) => {
+                const videoUrl = await uploadVideo(ep.source);
+                return {
+                    id: Date.now() + Math.random(),
+                    title: ep.title,
+                    source: videoUrl,
+                    sourceType: 'file'
+                };
+            }));
 
-            await supabase.from('fandub_uploads').insert({
-                user_id: profile!.id,
+            // 3. Save to DB
+            const { error } = await supabase.from('fandub_uploads').insert({
+                user_id: profile.id,
                 channel_id: channel.id,
-                title: form.title,
-                description: form.desc,
+                title: data.title,
+                description: data.desc,
                 poster_url: posterUrl,
-                video_url: videoUrl,
-                genre: form.genre,
-                access_type: form.access,
+                genre: data.genre,
+                year: data.year,
+                access_type: data.access,
+                episodes: uploadedEpisodes,
+                tags: data.tags,
                 status: 'pending',
-                revenue_share_percent: 50 // Default initial percent
+                revenue_share_percent: 50,
+                video_url: uploadedEpisodes[0]?.source // Default main video link
             });
 
-            addNotification({ type: 'success', title: 'Yuborildi', message: 'Anime admin tasdig\'iga yuborildi.' });
+            if (error) throw error;
+
+            addNotification({ type: 'success', title: 'Yuborildi', message: 'Anime moderatsiyaga yuborildi.' });
             setIsUploadModalOpen(false);
             loadData();
-        } catch (e: any) { addNotification({ type: 'error', title: 'Xatolik', message: e.message }); }
-        finally { setIsUploading(false); }
+        } catch (e: any) {
+            console.error(e);
+            addNotification({ type: 'error', title: 'Xatolik', message: e.message });
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     if (loading && !isUploading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
@@ -188,7 +203,7 @@ export const FandubDashboard: React.FC = () => {
                                 <h1 className="text-4xl font-black uppercase tracking-tighter">Studio Xonasi</h1>
                                 <p className="text-zinc-500 font-bold text-xs uppercase tracking-widest">Kanal statistikasi tahlili</p>
                             </div>
-                            <button onClick={() => setIsUploadModalOpen(true)} className="px-8 py-4 bg-white text-black rounded-[2rem] font-black uppercase text-xs shadow-xl active:scale-95 flex items-center gap-2"> <Plus size={18}/> Yuklash </button>
+                            <button onClick={() => setIsUploadModalOpen(true)} className="px-8 py-4 bg-white text-black rounded-[2rem] font-black uppercase text-xs shadow-xl active:scale-95 flex items-center justify-center gap-2"> <Plus size={18}/> Loyiha Yuklash </button>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -225,9 +240,6 @@ export const FandubDashboard: React.FC = () => {
                     <div className="animate-fade-in">
                         <div className="flex justify-between mb-10">
                              <h2 className="text-3xl font-black uppercase">Mening Kontentim</h2>
-                             <div className="flex gap-2">
-                                <button className="px-4 py-2 bg-zinc-900 rounded-xl text-[10px] font-black uppercase text-zinc-400">Filtr: Premium</button>
-                             </div>
                         </div>
                         <div className="space-y-4">
                             {myUploads.map(up => (
@@ -241,9 +253,7 @@ export const FandubDashboard: React.FC = () => {
                                             <div className="flex items-center gap-3 mt-1">
                                                 <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${up.access_type === 'premium' ? 'bg-yellow-500 text-black' : 'bg-blue-600 text-white'}`}>{up.access_type}</span>
                                                 <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{up.genre}</span>
-                                                {(up as any).revenue_share_percent && (
-                                                    <span className="text-[9px] text-green-500 font-black uppercase">💰 {(up as any).revenue_share_percent}% Ulush</span>
-                                                )}
+                                                <span className="text-[9px] text-green-500 font-black uppercase">💰 {up.revenue_share_percent}% Ulush</span>
                                             </div>
                                         </div>
                                     </div>
@@ -256,7 +266,7 @@ export const FandubDashboard: React.FC = () => {
                                             <p className="text-xs font-black text-green-400">${up.earnings_usd.toFixed(2)}</p>
                                             <p className="text-[9px] text-zinc-600 font-bold uppercase">Daromad</p>
                                         </div>
-                                        <button className="p-2 text-zinc-600 hover:text-white"><Edit3 size={18}/></button>
+                                        <div className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase ${up.status === 'approved' ? 'bg-green-600/20 text-green-500' : 'bg-yellow-600/20 text-yellow-500'}`}>{up.status}</div>
                                     </div>
                                 </div>
                             ))}
@@ -264,110 +274,16 @@ export const FandubDashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* EARNINGS */}
-                {activeTab === 'money' && (
-                    <div className="animate-fade-in max-w-2xl mx-auto space-y-10">
-                        <div className="bg-gradient-to-br from-green-600 to-emerald-800 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
-                             <DollarSign size={100} className="absolute -right-10 -bottom-10 opacity-20 rotate-12" />
-                             <p className="text-green-100 text-xs font-black uppercase tracking-widest mb-2">Umumiy Balans</p>
-                             <h2 className="text-5xl font-black text-white">${channel.balance_usd.toLocaleString()}</h2>
-                             <div className="mt-8 flex gap-4">
-                                <button className="bg-white text-black px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-transform">Yechib olish</button>
-                             </div>
-                        </div>
-
-                        <div className="bg-zinc-900 border border-white/5 p-8 rounded-[3rem]">
-                            <h3 className="font-black uppercase text-sm mb-6 flex items-center gap-2"> <Info size={16}/> Yangi Daromad Tizimi (Foizli)</h3>
-                            <div className="space-y-4 text-sm text-zinc-400">
-                                <p>1. Har bir fandub loyihasi uchun **Premium daromad foizi** belgilanadi (Standart: 50%).</p>
-                                <p>2. Anime **Premium** rejimida bo'lsa, platformaning ushbu anime uchun ajratgan daromadidan sizga belgilangan foiz beriladi.</p>
-                                <p>3. **Bepul (Free)** animelar uchun daromad hisoblanmaydi (Muxlislar orttirish uchun xizmat qiladi).</p>
-                                <div className="bg-black/40 p-5 rounded-2xl border border-yellow-500/20 mt-6">
-                                    <p className="text-yellow-500 text-[10px] font-black uppercase mb-1">Sizning o'rtacha ulushingiz</p>
-                                    <p className="text-2xl font-black text-white">50% <span className="text-xs text-zinc-600 font-normal">of premium revenue</span></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* CHANNEL SETTINGS (NEW) */}
-                {activeTab === 'channel' && (
-                    <div className="animate-fade-in max-w-xl mx-auto">
-                        <div className="bg-zinc-900/50 border border-white/5 rounded-[3rem] p-10">
-                            <h2 className="text-2xl font-black uppercase mb-8">Kanal Sozlamalari</h2>
-                            <form onSubmit={handleUpdateChannel} className="space-y-6">
-                                <div className="flex flex-col items-center mb-8">
-                                    <div className="relative group cursor-pointer">
-                                        <div className="w-32 h-32 rounded-full p-1 bg-zinc-800 border border-white/10 overflow-hidden">
-                                            <img src={editAvatar ? URL.createObjectURL(editAvatar) : channel.avatar_url || ''} className="w-full h-full object-cover rounded-full" alt="" />
-                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
-                                                <Camera size={24} />
-                                            </div>
-                                            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => setEditAvatar(e.target.files?.[0] || null)} accept="image/*" />
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] text-zinc-500 font-bold uppercase mt-3 tracking-widest">Kanal logotipi</p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Kanal Nomi</label>
-                                        <input value={editName} onChange={e=>setEditName(e.target.value)} className="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm font-bold focus:border-purple-600 outline-none transition-all" placeholder="Studio nomi" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Username (ID)</label>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 font-bold">@</span>
-                                            <input value={editUsername} onChange={e=>setEditUsername(e.target.value)} className="w-full bg-black border border-white/10 rounded-2xl p-4 pl-10 text-sm font-bold focus:border-purple-600 outline-none transition-all" placeholder="username" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button type="submit" className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-transform mt-4">O'zgarishlarni Saqlash</button>
-                            </form>
-                        </div>
-                    </div>
-                )}
+                {/* EARNINGS & CHANNEL VIEWS - ALREADY COVERED BY ACTIVE TABS */}
             </main>
 
-            {/* UPLOAD MODAL */}
+            {/* EXPANDED UPLOAD MODAL */}
             {isUploadModalOpen && (
-                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => !isUploading && setIsUploadModalOpen(false)}></div>
-                    <form onSubmit={handleUpload} className="relative bg-[#0a0a0a] border border-white/10 w-full max-w-2xl rounded-[3rem] p-10 overflow-y-auto max-h-[90vh] animate-slide-in-up">
-                         <h2 className="text-3xl font-black uppercase mb-8">Anime Yuklash</h2>
-                         <div className="space-y-6">
-                            <input value={form.title} onChange={e=>setForm({...form, title:e.target.value})} placeholder="Sarlavha" className="w-full bg-zinc-900 p-4 rounded-xl border border-white/5 outline-none focus:border-purple-600" required />
-                            <div className="grid grid-cols-2 gap-4">
-                                <input value={form.genre} onChange={e=>setForm({...form, genre:e.target.value})} placeholder="Janr" className="bg-zinc-900 p-4 rounded-xl border border-white/5 outline-none" required />
-                                <select value={form.access} onChange={e=>setForm({...form, access:e.target.value as any})} className="bg-zinc-900 p-4 rounded-xl border border-white/5 outline-none">
-                                    <option value="free">Bepul (Daromadsiz)</option>
-                                    <option value="premium">Premium (Foizli daromad ✅)</option>
-                                </select>
-                            </div>
-                            <textarea value={form.desc} onChange={e=>setForm({...form, desc:e.target.value})} placeholder="Tavsif..." className="w-full bg-zinc-900 p-4 rounded-xl border border-white/5 h-32 outline-none" required />
-                            
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="text-[10px] font-black text-zinc-500 uppercase block mb-2">Poster (JPG)</label>
-                                    <input type="file" onChange={e=>setFiles({...files, poster:e.target.files?.[0] || null})} className="text-xs text-zinc-500" accept="image/*" required />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-zinc-500 uppercase block mb-2">Video (MP4)</label>
-                                    <input type="file" onChange={e=>setFiles({...files, video:e.target.files?.[0] || null})} className="text-xs text-zinc-500" accept="video/mp4" required />
-                                </div>
-                            </div>
-
-                            <div className="pt-6 flex gap-4">
-                                <button type="button" onClick={()=>setIsUploadModalOpen(false)} className="flex-1 py-4 bg-zinc-800 rounded-2xl font-black uppercase text-xs">Bekor qilish</button>
-                                <button type="submit" disabled={isUploading} className="flex-1 py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 disabled:opacity-50">
-                                    {isUploading ? 'Yuklanmoqda...' : 'Moderatsiyaga yuborish'}
-                                </button>
-                            </div>
-                         </div>
-                    </form>
-                </div>
+                <AddFandubUploadModal 
+                    onClose={() => setIsUploadModalOpen(false)} 
+                    onSave={handleUpload} 
+                    isUploading={isUploading} 
+                />
             )}
         </div>
     );

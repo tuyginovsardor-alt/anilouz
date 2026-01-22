@@ -7,9 +7,7 @@ import {
     Broadcast, Promocode, UserDevice, SupportTicket, 
     TicketMessage, News, Transaction, ShopProduct, 
     ShopWallet, ShopOrder, SocialLink, PaymentRequestDB, 
-    FandubChannel, FandubUpload, ArkSchedule,
-    // Added missing 'Ad' import to resolve "Cannot find name 'Ad'" errors
-    Ad 
+    FandubChannel, FandubUpload, ArkSchedule, Ad 
 } from '../types';
 
 // --- CONFIG & APP SETTINGS ---
@@ -62,9 +60,34 @@ export const deleteUser = async (userId: string) => {
 };
 
 // --- MOVIES, EPISODES & REVIEWS ---
+// MIXED CATALOG FETCH
 export const getMovies = async (): Promise<Movie[]> => {
-    const { data } = await supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false });
-    return (data || []) as Movie[];
+    const [officialRes, fandubRes] = await Promise.all([
+        supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false }),
+        supabase.from('fandub_uploads').select('*').eq('status', 'approved').order('created_at', { ascending: false })
+    ]);
+
+    const officialMovies = (officialRes.data || []).map(m => ({ ...m, is_fandub: false }));
+    const fandubMovies = (fandubRes.data || []).map(m => ({
+        id: m.id,
+        title: m.title,
+        year: m.year,
+        plot: m.description,
+        posterUrl: m.poster_url,
+        videoUrl: m.video_url,
+        genre: m.genre,
+        language: m.language || 'JP/UZ',
+        quality: m.quality || 'HD',
+        rating: m.rating || 5.0,
+        tags: m.tags,
+        translator: 'Fandub Studio',
+        translator_id: m.user_id,
+        is_fandub: true,
+        access_type: m.access_type,
+        status: 'completed'
+    }));
+
+    return [...officialMovies, ...fandubMovies] as Movie[];
 };
 
 export const getAdminMovies = async (): Promise<Movie[]> => {
@@ -93,7 +116,11 @@ export const toggleMovieArchive = async (id: number, archived: boolean) => {
     if (error) throw error;
 };
 
-export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
+export const getMovieEpisodes = async (movieId: number, isFandub: boolean = false): Promise<Episode[]> => {
+    if (isFandub) {
+        const { data } = await supabase.from('fandub_uploads').select('episodes').eq('id', movieId).maybeSingle();
+        return (data?.episodes || []) as Episode[];
+    }
     const { data } = await supabase.from('episodes').select('*').eq('movie_id', movieId).order('id', { ascending: true });
     return (data || []) as Episode[];
 };
