@@ -5,7 +5,7 @@ import { createPaymentRequest, uploadFile } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { useNotification } from './hooks/useNotification';
 import { createTsPayTransaction } from './services/tspayService';
-import { CreditCard, Zap, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { CreditCard, Zap, CheckCircle, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 
 type Status = 'idle' | 'loading' | 'pending' | 'error';
 
@@ -75,14 +75,17 @@ export const BillingPage: React.FC = () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Avval tizimga kiring.");
 
+            // 1. Tranzaksiyani yaratish (Backend orqali)
             const response = await createTsPayTransaction(Number(tsAmount), user.id);
             
             if (response.status === 'success' && response.transaction.url) {
+                // 2. Holatni saqlab qo'yish (keyinchalik tekshirish uchun)
                 localStorage.setItem('tspay_pending_id', String(response.transaction.id));
                 localStorage.setItem('tspay_pending_amount', tsAmount);
                 
-                addNotification({ type: 'success', title: 'Tayyor', message: "To'lov sahifasiga yo'naltirilmoqdasiz..." });
+                addNotification({ type: 'success', title: 'Yo\'naltirilmoqda...', message: "TsPay to'lov sahifasi ochilmoqda." });
                 
+                // 3. Foydalanuvchini TsPay sahifasiga yo'naltirish
                 setTimeout(() => {
                     window.location.href = response.transaction.url;
                 }, 1000);
@@ -95,9 +98,8 @@ export const BillingPage: React.FC = () => {
             
             let userMsg = e.message || 'TsPay bilan aloqa yo\'q.';
             
-            // Agar PROXY xatosi bo'lsa, foydalanuvchiga tushunarliroq variant taklif qilamiz
             if (e.message === 'PROXY_ERROR' || e.message.includes('Proxy')) {
-                userMsg = "Avtomatik to'lov tizimida texnik ishlar. Iltimos, pastdagi 'Manual To'lov' (karta orqali) usulidan foydalaning.";
+                userMsg = "Tizim xatosi (Proxy). Iltimos, hozircha Manual To'lovdan foydalaning.";
             }
 
             addNotification({ type: 'error', title: 'Xatolik', message: userMsg });
@@ -157,7 +159,11 @@ export const BillingPage: React.FC = () => {
                         Tezkor To'lov (TsPay)
                     </h2>
                     <p className="text-sm text-gray-300 mb-6 leading-relaxed">
-                        UzCard yoki Humo kartalari orqali xavfsiz to'lov. Balansingiz <b>avtomatik</b> va <b>darhol</b> to'ldiriladi.
+                        To'lov summasini kiriting. Keyin <b>TsPay</b> sahifasiga o'tib <b>UzCard, Humo, Click yoki Payme</b> orqali to'lovni amalga oshirasiz.
+                        <br/>
+                        <span className="text-xs text-blue-300 mt-2 block flex items-center gap-1">
+                            <CheckCircle size={12}/> Balans avtomatik to'ldiriladi.
+                        </span>
                     </p>
 
                     <form onSubmit={handleTsPaySubmit} className="space-y-4 relative z-10">
@@ -184,20 +190,23 @@ export const BillingPage: React.FC = () => {
                                 {isTsPayLoading ? (
                                     <>
                                         <Loader2 className="animate-spin" size={20} />
-                                        <span>Yo'naltirilmoqda...</span>
+                                        <span>Kuting...</span>
                                     </>
                                 ) : (
                                     <>
                                         <CreditCard size={20}/> 
-                                        <span>To'lov qilish</span>
+                                        <span>To'lovga O'tish</span>
+                                        <ExternalLink size={16} className="opacity-70"/>
                                     </>
                                 )}
                             </button>
                         </div>
                         
-                        <div className="flex items-center justify-center gap-3 mt-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-                            <img src="https://logobank.uz:8005/media/logos_png/Uzcard-01.png" alt="Uzcard" className="h-6 object-contain" />
-                            <img src="https://logobank.uz:8005/media/logos_png/Humo-01.png" alt="Humo" className="h-6 object-contain" />
+                        <div className="flex items-center justify-center gap-4 mt-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                            <img src="https://logobank.uz:8005/media/logos_png/Uzcard-01.png" alt="Uzcard" className="h-5 object-contain" />
+                            <img src="https://logobank.uz:8005/media/logos_png/Humo-01.png" alt="Humo" className="h-5 object-contain" />
+                            <img src="https://logobank.uz:8005/media/logos_png/Click-01.png" alt="Click" className="h-5 object-contain" />
+                            <img src="https://logobank.uz:8005/media/logos_png/Payme-01.png" alt="Payme" className="h-5 object-contain" />
                         </div>
                     </form>
                 </div>
@@ -208,7 +217,7 @@ export const BillingPage: React.FC = () => {
                         <>
                             <h2 className="text-xl font-bold text-white mb-4">Manual To'lov (Karta orqali)</h2>
                             <p className="text-gray-400 mb-6 text-sm">
-                                Agarda avtomatik to'lovda muammo bo'lsa, quyidagi kartaga pul o'tkazib, chekni yuklang.
+                                Agarda avtomatik to'lovda muammo bo'lsa, quyidagi kartaga pul o'tkazib, chekni yuklang. Adminlar tasdiqlagach balans to'ldiriladi.
                             </p>
                             
                             <div className="mb-8">
