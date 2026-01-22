@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Mic, Search, Star, ChevronRight, Film, TrendingUp, Sparkles, User, Play, Heart, Users, Eye } from 'lucide-react';
+import { Mic, Search, Star, ChevronRight, Film, TrendingUp, Sparkles, User, Play, Heart, Users, Eye, Plus } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { UserProfile, Movie, FandubChannel, FandubStory } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
