@@ -81,6 +81,7 @@ export const SettingsPage: React.FC = () => {
         if (!profile) return;
         setProfile(prev => prev ? ({ ...prev, language: value }) : null);
         try {
+            // FIX: language property is now recognized in UserProfile type
             await updateUserProfile(profile.id, { language: value });
             addNotification({ type: 'success', title: 'Til o\'zgardi', message: 'Sahifani yangilash tavsiya etiladi.' });
         } catch (e) {
