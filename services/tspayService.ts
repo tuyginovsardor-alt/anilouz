@@ -60,10 +60,11 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
 
         const responseText = await response.text();
         
-        // HTML qaytishini tekshirish (ko'pincha Proxy yoki 404/500 xatolarda bo'ladi)
-        if (responseText.includes("<!DOCTYPE html>") || responseText.includes("<html")) {
-            console.error("[TsPay] Server HTML qaytardi (ehtimol Proxy yoki Endpoint xatosi). Javob:", responseText);
-            throw new Error(`To'lov tizimi vaqtincha ishlamayapti (Status: ${response.status})`);
+        // HTML qaytishini tekshirish (Proxy muammosi)
+        // Agar javob "<" bilan boshlansa yoki "html" so'zi bo'lsa, demak bu saytning o'zi.
+        if (responseText.trim().startsWith("<") || responseText.includes("<!DOCTYPE html>")) {
+            console.error("[TsPay] Proxy Xatosi: API o'rniga HTML sahifa qaytdi.");
+            throw new Error("Server xatosi: Proxy noto'g'ri sozlangan (vercel.json ni tekshiring).");
         }
 
         let data: any;
@@ -71,7 +72,7 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             data = JSON.parse(responseText.trim());
         } catch (e) {
             console.error("[TsPay] JSON Parse Error. Xom javob:", responseText);
-            throw new Error("Server javobini o'qib bo'lmadi.");
+            throw new Error("To'lov tizimidan tushunarsiz javob keldi.");
         }
 
         if (!response.ok) {
@@ -96,7 +97,6 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
 // 2. Tranzaksiya holatini tekshirish
 export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResponse> => {
     try {
-        // GET so'rovida parametrlarni URL ga qo'shamiz
         const endpoint = `${TSPAY_BASE_URL}/transactions/${chequeId}?access_token=${TSPAY_MERCHANT_TOKEN}`;
         
         const response = await fetch(endpoint, {
@@ -108,9 +108,9 @@ export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResp
 
         const responseText = await response.text();
         
-        if (responseText.includes("<!DOCTYPE html>")) {
+        if (responseText.trim().startsWith("<")) {
              console.error("[TsPay] Status Check HTML qaytardi.");
-             throw new Error("Statusni tekshirishda server xatosi.");
+             throw new Error("Server xatosi (Proxy).");
         }
 
         return JSON.parse(responseText.trim());

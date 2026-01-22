@@ -103,7 +103,12 @@ export const BillingPage: React.FC = () => {
 
         } catch (e: any) {
             console.error("Payment Init Error:", e);
-            addNotification({ type: 'error', title: 'Xatolik', message: e.message || 'TsPay bilan aloqa yo\'q.' });
+            // Show more detailed error in notification
+            const errorMsg = e.message.includes('Proxy') 
+                ? "Server sozlamalarida xatolik (Vercel Proxy)." 
+                : (e.message || 'TsPay bilan aloqa yo\'q.');
+                
+            addNotification({ type: 'error', title: 'Xatolik', message: errorMsg });
             setIsTsPayLoading(false);
         }
     };
