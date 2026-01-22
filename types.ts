@@ -369,6 +369,7 @@ export interface FandubUpload {
     earnings_usd: number;
     admin_comment?: string;
     created_at: string;
+    revenue_share_percent: number;
 }
 
 export interface MonetizationRate {
