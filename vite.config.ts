@@ -14,11 +14,20 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       proxy: {
         // Lokal kompyuterda '/api-tspay' ga kelgan so'rovlarni 'tspay.uz' ga yo'naltiramiz
+        // Bu "Frontend -> Backend -> TsPay" zanjiridagi "Backend" vazifasini bajaradi
         '/api-tspay': {
-          target: env.VITE_TSPAY_URL || 'https://tspay.uz/api/v1',
+          target: 'https://tspay.uz/api/v1',
           changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/api-tspay/, '')
+          secure: false, // SSL sertifikat xatolarini inkor etish (ba'zida kerak)
+          rewrite: (path) => path.replace(/^\/api-tspay/, ''),
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log('proxy error', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, _res) => {
+              // So'rov yuborilayotganda log qilish (kerak bo'lsa)
+            });
+          },
         }
       }
     },

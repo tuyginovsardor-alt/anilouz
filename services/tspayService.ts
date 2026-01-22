@@ -24,21 +24,28 @@ export interface TsPayCheckResponse {
 }
 
 /**
- * MUHIM: 405 (Method Not Allowed) xatosini oldini olish uchun 
- * endpoint oxiridagi '/' belgisi olib tashlandi. 
- * Ko'pgina API'lar POST so'rovini faqat aniq resurs manziliga qabul qiladi.
+ * MUHIM: '/api-tspay' proksi orqali so'rov yuboramiz.
+ * Vite configda bu 'https://tspay.uz/api/v1' ga almashtiriladi.
  */
 const CREATE_ENDPOINT = `${TSPAY_BASE_URL}/transactions/create`; 
 
 // 1. Tranzaksiya yaratish
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayCreateResponse> => {
+    // Token tekshiruvi
     if (!TSPAY_MERCHANT_TOKEN) {
-        throw new Error("Tizimda TsPay API kaliti sozlanmagan.");
+        console.warn("TsPay API kaliti topilmadi. So'rov baribir yuborilmoqda...");
     }
 
     try {
-        console.log("--- TSPAY REQUEST START ---");
-        console.log("Endpoint:", CREATE_ENDPOINT);
+        console.log(`[TsPay] So'rov yuborilmoqda: ${CREATE_ENDPOINT}`);
+        
+        // TsPay ma'lumotlarni POST body ichida qabul qiladi
+        const payload = {
+            amount: amount,
+            access_token: TSPAY_MERCHANT_TOKEN,
+            redirect_url: window.location.origin, // To'lovdan keyin qaytish manzili
+            comment: `Anilo ID: ${userId}`
+        };
 
         const response = await fetch(CREATE_ENDPOINT, {
             method: 'POST',
@@ -46,60 +53,50 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                amount: amount,
-                access_token: TSPAY_MERCHANT_TOKEN,
-                redirect_url: window.location.origin, 
-                comment: `Anilo User ID: ${userId}`
-            })
+            body: JSON.stringify(payload)
         });
 
-        console.log("Server Status:", response.status);
+        console.log("[TsPay] Server javobi status:", response.status);
 
         const responseText = await response.text();
         
-        // Agar HTML qaytsa (redirect yoki xato sahifasi)
-        if (responseText.includes("<!DOCTYPE html>")) {
-            console.error("Server kutilmaganda HTML qaytardi (405 yoki 404 bo'lishi mumkin).");
-            throw new Error(`Server JSON o'rniga HTML sahifa qaytardi (Status: ${response.status})`);
+        // HTML qaytishini tekshirish (ko'pincha Proxy yoki 404/500 xatolarda bo'ladi)
+        if (responseText.includes("<!DOCTYPE html>") || responseText.includes("<html")) {
+            console.error("[TsPay] Server HTML qaytardi (ehtimol Proxy yoki Endpoint xatosi). Javob:", responseText);
+            throw new Error(`To'lov tizimi vaqtincha ishlamayapti (Status: ${response.status})`);
         }
 
         let data: any;
         try {
             data = JSON.parse(responseText.trim());
         } catch (e) {
-            console.error("JSON Parse Error. Serverdan kelgan xom javob:", responseText);
-            throw new Error("Server javobini o'qib bo'lmadi (JSON xatosi).");
+            console.error("[TsPay] JSON Parse Error. Xom javob:", responseText);
+            throw new Error("Server javobini o'qib bo'lmadi.");
         }
 
         if (!response.ok) {
-            throw new Error(data.message || `To'lov tizimi xatosi: ${response.status}`);
+            throw new Error(data.message || `HTTP Xatolik: ${response.status}`);
         }
         
         if (data.status === 'error') {
-            throw new Error(data.message || "TsPay xatolik qaytardi.");
+            throw new Error(data.message || "TsPay to'lovni rad etdi.");
         }
 
         if (!data.transaction || !data.transaction.url) {
-            throw new Error("To'lov havolasi (URL) topilmadi.");
+            throw new Error("To'lov havolasi topilmadi.");
         }
 
         return data;
     } catch (error: any) {
-        console.error("TsPay Catch Error:", error);
-        throw new Error(error.message || "TsPay xizmatiga ulanishda xatolik.");
+        console.error("[TsPay] Catch Error:", error);
+        throw new Error(error.message || "To'lov tizimiga ulanishda xatolik.");
     }
 };
 
 // 2. Tranzaksiya holatini tekshirish
 export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResponse> => {
-    if (!TSPAY_MERCHANT_TOKEN) {
-        throw new Error("Tizimda TsPay API kaliti sozlanmagan.");
-    }
-
     try {
-        // Holatni tekshirish uchun GET so'rovi oxirida slash bo'lishi yoki bo'lmasligi serverga bog'liq,
-        // lekin odatda slashsiz ishlash xavfsizroq.
+        // GET so'rovida parametrlarni URL ga qo'shamiz
         const endpoint = `${TSPAY_BASE_URL}/transactions/${chequeId}?access_token=${TSPAY_MERCHANT_TOKEN}`;
         
         const response = await fetch(endpoint, {
@@ -110,9 +107,15 @@ export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResp
         });
 
         const responseText = await response.text();
+        
+        if (responseText.includes("<!DOCTYPE html>")) {
+             console.error("[TsPay] Status Check HTML qaytardi.");
+             throw new Error("Statusni tekshirishda server xatosi.");
+        }
+
         return JSON.parse(responseText.trim());
     } catch (error) {
-        console.error("TsPay Check Status Error:", error);
+        console.error("[TsPay] Check Status Error:", error);
         throw new Error("To'lov holatini tekshirib bo'lmadi.");
     }
 };
