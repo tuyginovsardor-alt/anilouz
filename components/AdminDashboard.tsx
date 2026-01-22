@@ -1,54 +1,50 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Users, Film, CreditCard, MessageSquare, TrendingUp } from 'lucide-react';
+import { Users, Film, CreditCard, MessageSquare, TrendingUp, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from './LoadingSpinner';
+import { getDashboardStats } from '../services/dbService';
 
 export const AdminDashboard: React.FC = () => {
-    const [stats, setStats] = useState({
-        users: 0,
-        movies: 0,
-        payments: 0,
-        tickets: 0
-    });
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const [u, m, p, t] = await Promise.all([
-                    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-                    supabase.from('movies').select('*', { count: 'exact', head: true }),
-                    supabase.from('payment_requests').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
-                    supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open')
-                ]);
+    useEffect(() => { loadData(); }, []);
 
-                setStats({
-                    users: u.count || 0,
-                    movies: m.count || 0,
-                    payments: p.count || 0,
-                    tickets: t.count || 0
-                });
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStats();
-    }, []);
+    const loadData = async () => {
+        try {
+            const data = await getDashboardStats();
+            // Bildirishnomalarni RPC orqali olamiz
+            const { data: counts } = await supabase.rpc('get_admin_counts');
+            setStats({ ...data, pendingFandub: counts?.fandub_pending || 0 });
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
+    };
 
-    if (loading) return <LoadingSpinner />;
+    if (loading) return <div className="flex justify-center items-center h-full"><LoadingSpinner /></div>;
 
     const cards = [
-        { label: 'Jami Foydalanuvchilar', value: stats.users, icon: <Users className="text-blue-500" />, color: 'from-blue-500/10 to-transparent' },
-        { label: 'Barcha Animelar', value: stats.movies, icon: <Film className="text-orange-500" />, color: 'from-orange-500/10 to-transparent' },
-        { label: 'Tasdiqlangan To\'lovlar', value: stats.payments, icon: <CreditCard className="text-green-500" />, color: 'from-green-500/10 to-transparent' },
-        { label: 'Ochiq Murojaatlar', value: stats.tickets, icon: <MessageSquare className="text-red-500" />, color: 'from-red-500/10 to-transparent' },
+        { label: 'Jami Foydalanuvchilar', value: stats?.users || 0, icon: <Users className="text-blue-500" />, color: 'from-blue-500/10 to-transparent' },
+        { label: 'Barcha Animelar', value: stats?.movies || 0, icon: <Film className="text-orange-500" />, color: 'from-orange-500/10 to-transparent' },
+        { label: 'Tasdiqlangan To\'lovlar', value: stats?.payments || 0, icon: <CreditCard className="text-green-500" />, color: 'from-green-500/10 to-transparent' },
+        { label: 'Ochiq Murojaatlar', value: stats?.tickets || 0, icon: <MessageSquare className="text-red-500" />, color: 'from-red-500/10 to-transparent' },
     ];
 
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in space-y-10 pb-10">
+            {/* Bildirishnoma (Banner) */}
+            {stats?.pendingFandub > 0 && (
+                <div className="bg-purple-600 p-4 rounded-2xl flex justify-between items-center animate-pulse shadow-lg shadow-purple-900/40">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle className="text-white" />
+                        <p className="text-white font-black uppercase text-xs tracking-widest">
+                            Yangi {stats.pendingFandub} ta Fandub yuklamalari kutilmoqda!
+                        </p>
+                    </div>
+                    <button className="px-5 py-2 bg-white text-purple-600 rounded-xl font-black text-[10px] uppercase">Tekshirish</button>
+                </div>
+            )}
+
             <h1 className="text-3xl font-bold text-white mb-8">Statistika</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                 {cards.map((card, i) => (

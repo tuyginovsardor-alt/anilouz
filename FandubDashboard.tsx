@@ -1,243 +1,308 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabaseClient';
-import { UserProfile, FandubUpload } from './types';
-import { getUserProfile, uploadPoster, uploadVideo } from './services/dbService';
-import { Mic, BarChart3, Upload, Film, Clock, CheckCircle, XCircle, AlertCircle, Plus, Image as ImageIcon } from 'lucide-react';
+import { UserProfile, FandubUpload, FandubChannel } from './types';
+import { getUserProfile, getFandubChannel, createFandubChannel, updateFandubChannel, getFandubUploads, uploadPoster, uploadVideo, getMonetizationRates } from './services/dbService';
+import { 
+    Mic, BarChart3, Upload, Film, Clock, CheckCircle, 
+    XCircle, AlertCircle, Plus, Image as ImageIcon, 
+    DollarSign, Users, Heart, Settings, LayoutGrid, Eye, TrendingUp, Edit3, Info
+} from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
 
-// This file handles the "Studio" logic for Fandubbers
 export const FandubDashboard: React.FC = () => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [channel, setChannel] = useState<FandubChannel | null>(null);
     const [myUploads, setMyUploads] = useState<FandubUpload[]>([]);
+    const [rates, setRates] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
-    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'channel' | 'money'>('overview');
     
-    // Upload Form State
-    const [title, setTitle] = useState('');
-    const [desc, setDesc] = useState('');
-    const [genre, setGenre] = useState('');
-    const [posterFile, setPosterFile] = useState<File | null>(null);
-    const [videoFile, setVideoFile] = useState<File | null>(null);
+    // UI States
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-
     const { addNotification } = useNotification();
 
-    useEffect(() => {
-        loadDashboard();
-    }, []);
+    // Form States
+    const [form, setForm] = useState({ title: '', desc: '', genre: '', access: 'free' as 'free' | 'premium' });
+    const [files, setFiles] = useState<{ poster: File | null, video: File | null }>({ poster: null, video: null });
 
-    const loadDashboard = async () => {
+    useEffect(() => { loadData(); }, []);
+
+    const loadData = async () => {
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const p = await getUserProfile(user.id);
-                setProfile(p as UserProfile);
+            if (!user) return;
 
-                // Fetch uploads from 'fandub_uploads' table
-                const { data } = await supabase.from('fandub_uploads').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-                setMyUploads((data || []) as FandubUpload[]);
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
+            const [p, c, u, r] = await Promise.all([
+                getUserProfile(user.id),
+                getFandubChannel(user.id),
+                getFandubUploads(user.id),
+                getMonetizationRates()
+            ]);
+
+            setProfile(p as UserProfile);
+            setChannel(c);
+            setMyUploads(u);
+            setRates(r);
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
     };
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!profile || !posterFile || !videoFile) {
-            addNotification({ type: 'warning', title: 'Diqqat', message: 'Barcha maydonlarni to\'ldiring va fayllarni yuklang.' });
-            return;
-        }
-
+        if (!channel || !files.poster || !files.video) return;
         setIsUploading(true);
         try {
-            // 1. Upload Media
-            const posterUrl = await uploadPoster(posterFile);
-            const videoUrl = await uploadVideo(videoFile);
+            const posterUrl = await uploadPoster(files.poster);
+            const videoUrl = await uploadVideo(files.video);
 
-            // 2. Insert into Pending Table
-            const { error } = await supabase.from('fandub_uploads').insert({
-                user_id: profile.id,
-                title,
-                description: desc,
+            await supabase.from('fandub_uploads').insert({
+                user_id: profile!.id,
+                channel_id: channel.id,
+                title: form.title,
+                description: form.desc,
                 poster_url: posterUrl,
                 video_url: videoUrl,
-                genre,
+                genre: form.genre,
+                access_type: form.access,
                 status: 'pending'
             });
 
-            if (error) throw error;
-
-            addNotification({ type: 'success', title: 'Yuborildi', message: 'Anime moderatsiyaga yuborildi. Tasdiqlangach saytda paydo bo\'ladi.' });
+            addNotification({ type: 'success', title: 'Yuborildi', message: 'Anime admin tasdig\'iga yuborildi.' });
             setIsUploadModalOpen(false);
-            resetForm();
-            loadDashboard();
-
-        } catch (e: any) {
-            console.error(e);
-            addNotification({ type: 'error', title: 'Xatolik', message: e.message || 'Yuklashda xatolik.' });
-        } finally {
-            setIsUploading(false);
-        }
+            loadData();
+        } catch (e: any) { addNotification({ type: 'error', title: 'Xatolik', message: e.message }); }
+        finally { setIsUploading(false); }
     };
-
-    const resetForm = () => {
-        setTitle(''); setDesc(''); setGenre(''); setPosterFile(null); setVideoFile(null);
-    }
 
     if (loading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
-    if (!profile || profile.role !== 'fandub') return <div className="text-center py-20 text-white">Sizda Fandub huquqi yo'q.</div>;
 
-    const stats = {
-        total: myUploads.length,
-        approved: myUploads.filter(u => u.status === 'approved').length,
-        pending: myUploads.filter(u => u.status === 'pending').length,
-        views: 0 // In real app, calculate sum of view_count
-    };
+    // Kanal yo'q bo'lsa yaratish oynasi
+    if (!channel) return (
+        <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
+            <div className="bg-zinc-900 p-10 rounded-[3rem] border border-white/5 max-w-md text-center">
+                <div className="w-20 h-20 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl"><Mic size={40}/></div>
+                <h2 className="text-2xl font-black uppercase text-white mb-2">Studio Kanalini yarating</h2>
+                <p className="text-zinc-500 text-sm mb-8">Ijodkorlikni boshlash uchun o'z brendingiz (kanal) nomini belgilang.</p>
+                <button 
+                    onClick={async () => {
+                        const name = prompt("Kanal nomi:");
+                        if(name) {
+                            await createFandubChannel({ user_id: profile!.id, name, username: profile!.username || 'user_'+Date.now() });
+                            loadData();
+                        }
+                    }}
+                    className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs"
+                >Kanalni ochish</button>
+            </div>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white p-6 pb-32 font-sans">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
-                <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-900/30">
-                        <Mic size={32} />
+        <div className="min-h-screen bg-[#050505] text-white flex flex-col md:flex-row font-sans">
+            
+            {/* SIDEBAR (Studio Style) */}
+            <aside className="w-full md:w-72 bg-[#0a0a0a] border-r border-white/5 p-6 flex flex-col">
+                <div className="flex flex-col items-center mb-10">
+                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-purple-600 to-blue-600 mb-4">
+                        <div className="w-full h-full rounded-full bg-black overflow-hidden border-2 border-black">
+                            <img src={channel.avatar_url || profile?.avatar_url || ''} className="w-full h-full object-cover" alt="" />
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-3xl font-black uppercase tracking-tighter">Fandub Studio</h1>
-                        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Creator Dashboard</p>
-                    </div>
+                    <h3 className="font-black text-white uppercase tracking-tight text-center">{channel.name}</h3>
+                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Studio Creator</p>
                 </div>
-                <button 
-                    onClick={() => setIsUploadModalOpen(true)}
-                    className="px-8 py-4 bg-white text-black hover:bg-purple-600 hover:text-white rounded-[2rem] font-black uppercase tracking-widest text-xs transition-all shadow-xl active:scale-95 flex items-center gap-3"
-                >
-                    <Plus size={18} /> Yangi Anime Yuklash
-                </button>
-            </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-                <div className="bg-zinc-900/50 p-6 rounded-[2rem] border border-white/5">
-                    <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2">Jami Yuklanmalar</p>
-                    <p className="text-3xl font-black">{stats.total}</p>
-                </div>
-                <div className="bg-zinc-900/50 p-6 rounded-[2rem] border border-green-500/20">
-                    <p className="text-green-500 text-[10px] font-black uppercase tracking-widest mb-2">Tasdiqlangan</p>
-                    <p className="text-3xl font-black text-green-400">{stats.approved}</p>
-                </div>
-                <div className="bg-zinc-900/50 p-6 rounded-[2rem] border border-yellow-500/20">
-                    <p className="text-yellow-500 text-[10px] font-black uppercase tracking-widest mb-2">Kutilmoqda</p>
-                    <p className="text-3xl font-black text-yellow-400">{stats.pending}</p>
-                </div>
-                <div className="bg-zinc-900/50 p-6 rounded-[2rem] border border-blue-500/20">
-                    <p className="text-blue-500 text-[10px] font-black uppercase tracking-widest mb-2">Umumiy Ko'rishlar</p>
-                    <p className="text-3xl font-black text-blue-400">{stats.views}</p>
-                </div>
-            </div>
+                <nav className="space-y-2 flex-1">
+                    {[
+                        { id: 'overview', label: 'Bosh sahifa', icon: <LayoutGrid size={20}/> },
+                        { id: 'content', label: 'Kontent', icon: <Film size={20}/> },
+                        { id: 'money', label: 'Daromad', icon: <DollarSign size={20}/> },
+                        { id: 'channel', label: 'Sozlamalar', icon: <Settings size={20}/> },
+                    ].map(tab => (
+                        <button 
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${activeTab === tab.id ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-500 hover:bg-white/5 hover:text-white'}`}
+                        >
+                            {tab.icon} {tab.label}
+                        </button>
+                    ))}
+                </nav>
 
-            {/* Uploads List */}
-            <div className="space-y-6">
-                <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
-                    <Film size={20} className="text-purple-500"/> Mening Loyihalarim
-                </h2>
+                <div className="mt-10 p-4 bg-zinc-900/50 rounded-[2rem] border border-white/5">
+                    <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Balans</p>
+                    <p className="text-xl font-black text-green-400">${channel.balance_usd.toLocaleString()}</p>
+                    <button onClick={() => setActiveTab('money')} className="text-[9px] font-black text-blue-500 uppercase mt-2 hover:underline">YECHIB OLISH &rarr;</button>
+                </div>
+            </aside>
+
+            {/* MAIN AREA */}
+            <main className="flex-1 p-6 md:p-12 overflow-y-auto">
                 
-                {myUploads.length === 0 ? (
-                    <div className="text-center py-20 border-2 border-dashed border-zinc-800 rounded-[3rem]">
-                        <Upload size={48} className="mx-auto text-zinc-800 mb-4" />
-                        <p className="text-zinc-500 font-bold uppercase tracking-widest">Hali hech narsa yuklamadingiz</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {myUploads.map(item => (
-                            <div key={item.id} className="group bg-zinc-900 border border-white/5 rounded-[2rem] overflow-hidden hover:border-purple-500/30 transition-all">
-                                <div className="relative aspect-video">
-                                    <img src={item.poster_url} className="w-full h-full object-cover" alt="" />
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest ${
-                                            item.status === 'approved' ? 'bg-green-600' : 
-                                            item.status === 'rejected' ? 'bg-red-600' : 'bg-yellow-600 text-black'
-                                        }`}>
-                                            {item.status === 'approved' ? 'Faol' : item.status === 'rejected' ? 'Rad etilgan' : 'Moderatsiyada'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <h3 className="font-black text-white text-lg uppercase tracking-tight truncate">{item.title}</h3>
-                                    <p className="text-xs text-zinc-500 font-bold uppercase mt-1">{item.genre}</p>
-                                    
-                                    {item.status === 'rejected' && item.admin_comment && (
-                                        <div className="mt-4 p-3 bg-red-900/20 border border-red-500/20 rounded-xl">
-                                            <p className="text-[10px] text-red-400 font-bold uppercase mb-1">Rad etish sababi:</p>
-                                            <p className="text-xs text-red-200">{item.admin_comment}</p>
-                                        </div>
-                                    )}
-                                    
-                                    <div className="mt-4 flex items-center gap-2 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-                                        <Clock size={12}/> {new Date(item.created_at).toLocaleDateString()}
-                                    </div>
-                                </div>
+                {/* OVERVIEW */}
+                {activeTab === 'overview' && (
+                    <div className="space-y-10 animate-fade-in">
+                        <div className="flex justify-between items-end">
+                            <div>
+                                <h1 className="text-4xl font-black uppercase tracking-tighter">Xush kelibsiz!</h1>
+                                <p className="text-zinc-500 font-bold text-xs uppercase tracking-widest">Kanal statistikasi tahlili</p>
                             </div>
-                        ))}
+                            <button onClick={() => setIsUploadModalOpen(true)} className="px-8 py-4 bg-white text-black rounded-[2rem] font-black uppercase text-xs shadow-xl active:scale-95 flex items-center gap-2"> <Plus size={18}/> Yuklash </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <StatCard title="Ko'rishlar" value={channel.total_views} icon={<Eye className="text-blue-500"/>} trend="+12%" />
+                            <StatCard title="Obunachilar" value={channel.subscriber_count} icon={<Users className="text-purple-500"/>} trend="+5%" />
+                            <StatCard title="Yoqtirishlar" value={channel.total_likes} icon={<Heart className="text-red-500"/>} trend="+24%" />
+                            <StatCard title="Daromad" value={`$${channel.balance_usd}`} icon={<TrendingUp className="text-green-500"/>} trend="+8%" />
+                        </div>
+
+                        <div className="bg-zinc-900/30 border border-white/5 rounded-[3rem] p-10">
+                            <h2 className="text-xl font-black uppercase mb-8">So'nggi yuklamalar</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {myUploads.slice(0, 3).map(up => (
+                                    <div key={up.id} className="bg-black/40 rounded-3xl p-4 border border-white/5">
+                                        <div className="aspect-video rounded-2xl overflow-hidden mb-4 relative">
+                                            <img src={up.poster_url} className="w-full h-full object-cover" alt="" />
+                                            <span className={`absolute top-2 right-2 px-2 py-1 rounded text-[8px] font-black uppercase ${up.status === 'approved' ? 'bg-green-600' : 'bg-yellow-600'}`}>{up.status}</span>
+                                        </div>
+                                        <h4 className="font-bold text-white text-sm line-clamp-1">{up.title}</h4>
+                                        <div className="flex justify-between mt-3 text-[10px] text-zinc-500 font-bold uppercase">
+                                            <span><Eye size={10} className="inline mr-1"/> {up.view_count}</span>
+                                            <span><DollarSign size={10} className="inline mr-1"/> {up.earnings_usd.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
-            </div>
+
+                {/* CONTENT LIST */}
+                {activeTab === 'content' && (
+                    <div className="animate-fade-in">
+                        <div className="flex justify-between mb-10">
+                             <h2 className="text-3xl font-black uppercase">Mening Kontentim</h2>
+                             <div className="flex gap-2">
+                                <button className="px-4 py-2 bg-zinc-900 rounded-xl text-xs font-bold text-zinc-400">Filtr: Premium</button>
+                                <button className="px-4 py-2 bg-zinc-900 rounded-xl text-xs font-bold text-zinc-400">Filtr: Bepul</button>
+                             </div>
+                        </div>
+                        <div className="space-y-4">
+                            {myUploads.map(up => (
+                                <div key={up.id} className="bg-zinc-900/50 border border-white/5 p-4 rounded-[2rem] flex items-center justify-between group hover:border-purple-500/30 transition-all">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-24 h-14 rounded-xl overflow-hidden bg-black">
+                                            <img src={up.poster_url} className="w-full h-full object-cover" alt="" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-white text-sm">{up.title}</h4>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${up.access_type === 'premium' ? 'bg-yellow-500 text-black' : 'bg-blue-600 text-white'}`}>{up.access_type}</span>
+                                                <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{up.genre}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-10">
+                                        <div className="text-center">
+                                            <p className="text-xs font-black">{up.view_count}</p>
+                                            <p className="text-[9px] text-zinc-600 font-bold uppercase">Ko'rish</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-xs font-black text-green-400">${up.earnings_usd.toFixed(2)}</p>
+                                            <p className="text-[9px] text-zinc-600 font-bold uppercase">Daromad</p>
+                                        </div>
+                                        <button className="p-2 text-zinc-600 hover:text-white"><Edit3 size={18}/></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* EARNINGS / WITHDRAW */}
+                {activeTab === 'money' && (
+                    <div className="animate-fade-in max-w-2xl mx-auto space-y-10">
+                        <div className="bg-gradient-to-br from-green-600 to-emerald-800 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                             <DollarSign size={100} className="absolute -right-10 -bottom-10 opacity-20 rotate-12" />
+                             <p className="text-green-100 text-xs font-black uppercase tracking-widest mb-2">Umumiy Balans</p>
+                             <h2 className="text-5xl font-black text-white">${channel.balance_usd.toLocaleString()}</h2>
+                             <div className="mt-8 flex gap-4">
+                                <button className="bg-white text-black px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Yechib olish</button>
+                                <p className="text-[10px] text-green-100 font-bold flex items-center">Min. yechish: ${rates.min_withdrawal || '10.00'}</p>
+                             </div>
+                        </div>
+
+                        <div className="bg-zinc-900 border border-white/5 p-8 rounded-[3rem]">
+                            <h3 className="font-black uppercase text-sm mb-6 flex items-center gap-2"> <Info size={16}/> To'lov stavkalari</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="bg-black/40 p-5 rounded-2xl">
+                                    <p className="text-zinc-500 text-[10px] font-black uppercase mb-1">1000 ko'rish (BEPUL)</p>
+                                    <p className="text-xl font-black text-white">${rates.free_rate_1k || '1.25'}</p>
+                                </div>
+                                <div className="bg-black/40 p-5 rounded-2xl border border-yellow-500/20">
+                                    <p className="text-yellow-500 text-[10px] font-black uppercase mb-1">1000 ko'rish (PREMIUM)</p>
+                                    <p className="text-xl font-black text-white">${rates.premium_rate_1k || '2.50'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
 
             {/* UPLOAD MODAL */}
             {isUploadModalOpen && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/95 backdrop-blur-md animate-fade-in" onClick={() => !isUploading && setIsUploadModalOpen(false)}></div>
-                    <form onSubmit={handleUpload} className="relative bg-[#0a0a0a] border border-white/10 w-full max-w-2xl rounded-[3rem] p-8 md:p-12 overflow-y-auto max-h-[90vh] animate-slide-in-up">
-                        <div className="mb-8">
-                            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Anime Yuklash</h2>
-                            <p className="text-purple-500 text-[10px] font-bold uppercase tracking-widest mt-2">Moderatsiyadan so'ng e'lon qilinadi</p>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-4">Nomi</label>
-                                <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-zinc-900 border border-white/5 rounded-2xl p-4 text-white font-bold focus:border-purple-500 outline-none transition-all" placeholder="Anime nomi..." required />
-                            </div>
-                            
+                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => !isUploading && setIsUploadModalOpen(false)}></div>
+                    <form onSubmit={handleUpload} className="relative bg-[#0a0a0a] border border-white/10 w-full max-w-2xl rounded-[3rem] p-10 overflow-y-auto max-h-[90vh] animate-slide-in-up">
+                         <h2 className="text-3xl font-black uppercase mb-8">Anime Yuklash</h2>
+                         <div className="space-y-6">
+                            <input value={form.title} onChange={e=>setForm({...form, title:e.target.value})} placeholder="Sarlavha" className="w-full bg-zinc-900 p-4 rounded-xl border border-white/5 outline-none focus:border-purple-600" required />
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-4">Janr</label>
-                                    <input value={genre} onChange={e => setGenre(e.target.value)} className="w-full bg-zinc-900 border border-white/5 rounded-2xl p-4 text-white font-bold focus:border-purple-500 outline-none transition-all" placeholder="Action, Drama..." required />
-                                </div>
-                                {/* More fields like Year could go here */}
+                                <input value={form.genre} onChange={e=>setForm({...form, genre:e.target.value})} placeholder="Janr" className="bg-zinc-900 p-4 rounded-xl border border-white/5 outline-none" required />
+                                <select value={form.access} onChange={e=>setForm({...form, access:e.target.value as any})} className="bg-zinc-900 p-4 rounded-xl border border-white/5 outline-none">
+                                    <option value="free">Bepul (Stavka: $1.25)</option>
+                                    <option value="premium">Premium (Stavka: $2.50)</option>
+                                </select>
                             </div>
-
-                            <div>
-                                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-4">Mazmun</label>
-                                <textarea value={desc} onChange={e => setDesc(e.target.value)} className="w-full bg-zinc-900 border border-white/5 rounded-2xl p-4 text-white font-medium focus:border-purple-500 outline-none transition-all h-32" placeholder="Qisqacha tavsif..." required />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                            <textarea value={form.desc} onChange={e=>setForm({...form, desc:e.target.value})} placeholder="Tavsif..." className="w-full bg-zinc-900 p-4 rounded-xl border border-white/5 h-32 outline-none" required />
+                            
+                            <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-4 flex items-center gap-2"><ImageIcon size={14}/> Poster (Rasm)</label>
-                                    <input type="file" accept="image/*" onChange={e => setPosterFile(e.target.files?.[0] || null)} className="w-full text-zinc-400 text-xs" required />
+                                    <label className="text-[10px] font-black text-zinc-500 uppercase block mb-2">Poster (JPG)</label>
+                                    <input type="file" onChange={e=>setFiles({...files, poster:e.target.files?.[0] || null})} className="text-xs text-zinc-500" accept="image/*" required />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-4 flex items-center gap-2"><Film size={14}/> Video Fayl (MP4)</label>
-                                    <input type="file" accept="video/mp4" onChange={e => setVideoFile(e.target.files?.[0] || null)} className="w-full text-zinc-400 text-xs" required />
+                                    <label className="text-[10px] font-black text-zinc-500 uppercase block mb-2">Video (MP4)</label>
+                                    <input type="file" onChange={e=>setFiles({...files, video:e.target.files?.[0] || null})} className="text-xs text-zinc-500" accept="video/mp4" required />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="mt-10 flex justify-end gap-4">
-                            <button type="button" onClick={() => setIsUploadModalOpen(false)} disabled={isUploading} className="px-6 py-3 bg-zinc-800 rounded-xl text-white font-bold text-xs uppercase tracking-widest hover:bg-zinc-700 transition-all">Bekor qilish</button>
-                            <button type="submit" disabled={isUploading} className="px-8 py-3 bg-purple-600 rounded-xl text-white font-bold text-xs uppercase tracking-widest hover:bg-purple-700 transition-all flex items-center gap-2">
-                                {isUploading ? <LoadingSpinner /> : <><Upload size={16}/> Yuborish</>}
-                            </button>
-                        </div>
+                            <div className="pt-6 flex gap-4">
+                                <button type="button" onClick={()=>setIsUploadModalOpen(false)} className="flex-1 py-4 bg-zinc-800 rounded-2xl font-black uppercase text-xs">Bekor qilish</button>
+                                <button type="submit" disabled={isUploading} className="flex-1 py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 disabled:opacity-50">
+                                    {isUploading ? 'Yuklanmoqda...' : 'Moderatsiyaga yuborish'}
+                                </button>
+                            </div>
+                         </div>
                     </form>
                 </div>
             )}
         </div>
     );
 };
+
+const StatCard = ({ title, value, icon, trend }: any) => (
+    <div className="bg-zinc-900/50 p-6 rounded-[2rem] border border-white/5 relative overflow-hidden group hover:border-purple-500/20 transition-all">
+        <div className="flex justify-between items-start mb-4">
+            <div className="p-3 bg-black/40 rounded-xl group-hover:scale-110 transition-transform">{icon}</div>
+            <span className="text-[10px] font-black text-green-400">{trend}</span>
+        </div>
+        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{title}</p>
+        <p className="text-2xl font-black text-white mt-1">{value.toLocaleString()}</p>
+    </div>
+);
