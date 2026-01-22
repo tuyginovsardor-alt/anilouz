@@ -31,22 +31,22 @@ const CREATE_ENDPOINT = `${TSPAY_BASE_URL}/transactions/create`;
 
 // 1. Tranzaksiya yaratish
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayCreateResponse> => {
-    // Token tekshiruvi
     if (!TSPAY_MERCHANT_TOKEN) {
-        console.warn("TsPay API kaliti topilmadi. So'rov baribir yuborilmoqda...");
+        console.warn("TsPay API kaliti topilmadi.");
     }
 
     try {
-        console.log(`[TsPay] So'rov yuborilmoqda: ${CREATE_ENDPOINT}`);
+        console.log(`[TsPay] So'rov: ${CREATE_ENDPOINT}`);
         
-        // TsPay ma'lumotlarni POST body ichida qabul qiladi
         const payload = {
             amount: amount,
             access_token: TSPAY_MERCHANT_TOKEN,
-            redirect_url: window.location.origin, // To'lovdan keyin qaytish manzili
+            redirect_url: window.location.origin,
             comment: `Anilo ID: ${userId}`
         };
 
+        // Ba'zi serverlar 'X-Requested-With' headerini yoqtirmaydi, shuning uchun olib tashladik
+        // Faqat eng zarur headerlar qoldi
         const response = await fetch(CREATE_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -56,29 +56,23 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             body: JSON.stringify(payload)
         });
 
-        console.log("[TsPay] Server javobi status:", response.status);
-
         const responseText = await response.text();
         
         // HTML qaytishini tekshirish (Proxy muammosi)
-        // Agar javob "<" bilan boshlansa yoki "html" so'zi bo'lsa, demak bu saytning o'zi.
-        if (responseText.trim().startsWith("<") || responseText.includes("<!DOCTYPE html>")) {
-            console.error("[TsPay] Proxy Xatosi: API o'rniga HTML sahifa qaytdi.");
-            throw new Error("Server xatosi: Proxy noto'g'ri sozlangan (vercel.json ni tekshiring).");
+        // Agar javob "<" bilan boshlansa, demak bu aniq HTML (saytning o'zi)
+        if (responseText.trim().startsWith("<")) {
+            console.error("[TsPay] Proxy Xatosi: HTML qaytdi.", responseText.substring(0, 100));
+            throw new Error("PROXY_ERROR"); // Maxsus kod
         }
 
         let data: any;
         try {
-            data = JSON.parse(responseText.trim());
+            data = JSON.parse(responseText);
         } catch (e) {
-            console.error("[TsPay] JSON Parse Error. Xom javob:", responseText);
-            throw new Error("To'lov tizimidan tushunarsiz javob keldi.");
+            console.error("[TsPay] JSON Parse Error:", responseText);
+            throw new Error("To'lov tizimidan noto'g'ri javob keldi.");
         }
 
-        if (!response.ok) {
-            throw new Error(data.message || `HTTP Xatolik: ${response.status}`);
-        }
-        
         if (data.status === 'error') {
             throw new Error(data.message || "TsPay to'lovni rad etdi.");
         }
@@ -90,7 +84,7 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
         return data;
     } catch (error: any) {
         console.error("[TsPay] Catch Error:", error);
-        throw new Error(error.message || "To'lov tizimiga ulanishda xatolik.");
+        throw error; // Xatoni o'zgartirmasdan uzatamiz
     }
 };
 
@@ -98,22 +92,15 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
 export const checkTsPayStatus = async (chequeId: number): Promise<TsPayCheckResponse> => {
     try {
         const endpoint = `${TSPAY_BASE_URL}/transactions/${chequeId}?access_token=${TSPAY_MERCHANT_TOKEN}`;
-        
         const response = await fetch(endpoint, {
             method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: { 'Accept': 'application/json' }
         });
 
         const responseText = await response.text();
-        
-        if (responseText.trim().startsWith("<")) {
-             console.error("[TsPay] Status Check HTML qaytardi.");
-             throw new Error("Server xatosi (Proxy).");
-        }
+        if (responseText.trim().startsWith("<")) throw new Error("PROXY_ERROR");
 
-        return JSON.parse(responseText.trim());
+        return JSON.parse(responseText);
     } catch (error) {
         console.error("[TsPay] Check Status Error:", error);
         throw new Error("To'lov holatini tekshirib bo'lmadi.");

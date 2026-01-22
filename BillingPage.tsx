@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { PaymentDetailsCard } from './components/PaymentDetailsCard';
-import { createPaymentRequest, uploadFile, recordTsPaySuccess } from './services/dbService';
+import { createPaymentRequest, uploadFile } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { useNotification } from './hooks/useNotification';
 import { createTsPayTransaction } from './services/tspayService';
@@ -38,14 +38,10 @@ export const BillingPage: React.FC = () => {
         setError(null);
 
         try {
-            // 1. Upload Screenshot
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Foydalanuvchi aniqlanmadi");
 
-            // 'receipts' bucketiga yuklash
             const publicUrl = await uploadFile(screenshot, 'receipts'); 
-
-            // 2. Create DB Record
             await createPaymentRequest(user.id, Number(amount), publicUrl);
 
             setStatus('pending');
@@ -55,7 +51,6 @@ export const BillingPage: React.FC = () => {
                 message: 'To\'lov cheki adminlarga yuborildi. Tez orada balansingiz yangilanadi.',
             });
             
-            // Reset form
             setAmount('');
             setScreenshot(null);
 
@@ -64,11 +59,7 @@ export const BillingPage: React.FC = () => {
             const errorMessage = err instanceof Error ? err.message : "Noma'lum xatolik yuz berdi.";
             setError(`Xatolik: ${errorMessage}`);
             setStatus('error');
-            addNotification({
-                type: 'error',
-                title: 'Xatolik',
-                message: errorMessage,
-            });
+            addNotification({ type: 'error', title: 'Xatolik', message: errorMessage });
         }
     };
 
@@ -87,13 +78,11 @@ export const BillingPage: React.FC = () => {
             const response = await createTsPayTransaction(Number(tsAmount), user.id);
             
             if (response.status === 'success' && response.transaction.url) {
-                // To'lov jarayonini kuzatish uchun local storagega yozib qo'yamiz
                 localStorage.setItem('tspay_pending_id', String(response.transaction.id));
                 localStorage.setItem('tspay_pending_amount', tsAmount);
                 
                 addNotification({ type: 'success', title: 'Tayyor', message: "To'lov sahifasiga yo'naltirilmoqdasiz..." });
                 
-                // Redirect user to TsPay after slight delay
                 setTimeout(() => {
                     window.location.href = response.transaction.url;
                 }, 1000);
@@ -103,12 +92,15 @@ export const BillingPage: React.FC = () => {
 
         } catch (e: any) {
             console.error("Payment Init Error:", e);
-            // Show more detailed error in notification
-            const errorMsg = e.message.includes('Proxy') 
-                ? "Server sozlamalarida xatolik (Vercel Proxy)." 
-                : (e.message || 'TsPay bilan aloqa yo\'q.');
-                
-            addNotification({ type: 'error', title: 'Xatolik', message: errorMsg });
+            
+            let userMsg = e.message || 'TsPay bilan aloqa yo\'q.';
+            
+            // Agar PROXY xatosi bo'lsa, foydalanuvchiga tushunarliroq variant taklif qilamiz
+            if (e.message === 'PROXY_ERROR' || e.message.includes('Proxy')) {
+                userMsg = "Avtomatik to'lov tizimida texnik ishlar. Iltimos, pastdagi 'Manual To'lov' (karta orqali) usulidan foydalaning.";
+            }
+
+            addNotification({ type: 'error', title: 'Xatolik', message: userMsg });
             setIsTsPayLoading(false);
         }
     };
@@ -128,7 +120,7 @@ export const BillingPage: React.FC = () => {
                         <h3 className="font-bold flex items-center justify-center gap-2 mb-2">
                             <CheckCircle size={20} /> So'rovingiz qabul qilindi!
                         </h3>
-                        <p className="text-sm">To'lovingiz adminlar tomonidan tekshirilgach (odatda 15 daqiqa ichida), balansingizga pul tushadi.</p>
+                        <p className="text-sm">Adminlar tez orada tekshirib chiqadilar.</p>
                         <button onClick={() => setStatus('idle')} className="mt-4 text-sm bg-green-800 hover:bg-green-700 px-4 py-2 rounded text-white transition-colors">Yana to'ldirish</button>
                     </div>
                 );
@@ -146,7 +138,6 @@ export const BillingPage: React.FC = () => {
                 return null;
         }
     }
-
 
     return (
         <div className="animate-fade-in pb-10">
@@ -215,8 +206,10 @@ export const BillingPage: React.FC = () => {
                 <div className={`transition-all duration-500 ${status === 'pending' ? 'bg-green-900/10' : 'bg-gray-900/50'} backdrop-blur-sm border border-gray-800 rounded-2xl p-6`}>
                     {status === 'pending' ? renderStatusMessage() : (
                         <>
-                            <h2 className="text-xl font-bold text-white mb-4">Manual To'lov (Chek bilan)</h2>
-                            <p className="text-gray-400 mb-6 text-sm">Agarda avtomatik to'lov ishlamasa, karta raqamiga o'tkazib chek yuboring.</p>
+                            <h2 className="text-xl font-bold text-white mb-4">Manual To'lov (Karta orqali)</h2>
+                            <p className="text-gray-400 mb-6 text-sm">
+                                Agarda avtomatik to'lovda muammo bo'lsa, quyidagi kartaga pul o'tkazib, chekni yuklang.
+                            </p>
                             
                             <div className="mb-8">
                                 <PaymentDetailsCard />
@@ -224,7 +217,7 @@ export const BillingPage: React.FC = () => {
 
                             <form onSubmit={handleManualSubmit} className="space-y-6">
                                 <div>
-                                    <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-2">To'lov qilingan summa (UZS)</label>
+                                    <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-2">O'tkazilgan summa (UZS)</label>
                                     <input 
                                         id="amount"
                                         type="number" 
