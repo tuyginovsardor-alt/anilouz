@@ -29,7 +29,7 @@ const InputField: React.FC<{label: string, id: string, type?: string, value: str
     </div>
 );
 
-// Predefined Genres List (English keys for DB consistency, Uzbek labels for UI)
+// Predefined Genres List
 const GENRE_OPTIONS = [
     { id: 'Action', label: 'Jangari (Action)' },
     { id: 'Adventure', label: 'Sarguzasht' },
@@ -51,17 +51,17 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
     const [title, setTitle] = useState('');
     const [year, setYear] = useState(new Date().getFullYear());
     const [plot, setPlot] = useState('');
-    // Genre is now managed as an array of strings internally
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
     const [tags, setTags] = useState('');
-    const [translator, setTranslator] = useState(''); // New Translator state
+    const [translator, setTranslator] = useState('');
     const [poster, setPoster] = useState<string | File>('');
     const [posterType, setPosterType] = useState<'url' | 'file'>('url');
     const [isSeries, setIsSeries] = useState(false);
     const [episodes, setEpisodes] = useState<Partial<Episode>[]>([{ title: '1-qism', sourceType: 'url', source: '' }]);
     const [videoSourceType, setVideoSourceType] = useState<'url' | 'file'>('url');
     const [videoSource, setVideoSource] = useState<string | File>('');
-    const [status, setStatus] = useState<'ongoing' | 'completed'>('completed'); // Default to completed
+    const [status, setStatus] = useState<'ongoing' | 'completed'>('completed');
+    const [accessType, setAccessType] = useState<'free' | 'premium'>('free'); // New state
 
     useEffect(() => {
         if (initialData) {
@@ -71,11 +71,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             setTags(initialData.tags || '');
             setTranslator(initialData.translator || '');
             
-            // Parse existing comma-separated genre string into array
             if (initialData.genre) {
-                // Split by comma, trim whitespace, and filter empty strings
                 const genres = initialData.genre.split(',').map(g => g.trim()).filter(Boolean);
-                // Normalize casing to match options if possible, or keep as is
                 setSelectedGenres(genres);
             }
 
@@ -86,12 +83,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                 setVideoSourceType('url');
             }
             
-            // Check for existing status or infer
-            if (initialData.status) {
-                setStatus(initialData.status);
-            } else {
-                setStatus('completed');
-            }
+            if (initialData.status) setStatus(initialData.status);
+            if (initialData.access_type) setAccessType(initialData.access_type);
         }
     }, [initialData]);
 
@@ -122,12 +115,10 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Convert selected genres array back to comma-separated string
         const finalGenreString = selectedGenres.join(', ');
 
         const movieData = {
-            id: initialData?.id, // Include ID for updates
+            id: initialData?.id,
             title,
             year,
             plot,
@@ -137,7 +128,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             poster,
             posterType,
             isSeries,
-            status, // Include status
+            status,
+            access_type: accessType, // Include in payload
             videoSource: !isSeries ? videoSource : undefined,
             videoSourceType: !isSeries ? videoSourceType : undefined,
             episodes: isSeries ? episodes : []
@@ -163,21 +155,33 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                         <InputField label="Yili" id="year" type="number" value={year} onChange={e => setYear(Number(e.target.value))} disabled={isSaving} />
                     </div>
                     
-                    {/* Status Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Holati</label>
-                        <select 
-                            value={status} 
-                            onChange={(e) => setStatus(e.target.value as 'ongoing' | 'completed')}
-                            disabled={isSaving}
-                            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white"
-                        >
-                            <option value="completed">Tugallangan</option>
-                            <option value="ongoing">Davom etmoqda (Ongoing)</option>
-                        </select>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Holati</label>
+                            <select 
+                                value={status} 
+                                onChange={(e) => setStatus(e.target.value as 'ongoing' | 'completed')}
+                                disabled={isSaving}
+                                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white"
+                            >
+                                <option value="completed">Tugallangan</option>
+                                <option value="ongoing">Davom etmoqda (Ongoing)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Kirish turi (Access)</label>
+                            <select 
+                                value={accessType} 
+                                onChange={(e) => setAccessType(e.target.value as 'free' | 'premium')}
+                                disabled={isSaving}
+                                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white font-bold"
+                            >
+                                <option value="free" className="text-green-400">BEPUL (Hamma ko'radi)</option>
+                                <option value="premium" className="text-yellow-400">PREMIUM (Faqat obunachilar)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    {/* Genre Selection UI */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">Janrlar (Bir nechtasini tanlang)</label>
                         <div className="flex flex-wrap gap-2 bg-gray-800/50 p-3 rounded-md border border-gray-700">
@@ -206,7 +210,6 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                         )}
                     </div>
                     
-                    {/* Tags Input */}
                     <InputField 
                         label="Qo'shimcha qidiruv so'zlari (Tags)" 
                         id="tags" 
@@ -216,7 +219,6 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                         placeholder="Masalan: Aniblativ, Ninja, Boruto otasi, Vampir..." 
                     />
 
-                     {/* Translator Input */}
                      <InputField 
                         label="Tarjimon (Translator)" 
                         id="translator" 
