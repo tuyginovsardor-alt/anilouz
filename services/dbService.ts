@@ -7,7 +7,9 @@ import {
     Broadcast, Promocode, UserDevice, SupportTicket, 
     TicketMessage, News, Transaction, ShopProduct, 
     ShopWallet, ShopOrder, SocialLink, PaymentRequestDB, 
-    FandubChannel, FandubUpload, ArkSchedule 
+    FandubChannel, FandubUpload, ArkSchedule,
+    // Added missing 'Ad' import to resolve "Cannot find name 'Ad'" errors
+    Ad 
 } from '../types';
 
 // --- CONFIG & APP SETTINGS ---
@@ -113,7 +115,6 @@ export const getUserHistory = async (userId: string): Promise<Movie[]> => {
 };
 
 export const updateUserWatchTime = async (userId: string, seconds: number) => {
-    // Basic tracking, can be expanded to specific movies
     const { error } = await supabase.rpc('increment_watch_time', { u_id: userId, secs: seconds });
     if (error) console.error(error);
 };
@@ -342,6 +343,12 @@ export const recordTsPaySuccess = async (userId: string, amount: number, tspayId
     if (error) throw error;
 };
 
+// --- TRANSACTIONS ---
+export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
+    const { data } = await supabase.from('user_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return (data || []) as Transaction[];
+};
+
 // --- BROADCASTS ---
 export const getBroadcasts = async (): Promise<Broadcast[]> => {
     const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
@@ -400,6 +407,14 @@ export const logDeviceLogin = async (userId: string, deviceId: string) => {
     const name = navigator.userAgent;
     const { error } = await supabase.from('user_devices').upsert({ user_id: userId, device_id: deviceId, device_name: name, last_active: new Date().toISOString() });
     if (error) console.error(error);
+};
+
+// Exported missing checkAndTrackRegistration function to handle device-based registration tracking/limiting
+export const checkAndTrackRegistration = async (deviceId: string) => {
+    const { data, error } = await supabase.from('user_devices').select('is_blocked').eq('device_id', deviceId).maybeSingle();
+    if (data && data.is_blocked) {
+        throw new Error("Ushbu qurilma bloklangan.");
+    }
 };
 
 // --- SUPPORT TICKETS ---
@@ -508,10 +523,6 @@ export const getAdminNotificationCounts = async () => {
         financials: data?.payment_pending || 0,
         support: data?.tickets_open || 0
     };
-};
-
-export const getAdminNotificationCountsCount = async () => {
-    return getAdminNotificationCounts();
 };
 
 export const getUnreadNotificationsCount = async (userId: string): Promise<number> => {
@@ -633,10 +644,6 @@ export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
 export const getDashboardStats = async () => {
     const { data } = await supabase.rpc('get_dashboard_stats');
     return data;
-};
-
-export const checkAndTrackRegistration = async (deviceId: string) => {
-    // Logic to prevent multiple registrations from same device if needed
 };
 
 // --- FILE UPLOADS ---
