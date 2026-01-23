@@ -68,7 +68,10 @@ export interface FandubStory {
     media_url: string;
     media_type: 'image' | 'video';
     created_at: string;
-    profiles?: UserProfile;
+    profiles?: {
+        username: string | null;
+        avatar_url: string | null;
+    };
 }
 
 export interface FandubUpload {
@@ -104,12 +107,10 @@ export interface Episode {
 
 export interface Notification {
     id: string;
-    type: NotificationType;
+    type: 'success' | 'error' | 'warning' | 'info';
     title: string;
     message: string;
 }
-
-export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 export interface Ad {
     id?: number;
@@ -120,133 +121,6 @@ export interface Ad {
     location: string;
     status: 'active' | 'inactive';
     view_count?: number;
-}
-
-// Added missing types below
-
-export interface ATCWallet {
-    balance: number;
-    total_converted: number;
-    total_earned: number;
-    active_days: number;
-    last_spin_at: string | null;
-    extra_spins: number;
-}
-
-export interface ATCTransaction {
-    id: number;
-    user_id: string;
-    amount: number;
-    description: string;
-    type: string;
-    created_at: string;
-}
-
-export interface ContestTask {
-    id: number;
-    label: string;
-    url: string;
-    reward_atc: number;
-    platform: 'telegram' | 'instagram' | 'youtube' | 'facebook' | 'other';
-}
-
-export interface WheelPrize {
-    id: number;
-    label: string;
-    value: number;
-    type: 'atc' | 'uzs' | 'loss' | 'ark' | 'box';
-    color: string;
-    probability: number;
-}
-
-export interface QuizQuestion {
-    id: number;
-    question: string;
-    option_a: string;
-    option_b: string;
-    option_c: string;
-    option_d: string;
-    correct_option: string;
-    reward_spins: number;
-}
-
-export interface ContestAd {
-    id: number;
-    title: string;
-    media_url: string;
-    media_type: 'image' | 'video';
-    reward_atc: number;
-    duration_sec: number;
-}
-
-export interface ArkWallet {
-    balance: number;
-    available_spins: number;
-    total_earned: number;
-}
-
-export interface ArkMarketData {
-    price: number;
-    created_at: string;
-}
-
-export interface ArkAd {
-    id: number;
-    title: string;
-    media_url: string;
-    media_type: 'image' | 'video';
-    reward_ark: number;
-    duration_sec: number;
-    is_active: boolean;
-    view_count: number;
-}
-
-export interface ArkQuiz {
-    id: number;
-    question: string;
-    option_a: string;
-    option_b: string;
-    option_c: string;
-    option_d: string;
-    correct_option: string;
-    reward_spins: number;
-}
-
-export interface Broadcast {
-    id: number;
-    title: string;
-    message: string;
-    type: 'info' | 'warning' | 'urgent';
-    target_group: 'all' | 'premium' | 'user';
-    created_at: string;
-}
-
-export interface ArkWithdrawal {
-    id: number;
-    user_id: string;
-    amount_ark: number;
-    amount_uzs: number;
-    card_number: string;
-    card_holder: string;
-    status: 'pending' | 'approved' | 'rejected';
-    created_at: string;
-    profiles?: {
-        full_name: string | null;
-        email: string | null;
-    };
-}
-
-export interface ArkAutopilotConfig {
-    unit_views: number;
-    revenue_per_unit: number;
-    market_share_percent: number;
-}
-
-export interface ArkSchedule {
-    start_date: string;
-    duration_hours: number;
-    growth_percent: number;
-    is_active: boolean;
 }
 
 export interface ContentItem {
@@ -262,19 +136,6 @@ export interface SocialLink {
     label: string;
 }
 
-export interface PaymentRequestDB {
-    id: number;
-    user_id: string;
-    amount: number;
-    screenshot_url: string;
-    status: 'pending' | 'approved' | 'rejected';
-    created_at: string;
-    profiles?: {
-        full_name: string | null;
-        email: string | null;
-    };
-}
-
 export interface UserDevice {
     id: number;
     user_id: string;
@@ -287,17 +148,6 @@ export interface UserDevice {
         email: string | null;
         role: UserRole;
     };
-}
-
-export interface Promocode {
-    id?: number;
-    code: string;
-    type: 'percentage' | 'fixed';
-    value: number;
-    usage_limit: number | null;
-    used_count: number;
-    expires_at: string | null;
-    status: 'active' | 'inactive' | 'expired';
 }
 
 export interface SupportTicket {
@@ -331,70 +181,4 @@ export interface Transaction {
     user_id: string;
     amount: number;
     created_at: string;
-}
-
-export interface ShopProduct {
-    id: number;
-    title: string;
-    price: number;
-    discount_percent?: number;
-    rating?: number;
-    delivery_time?: string;
-    description: string;
-    category: 'figure' | 'clothing' | 'accessory' | 'other';
-    image_url: string;
-    specifications?: Record<string, string>;
-    stock_count: number;
-    is_active: boolean;
-    sales_count?: number;
-}
-
-export interface ShopWallet {
-    user_id: string;
-    balance: number;
-}
-
-export interface ShopOrder {
-    id: number;
-    user_id: string;
-    product_id: number;
-    amount: number;
-    address: string;
-    phone: string;
-    status: string;
-    created_at: string;
-}
-
-export enum Sender {
-    User = 'user',
-    Bot = 'bot',
-    System = 'system'
-}
-
-export interface Message {
-    id: string;
-    text: string;
-    sender: Sender;
-    timestamp: number;
-    isError?: boolean;
-}
-
-export enum AppView {
-    Chat = 'chat',
-    Settings = 'settings',
-    About = 'about'
-}
-
-export interface ChatSession {
-    id: string;
-    title: string;
-}
-
-export interface CulturalAnalysis {
-    detectedLanguage: string;
-    isoCode: string;
-    englishTranslation: string;
-    pronunciation: string;
-    friendlyResponse: string;
-    culturalFacts: string[];
 }

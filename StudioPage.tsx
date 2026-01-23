@@ -4,7 +4,7 @@ import {
     Mic, Star, ChevronRight, Film, TrendingUp, User, Play, Heart, Users, Eye, Plus, X, Search, CheckCircle, Bell, ChevronLeft
 } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
-import { UserProfile, Movie, FandubChannel, FandubStory } from './types';
+import { Movie, FandubChannel, FandubStory } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { getMovies, getFandubChannels, getActiveStories, toggleFollowChannel } from './services/dbService';
 import { MovieCard } from './components/MovieCard';
@@ -34,9 +34,9 @@ export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onM
                 getActiveStories(),
                 getMovies()
             ]);
-            setChannels(c);
-            setStories(s);
-            setAllMovies(m.filter(movie => movie.is_fandub));
+            setChannels(c || []);
+            setStories(s || []);
+            setAllMovies((m || []).filter(movie => movie.is_fandub));
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     };
@@ -60,11 +60,9 @@ export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onM
     return (
         <div className="min-h-screen bg-[#050505] text-white pb-32 animate-fade-in font-sans">
             
-            {/* 1. STORIES SECTION (Creator Avatars) */}
             <div className="w-full bg-[#0a0a0a]/50 border-b border-white/5 py-8">
                 <div className="container mx-auto px-4">
                     <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
-                        {/* Your Action */}
                         <div className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group">
                             <div className="w-20 h-20 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-purple-600 hover:text-purple-600 transition-all duration-500 active:scale-95 bg-black">
                                 <Plus size={32}/>
@@ -72,7 +70,6 @@ export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onM
                             <span className="text-[10px] font-black uppercase text-zinc-600 tracking-widest">Sizniki</span>
                         </div>
 
-                        {/* Stories Feed */}
                         {stories.map((story, i) => (
                             <div key={story.id} onClick={() => setActiveStoryView(story)} className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
                                 <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500 shadow-2xl group-active:scale-95 transition-all duration-300">
@@ -88,8 +85,6 @@ export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onM
             </div>
 
             <div className="container mx-auto px-4 mt-16 space-y-24">
-                
-                {/* 2. CHANNELS LIST (YouTube Style Horizontal) */}
                 <section>
                     <div className="flex items-center gap-4 mb-10">
                         <div className="w-1.5 h-8 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(147,51,234,0.5)]"></div>
@@ -126,7 +121,6 @@ export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onM
                     </div>
                 </section>
 
-                {/* 3. ALL FANDUB PROJECTS GRID */}
                 <section>
                     <div className="flex items-center gap-4 mb-10">
                         <div className="w-1.5 h-8 bg-orange-600 rounded-full shadow-[0_0_20px_rgba(249,115,22,0.5)]"></div>
@@ -141,19 +135,16 @@ export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onM
                 </section>
             </div>
 
-            {/* CHANNEL DETAIL OVERLAY - FULL YOUTUBE EXPERIENCE */}
             {selectedChannel && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 lg:p-4 animate-fade-in">
                     <div className="absolute inset-0 bg-black/98 backdrop-blur-xl" onClick={() => setSelectedChannel(null)}></div>
                     <div className="relative bg-[#050505] w-full max-w-5xl h-full lg:h-[90vh] lg:rounded-[3.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/5 animate-slide-in-up">
-                        {/* Banner */}
                         <div className="h-44 lg:h-72 bg-zinc-900 relative flex-shrink-0">
                             <img src={selectedChannel.banner_url || 'https://i.imgur.com/8y9q1Xh.jpg'} className="w-full h-full object-cover" alt="" />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent"></div>
                             <button onClick={() => setSelectedChannel(null)} className="absolute top-6 right-6 p-3 bg-black/60 hover:bg-black rounded-full text-white transition-all active:scale-90"><X size={24}/></button>
                         </div>
 
-                        {/* Channel Header Info */}
                         <div className="px-6 lg:px-16 flex flex-col lg:flex-row gap-6 lg:gap-10 -mt-20 lg:-mt-24 relative z-10 flex-shrink-0">
                             <div className="w-36 h-36 lg:w-48 lg:h-48 rounded-[2.5rem] lg:rounded-[3rem] overflow-hidden p-1.5 bg-[#050505] shadow-2xl">
                                 <img src={selectedChannel.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full rounded-[2.3rem] lg:rounded-[2.8rem] object-cover border-4 border-zinc-900" alt="" />
@@ -179,7 +170,6 @@ export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onM
                             </div>
                         </div>
 
-                        {/* Content Navigation */}
                         <div className="px-6 lg:px-16 mt-8 lg:mt-12 flex-1 overflow-hidden flex flex-col">
                             <div className="flex gap-10 border-b border-white/5 mb-10 flex-shrink-0">
                                 <button className="pb-4 text-[10px] font-black uppercase tracking-widest border-b-2 border-purple-600 text-purple-500 transition-all">Loyihalar</button>
@@ -196,51 +186,6 @@ export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onM
                                     )}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* STORY VIEWER MODAL */}
-            {activeStoryView && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black animate-fade-in">
-                    <div className="relative w-full max-w-lg h-full lg:h-[90vh] bg-zinc-900 lg:rounded-[3rem] overflow-hidden flex flex-col shadow-2xl">
-                        {/* Progress Bar */}
-                        <div className="absolute top-0 left-0 w-full h-1 bg-white/20 z-20 flex">
-                            <div className="h-full bg-white animate-progress-story" style={{ width: '100%' }}></div>
-                        </div>
-
-                        {/* Story Header */}
-                        <div className="absolute top-6 left-6 right-6 z-20 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full border-2 border-purple-600 p-0.5">
-                                    <img src={activeStoryView.profiles?.avatar_url || ''} className="w-full h-full rounded-full object-cover" />
-                                </div>
-                                <span className="font-black text-sm text-white drop-shadow-md tracking-tight">{activeStoryView.profiles?.username}</span>
-                                <span className="text-[10px] text-zinc-400 font-bold ml-1">{new Date(activeStoryView.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            </div>
-                            <button onClick={() => setActiveStoryView(null)} className="p-2 bg-black/40 rounded-full text-white"><X size={24}/></button>
-                        </div>
-
-                        {/* Story Media */}
-                        <div className="flex-1 flex items-center justify-center bg-black relative">
-                            {activeStoryView.media_type === 'video' ? (
-                                <video src={activeStoryView.media_url} autoPlay playsInline className="w-full h-full object-contain" onEnded={() => setActiveStoryView(null)} />
-                            ) : (
-                                <img src={activeStoryView.media_url} className="w-full h-full object-contain" />
-                            )}
-                            
-                            {/* Navigation Taps */}
-                            <div className="absolute inset-0 flex">
-                                <div className="w-1/2 h-full cursor-pointer" onClick={() => {/* Prev logic */}}></div>
-                                <div className="w-1/2 h-full cursor-pointer" onClick={() => setActiveStoryView(null)}></div>
-                            </div>
-                        </div>
-
-                        {/* Footer (Actions) */}
-                        <div className="p-6 bg-gradient-to-t from-black to-transparent absolute bottom-0 left-0 w-full flex items-center gap-4">
-                            <input placeholder="Xabar yozing..." className="flex-1 bg-white/10 border border-white/10 rounded-full px-6 py-3 text-sm text-white focus:bg-white/20 outline-none transition-all backdrop-blur-md" />
-                            <button className="p-3 bg-purple-600 rounded-full text-white shadow-xl active:scale-90 transition-all"><Heart size={20}/></button>
                         </div>
                     </div>
                 </div>
