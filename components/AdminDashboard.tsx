@@ -70,31 +70,70 @@ export const AdminDashboard: React.FC = () => {
                 ))}
             </div>
             
-            {/* PENDING FANDUB UPLOADS */}
+            {/* PENDING FANDUB UPLOADS SECTION */}
             <div className="bg-gray-800/40 border border-gray-700 rounded-3xl p-8">
-                <div className="flex items-center gap-3 mb-8">
-                    <AlertCircle className="text-yellow-500" />
-                    <h2 className="text-xl font-bold text-white uppercase tracking-tight">Kutilayotgan Fandub Loyihalari ({pendingUploads.length})</h2>
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle className="text-yellow-500" />
+                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">Fandub Moderatsiyasi ({pendingUploads.length})</h2>
+                    </div>
+                    <p className="text-xs text-gray-500 italic">Yangi kelgan loyihalarni tekshiring</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {pendingUploads.map(up => (
-                        <div key={up.id} className="bg-gray-900 p-5 rounded-2xl flex gap-5 border border-gray-800 group hover:border-yellow-500/30 transition-all">
-                            <div className="w-24 h-32 rounded-xl overflow-hidden flex-shrink-0 bg-gray-800">
-                                <img src={up.poster_url} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-white truncate text-lg">{up.title}</h4>
-                                <p className="text-xs text-gray-500 mt-1 uppercase font-black tracking-widest">{up.genre}</p>
-                                <p className="text-xs text-blue-400 mt-2">Kimdan: { (up as any).profiles?.full_name }</p>
-                                <div className="flex gap-2 mt-6">
-                                    <button onClick={() => handleApprove(up.id)} className="flex-1 bg-green-600 hover:bg-green-500 text-white p-2 rounded-lg transition-all flex items-center justify-center gap-2 text-xs font-bold uppercase"><Check size={14}/> Tasdiqlash</button>
-                                    <button onClick={() => handleReject(up.id)} className="flex-1 bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white p-2 rounded-lg transition-all flex items-center justify-center gap-2 text-xs font-bold uppercase"><XIcon size={14}/> Rad etish</button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                    {pendingUploads.length === 0 && <p className="text-gray-600 italic text-center py-4 col-span-full">Hozircha yangi yuklamalar yo'q.</p>}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-900/50 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                            <tr>
+                                <th className="p-5">Anime</th>
+                                <th className="p-5">Yuklovchi</th>
+                                <th className="p-5">Janr / Yil</th>
+                                <th className="p-5 text-right">Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                            {pendingUploads.length === 0 ? (
+                                <tr><td colSpan={4} className="p-10 text-center text-gray-600 uppercase font-black text-xs tracking-widest italic">Hozircha yangi loyihalar yo'q.</td></tr>
+                            ) : pendingUploads.map(up => (
+                                <tr key={up.id} className="group hover:bg-gray-800/50 transition-all">
+                                    <td className="p-5">
+                                        <div className="flex items-center gap-4">
+                                            <img src={up.poster_url} className="w-12 h-16 rounded-lg object-cover shadow-lg" alt="" />
+                                            <div>
+                                                <p className="text-white font-bold">{up.title}</p>
+                                                <p className="text-[10px] text-zinc-500 line-clamp-1 max-w-[200px]">{up.description}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-5">
+                                        <p className="text-sm text-purple-400 font-bold">{(up as any).profiles?.full_name || 'Noma\'lum'}</p>
+                                        <p className="text-[10px] text-gray-500">ID: {up.channel_id.slice(0,8)}...</p>
+                                    </td>
+                                    <td className="p-5">
+                                        <span className="bg-gray-700 px-2 py-1 rounded text-[10px] font-black text-gray-300 mr-2">{up.genre}</span>
+                                        <span className="text-xs text-gray-500 font-mono">{up.year}</span>
+                                    </td>
+                                    <td className="p-5 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <button 
+                                                onClick={() => handleApprove(up.id)}
+                                                className="p-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-all shadow-lg shadow-green-900/20"
+                                                title="Tasdiqlash"
+                                            >
+                                                <Check size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleReject(up.id)}
+                                                className="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all shadow-lg shadow-red-900/20"
+                                                title="Rad etish"
+                                            >
+                                                <XIcon size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

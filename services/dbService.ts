@@ -14,7 +14,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     return data as UserProfile;
 };
 
-// Added getUserSessions to fix import error in ProfilePage.tsx
 export const getUserSessions = async (userId: string): Promise<UserDevice[]> => {
     const { data } = await supabase.from('user_devices').select('*').eq('user_id', userId).order('last_active', { ascending: false });
     return (data || []) as UserDevice[];
@@ -35,8 +34,9 @@ export const updateUserEmail = async (newEmail: string) => {
     if (error) throw error;
 };
 
-// --- MOVIES ---
+// --- MOVIES & FANDUB LOYIHALARI ---
 export const getMovies = async (): Promise<Movie[]> => {
+    // Rasmiy va tasdiqlangan Fandub kinolarni birlashtirib olamiz
     const [off, fan] = await Promise.all([
         supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false }),
         supabase.from('fandub_uploads').select('*').eq('status', 'approved').order('created_at', { ascending: false })
@@ -45,7 +45,7 @@ export const getMovies = async (): Promise<Movie[]> => {
     const fandub = (fan.data || []).map(m => ({
         id: m.id, title: m.title, year: m.year, plot: m.description, posterUrl: m.poster_url,
         videoUrl: m.video_url, genre: m.genre, language: 'JP/UZ', quality: 'HD', rating: 5.0,
-        is_fandub: true, channel_id: m.channel_id
+        is_fandub: true, channel_id: m.channel_id, translator: m.title.includes('Anilo') ? 'Anilo' : 'Fandub'
     }));
     return [...official, ...fandub] as Movie[];
 };
@@ -90,7 +90,7 @@ export const getUserHistory = async (userId: string): Promise<Movie[]> => {
 };
 
 export const updateUserWatchTime = async (userId: string, seconds: number) => {
-    // Analytics update
+    // Watch time analytics
 };
 
 // --- TRANSACTIONS ---
@@ -227,7 +227,7 @@ export const updateAppConfig = async (key: string, value: string) => {
     await supabase.from('app_config').upsert({ key, value });
 };
 
-// --- ADMIN OPS ---
+// --- ADMIN OPS (BOSHQRUV) ---
 export const getAdminMovies = async (): Promise<Movie[]> => {
     const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
     return data || [];
@@ -311,7 +311,7 @@ export const getAdminNotificationCounts = async () => {
     return { financials: data?.payment_pending || 0, support: data?.tickets_open || 0, fandub: data?.fandub_pending || 0 };
 };
 
-// --- FANDUB CHANNEL & STORY ---
+// --- FANDUB CHANNEL & UPLOAD SYSTEM ---
 export const getFandubChannels = async (userId?: string): Promise<FandubChannel[]> => {
     const { data } = await supabase.from('fandub_channels').select('*').order('subscriber_count', { ascending: false });
     if (userId && data) {
@@ -367,16 +367,19 @@ export const getFandubUploads = async (userId: string): Promise<FandubUpload[]> 
     return data || [];
 };
 
+// ADMIN: Kutilayotgan Fandub loyihalarini olish
 export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
     const { data } = await supabase.from('fandub_uploads').select('*, profiles(full_name)').eq('status', 'pending');
     return data || [];
 };
 
+// ADMIN: Fandub loyihasini tasdiqlash
 export const approveFandubUpload = async (id: number) => {
     const { error } = await supabase.from('fandub_uploads').update({ status: 'approved' }).eq('id', id);
     if (error) throw error;
 };
 
+// ADMIN: Fandub loyihasini rad etish
 export const rejectFandubUpload = async (id: number, comment: string) => {
     const { error } = await supabase.from('fandub_uploads').update({ status: 'rejected', admin_comment: comment }).eq('id', id);
     if (error) throw error;
@@ -394,7 +397,7 @@ export const uploadFile = async (file: File, bucket: string): Promise<string> =>
 export const uploadPoster = (file: File) => uploadFile(file, 'posters');
 export const uploadVideo = (file: File) => uploadFile(file, 'videos');
 
-// --- DATABASE ADMIN ---
+// --- DATABASE ADMIN MISC ---
 export const getSocialLinks = async (): Promise<SocialLink[]> => {
     const { data } = await supabase.from('social_links').select('*');
     return data || [];
