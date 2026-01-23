@@ -7,61 +7,16 @@ import { useNotification } from './hooks/useNotification';
 import { createTsPayTransaction } from './services/tspayService';
 import { CreditCard, Zap, CheckCircle, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 
-type Status = 'idle' | 'loading' | 'pending' | 'error';
-
 export const BillingPage: React.FC = () => {
     const [amount, setAmount] = useState('');
     const [screenshot, setScreenshot] = useState<File | null>(null);
-    const [status, setStatus] = useState<Status>('idle');
-    const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState<'idle' | 'loading' | 'pending' | 'error'>('idle');
     
     // TsPay State
     const [tsAmount, setTsAmount] = useState('');
     const [isTsPayLoading, setIsTsPayLoading] = useState(false);
 
     const { addNotification } = useNotification();
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setScreenshot(e.target.files[0]);
-        }
-    };
-
-    const handleManualSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!amount || !screenshot) {
-            setError("Iltimos, barcha maydonlarni to'ldiring.");
-            return;
-        }
-
-        setStatus('loading');
-        setError(null);
-
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("Foydalanuvchi aniqlanmadi");
-
-            const publicUrl = await uploadFile(screenshot, 'receipts'); 
-            await createPaymentRequest(user.id, Number(amount), publicUrl);
-
-            setStatus('pending');
-            addNotification({
-                type: 'success',
-                title: 'So\'rov yuborildi',
-                message: 'To\'lov cheki adminlarga yuborildi. Tez orada balansingiz yangilanadi.',
-            });
-            
-            setAmount('');
-            setScreenshot(null);
-
-        } catch (err) {
-            console.error(err);
-            const errorMessage = err instanceof Error ? err.message : "Noma'lum xatolik yuz berdi.";
-            setError(`Xatolik: ${errorMessage}`);
-            setStatus('error');
-            addNotification({ type: 'error', title: 'Xatolik', message: errorMessage });
-        }
-    };
 
     const handleTsPaySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,196 +30,90 @@ export const BillingPage: React.FC = () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Avval tizimga kiring.");
 
-            // 1. Tranzaksiyani yaratish (Backend orqali)
-            const response = await createTsPayTransaction(Number(tsAmount), user.id);
+            // Edge Function orqali xavfsiz tranzaksiya yaratish
+            const res = await createTsPayTransaction(Number(tsAmount), user.id);
             
-            if (response.status === 'success' && response.transaction.url) {
-                // 2. Holatni saqlab qo'yish (keyinchalik tekshirish uchun)
-                localStorage.setItem('tspay_pending_id', String(response.transaction.id));
+            if (res.status === 'success' && res.transaction?.url) {
+                // To'lov ID sini saqlab qo'yamiz (App.tsx da tekshirish uchun)
+                localStorage.setItem('tspay_pending_id', String(res.transaction.id));
                 localStorage.setItem('tspay_pending_amount', tsAmount);
                 
-                addNotification({ type: 'success', title: 'Yo\'naltirilmoqda...', message: "TsPay to'lov sahifasi ochilmoqda." });
-                
-                // 3. Foydalanuvchini TsPay sahifasiga yo'naltirish
-                setTimeout(() => {
-                    window.location.href = response.transaction.url;
-                }, 1000);
+                addNotification({ type: 'success', title: 'Tayyor', message: "To'lov sahifasiga o'tilmoqda..." });
+                window.location.href = res.transaction.url;
             } else {
-                throw new Error(response.message || "To'lov havolasini olib bo'lmadi.");
+                throw new Error(res.message || "To'lov tizimida xatolik yuz berdi.");
             }
-
         } catch (e: any) {
-            console.error("Payment Init Error:", e);
-            
-            let userMsg = e.message || 'TsPay bilan aloqa yo\'q.';
-            
-            if (e.message === 'PROXY_ERROR' || e.message.includes('Proxy')) {
-                userMsg = "Tizim xatosi (Proxy). Iltimos, hozircha Manual To'lovdan foydalaning.";
-            }
-
-            addNotification({ type: 'error', title: 'Xatolik', message: userMsg });
+            console.error(e);
+            addNotification({ type: 'error', title: 'Xatolik', message: e.message });
+        } finally {
             setIsTsPayLoading(false);
         }
     };
 
-    const renderStatusMessage = () => {
-        switch (status) {
-            case 'loading':
-                return (
-                    <div className="text-center p-4 bg-blue-900/30 text-blue-300 rounded-lg flex items-center justify-center gap-2">
-                        <Loader2 className="animate-spin" size={20} />
-                        <div className="animate-pulse">Chek yuklanmoqda...</div>
-                    </div>
-                );
-            case 'pending':
-                return (
-                    <div className="text-center p-4 bg-green-900/30 text-green-300 rounded-lg border border-green-500/30">
-                        <h3 className="font-bold flex items-center justify-center gap-2 mb-2">
-                            <CheckCircle size={20} /> So'rovingiz qabul qilindi!
-                        </h3>
-                        <p className="text-sm">Adminlar tez orada tekshirib chiqadilar.</p>
-                        <button onClick={() => setStatus('idle')} className="mt-4 text-sm bg-green-800 hover:bg-green-700 px-4 py-2 rounded text-white transition-colors">Yana to'ldirish</button>
-                    </div>
-                );
-            case 'error':
-                 return (
-                    <div className="text-center p-4 bg-red-900/30 text-red-300 rounded-lg border border-red-500/30">
-                        <h3 className="font-bold flex items-center justify-center gap-2 mb-2">
-                            <AlertCircle size={20} /> Xatolik!
-                        </h3>
-                        <p className="text-sm">{error}</p>
-                        <button onClick={() => setStatus('idle')} className="mt-4 text-sm underline hover:text-white">Qayta urinish</button>
-                    </div>
-                );
-            default:
-                return null;
+    const handleManualSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!amount || !screenshot) return;
+        setStatus('loading');
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const publicUrl = await uploadFile(screenshot, 'posters'); 
+            await createPaymentRequest(user!.id, Number(amount), publicUrl);
+            setStatus('pending');
+            addNotification({ type: 'success', title: 'Yuborildi', message: 'Adminlar tekshirgach hisobingiz to\'ldiriladi.' });
+        } catch (err: any) {
+            setStatus('error');
+            addNotification({ type: 'error', title: 'Xatolik', message: err.message });
         }
-    }
+    };
 
     return (
         <div className="animate-fade-in pb-10">
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 mb-8 text-center sm:text-left">
-                Hisobni To'ldirish
-            </h1>
+            <h1 className="text-3xl font-bold text-white mb-8">Hisobni To'ldirish</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* 1. TSPAY AUTOMATIC */}
-                <div className="bg-gradient-to-br from-indigo-900/50 to-blue-900/50 border border-blue-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
-                    <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl group-hover:bg-blue-500/30 transition-all duration-700"></div>
-                    
-                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        <div className="bg-blue-600 p-2 rounded-lg text-white shadow-lg shadow-blue-500/40">
-                            <Zap size={20} className="fill-current" />
-                        </div>
-                        Tezkor To'lov (TsPay)
+                {/* 1. TSPAY (EDGE FUNCTION) */}
+                <div className="bg-gradient-to-br from-indigo-900/50 to-blue-900/50 border border-blue-500/30 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden group">
+                    <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl"></div>
+                    <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-3">
+                        <Zap size={28} className="text-yellow-400 fill-current" /> Avtomatik To'lov
                     </h2>
-                    <p className="text-sm text-gray-300 mb-6 leading-relaxed">
-                        To'lov summasini kiriting. Keyin <b>TsPay</b> sahifasiga o'tib <b>UzCard, Humo, Click yoki Payme</b> orqali to'lovni amalga oshirasiz.
-                        <br/>
-                        <span className="text-xs text-blue-300 mt-2 block flex items-center gap-1">
-                            <CheckCircle size={12}/> Balans avtomatik to'ldiriladi.
-                        </span>
+                    <p className="text-zinc-300 text-sm mb-8 leading-relaxed">
+                        To'lov summasini kiriting. <b>UzCard, Humo, Click yoki Payme</b> orqali to'lovni amalga oshiring. Balans avtomatik to'ldiriladi.
                     </p>
 
-                    <form onSubmit={handleTsPaySubmit} className="space-y-4 relative z-10">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">Summa (UZS)</label>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={tsAmount}
-                                    onChange={e => setTsAmount(e.target.value)}
-                                    placeholder="Masalan: 15000"
-                                    className="w-full bg-black/40 border border-blue-500/30 rounded-xl p-4 text-white font-bold text-xl focus:border-blue-500 outline-none transition-all placeholder:text-gray-600 pl-4"
-                                />
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">UZS</span>
-                            </div>
+                    <form onSubmit={handleTsPaySubmit} className="space-y-5 relative z-10">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Summa (UZS)</label>
+                            <input 
+                                type="number" 
+                                value={tsAmount}
+                                onChange={e => setTsAmount(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white font-bold text-xl outline-none focus:border-blue-500 transition-all"
+                                placeholder="10,000"
+                            />
                         </div>
-                        
-                        <div className="pt-2">
-                            <button 
-                                type="submit" 
-                                disabled={isTsPayLoading}
-                                className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-blue-600/30 disabled:opacity-70 flex items-center justify-center gap-3 active:scale-95"
-                            >
-                                {isTsPayLoading ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={20} />
-                                        <span>Kuting...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <CreditCard size={20}/> 
-                                        <span>To'lovga O'tish</span>
-                                        <ExternalLink size={16} className="opacity-70"/>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                        
-                        <div className="flex items-center justify-center gap-4 mt-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                            <img src="https://logobank.uz:8005/media/logos_png/Uzcard-01.png" alt="Uzcard" className="h-5 object-contain" />
-                            <img src="https://logobank.uz:8005/media/logos_png/Humo-01.png" alt="Humo" className="h-5 object-contain" />
-                            <img src="https://logobank.uz:8005/media/logos_png/Click-01.png" alt="Click" className="h-5 object-contain" />
-                            <img src="https://logobank.uz:8005/media/logos_png/Payme-01.png" alt="Payme" className="h-5 object-contain" />
-                        </div>
+                        <button 
+                            type="submit" 
+                            disabled={isTsPayLoading}
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                        >
+                            {isTsPayLoading ? <Loader2 className="animate-spin" /> : <><CreditCard size={18}/> To'lovga O'tish</>}
+                        </button>
                     </form>
                 </div>
 
-                {/* 2. MANUAL UPLOAD */}
-                <div className={`transition-all duration-500 ${status === 'pending' ? 'bg-green-900/10' : 'bg-gray-900/50'} backdrop-blur-sm border border-gray-800 rounded-2xl p-6`}>
-                    {status === 'pending' ? renderStatusMessage() : (
-                        <>
-                            <h2 className="text-xl font-bold text-white mb-4">Manual To'lov (Karta orqali)</h2>
-                            <p className="text-gray-400 mb-6 text-sm">
-                                Agarda avtomatik to'lovda muammo bo'lsa, quyidagi kartaga pul o'tkazib, chekni yuklang. Adminlar tasdiqlagach balans to'ldiriladi.
-                            </p>
-                            
-                            <div className="mb-8">
-                                <PaymentDetailsCard />
-                            </div>
-
-                            <form onSubmit={handleManualSubmit} className="space-y-6">
-                                <div>
-                                    <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-2">O'tkazilgan summa (UZS)</label>
-                                    <input 
-                                        id="amount"
-                                        type="number" 
-                                        value={amount}
-                                        onChange={e => setAmount(e.target.value)}
-                                        placeholder="15000"
-                                        required
-                                        disabled={status === 'loading'}
-                                        className="w-full px-4 py-3 text-lg bg-gray-800 border-2 border-gray-700 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white transition-all"
-                                    />
-                                </div>
-
-                                <div>
-                                     <label htmlFor="screenshot" className="block text-sm font-medium text-gray-300 mb-2">To'lov cheki (skrinshot)</label>
-                                     <input 
-                                        id="screenshot"
-                                        type="file" 
-                                        accept="image/*"
-                                        required
-                                        disabled={status === 'loading'}
-                                        onChange={handleFileChange}
-                                        className="w-full text-sm text-gray-400 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-orange-600/20 file:text-orange-400 hover:file:bg-orange-600/30 cursor-pointer"
-                                     />
-                                </div>
-                                
-                                {renderStatusMessage()}
-                                
-                                {status !== 'loading' && status !== 'error' && (
-                                    <button 
-                                        type="submit"
-                                        className="w-full py-4 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold text-sm uppercase tracking-widest transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed text-white border border-gray-700 hover:border-gray-500"
-                                    >
-                                        Chekni Yuborish
-                                    </button>
-                                )}
-                            </form>
-                        </>
-                    )}
+                {/* 2. MANUAL (CHEK YUKLASH) */}
+                <div className="bg-zinc-900/50 border border-white/5 rounded-[2.5rem] p-8">
+                    <h2 className="text-2xl font-black text-white mb-6">Manual To'lov</h2>
+                    <PaymentDetailsCard />
+                    <form onSubmit={handleManualSubmit} className="mt-8 space-y-5">
+                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Summa" className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-orange-500" />
+                        <input type="file" onChange={e => setScreenshot(e.target.files?.[0] || null)} className="w-full text-xs text-zinc-500" accept="image/*" />
+                        <button type="submit" disabled={status === 'loading'} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all">
+                            {status === 'loading' ? 'Yuklanmoqda...' : 'Chekni yuborish'}
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
