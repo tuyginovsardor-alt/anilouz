@@ -1,10 +1,11 @@
 
 import { supabase } from './supabaseClient';
 import { 
-    UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad, 
-    ATCWallet, ATCTransaction, ContestTask, QuizQuestion, ContestAd,
+    UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
+    ATCTransaction, ContestTask, QuizQuestion, ContestAd, ATCWallet,
     ArkWallet, ArkMarketData, ArkAd, ArkQuiz, ArkWithdrawal, ArkSchedule,
-    SocialLink, PaymentRequestDB, UserDevice, Promocode, SupportTicket, TicketMessage, News, Transaction, ShopProduct, ShopWallet, ShopOrder
+    SocialLink, PaymentRequestDB, UserDevice, Promocode, SupportTicket,
+    TicketMessage, News, Transaction, ShopProduct, ShopWallet, ShopOrder, WheelPrize
 } from '../types';
 
 // --- FANDUB CHANNEL & STORIES ---
@@ -64,8 +65,7 @@ export const rejectFandubUpload = async (id: number, comment: string) => {
     if (error) throw error;
 };
 
-// --- GENERAL SERVICES ---
-
+// --- CORE APP CONFIG ---
 export const getAppConfig = async () => {
     const { data } = await supabase.from('app_config').select('*');
     const config: Record<string, string> = {};
@@ -78,6 +78,7 @@ export const updateAppConfig = async (key: string, value: string) => {
     if (error) throw error;
 };
 
+// --- USER PROFILE ---
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
     return data as UserProfile;
@@ -105,6 +106,7 @@ export const getMovies = async (): Promise<Movie[]> => {
         supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false }),
         supabase.from('fandub_uploads').select('*').eq('status', 'approved').order('created_at', { ascending: false })
     ]);
+
     const officialMovies = (officialRes.data || []).map(m => ({ ...m, is_fandub: false }));
     const fandubMovies = (fandubRes.data || []).map(m => ({
         id: m.id,
@@ -120,6 +122,7 @@ export const getMovies = async (): Promise<Movie[]> => {
         is_fandub: true,
         channel_id: m.channel_id
     }));
+
     return [...officialMovies, ...fandubMovies] as Movie[];
 };
 
@@ -142,32 +145,6 @@ export const updateFandubChannel = async (channelId: string, updates: Partial<Fa
 export const getFandubUploads = async (userId: string): Promise<FandubUpload[]> => {
     const { data } = await supabase.from('fandub_uploads').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     return (data || []) as FandubUpload[];
-};
-
-export const getAdminMovies = async (): Promise<Movie[]> => {
-    const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
-    return (data || []) as Movie[];
-};
-
-export const addMovieToDB = async (movie: Movie) => {
-    const { data, error } = await supabase.from('movies').insert(movie).select().single();
-    if (error) throw error;
-    return data as Movie;
-};
-
-export const updateMovieInDB = async (id: number, movie: Partial<Movie>) => {
-    const { error } = await supabase.from('movies').update(movie).eq('id', id);
-    if (error) throw error;
-};
-
-export const deleteMovieFromDB = async (id: number) => {
-    const { error } = await supabase.from('movies').delete().eq('id', id);
-    if (error) throw error;
-};
-
-export const toggleMovieArchive = async (id: number, archived: boolean) => {
-    const { error } = await supabase.from('movies').update({ is_archived: archived }).eq('id', id);
-    if (error) throw error;
 };
 
 export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
@@ -220,473 +197,520 @@ export const getAdminNotificationCounts = async () => {
     };
 };
 
-/** 
- * Added missing functions based on component errors 
- */
-
-export const getATCTransactions = async (userId: string): Promise<ATCTransaction[]> => {
-  const { data } = await supabase.from('atc_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-  return data || [];
-};
-
-export const getContestSettings = async () => {
-  const { data } = await supabase.from('contest_settings').select('*');
-  const settings: Record<string, any> = {};
-  (data || []).forEach(s => settings[s.key] = s.value);
-  return settings;
-};
-
-export const getContestTasks = async (): Promise<ContestTask[]> => {
-  const { data } = await supabase.from('contest_tasks').select('*').eq('is_active', true);
-  return data || [];
-};
-
-export const claimATCReward = async (userId: string, amount: number, type: string, description: string) => {
-  await supabase.rpc('claim_atc_reward', { u_id: userId, amt: amount, t: type, desc: description });
-};
-
-export const convertATCtoUZS = async (userId: string, amount: number, rate: number) => {
-  await supabase.rpc('convert_atc_to_uzs', { u_id: userId, atc_amt: amount, ex_rate: rate });
-};
-
-export const getQuizQuestions = async (count: number): Promise<QuizQuestion[]> => {
-  const { data } = await supabase.from('quiz_questions').select('*').limit(count);
-  return data || [];
-};
-
-export const rewardExtraSpin = async (userId: string, amount: number) => {
-  await supabase.rpc('reward_extra_spin', { u_id: userId, amt: amount });
-};
-
-export const getATCWallet = async (userId: string): Promise<ATCWallet | null> => {
-  const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
-  return data as ATCWallet;
-};
-
-export const getContestAds = async (): Promise<ContestAd[]> => {
-  const { data } = await supabase.from('contest_ads').select('*').eq('is_active', true);
-  return data || [];
-};
-
-export const recordTsPaySuccess = async (userId: string, amount: number, transactionId: number) => {
-  await supabase.from('tspay_logs').insert({ user_id: userId, amount, transaction_id: transactionId, status: 'success' });
-  await supabase.rpc('add_balance', { u_id: userId, amt: amount });
-};
-
-export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
-  const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
-  return data as ArkWallet;
-};
-
-export const getArkMarketHistory = async (): Promise<ArkMarketData[]> => {
-  const { data } = await supabase.from('ark_market_history').select('*').order('created_at', { ascending: true });
-  return data || [];
-};
-
-export const requestArkWithdrawal = async (userId: string, amount: number, card: string, holder: string) => {
-  await supabase.from('ark_withdrawals').insert({ user_id: userId, amount_ark: amount, card_number: card, card_holder: holder, status: 'pending' });
-};
-
-export const getArkSettings = async () => {
-  const { data } = await supabase.from('ark_settings').select('*');
-  const settings: Record<string, any> = {};
-  (data || []).forEach(s => settings[s.key] = s.value);
-  return settings;
-};
-
-export const getArkAds = async (): Promise<ArkAd[]> => {
-  const { data } = await supabase.from('ark_ads').select('*').eq('is_active', true);
-  return data || [];
-};
-
-export const getArkQuizzes = async (): Promise<ArkQuiz[]> => {
-  const { data } = await supabase.from('ark_quizzes').select('*');
-  return data || [];
-};
-
-export const recordArkSpinResult = async (userId: string, prize: any) => {
-  await supabase.rpc('record_ark_spin', { u_id: userId, prize_data: prize });
-};
-
-export const rewardArkSpins = async (userId: string, amount: number) => {
-  await supabase.rpc('add_ark_spins', { u_id: userId, amt: amount });
-};
-
-export const claimArkAdReward = async (userId: string, amount: number, title: string) => {
-  await supabase.rpc('claim_ark_ad_reward', { u_id: userId, amt: amount, ad_title: title });
-};
-
-export const createPaymentRequest = async (userId: string, amount: number, url: string) => {
-  await supabase.from('payment_requests').insert({ user_id: userId, amount, screenshot_url: url, status: 'pending' });
-};
-
-export const getBroadcasts = async (): Promise<any[]> => {
-  const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
-  return data || [];
-};
-
-export const createBroadcast = async (broadcast: any) => {
-  await supabase.from('broadcasts').insert(broadcast);
-};
-
-export const deleteBroadcast = async (id: number) => {
-  await supabase.from('broadcasts').delete().eq('id', id);
-};
-
-export const updateArkSettings = async (key: string, value: any) => {
-  await supabase.from('ark_settings').upsert({ key, value });
-};
-
-export const getArkWithdrawals = async (): Promise<ArkWithdrawal[]> => {
-  const { data } = await supabase.from('ark_withdrawals').select('*, profiles(*)').order('created_at', { ascending: false });
-  return data || [];
-};
-
-export const approveArkWithdrawal = async (id: number) => {
-  await supabase.from('ark_withdrawals').update({ status: 'approved' }).eq('id', id);
-};
-
-export const updateContestSetting = async (key: string, value: any) => {
-  await supabase.from('contest_settings').upsert({ key, value });
-};
-
-export const createContestTask = async (task: any) => {
-  await supabase.from('contest_tasks').insert(task);
-};
-
-export const deleteContestTask = async (id: number) => {
-  await supabase.from('contest_tasks').delete().eq('id', id);
-};
-
-export const createContestAd = async (ad: any) => {
-  await supabase.from('contest_ads').insert(ad);
-};
-
-export const deleteContestAd = async (id: number) => {
-  await supabase.from('contest_ads').delete().eq('id', id);
-};
-
-export const getSocialLinks = async (): Promise<SocialLink[]> => {
-  const { data } = await supabase.from('social_links').select('*');
-  return data || [];
-};
-
-export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
-  const { data } = await supabase.from('payment_requests').select('*, profiles(*)').order('created_at', { ascending: false });
-  return data || [];
-};
-
-export const approvePaymentRequest = async (requestId: number, userId: string, amount: number) => {
-  await supabase.from('payment_requests').update({ status: 'approved' }).eq('id', requestId);
-  await supabase.rpc('add_balance', { u_id: userId, amt: amount });
-};
-
-export const rejectPaymentRequest = async (requestId: number) => {
-  await supabase.from('payment_requests').update({ status: 'rejected' }).eq('id', requestId);
-};
-
-export const getPremiumUsers = async () => {
-  const { data } = await supabase.from('profiles').select('*').gt('balance', 0);
-  return data || [];
-};
-
-export const adminAdjustUserBalance = async (userId: string, amount: number, type: 'add' | 'deduct', desc: string) => {
-  const finalAmount = type === 'add' ? amount : -amount;
-  await supabase.rpc('admin_adjust_balance', { u_id: userId, amt: finalAmount, description: desc });
-};
-
-export const getUserByEmail = async (email: string) => {
-  const { data } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-  return data;
-};
-
-export const giveGlobalBonus = async (amount: number, desc: string) => {
-  const { data } = await supabase.rpc('give_global_bonus', { amt: amount, description: desc });
-  return data;
-};
-
-export const getUserHistory = async (userId: string): Promise<Movie[]> => {
-  const { data } = await supabase.from('watch_history').select('movies(*)').eq('user_id', userId).order('watched_at', { ascending: false });
-  return (data || []).map((item: any) => item.movies) as Movie[];
-};
-
-export const getUserSessions = async (userId: string): Promise<UserDevice[]> => {
-  const { data } = await supabase.from('user_devices').select('*').eq('user_id', userId);
-  return data || [];
-};
-
-export const getPromocodes = async (): Promise<Promocode[]> => {
-  const { data } = await supabase.from('promocodes').select('*');
-  return data || [];
-};
-
-export const savePromocode = async (promo: Promocode) => {
-  await supabase.from('promocodes').insert(promo);
-};
-
-export const deletePromocode = async (id: number) => {
-  await supabase.from('promocodes').delete().eq('id', id);
-};
-
-export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
-  const { data } = await supabase.from('movies').select('*').ilike('title', `%${query}%`).eq('is_archived', false);
-  return data || [];
-};
-
-export const getAdminPin = async (): Promise<string> => {
-  const { data } = await supabase.from('app_config').select('value').eq('key', 'admin_pin').maybeSingle();
-  return data?.value || '0000';
-};
-
-export const setAdminPin = async (pin: string) => {
-  await supabase.from('app_config').upsert({ key: 'admin_pin', value: pin });
-};
-
-export const getProtectedRoutes = async (): Promise<string[]> => {
-  const { data } = await supabase.from('app_config').select('value').eq('key', 'protected_routes').maybeSingle();
-  return data ? JSON.parse(data.value) : [];
-};
-
-export const setProtectedRoutes = async (routes: string[]) => {
-  await supabase.from('app_config').upsert({ key: 'protected_routes', value: JSON.stringify(routes) });
-};
-
-export const saveRecoveryCodes = async (codes: string[]) => {
-  await supabase.from('app_config').upsert({ key: 'admin_recovery_codes', value: JSON.stringify(codes) });
-};
-
-export const verifyRecoveryCode = async (code: string): Promise<boolean> => {
-  const { data } = await supabase.from('app_config').select('value').eq('key', 'admin_recovery_codes').maybeSingle();
-  if (!data) return false;
-  const codes: string[] = JSON.parse(data.value);
-  return codes.includes(code);
-};
-
-export const getRecoveryCodesStatus = async (): Promise<boolean> => {
-  const { data } = await supabase.from('app_config').select('value').eq('key', 'admin_recovery_codes').maybeSingle();
-  return !!(data && JSON.parse(data.value).length > 0);
-};
-
-export const getAllSessions = async (): Promise<UserDevice[]> => {
-  const { data } = await supabase.from('user_devices').select('*, profiles(*)').order('last_active', { ascending: false });
-  return data || [];
-};
-
-export const toggleDeviceBlock = async (id: number, blocked: boolean) => {
-  await supabase.from('user_devices').update({ is_blocked: blocked }).eq('id', id);
-};
-
-export const updateUserPassword = async (password: string) => {
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw error;
-};
-
-export const updateUserEmail = async (email: string) => {
-  const { error } = await supabase.auth.updateUser({ email });
-  if (error) throw error;
-};
-
-export const getAllTickets = async (): Promise<SupportTicket[]> => {
-  const { data } = await supabase.from('support_tickets').select('*, profiles(*)').order('created_at', { ascending: false });
-  return data || [];
-};
-
-export const getTicketMessages = async (ticketId: number): Promise<TicketMessage[]> => {
-  const { data } = await supabase.from('ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true });
-  return data || [];
-};
-
-export const sendMessage = async (ticketId: number, senderId: string, msg: string, isAdmin: boolean) => {
-  await supabase.from('ticket_messages').insert({ ticket_id: ticketId, sender_id: senderId, message: msg, is_admin: isAdmin });
-};
-
-export const getNews = async (): Promise<News[]> => {
-  const { data } = await supabase.from('news').select('*').order('created_at', { ascending: false });
-  return data || [];
-};
-
-export const createNews = async (title: string, content: string) => {
-  await supabase.from('news').insert({ title, content });
-};
-
-export const deleteNews = async (id: number) => {
-  await supabase.from('news').delete().eq('id', id);
-};
-
-export const getAllUsers = async (): Promise<UserProfile[]> => {
-  const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-  return data || [];
-};
-
-export const deleteUser = async (id: string) => {
-  await supabase.from('profiles').delete().eq('id', id);
-};
-
-export const startFreeTrial = async (userId: string) => {
-  const now = new Date().toISOString();
-  await supabase.from('profiles').update({ free_trial_started_at: now }).eq('id', userId);
-  return now;
-};
-
-export const updateUserWatchTime = async (userId: string, seconds: number) => {
-  await supabase.rpc('increment_watch_time', { u_id: userId, s: seconds });
-};
-
-export const incrementAdView = async (adId: number) => {
-  await supabase.rpc('increment_ad_view', { ad_id: adId });
-};
-
-export const addSocialLink = async (link: any) => {
-  await supabase.from('social_links').insert(link);
-};
-
-export const deleteSocialLink = async (id: number) => {
-  await supabase.from('social_links').delete().eq('id', id);
-};
-
-export const checkAndTrackRegistration = async (deviceId: string) => {
-  const { data } = await supabase.from('device_registrations').select('id').eq('device_id', deviceId).maybeSingle();
-  if (data) throw new Error("Bu qurilmadan allaqachon ro'yxatdan o'tilgan.");
-  await supabase.from('device_registrations').insert({ device_id: deviceId });
-};
-
-export const logDeviceLogin = async (userId: string, deviceId: string) => {
-  await supabase.from('user_devices').upsert({ user_id: userId, device_id: deviceId, last_active: new Date().toISOString() });
-};
-
-export const buySubscription = async (userId: string, plan: string, price: number) => {
-  await supabase.rpc('buy_subscription', { u_id: userId, p_plan: plan, p_price: price });
-};
-
-export const redeemPromocode = async (userId: string, code: string) => {
-  const { data, error } = await supabase.rpc('redeem_promocode', { u_id: userId, p_code: code });
-  if (error) throw error;
-  return data;
-};
-
-export const createTicket = async (userId: string) => {
-  const { data, error } = await supabase.from('support_tickets').insert({ user_id: userId, status: 'open' }).select().single();
-  if (error) throw error;
-  return data;
-};
-
-export const getMyTickets = async (userId: string): Promise<SupportTicket[]> => {
-  const { data } = await supabase.from('support_tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-  return data || [];
-};
-
 export const getDashboardStats = async () => {
-  const { data } = await supabase.rpc('get_dashboard_stats');
-  return data;
-};
-
-export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
-  const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-  return data || [];
+    const { data } = await supabase.rpc('get_dashboard_stats');
+    return data;
 };
 
 export const getAds = async (): Promise<Ad[]> => {
-  const { data } = await supabase.from('ads').select('*');
-  return (data || []).map((ad: any) => ({
-    id: ad.id,
-    name: ad.name,
-    type: ad.type,
-    contentUrl: ad.content_url,
-    targetUrl: ad.target_url,
-    location: ad.location,
-    status: ad.status,
-    view_count: ad.view_count
-  }));
+    const { data } = await supabase.from('ads').select('*').order('id', { ascending: false });
+    return (data || []).map((ad: any) => ({
+        id: ad.id,
+        name: ad.name,
+        type: ad.type,
+        contentUrl: ad.content_url,
+        targetUrl: ad.target_url,
+        location: ad.location,
+        status: ad.status,
+        view_count: ad.view_count
+    }));
 };
 
 export const saveAd = async (ad: Ad) => {
-  const payload = {
-    name: ad.name,
-    type: ad.type,
-    content_url: ad.contentUrl,
-    target_url: ad.targetUrl,
-    location: ad.location,
-    status: ad.status,
-    view_count: ad.view_count
-  };
-  await supabase.from('ads').insert(payload);
+    const { error } = await supabase.from('ads').insert({
+        name: ad.name,
+        type: ad.type,
+        content_url: ad.contentUrl,
+        target_url: ad.targetUrl,
+        location: ad.location,
+        status: ad.status
+    });
+    if (error) throw error;
 };
 
 export const deleteAd = async (id: number) => {
-  await supabase.from('ads').delete().eq('id', id);
+    const { error } = await supabase.from('ads').delete().eq('id', id);
+    if (error) throw error;
 };
 
-export const getShopProducts = async (category: string, sortBy: string, search: string): Promise<ShopProduct[]> => {
-  let query = supabase.from('shop_products').select('*').eq('is_active', true);
-  if (category !== 'all') query = query.eq('category', category);
-  if (search) query = query.ilike('title', `%${search}%`);
-  
-  if (sortBy === 'price_asc') query = query.order('price', { ascending: true });
-  else if (sortBy === 'price_desc') query = query.order('price', { ascending: false });
-  else query = query.order('created_at', { ascending: false });
-
-  const { data } = await query;
-  return data || [];
+export const incrementAdView = async (id: number) => {
+    await supabase.rpc('increment_ad_view', { ad_id: id });
 };
 
-export const getShopWallet = async (userId: string): Promise<ShopWallet | null> => {
-  const { data } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
-  return data as ShopWallet;
+export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
+    const { data } = await supabase.from('movies').select('*').or(`title.ilike.%${query}%,genre.ilike.%${query}%,tags.ilike.%${query}%`).eq('is_archived', false);
+    return (data || []) as Movie[];
 };
 
-export const createShopPaymentRequest = async (userId: string, amount: number, url: string) => {
-  await supabase.from('shop_payments').insert({ user_id: userId, amount, screenshot_url: url, status: 'pending' });
+export const recordTsPaySuccess = async (userId: string, amount: number, tspayId: number) => {
+    const { error } = await supabase.rpc('record_tspay_success', { u_id: userId, amt: amount, t_id: tspayId });
+    if (error) throw error;
 };
 
-export const placeShopOrder = async (userId: string, productId: number, amount: number, address: string, phone: string) => {
-  await supabase.rpc('place_shop_order', { u_id: userId, p_id: productId, amt: amount, addr: address, ph: phone });
+export const getUserHistory = async (userId: string): Promise<Movie[]> => {
+    const { data } = await supabase.from('user_history').select('movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
+    return (data || []).map((item: any) => item.movies) as Movie[];
 };
 
-export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
-  const { data } = await supabase.from('shop_orders').select('*, shop_products(*)').eq('user_id', userId).order('created_at', { ascending: false });
-  return data || [];
+export const updateUserWatchTime = async (userId: string, seconds: number) => {
+    const { error } = await supabase.rpc('increment_watch_time', { u_id: userId, secs: seconds });
+    if (error) console.error(error);
 };
 
-export const getAdminShopProducts = async (): Promise<ShopProduct[]> => {
-  const { data } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
-  return data || [];
+export const getUserSessions = async (userId: string): Promise<UserDevice[]> => {
+    const { data } = await supabase.from('user_devices').select('*').eq('user_id', userId).order('last_active', { ascending: false });
+    return (data || []) as UserDevice[];
 };
 
-export const createShopProduct = async (product: any) => {
-  await supabase.from('shop_products').insert(product);
+export const logDeviceLogin = async (userId: string, deviceId: string) => {
+    const name = navigator.userAgent;
+    const { error } = await supabase.from('user_devices').upsert({ user_id: userId, device_id: deviceId, device_name: name, last_active: new Date().toISOString() });
+    if (error) console.error(error);
 };
 
-export const giveArkGlobalBonus = async (amount: number, desc: string) => {
-  const { data } = await supabase.rpc('give_ark_global_bonus', { amt: amount, description: desc });
-  return data;
+export const checkAndTrackRegistration = async (deviceId: string) => {
+    const { data } = await supabase.from('user_devices').select('is_blocked').eq('device_id', deviceId).maybeSingle();
+    if (data && data.is_blocked) throw new Error("Ushbu qurilma bloklangan.");
 };
 
-export const runArkAutopilot = async () => {
-  const { data, error } = await supabase.rpc('run_ark_autopilot');
-  if (error) throw error;
-  return data;
+export const startFreeTrial = async (userId: string): Promise<string> => {
+    const now = new Date().toISOString();
+    const { error } = await supabase.from('profiles').update({ free_trial_started_at: now }).eq('id', userId);
+    if (error) throw error;
+    return now;
 };
 
-export const toggleArkMarketStatus = async (status: string) => {
-  await supabase.from('ark_settings').upsert({ key: 'game_status', value: status });
+// Added missing functions below
+
+// ATC Tizimi
+export const getATCTransactions = async (userId: string): Promise<ATCTransaction[]> => {
+    const { data } = await supabase.from('atc_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
 };
 
-export const saveArkSchedule = async (schedule: ArkSchedule) => {
-  await supabase.from('ark_settings').upsert({ key: 'market_schedule', value: JSON.stringify(schedule) });
+export const getContestSettings = async () => {
+    const { data } = await supabase.from('contest_settings').select('*');
+    const settings: any = {};
+    (data || []).forEach(s => settings[s.key] = s.value);
+    return settings;
 };
 
-export const createArkAd = async (ad: any) => {
-  await supabase.from('ark_ads').insert(ad);
+export const getContestTasks = async (): Promise<ContestTask[]> => {
+    const { data } = await supabase.from('contest_tasks').select('*');
+    return data || [];
+};
+
+export const claimATCReward = async (userId: string, amount: number, type: string, description: string) => {
+    await supabase.rpc('claim_atc_reward', { u_id: userId, amt: amount, r_type: type, desc: description });
+};
+
+export const convertATCtoUZS = async (userId: string, amount: number, rate: number) => {
+    await supabase.rpc('convert_atc_to_uzs', { u_id: userId, amt: amount, ex_rate: rate });
+};
+
+export const getQuizQuestions = async (count: number): Promise<QuizQuestion[]> => {
+    const { data } = await supabase.from('quiz_questions').select('*').limit(count);
+    return data || [];
+};
+
+export const rewardExtraSpin = async (userId: string, spins: number) => {
+    await supabase.rpc('reward_extra_spin', { u_id: userId, amt: spins });
+};
+
+export const getATCWallet = async (userId: string): Promise<ATCWallet | null> => {
+    const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
+    return data;
+};
+
+export const getContestAds = async (): Promise<ContestAd[]> => {
+    const { data } = await supabase.from('contest_ads').select('*');
+    return data || [];
+};
+
+// ARK Trading
+export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
+    const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
+    return data;
+};
+
+export const getArkMarketHistory = async (): Promise<ArkMarketData[]> => {
+    const { data } = await supabase.from('ark_market_history').select('*').order('created_at', { ascending: true });
+    return data || [];
+};
+
+export const requestArkWithdrawal = async (userId: string, amount: number, card: string, holder: string) => {
+    const { error } = await supabase.from('ark_withdrawals').insert({
+        user_id: userId,
+        amount_ark: amount,
+        card_number: card,
+        card_holder: holder,
+        status: 'pending'
+    });
+    if (error) throw error;
+};
+
+export const getArkSettings = async () => {
+    const { data } = await supabase.from('ark_settings').select('*');
+    const settings: any = {};
+    (data || []).forEach(s => settings[s.key] = s.value);
+    return settings;
+};
+
+export const getArkAds = async (): Promise<ArkAd[]> => {
+    const { data } = await supabase.from('ark_ads').select('*').eq('is_active', true);
+    return data || [];
+};
+
+export const getArkQuizzes = async (): Promise<ArkQuiz[]> => {
+    const { data } = await supabase.from('ark_quizzes').select('*');
+    return data || [];
+};
+
+export const recordArkSpinResult = async (userId: string, prize: WheelPrize) => {
+    await supabase.rpc('record_ark_spin', { u_id: userId, p_val: prize.value, p_type: prize.type });
+};
+
+export const rewardArkSpins = async (userId: string, spins: number) => {
+    await supabase.rpc('reward_ark_spins', { u_id: userId, amt: spins });
+};
+
+export const claimArkAdReward = async (userId: string, amount: number, title: string) => {
+    await supabase.rpc('claim_ark_ad_reward', { u_id: userId, amt: amount, ad_title: title });
+};
+
+// Billing
+export const createPaymentRequest = async (userId: string, amount: number, screenshotUrl: string) => {
+    const { error } = await supabase.from('payment_requests').insert({ user_id: userId, amount, screenshot_url: screenshotUrl });
+    if (error) throw error;
+};
+
+// Broadcasts
+export const getBroadcasts = async (): Promise<Broadcast[]> => {
+    const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const createBroadcast = async (broadcast: Partial<Broadcast>) => {
+    const { error } = await supabase.from('broadcasts').insert(broadcast);
+    if (error) throw error;
+};
+
+export const deleteBroadcast = async (id: number) => {
+    const { error } = await supabase.from('broadcasts').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// Cash Contest Admin
+export const updateArkSettings = async (key: string, value: string) => {
+    const { error } = await supabase.from('ark_settings').upsert({ key, value });
+    if (error) throw error;
+};
+
+export const getArkWithdrawals = async (): Promise<ArkWithdrawal[]> => {
+    const { data } = await supabase.from('ark_withdrawals').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const approveArkWithdrawal = async (id: number) => {
+    await supabase.rpc('approve_ark_withdrawal', { w_id: id });
+};
+
+export const updateContestSetting = async (key: string, value: string) => {
+    await supabase.from('contest_settings').upsert({ key, value });
+};
+
+export const createArkAd = async (ad: Partial<ArkAd>) => {
+    const { error } = await supabase.from('ark_ads').insert(ad);
+    if (error) throw error;
 };
 
 export const deleteArkAd = async (id: number) => {
-  await supabase.from('ark_ads').delete().eq('id', id);
+    const { error } = await supabase.from('ark_ads').delete().eq('id', id);
+    if (error) throw error;
 };
 
-export const createArkQuiz = async (quiz: any) => {
-  await supabase.from('ark_quizzes').insert(quiz);
+export const createArkQuiz = async (quiz: Partial<ArkQuiz>) => {
+    const { error } = await supabase.from('ark_quizzes').insert(quiz);
+    if (error) throw error;
 };
 
 export const deleteArkQuiz = async (id: number) => {
-  await supabase.from('ark_quizzes').delete().eq('id', id);
+    const { error } = await supabase.from('ark_quizzes').delete().eq('id', id);
+    if (error) throw error;
+};
+
+export const giveArkGlobalBonus = async (amount: number, message: string) => {
+    await supabase.rpc('give_ark_global_bonus', { amt: amount, msg: message });
+};
+
+export const runArkAutopilot = async () => {
+    const { data, error } = await supabase.rpc('run_ark_autopilot');
+    if (error) throw error;
+    return data;
+};
+
+export const toggleArkMarketStatus = async (status: string) => {
+    await updateArkSettings('game_status', status);
+};
+
+export const saveArkSchedule = async (schedule: ArkSchedule) => {
+    await updateArkSettings('market_schedule', JSON.stringify(schedule));
+};
+
+// Social Links
+export const getSocialLinks = async (): Promise<SocialLink[]> => {
+    const { data } = await supabase.from('social_links').select('*');
+    return data || [];
+};
+
+export const addSocialLink = async (link: Partial<SocialLink>) => {
+    await supabase.from('social_links').insert(link);
+};
+
+export const deleteSocialLink = async (id: number) => {
+    await supabase.from('social_links').delete().eq('id', id);
+};
+
+// Financials Admin
+export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
+    const { data } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const approvePaymentRequest = async (id: number, userId: string, amount: number) => {
+    await supabase.rpc('approve_payment_request', { req_id: id, u_id: userId, amt: amount });
+};
+
+export const rejectPaymentRequest = async (id: number) => {
+    await supabase.from('payment_requests').update({ status: 'rejected' }).eq('id', id);
+};
+
+export const getPremiumUsers = async () => {
+    const { data } = await supabase.from('profiles').select('*').gt('balance', 0);
+    return data || [];
+};
+
+export const adminAdjustUserBalance = async (userId: string, amount: number, type: 'add' | 'deduct', description: string) => {
+    const finalAmount = type === 'add' ? amount : -amount;
+    await supabase.rpc('admin_adjust_balance', { u_id: userId, amt: finalAmount, desc: description });
+};
+
+export const getUserByEmail = async (email: string) => {
+    const { data } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+    return data;
+};
+
+export const giveGlobalBonus = async (amount: number, description: string) => {
+    const { data, error } = await supabase.rpc('give_global_bonus', { amt: amount, desc: description });
+    if (error) throw error;
+    return data;
+};
+
+// Movies Admin
+export const getAdminMovies = async (): Promise<Movie[]> => {
+    const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const addMovieToDB = async (movie: Partial<Movie>) => {
+    const { data, error } = await supabase.from('movies').insert(movie).select().single();
+    if (error) throw error;
+    return data;
+};
+
+export const updateMovieInDB = async (id: number, movie: Partial<Movie>) => {
+    const { error } = await supabase.from('movies').update(movie).eq('id', id);
+    if (error) throw error;
+};
+
+export const deleteMovieFromDB = async (id: number) => {
+    const { error } = await supabase.from('movies').delete().eq('id', id);
+    if (error) throw error;
+};
+
+export const toggleMovieArchive = async (id: number, status: boolean) => {
+    await supabase.from('movies').update({ is_archived: status }).eq('id', id);
+};
+
+// Promocodes
+export const getPromocodes = async (): Promise<Promocode[]> => {
+    const { data } = await supabase.from('promocodes').select('*').order('id', { ascending: false });
+    return data || [];
+};
+
+export const savePromocode = async (promocode: Promocode) => {
+    const { error } = await supabase.from('promocodes').insert(promocode);
+    if (error) throw error;
+};
+
+export const deletePromocode = async (id: number) => {
+    await supabase.from('promocodes').delete().eq('id', id);
+};
+
+// Security
+export const getAdminPin = async (): Promise<string> => {
+    const config = await getAppConfig();
+    return config['admin_pin'] || '0000';
+};
+
+export const setAdminPin = async (pin: string) => {
+    await updateAppConfig('admin_pin', pin);
+};
+
+export const getProtectedRoutes = async (): Promise<string[]> => {
+    const config = await getAppConfig();
+    return JSON.parse(config['protected_routes'] || '[]');
+};
+
+export const setProtectedRoutes = async (routes: string[]) => {
+    await updateAppConfig('protected_routes', JSON.stringify(routes));
+};
+
+export const saveRecoveryCodes = async (codes: string[]) => {
+    await updateAppConfig('admin_recovery_codes', JSON.stringify(codes));
+};
+
+export const verifyRecoveryCode = async (code: string): Promise<boolean> => {
+    const config = await getAppConfig();
+    const codes = JSON.parse(config['admin_recovery_codes'] || '[]');
+    return codes.includes(code);
+};
+
+export const getRecoveryCodesStatus = async (): Promise<boolean> => {
+    const config = await getAppConfig();
+    const codes = JSON.parse(config['admin_recovery_codes'] || '[]');
+    return codes.length > 0;
+};
+
+// Sessions
+export const getAllSessions = async (): Promise<UserDevice[]> => {
+    const { data } = await supabase.from('user_devices').select('*, profiles(full_name, email, role)').order('last_active', { ascending: false });
+    return data || [];
+};
+
+export const toggleDeviceBlock = async (id: number, status: boolean) => {
+    await supabase.from('user_devices').update({ is_blocked: status }).eq('id', id);
+};
+
+// User Profile Passwords & Emails (Wrappers for Supabase Auth)
+export const updateUserPassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+};
+
+export const updateUserEmail = async (email: string) => {
+    const { error } = await supabase.auth.updateUser({ email });
+    if (error) throw error;
+};
+
+// Support
+export const getAllTickets = async (): Promise<SupportTicket[]> => {
+    const { data } = await supabase.from('support_tickets').select('*, profiles(full_name)').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const getTicketMessages = async (ticketId: number): Promise<TicketMessage[]> => {
+    const { data } = await supabase.from('ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true });
+    return data || [];
+};
+
+export const sendMessage = async (ticketId: number, userId: string, message: string, isAdmin: boolean) => {
+    await supabase.from('ticket_messages').insert({ ticket_id: ticketId, user_id: userId, message, is_admin: isAdmin });
+};
+
+export const getNews = async (): Promise<News[]> => {
+    const { data } = await supabase.from('news').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const createNews = async (title: string, content: string) => {
+    await supabase.from('news').insert({ title, content });
+};
+
+export const deleteNews = async (id: number) => {
+    await supabase.from('news').delete().eq('id', id);
+};
+
+// Users Management
+export const getAllUsers = async (): Promise<UserProfile[]> => {
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const deleteUser = async (id: string) => {
+    // This usually requires admin level auth which is handled by Supabase policies or edge functions
+    // For now we assume a direct delete on profiles if allowed
+    await supabase.from('profiles').delete().eq('id', id);
+};
+
+// Subscriptions
+export const buySubscription = async (userId: string, plan: string, price: number) => {
+    await supabase.rpc('buy_subscription', { u_id: userId, s_plan: plan, p_cost: price });
+};
+
+export const redeemPromocode = async (userId: string, code: string) => {
+    const { data, error } = await supabase.rpc('redeem_promocode', { u_id: userId, p_code: code });
+    if (error) throw error;
+    return data;
+};
+
+// Ticket Creation
+export const createTicket = async (userId: string): Promise<SupportTicket> => {
+    const { data, error } = await supabase.from('support_tickets').insert({ user_id: userId, status: 'open' }).select().single();
+    if (error) throw error;
+    return data;
+};
+
+export const getMyTickets = async (userId: string): Promise<SupportTicket[]> => {
+    const { data } = await supabase.from('support_tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
+};
+
+// Account History
+export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
+    const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
+};
+
+// Shop
+export const getShopProducts = async (category: string, sortBy: string, query: string): Promise<ShopProduct[]> => {
+    let q = supabase.from('shop_products').select('*').eq('is_active', true);
+    if (category !== 'all') q = q.eq('category', category);
+    if (query) q = q.ilike('title', `%${query}%`);
+    
+    switch (sortBy) {
+        case 'price_asc': q = q.order('price', { ascending: true }); break;
+        case 'price_desc': q = q.order('price', { ascending: false }); break;
+        default: q = q.order('created_at', { ascending: false }); break;
+    }
+    
+    const { data } = await q;
+    return data || [];
+};
+
+export const getShopWallet = async (userId: string): Promise<ShopWallet | null> => {
+    const { data } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
+    return data;
+};
+
+export const createShopPaymentRequest = async (userId: string, amount: number, screenshotUrl: string) => {
+    await supabase.from('shop_payment_requests').insert({ user_id: userId, amount, screenshot_url: screenshotUrl });
+};
+
+export const placeShopOrder = async (userId: string, productId: number, amount: number, address: string, phone: string) => {
+    await supabase.rpc('place_shop_order', { u_id: userId, p_id: productId, amt: amount, addr: address, ph: phone });
+};
+
+export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
+    const { data } = await supabase.from('shop_orders').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const getAdminShopProducts = async (): Promise<ShopProduct[]> => {
+    const { data } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const createShopProduct = async (product: Partial<ShopProduct>) => {
+    await supabase.from('shop_products').insert(product);
 };
