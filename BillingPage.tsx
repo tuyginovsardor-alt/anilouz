@@ -5,7 +5,7 @@ import { createPaymentRequest, uploadFile } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { useNotification } from './hooks/useNotification';
 import { createTsPayTransaction } from './services/tspayService';
-import { CreditCard, Zap, CheckCircle, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
+import { CreditCard, Zap, Loader2 } from 'lucide-react';
 
 export const BillingPage: React.FC = () => {
     const [amount, setAmount] = useState('');
@@ -30,22 +30,21 @@ export const BillingPage: React.FC = () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Avval tizimga kiring.");
 
-            // Edge Function orqali xavfsiz tranzaksiya yaratish
             const res = await createTsPayTransaction(Number(tsAmount), user.id);
             
             if (res.status === 'success' && res.transaction?.url) {
-                // To'lov ID sini saqlab qo'yamiz (App.tsx da tekshirish uchun)
                 localStorage.setItem('tspay_pending_id', String(res.transaction.id));
                 localStorage.setItem('tspay_pending_amount', tsAmount);
                 
                 addNotification({ type: 'success', title: 'Tayyor', message: "To'lov sahifasiga o'tilmoqda..." });
                 window.location.href = res.transaction.url;
             } else {
-                throw new Error(res.message || "To'lov tizimida xatolik yuz berdi.");
+                // TsPay qaytargan aniq xabarni ko'rsatamiz
+                throw new Error(res.message || "To'lov tizimi rad etdi.");
             }
         } catch (e: any) {
             console.error(e);
-            addNotification({ type: 'error', title: 'Xatolik', message: e.message });
+            addNotification({ type: 'error', title: 'To\'lovda Xatolik', message: e.message });
         } finally {
             setIsTsPayLoading(false);
         }
