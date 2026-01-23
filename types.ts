@@ -99,348 +99,6 @@ export interface Ad {
     view_count?: number;
 }
 
-// --- ADDED MISSING TYPES ---
-
-/**
- * ATC (Anilo Token Coin) Wallet structure
- */
-export interface ATCWallet {
-    id: string;
-    user_id: string;
-    balance: number;
-    total_earned: number;
-    total_converted: number;
-    active_days: number;
-    extra_spins: number;
-    last_spin_at: string | null;
-}
-
-/**
- * ATC internal transaction log
- */
-export interface ATCTransaction {
-    id: number;
-    user_id: string;
-    amount: number;
-    type: string;
-    description: string;
-    created_at: string;
-}
-
-/**
- * Social and interaction tasks for ATC rewards
- */
-export interface ContestTask {
-    id: number;
-    label: string;
-    url: string;
-    reward_atc: number;
-    platform: 'telegram' | 'instagram' | 'youtube' | 'facebook' | 'other';
-    created_at: string;
-}
-
-/**
- * Common wheel prize structure used in various mini-games
- */
-export interface WheelPrize {
-    id: number | string;
-    label: string;
-    value: number;
-    type: 'atc' | 'uzs' | 'ark' | 'loss' | 'box';
-    color: string;
-    probability: number;
-}
-
-/**
- * Quiz question structure for extra spins/rewards
- */
-export interface QuizQuestion {
-    id: number;
-    question: string;
-    option_a: string;
-    option_b: string;
-    option_c: string;
-    option_d: string;
-    correct_option: string;
-    created_at: string;
-}
-
-/**
- * Ad format specifically for the contest sections
- */
-export interface ContestAd {
-    id: number;
-    title: string;
-    media_url: string;
-    media_type: 'video' | 'image';
-    reward_atc: number;
-    duration_sec: number;
-    is_active: boolean;
-    created_at: string;
-}
-
-/**
- * ARK Trading internal wallet
- */
-export interface ArkWallet {
-    id: string;
-    user_id: string;
-    balance: number;
-    total_earned: number;
-    available_spins: number;
-    created_at: string;
-}
-
-/**
- * Historical market data for ARK price charting
- */
-export interface ArkMarketData {
-    id: number;
-    price: number;
-    created_at: string;
-}
-
-/**
- * ARK specific ad tasks
- */
-export interface ArkAd {
-    id: number;
-    title: string;
-    media_url: string;
-    media_type: 'video' | 'image';
-    reward_ark: number;
-    duration_sec: number;
-    is_active: boolean;
-    view_count?: number;
-    created_at: string;
-}
-
-/**
- * ARK specific quiz questions
- */
-export interface ArkQuiz {
-    id: number;
-    question: string;
-    option_a: string;
-    option_b: string;
-    option_c: string;
-    option_d: string;
-    correct_option: string;
-    reward_spins: number;
-    created_at: string;
-}
-
-/**
- * System-wide broadcasts for users
- */
-export interface Broadcast {
-    id: number;
-    title: string;
-    message: string;
-    type: 'info' | 'warning' | 'urgent';
-    target_group: 'all' | 'premium' | 'user';
-    created_at: string;
-}
-
-/**
- * Financial withdrawal requests for the ARK system
- */
-export interface ArkWithdrawal {
-    id: number;
-    user_id: string;
-    amount_ark: number;
-    amount_uzs: number;
-    card_number: string;
-    card_holder: string;
-    status: 'pending' | 'approved' | 'rejected';
-    created_at: string;
-    profiles?: {
-        full_name: string | null;
-        email: string;
-    };
-}
-
-/**
- * ARK Market autopilot pricing algorithm config
- */
-export interface ArkAutopilotConfig {
-    unit_views: number;
-    revenue_per_unit: number;
-    market_share_percent: number;
-}
-
-/**
- * Market growth scheduling
- */
-export interface ArkSchedule {
-    start_date: string;
-    duration_hours: number;
-    growth_percent: number;
-    is_active: boolean;
-}
-
-/**
- * Generic content item for carousels
- */
-export interface ContentItem {
-    id: number;
-    title: string;
-    imageUrl: string;
-}
-
-/**
- * Social media link entry
- */
-export interface SocialLink {
-    id: number;
-    platform: 'instagram' | 'telegram' | 'youtube' | 'facebook' | 'globe';
-    url: string;
-    label: string;
-    created_at: string;
-}
-
-/**
- * User-submitted payment proof entry
- */
-export interface PaymentRequestDB {
-    id: number;
-    user_id: string;
-    amount: number;
-    screenshot_url: string;
-    status: 'pending' | 'approved' | 'rejected';
-    created_at: string;
-    profiles?: {
-        full_name: string | null;
-        email: string;
-    };
-}
-
-/**
- * Active login session/device entry
- */
-export interface UserDevice {
-    id: number;
-    user_id: string;
-    device_id: string;
-    device_name: string;
-    last_active: string;
-    is_blocked: boolean;
-    profiles?: {
-        full_name: string | null;
-        email: string;
-        role: string;
-    };
-}
-
-/**
- * Discount promocode entry
- */
-export interface Promocode {
-    id?: number;
-    code: string;
-    type: 'percentage' | 'fixed';
-    value: number;
-    usage_limit: number | null;
-    used_count: number;
-    expires_at: string | null;
-    status: 'active' | 'inactive' | 'expired';
-}
-
-/**
- * Support ticket entry
- */
-export interface SupportTicket {
-    id: number;
-    user_id: string;
-    status: 'open' | 'closed';
-    created_at: string;
-    profiles?: {
-        full_name: string | null;
-        email: string;
-    };
-}
-
-/**
- * Message within a support ticket
- */
-export interface TicketMessage {
-    id: number;
-    ticket_id: number;
-    sender_id: string;
-    message: string;
-    is_admin: boolean;
-    created_at: string;
-}
-
-/**
- * Site news entry
- */
-export interface News {
-    id: number;
-    title: string;
-    content: string;
-    created_at: string;
-}
-
-/**
- * Standard financial transaction record
- */
-export interface Transaction {
-    id: number;
-    user_id: string;
-    amount: number;
-    type: string;
-    description: string;
-    created_at: string;
-}
-
-/**
- * Merch store product entry
- */
-export interface ShopProduct {
-    id: number;
-    title: string;
-    price: number;
-    discount_percent?: number;
-    rating?: number;
-    delivery_time?: string;
-    description: string;
-    category: 'figure' | 'clothing' | 'accessory' | 'other';
-    image_url: string;
-    specifications: Record<string, string>;
-    stock_count: number;
-    sales_count?: number;
-    is_active: boolean;
-    created_at: string;
-}
-
-/**
- * Shop-specific credits wallet
- */
-export interface ShopWallet {
-    id: string;
-    user_id: string;
-    balance: number;
-    created_at: string;
-}
-
-/**
- * Merch order entry
- */
-export interface ShopOrder {
-    id: number;
-    user_id: string;
-    product_id: number;
-    amount_paid: number;
-    address: string;
-    phone: string;
-    status: 'pending' | 'shipped' | 'delivered' | 'canceled';
-    created_at: string;
-}
-
-/**
- * Fandub project upload entry for moderation
- */
 export interface FandubUpload {
     id: number;
     user_id: string;
@@ -464,15 +122,247 @@ export interface FandubUpload {
     };
 }
 
-/**
- * AI Chat message
+/** 
+ * Added missing types based on component errors 
  */
-export interface Message {
+
+export interface ATCWallet {
   id: string;
-  text: string;
-  sender: Sender;
-  timestamp: number;
-  isError?: boolean;
+  user_id: string;
+  balance: number;
+  total_earned: number;
+  total_converted: number;
+  active_days: number;
+  extra_spins: number;
+  last_spin_at: string | null;
+}
+
+export interface ATCTransaction {
+  id: number;
+  user_id: string;
+  amount: number;
+  type: string;
+  description: string;
+  created_at: string;
+}
+
+export interface ContestTask {
+  id: number;
+  label: string;
+  url: string;
+  reward_atc: number;
+  platform: 'telegram' | 'instagram' | 'youtube' | 'facebook' | 'other';
+  is_active: boolean;
+}
+
+export interface WheelPrize {
+  id: number;
+  label: string;
+  value: number;
+  type: 'atc' | 'uzs' | 'loss' | 'ark' | 'box';
+  color: string;
+  probability: number;
+}
+
+export interface QuizQuestion {
+  id: number;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: string;
+  reward_atc?: number;
+  created_at: string;
+}
+
+export interface ContestAd {
+  id: number;
+  title: string;
+  media_type: 'video' | 'image';
+  media_url: string;
+  reward_atc: number;
+  duration_sec: number;
+  is_active: boolean;
+}
+
+export interface ArkWallet {
+  user_id: string;
+  balance: number;
+  available_spins: number;
+  total_earned: number;
+  created_at: string;
+}
+
+export interface ArkMarketData {
+  id: number;
+  price: number;
+  created_at: string;
+}
+
+export interface ArkAd {
+  id: number;
+  title: string;
+  media_type: 'video' | 'image';
+  media_url: string;
+  reward_ark: number;
+  duration_sec: number;
+  is_active: boolean;
+  view_count?: number;
+}
+
+export interface ArkQuiz {
+  id: number;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: string;
+  reward_spins: number;
+}
+
+export interface ArkWithdrawal {
+  id: number;
+  user_id: string;
+  amount_ark: number;
+  amount_uzs: number;
+  card_number: string;
+  card_holder: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  profiles?: UserProfile;
+}
+
+export interface ArkAutopilotConfig {
+  unit_views: number;
+  revenue_per_unit: number;
+  market_share_percent: number;
+}
+
+export interface ArkSchedule {
+  start_date: string;
+  duration_hours: number;
+  growth_percent: number;
+  is_active: boolean;
+}
+
+export interface ContentItem {
+  id: number;
+  title: string;
+  imageUrl: string;
+}
+
+export interface SocialLink {
+  id: number;
+  platform: 'instagram' | 'telegram' | 'youtube' | 'facebook' | 'globe';
+  url: string;
+  label: string;
+}
+
+export interface PaymentRequestDB {
+  id: number;
+  user_id: string;
+  amount: number;
+  screenshot_url: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  profiles?: UserProfile;
+}
+
+export interface UserDevice {
+  id: number;
+  user_id: string;
+  device_id: string;
+  device_name: string;
+  last_active: string;
+  is_blocked: boolean;
+  profiles?: UserProfile;
+}
+
+export interface Promocode {
+  id?: number;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  usage_limit: number | null;
+  used_count: number;
+  expires_at: string | null;
+  status: 'active' | 'inactive' | 'expired';
+}
+
+export interface SupportTicket {
+  id: number;
+  user_id: string;
+  status: 'open' | 'closed';
+  created_at: string;
+  profiles?: UserProfile;
+}
+
+export interface TicketMessage {
+  id: number;
+  ticket_id: number;
+  sender_id: string;
+  message: string;
+  is_admin: boolean;
+  created_at: string;
+}
+
+export interface News {
+  id: number;
+  title: string;
+  content: string;
+  created_at: string;
+}
+
+export interface Transaction {
+  id: number;
+  user_id: string;
+  amount: number;
+  description: string;
+  created_at: string;
+}
+
+export interface ShopProduct {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  discount_percent?: number;
+  category: ' figure' | 'clothing' | 'accessory' | 'other';
+  image_url: string;
+  rating: number;
+  sales_count: number;
+  stock_count: number;
+  delivery_time: string;
+  specifications: Record<string, string>;
+  is_active: boolean;
+}
+
+export interface ShopWallet {
+  user_id: string;
+  balance: number;
+}
+
+export interface ShopOrder {
+  id: number;
+  user_id: string;
+  product_id: number;
+  amount: number;
+  address: string;
+  phone: string;
+  status: 'pending' | 'shipped' | 'delivered' | 'canceled';
+  created_at: string;
+  product?: ShopProduct;
+}
+
+export interface Broadcast {
+  id: number;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'urgent';
+  target_group: 'all' | 'premium' | 'user';
+  created_at: string;
 }
 
 export enum Sender {
@@ -481,27 +371,26 @@ export enum Sender {
   System = 'system'
 }
 
-/**
- * AI Assistant view state
- */
+export interface Message {
+  id: string;
+  text: string;
+  sender: Sender;
+  timestamp: number;
+  isError?: boolean;
+}
+
 export enum AppView {
   Chat = 'chat',
   Settings = 'settings',
   About = 'about'
 }
 
-/**
- * Persistent chat session
- */
 export interface ChatSession {
   id: string;
   title: string;
-  lastMessageAt: number;
+  created_at: number;
 }
 
-/**
- * Language analysis result (for AI tool)
- */
 export interface CulturalAnalysis {
   detectedLanguage: string;
   isoCode: string;
