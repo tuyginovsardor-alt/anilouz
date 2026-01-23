@@ -28,97 +28,105 @@ serve(async (req) => {
     if (!token) {
         return new Response(JSON.stringify({ 
             status: 'error', 
-            message: "Tizimda API Token o'rnatilmagan (Secret is null)." 
+            message: "API Token topilmadi." 
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
-    // 1. TsPay WEBHOOK
+    // 1. Webhook (To'lov tasdiqlanganda)
     if (!body.action && (body.pay_status || body.status)) {
-      console.log("Webhook received:", body);
       const status = body.pay_status || body.status;
-      const amount = Number(body.amount);
-      const comment = body.comment || "";
-      const orderId = body.id || body.cheque_id || 0;
-
       if (status === 'paid' || status === 'success') {
+        const amount = Number(body.amount);
+        const comment = body.comment || "";
+        const orderId = body.id || body.cheque_id || 0;
         const userIdMatch = comment.match(/([a-f0-9-]{36})/i);
         const userId = userIdMatch ? userIdMatch[1] : null;
 
         if (userId && amount) {
-          const { error: rpcError } = await supabaseAdmin.rpc('record_tspay_success', {
-            u_id: userId,
-            amt: amount,
-            o_id: Number(orderId)
-          });
-          if (rpcError) console.error("RPC Error:", rpcError);
+          await supabaseAdmin.rpc('record_tspay_success', { u_id: userId, amt: amount, o_id: Number(orderId) });
         }
       }
-      return new Response(JSON.stringify({ status: 'ok' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+      return new Response(JSON.stringify({ status: 'ok' }), { headers: corsHeaders });
     }
 
-    // 2. FRONTEND: To'lov yaratish
+    // 2. To'lov yaratish
     if (body.action === 'create') {
       const amount = Math.floor(Number(body.amount));
-      
-      console.log(`TsPay Request: Summa=${amount}, Token=${token.substring(0, 5)}...`);
+      const TSPAY_API_URL = 'https://tspay.uz/api/v1/transactions/create/';
 
-      const tsResponse = await fetch('https://tspay.uz/api/v1/transactions/create', {
+      const tsResponse = await fetch(TSPAY_API_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
           amount: amount,
           access_token: token,
-          comment: `Anilo.uz ID: ${body.user_id}`,
+          comment: `Anilo.uz: ${body.user_id}`,
           redirect_url: 'https://anilo.uz/dashboard/account'
         })
       });
+      
+      const data = await tsResponse.json();
+      console.log("TsPay Raw Response:", JSON.stringify(data));
 
-      // Agar TsPay JSON qaytarmasa (masalan 503 HTML xatosi)
-      const contentType = tsResponse.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-          const data = await tsResponse.json();
-          if (tsResponse.ok && (data.pay_url || data.url)) {
-              return new Response(JSON.stringify({ 
-                  status: 'success', 
-                  transaction: { url: data.pay_url || data.url, id: data.id || data.cheque_id } 
-              }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
-          } else {
-              return new Response(JSON.stringify({ 
-                  status: 'error', 
-                  message: `TsPay API Error: ${data.message || JSON.stringify(data)}` 
-              }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+      // 200 va 201 kodlari muvaffaqiyatli
+      const isOk = tsResponse.status === 200 || tsResponse.status === 201;
+      
+      /**
+       * Deep Search: JSON ichidagi barcha propertylarni tekshiradi
+       */
+      const findUrlDeep = (obj: any): string | null => {
+          if (!obj || typeof obj !== 'object') return null;
+          
+          // 1-bosqich: To'g'ridan-to'g'ri kalitlarni tekshirish
+          const priorityKeys = ['pay_url', 'url', 'payment_url', 'link', 'pay_link', 'payment_page_url', 'checkout_url'];
+          for (const key of priorityKeys) {
+              if (typeof obj[key] === 'string' && obj[key].startsWith('http')) return obj[key];
           }
+
+          // 2-bosqich: Ob'ekt ichidagi barcha stringlarni tekshirish (agar kalit nomi boshqacha bo'lsa)
+          for (const key in obj) {
+              if (typeof obj[key] === 'string' && obj[key].startsWith('https://checkout.tspay.uz')) {
+                  return obj[key];
+              }
+              // Agar ichki ob'ekt bo'lsa, rekursiya
+              if (typeof obj[key] === 'object') {
+                  const found = findUrlDeep(obj[key]);
+                  if (found) return found;
+              }
+          }
+          return null;
+      };
+
+      const payUrl = findUrlDeep(data);
+      // Tranzaksiya ID sini ham har xil joydan qidiramiz
+      const transactionId = data.id || (data.data && data.data.id) || (data.result && data.result.id) || data.cheque_id;
+
+      if (isOk && payUrl) {
+          return new Response(JSON.stringify({ 
+              status: 'success', 
+              transaction: { url: payUrl, id: transactionId } 
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       } else {
-          // 503 yoki HTML xatolarni o'qish
-          const errorText = await tsResponse.text();
-          console.error("TsPay Non-JSON Error:", errorText);
+          // Xatolik haqida batafsilroq ma'lumot
+          const errorMsg = data.message || data.error || (data.data && data.data.error);
           return new Response(JSON.stringify({ 
               status: 'error', 
-              message: `TsPay Server Error (${tsResponse.status}): TsPay serveri vaqtincha ishlamayapti yoki so'rov rad etildi.` 
+              message: errorMsg || `TsPay havolani yubormadi (Status: ${tsResponse.status}). JSON javobini loglarda ko'ring.` 
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       }
     }
 
-    // 3. FRONTEND: Tekshirish
+    // 3. To'lovni tekshirish
     if (body.action === 'check') {
       const response = await fetch(`https://tspay.uz/api/v1/transactions/${body.cheque_id}/?access_token=${token}`)
       const data = await response.json()
-      return new Response(JSON.stringify({ status: 'success', data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      })
+      return new Response(JSON.stringify({ status: 'success', data }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ status: 'error', message: 'Noma\'lum amal' }), { status: 200 })
+    return new Response(JSON.stringify({ status: 'error', message: 'Noma\'lum amal' }), { status: 200 });
 
   } catch (error: any) {
-    console.error("Critical Function Error:", error.message);
-    return new Response(JSON.stringify({ 
-        status: 'error', 
-        message: "Serverda ichki xatolik: " + error.message 
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+    console.error("Function Error:", error);
+    return new Response(JSON.stringify({ status: 'error', message: "Edge Function xatosi: " + error.message }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 })

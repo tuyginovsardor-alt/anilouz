@@ -12,7 +12,7 @@ interface MovieDetailPageProps {
   movie: Movie;
   onBack: () => void;
   onPlay: () => void;
-  onEpisodePlay?: (episode: Episode) => void; // New Prop
+  onEpisodePlay?: (episode: Episode) => void;
   onArtistClick?: (userId: string) => void;
 }
 
@@ -82,7 +82,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
           await addReview(movie.id!, userProfile.id, rating, commentText);
           setCommentText('');
           setRating(5);
-          // Refresh reviews
           const revs = await getMovieReviews(movie.id!);
           setReviews(revs);
           addNotification({ type: 'success', title: 'Rahmat!', message: 'Sharhingiz qabul qilindi.' });
@@ -107,7 +106,13 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
           addNotification({ type: 'warning', title: 'Premium Kerak', message: 'Ushbu animeni ko\'rish uchun obuna bo\'lishingiz shart.' });
           return;
       }
-      onPlay();
+      
+      // Agar epizodlar bo'lsa avtomatik 1-qismni ochish
+      if (episodes.length > 0 && onEpisodePlay) {
+          onEpisodePlay(episodes[0]);
+      } else {
+          onPlay();
+      }
   };
 
   const handleEpisodeClick = (episode: Episode) => {
@@ -140,9 +145,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   return (
     <div className="bg-[#050505] min-h-screen text-white pb-32 overflow-x-hidden">
         
-        {/* HERO SECTION - FULL HEIGHT */}
+        {/* HERO SECTION */}
         <div className="relative w-full h-[100vh] overflow-hidden">
-            {/* Background Image - Full Coverage */}
             <div 
                 className="absolute inset-0 z-0 will-change-transform"
                 style={{ 
@@ -151,13 +155,10 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 }}
             >
                 <img src={movie.posterUrl} alt="" className="w-full h-full object-cover" />
-                {/* Gradient faqat pastdan */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent"></div>
-                {/* Gradient tepadan juda yupqa, matn o'qilishi uchun emas, shunchaki estetika */}
                 <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/40 to-transparent pointer-events-none"></div>
             </div>
 
-            {/* Transparent Header Icons (Absolute Positioning at Top) */}
             <div className="absolute top-0 left-0 right-0 pt-6 px-4 md:px-8 flex justify-between items-center z-[100] animate-fade-in">
                 <button 
                     onClick={onBack} 
@@ -178,7 +179,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 </div>
             </div>
 
-            {/* Content Overlay */}
             <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16 max-w-7xl mx-auto w-full z-10 pb-32">
                 <div 
                     className="max-w-4xl space-y-6 animate-fade-in"
@@ -218,7 +218,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 </div>
             </div>
             
-            {/* Scroll Down Indicator */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce opacity-60 z-20">
                 <ChevronDown size={36} />
             </div>
@@ -244,7 +243,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 ))}
             </div>
 
-            {/* TAB CONTENTS */}
             <div className="animate-fade-in min-h-[500px]">
                 {activeTab === 'episodes' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

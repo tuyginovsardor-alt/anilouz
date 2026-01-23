@@ -35,20 +35,26 @@ export const Header: React.FC<HeaderProps> = ({
       });
 
       if (isAuthenticated) {
-          const fetchHeaderData = async () => {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                  const [count, profile] = await Promise.all([
-                      db.getUnreadNotificationsCount(user.id),
-                      db.getUserProfile(user.id)
-                  ]);
-                  setUnreadCount(count);
-                  if (profile) setAvatarUrl(profile.avatar_url);
-              }
-          };
           fetchHeaderData();
+          // Real vaqtda bildirishnomalarni tekshirish (Polling)
+          const interval = setInterval(fetchHeaderData, 15000); // 15 sekundda bir
+          return () => clearInterval(interval);
       }
   }, [isAuthenticated]);
+
+  const fetchHeaderData = async () => {
+      try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+              const [count, profile] = await Promise.all([
+                  db.getUnreadNotificationsCount(user.id),
+                  db.getUserProfile(user.id)
+              ]);
+              setUnreadCount(count);
+              if (profile) setAvatarUrl(profile.avatar_url);
+          }
+      } catch (e) { console.error(e); }
+  };
 
   const navLinks = [
     { id: 'welcome', label: 'Asosiy' },
@@ -87,10 +93,10 @@ export const Header: React.FC<HeaderProps> = ({
                 <button onClick={onSearchClick} className="p-2 text-white hover:text-orange-500 transition-colors drop-shadow-md active:scale-95">
                     <Search size={26} strokeWidth={2.5} />
                 </button>
-                <button className="p-2 text-white hover:text-orange-500 transition-colors relative drop-shadow-md active:scale-95">
-                    <Bell size={26} strokeWidth={2.5} />
+                <button className="p-2 text-white hover:text-orange-500 transition-colors relative drop-shadow-md active:scale-95 group">
+                    <Bell size={26} strokeWidth={2.5} className={unreadCount > 0 ? "animate-swing" : ""} />
                     {unreadCount > 0 && (
-                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-orange-600 rounded-full border border-black text-[8px] flex items-center justify-center text-white font-bold">
+                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 rounded-full border border-black text-[8px] flex items-center justify-center text-white font-black animate-pulse">
                             {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}
