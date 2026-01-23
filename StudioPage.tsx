@@ -10,7 +10,13 @@ import { getMovies, getFandubChannels, getActiveStories, toggleFollowChannel } f
 import { MovieCard } from './components/MovieCard';
 import { useNotification } from './hooks/useNotification';
 
-export const StudioPage: React.FC<{ onMovieClick: (m: Movie) => void }> = ({ onMovieClick }) => {
+// Added onArtistClick to props interface to fix type error in App.tsx
+interface StudioPageProps {
+    onMovieClick: (movie: Movie) => void;
+    onArtistClick?: (userId: string) => void;
+}
+
+export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistClick }) => {
     const [channels, setChannels] = useState<FandubChannel[]>([]);
     const [stories, setStories] = useState<FandubStory[]>([]);
     const [allMovies, setAllMovies] = useState<Movie[]>([]);

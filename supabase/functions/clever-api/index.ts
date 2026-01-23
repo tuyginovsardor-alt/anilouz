@@ -28,7 +28,7 @@ serve(async (req) => {
         throw new Error("TSPAY_TOKEN topilmadi. Secrets o'rnatilganini tekshiring.");
     }
 
-    // 1. TsPay WEBHOOK
+    // 1. TsPay WEBHOOK (To'lov amalga oshirilganda chaqiriladi)
     const isWebhook = !body.action && (body.pay_status || body.status);
     if (isWebhook) {
       const status = body.pay_status || body.status;
@@ -58,7 +58,7 @@ serve(async (req) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: body.amount,
+          amount: Math.floor(Number(body.amount)), // Butun son bo'lishi shart
           access_token: token,
           comment: `Anilo.uz. User ID: ${body.user_id}`,
           redirect_url: 'https://www.anilo.uz/dashboard/account'
@@ -66,22 +66,25 @@ serve(async (req) => {
       })
       
       const data = await response.json();
+      console.log("TsPay create response:", data);
+
+      // TsPay odatda muvaffaqiyatli bo'lsa 'pay_url' yoki 'url' qaytaradi
+      const payUrl = data.pay_url || data.url;
       
-      // Agar TsPay xato qaytarsa
-      if (data.status === 'error') {
+      if (payUrl) {
+          return new Response(JSON.stringify({ 
+              status: 'success', 
+              transaction: { url: payUrl, id: data.id || data.cheque_id } 
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+      } else {
           return new Response(JSON.stringify({ 
               status: 'error', 
-              message: data.message || "TsPay serverida xatolik" 
+              message: data.message || "TsPay serveri to'lovni rad etdi (Summa xato yoki Token xato)" 
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       }
-
-      return new Response(JSON.stringify({ status: 'success', transaction: data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      })
     }
 
-    // 3. FRONTEND: Tekshirish
+    // 3. FRONTEND: Tekshirish (Manual status check)
     if (body.action === 'check') {
       const response = await fetch(`https://tspay.uz/api/v1/transactions/${body.cheque_id}/?access_token=${token}`)
       const data = await response.json()
@@ -93,11 +96,11 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ status: 'error', message: 'Noma\'lum amal' }), { status: 400 })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Global Error:", error.message)
     return new Response(JSON.stringify({ status: 'error', message: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200, // Frontend xatoni o'qishi uchun 200 qaytaramiz
+      status: 200,
     })
   }
 })
