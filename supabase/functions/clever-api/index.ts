@@ -22,15 +22,21 @@ serve(async (req) => {
     )
 
     const body = await req.json()
-    const token = Deno.env.get('TSPAY_TOKEN')
+    const rawToken = Deno.env.get('TSPAY_TOKEN');
+    const token = rawToken ? rawToken.trim() : null;
 
     if (!token) {
-        return new Response(JSON.stringify({ status: 'error', message: "Tizimda API Token (Secret) o'rnatilmagan." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+        console.error("TSPAY_TOKEN topilmadi! Supabase Secrets-ni tekshiring.");
+        return new Response(JSON.stringify({ 
+            status: 'error', 
+            message: "Tizimda API Token o'rnatilmagan (Secret missing)." 
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
-    // 1. TsPay WEBHOOK
+    // 1. TsPay WEBHOOK (To'lov tasdiqlanganda keladigan so'rov)
     const isWebhook = !body.action && (body.pay_status || body.status);
     if (isWebhook) {
+      console.log("Webhook received payload:", body);
       const status = body.pay_status || body.status;
       const amount = Number(body.amount);
       const comment = body.comment || "";
@@ -41,32 +47,37 @@ serve(async (req) => {
         const userId = userIdMatch ? userIdMatch[1] : null;
 
         if (userId && amount) {
+          console.log(`To'lov muvaffaqiyatli: User=${userId}, Summa=${amount}`);
           const { error: rpcError } = await supabaseAdmin.rpc('record_tspay_success', {
             u_id: userId,
             amt: amount,
             o_id: Number(orderId)
           });
-          if (rpcError) console.error("RPC Error:", rpcError);
+          if (rpcError) console.error("RPC Error (record_tspay_success):", rpcError);
         }
       }
       return new Response(JSON.stringify({ status: 'ok' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
-    // 2. FRONTEND: To'lov yaratish
+    // 2. FRONTEND: To'lov havolasini yaratish
     if (body.action === 'create') {
+      const amount = Math.floor(Number(body.amount));
+      console.log(`TsPay-ga yaratish so'rovi: Summa=${amount}, User=${body.user_id}`);
+
+      // TsPay API v1 bo'yicha so'rov
       const tsResponse = await fetch('https://tspay.uz/api/v1/transactions/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: Math.floor(Number(body.amount)),
+          amount: amount,
           access_token: token,
           comment: `Anilo.uz Foydalanuvchi: ${body.user_id}`,
           redirect_url: 'https://anilo.uz/dashboard/account'
         })
-      })
+      });
       
       const data = await tsResponse.json();
-      console.log("TsPay Full Response:", data);
+      console.log("TsPay API Full Response:", data);
 
       if (tsResponse.ok && (data.pay_url || data.url)) {
           return new Response(JSON.stringify({ 
@@ -74,16 +85,17 @@ serve(async (req) => {
               transaction: { url: data.pay_url || data.url, id: data.id || data.cheque_id } 
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       } else {
-          // TsPay dan kelgan ASL xatoni qaytaramiz
-          const errorMsg = data.message || data.error || JSON.stringify(data);
+          // TsPay dan kelgan aniq xatoni qaytaramiz
+          const errorMsg = data.message || data.error || `TsPay Xatosi (Status: ${tsResponse.status})`;
+          console.error("TsPay Create Failed:", errorMsg);
           return new Response(JSON.stringify({ 
               status: 'error', 
-              message: `TsPay Xatosi: ${errorMsg}` 
+              message: `To'lov tizimi xatosi: ${errorMsg}.` 
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       }
     }
 
-    // 3. FRONTEND: Tekshirish
+    // 3. FRONTEND: To'lov holatini tekshirish
     if (body.action === 'check') {
       const response = await fetch(`https://tspay.uz/api/v1/transactions/${body.cheque_id}/?access_token=${token}`)
       const data = await response.json()
@@ -96,7 +108,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ status: 'error', message: 'Noma\'lum amal' }), { status: 400 })
 
   } catch (error: any) {
-    return new Response(JSON.stringify({ status: 'error', message: "Serverda texnik xatolik: " + error.message }), {
+    console.error("Critical Edge Function Error:", error);
+    return new Response(JSON.stringify({ status: 'error', message: "Texnik xatolik: " + error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
