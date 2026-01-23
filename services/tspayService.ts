@@ -17,23 +17,37 @@ export interface TsPayResponse {
 }
 
 /**
- * Yangi yaratilgan Supabase Edge Function-ni chaqiramiz.
- * Bu fronteddan to'g'ridan-to'g'ri API kalitini ishlatishdan ancha xavfsiz.
+ * Supabase Edge Function-ni chaqiramiz.
+ * Dashboardda funksiya nomi 'clever-api' bo'lgani uchun nomi shunday bo'lishi shart.
  */
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayResponse> => {
-    const { data, error } = await supabase.functions.invoke('tspay-handler', {
-        body: { action: 'create', amount, user_id: userId }
-    });
+    try {
+        const { data, error } = await supabase.functions.invoke('clever-api', {
+            body: { action: 'create', amount, user_id: userId }
+        });
 
-    if (error) throw new Error(error.message || "Edge Function bilan bog'lanib bo'lmadi");
-    return data as TsPayResponse;
+        if (error) {
+            console.error("Invoke error details:", error);
+            throw new Error(error.message || "Edge Function xatosi yuz berdi.");
+        }
+        
+        return data as TsPayResponse;
+    } catch (err: any) {
+        console.error("Invoke fail:", err);
+        throw new Error(err.message || "To'lov tizimiga ulanib bo'lmadi.");
+    }
 };
 
 export const checkTsPayStatus = async (chequeId: number): Promise<TsPayResponse> => {
-    const { data, error } = await supabase.functions.invoke('tspay-handler', {
-        body: { action: 'check', cheque_id: chequeId }
-    });
+    try {
+        const { data, error } = await supabase.functions.invoke('clever-api', {
+            body: { action: 'check', cheque_id: chequeId }
+        });
 
-    if (error) throw new Error(error.message || "Holatni tekshirishda xatolik");
-    return data as TsPayResponse;
+        if (error) throw new Error(error.message);
+        return data as TsPayResponse;
+    } catch (err: any) {
+        console.error("Status check fail:", err);
+        throw new Error("To'lov holatini tekshirib bo'lmadi.");
+    }
 };
