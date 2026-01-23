@@ -5,7 +5,7 @@ import { createPaymentRequest, uploadFile } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { useNotification } from './hooks/useNotification';
 import { createTsPayTransaction } from './services/tspayService';
-import { CreditCard, Zap, Loader2 } from 'lucide-react';
+import { CreditCard, Zap, Loader2, AlertCircle } from 'lucide-react';
 
 export const BillingPage: React.FC = () => {
     const [amount, setAmount] = useState('');
@@ -15,11 +15,14 @@ export const BillingPage: React.FC = () => {
     // TsPay State
     const [tsAmount, setTsAmount] = useState('');
     const [isTsPayLoading, setIsTsPayLoading] = useState(false);
+    const [lastError, setLastError] = useState<string | null>(null);
 
     const { addNotification } = useNotification();
 
     const handleTsPaySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLastError(null);
+
         if (!tsAmount || Number(tsAmount) < 1000) {
             addNotification({ type: 'warning', title: 'Diqqat', message: "Minimal summa 1000 so'm." });
             return;
@@ -33,18 +36,25 @@ export const BillingPage: React.FC = () => {
             const res = await createTsPayTransaction(Number(tsAmount), user.id);
             
             if (res.status === 'success' && res.transaction?.url) {
+                // Tranzaksiya ma'lumotlarini saqlab qo'yamiz (App.tsx tekshirishi uchun)
                 localStorage.setItem('tspay_pending_id', String(res.transaction.id));
                 localStorage.setItem('tspay_pending_amount', tsAmount);
                 
                 addNotification({ type: 'success', title: 'Tayyor', message: "To'lov sahifasiga o'tilmoqda..." });
-                window.location.href = res.transaction.url;
+                
+                // Redirect - ba'zi brauzerlar window.location.href ni bloklashi mumkin, 
+                // shuning uchun kechikish bilan yuboramiz
+                setTimeout(() => {
+                    window.location.assign(res.transaction!.url);
+                }, 500);
             } else {
-                // TsPay qaytargan aniq xabarni ko'rsatamiz
-                throw new Error(res.message || "To'lov tizimi rad etdi.");
+                throw new Error(res.message || "To'lov tizimi so'rovni rad etdi. Summani tekshiring.");
             }
         } catch (e: any) {
-            console.error(e);
-            addNotification({ type: 'error', title: 'To\'lovda Xatolik', message: e.message });
+            console.error("Payment Error:", e);
+            const errorMsg = e.message || "Ulanishda noma'lum xatolik.";
+            setLastError(errorMsg);
+            addNotification({ type: 'error', title: 'To\'lovda Xatolik', message: errorMsg });
         } finally {
             setIsTsPayLoading(false);
         }
@@ -88,10 +98,18 @@ export const BillingPage: React.FC = () => {
                                 type="number" 
                                 value={tsAmount}
                                 onChange={e => setTsAmount(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white font-bold text-xl outline-none focus:border-blue-500 transition-all"
+                                className={`w-full bg-black/40 border ${lastError ? 'border-red-500' : 'border-white/10'} rounded-2xl p-5 text-white font-bold text-xl outline-none focus:border-blue-500 transition-all`}
                                 placeholder="10,000"
                             />
                         </div>
+                        
+                        {lastError && (
+                            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 p-3 rounded-xl border border-red-500/20 animate-fade-in">
+                                <AlertCircle size={14} />
+                                <span>{lastError}</span>
+                            </div>
+                        )}
+
                         <button 
                             type="submit" 
                             disabled={isTsPayLoading}
