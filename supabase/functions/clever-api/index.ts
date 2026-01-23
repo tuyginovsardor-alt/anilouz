@@ -25,10 +25,10 @@ serve(async (req) => {
     const token = Deno.env.get('TSPAY_TOKEN')
 
     if (!token) {
-        throw new Error("TSPAY_TOKEN topilmadi. Secrets o'rnatilganini tekshiring.");
+        return new Response(JSON.stringify({ status: 'error', message: "Tizimda API Token (Secret) o'rnatilmagan." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
-    // 1. TsPay WEBHOOK (To'lov amalga oshirilganda chaqiriladi)
+    // 1. TsPay WEBHOOK
     const isWebhook = !body.action && (body.pay_status || body.status);
     if (isWebhook) {
       const status = body.pay_status || body.status;
@@ -46,7 +46,7 @@ serve(async (req) => {
             amt: amount,
             o_id: Number(orderId)
           });
-          if (rpcError) throw rpcError;
+          if (rpcError) console.error("RPC Error:", rpcError);
         }
       }
       return new Response(JSON.stringify({ status: 'ok' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
@@ -54,37 +54,36 @@ serve(async (req) => {
 
     // 2. FRONTEND: To'lov yaratish
     if (body.action === 'create') {
-      const response = await fetch('https://tspay.uz/api/v1/transactions/create', {
+      const tsResponse = await fetch('https://tspay.uz/api/v1/transactions/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: Math.floor(Number(body.amount)), // Butun son bo'lishi shart
+          amount: Math.floor(Number(body.amount)),
           access_token: token,
-          comment: `Anilo.uz. User ID: ${body.user_id}`,
-          redirect_url: 'https://www.anilo.uz/dashboard/account'
+          comment: `Anilo.uz Foydalanuvchi: ${body.user_id}`,
+          redirect_url: 'https://anilo.uz/dashboard/account'
         })
       })
       
-      const data = await response.json();
-      console.log("TsPay create response:", data);
+      const data = await tsResponse.json();
+      console.log("TsPay Full Response:", data);
 
-      // TsPay odatda muvaffaqiyatli bo'lsa 'pay_url' yoki 'url' qaytaradi
-      const payUrl = data.pay_url || data.url;
-      
-      if (payUrl) {
+      if (tsResponse.ok && (data.pay_url || data.url)) {
           return new Response(JSON.stringify({ 
               status: 'success', 
-              transaction: { url: payUrl, id: data.id || data.cheque_id } 
+              transaction: { url: data.pay_url || data.url, id: data.id || data.cheque_id } 
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       } else {
+          // TsPay dan kelgan ASL xatoni qaytaramiz
+          const errorMsg = data.message || data.error || JSON.stringify(data);
           return new Response(JSON.stringify({ 
               status: 'error', 
-              message: data.message || "TsPay serveri to'lovni rad etdi (Summa xato yoki Token xato)" 
+              message: `TsPay Xatosi: ${errorMsg}` 
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       }
     }
 
-    // 3. FRONTEND: Tekshirish (Manual status check)
+    // 3. FRONTEND: Tekshirish
     if (body.action === 'check') {
       const response = await fetch(`https://tspay.uz/api/v1/transactions/${body.cheque_id}/?access_token=${token}`)
       const data = await response.json()
@@ -97,8 +96,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ status: 'error', message: 'Noma\'lum amal' }), { status: 400 })
 
   } catch (error: any) {
-    console.error("Global Error:", error.message)
-    return new Response(JSON.stringify({ status: 'error', message: error.message }), {
+    return new Response(JSON.stringify({ status: 'error', message: "Serverda texnik xatolik: " + error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })

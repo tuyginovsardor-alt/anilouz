@@ -36,25 +36,23 @@ export const BillingPage: React.FC = () => {
             const res = await createTsPayTransaction(Number(tsAmount), user.id);
             
             if (res.status === 'success' && res.transaction?.url) {
-                // Tranzaksiya ma'lumotlarini saqlab qo'yamiz (App.tsx tekshirishi uchun)
                 localStorage.setItem('tspay_pending_id', String(res.transaction.id));
                 localStorage.setItem('tspay_pending_amount', tsAmount);
                 
                 addNotification({ type: 'success', title: 'Tayyor', message: "To'lov sahifasiga o'tilmoqda..." });
                 
-                // Redirect - ba'zi brauzerlar window.location.href ni bloklashi mumkin, 
-                // shuning uchun kechikish bilan yuboramiz
                 setTimeout(() => {
                     window.location.assign(res.transaction!.url);
                 }, 500);
             } else {
-                throw new Error(res.message || "To'lov tizimi so'rovni rad etdi. Summani tekshiring.");
+                // Agar Edge Function dan message kelsa, shuni ko'rsatamiz
+                throw new Error(res.message || "To'lov tizimi so'rovni rad etdi.");
             }
         } catch (e: any) {
             console.error("Payment Error:", e);
-            const errorMsg = e.message || "Ulanishda noma'lum xatolik.";
+            const errorMsg = e.message || "Noma'lum xatolik.";
             setLastError(errorMsg);
-            addNotification({ type: 'error', title: 'To\'lovda Xatolik', message: errorMsg });
+            addNotification({ type: 'error', title: 'Rad etildi', message: errorMsg });
         } finally {
             setIsTsPayLoading(false);
         }
@@ -88,7 +86,7 @@ export const BillingPage: React.FC = () => {
                         <Zap size={28} className="text-yellow-400 fill-current" /> Avtomatik To'lov
                     </h2>
                     <p className="text-zinc-300 text-sm mb-8 leading-relaxed">
-                        To'lov summasini kiriting. <b>UzCard, Humo, Click yoki Payme</b> orqali to'lovni amalga oshiring. Balans avtomatik to'ldiriladi.
+                        <b>UzCard, Humo, Click yoki Payme</b> orqali tezkor to'lov.
                     </p>
 
                     <form onSubmit={handleTsPaySubmit} className="space-y-5 relative z-10">
@@ -104,9 +102,9 @@ export const BillingPage: React.FC = () => {
                         </div>
                         
                         {lastError && (
-                            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 p-3 rounded-xl border border-red-500/20 animate-fade-in">
-                                <AlertCircle size={14} />
-                                <span>{lastError}</span>
+                            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 p-4 rounded-xl border border-red-500/20 animate-fade-in">
+                                <AlertCircle size={16} className="shrink-0" />
+                                <span><b>Xatolik:</b> {lastError}</span>
                             </div>
                         )}
 
