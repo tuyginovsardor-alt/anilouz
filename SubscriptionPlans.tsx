@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { CrownIcon } from './icons/CrownIcon';
-import { TicketIcon } from './icons/TicketIcon';
-import { QualityIcon } from './icons/QualityIcon';
-import { NoAdsIcon } from './icons/NoAdsIcon';
-import { buySubscription, redeemPromocode, getAppConfig } from '../services/dbService';
-import { supabase } from '../services/supabaseClient';
-import { useNotification } from '../hooks/useNotification';
-import { LoadingSpinner } from './LoadingSpinner';
-import { PlayIcon } from './icons/PlayIcon';
+import { CrownIcon } from './components/icons/CrownIcon';
+import { TicketIcon } from './components/icons/TicketIcon';
+import { QualityIcon } from './components/icons/QualityIcon';
+import { NoAdsIcon } from './components/icons/NoAdsIcon';
+import { buySubscription, redeemPromocode, getAppConfig } from './services/dbService';
+import { supabase } from './services/supabaseClient';
+import { useNotification } from './hooks/useNotification';
+import { LoadingSpinner } from './components/LoadingSpinner';
+import { PlayIcon } from './components/icons/PlayIcon';
 
 // Define plan types
 type PlanDuration = '1-oy' | '3-oy' | '6-oy' | '1-yil';
@@ -60,7 +60,7 @@ export const SubscriptionPlans: React.FC = () => {
                 setPlans({
                     '1-oy': {
                         price: p1,
-                        originalPrice: Math.round(p1 * 1.2), // Fake discount logic for visual
+                        originalPrice: Math.round(p1 * 1.2),
                         label: '1 oy',
                     },
                     '3-oy': {
@@ -100,7 +100,6 @@ export const SubscriptionPlans: React.FC = () => {
         }
     }
 
-    // Feature list - DOWNLOAD REMOVED
     const premiumFeatures = [
         { icon: <QualityIcon className="w-5 h-5" />, text: '4K+HDR Yuqori Sifat' },
         { icon: <NoAdsIcon className="w-5 h-5" />, text: selectedPlan === '1-yil' ? 'REKLAMASIZ (1 yillik bonus)' : 'Minimal reklama' },
@@ -118,21 +117,9 @@ export const SubscriptionPlans: React.FC = () => {
                 return;
             }
 
-            // Check existing subscription
-            const { data: profile } = await supabase.from('profiles').select('subscription_end_at').eq('id', user.id).single();
-            // Fix: Added explicit null check and cast to any for profile and subscription_end_at access
-            if (profile && (profile as any).subscription_end_at && new Date((profile as any).subscription_end_at) > new Date()) {
-                const proceed = window.confirm("Sizda allaqachon faol obuna mavjud. Baribir sotib olib, muddatni uzaytirmoqchimisiz?");
-                if (!proceed) {
-                    setIsLoading(false);
-                    return;
-                }
-            }
-
             await buySubscription(user.id, selectedPlan, finalPrice);
             addNotification({ type: 'success', title: 'Muvaffaqiyatli!', message: "Premium obuna faollashtirildi." });
             
-            // Redirect/Reload logic to prevent white screen and refresh state
             setTimeout(() => {
                 window.location.reload(); 
             }, 1500);
@@ -141,19 +128,10 @@ export const SubscriptionPlans: React.FC = () => {
             console.error(error);
             if (error.message.includes("Mablag' yetarli emas")) {
                  addNotification({ type: 'error', title: 'Mablag\' yetarli emas', message: "Hisobingizni to'ldiring." });
-                 const goToBilling = window.confirm("Mablag' yetarli emas. Hisobni to'ldirish sahifasiga o'tasizmi?");
-                 if (goToBilling) {
-                     window.location.href = "/?page=dashboard&tab=billing"; // Assuming query params handle routing or simple navigation
-                 }
             } else {
-                // Agar SQL xatosi bo'lsa, tushunarliroq qilish
-                let msg = error.message;
-                if (msg.includes('invalid input value for enum')) {
-                    msg = "Tizim xatosi: Iltimos, Adminga xabar bering (Enum Error).";
-                }
-                addNotification({ type: 'error', title: 'Xatolik', message: msg || "Xatolik yuz berdi" });
+                addNotification({ type: 'error', title: 'Xatolik', message: error.message || "Xatolik yuz berdi" });
             }
-            setIsLoading(false); // Only unset loading on error, otherwise wait for reload
+            setIsLoading(false);
         }
     };
 
@@ -253,7 +231,6 @@ export const SubscriptionPlans: React.FC = () => {
                 </div>
             </div>
 
-            {/* Promo Modal */}
             {showPromoModal && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setShowPromoModal(false)}>
                     <div className="bg-gray-900 border border-yellow-500/50 p-6 rounded-xl w-full max-sm shadow-2xl" onClick={e => e.stopPropagation()}>

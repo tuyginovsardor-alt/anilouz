@@ -130,6 +130,8 @@ export interface ArkAd {
     media_type: 'video' | 'image';
     reward_ark: number;
     duration_sec: number;
+    // Added is_active property to fix type mismatch in CashContestPage.tsx
+    is_active: boolean;
 }
 
 export interface ArkQuiz {
@@ -140,6 +142,8 @@ export interface ArkQuiz {
     option_c: string;
     option_d: string;
     correct_option: string;
+    // Added reward_spins property to fix type mismatch in CashContestPage.tsx
+    reward_spins: number;
 }
 
 export interface ArkWithdrawal {
@@ -250,13 +254,17 @@ export interface FandubUpload {
 // --- SYSTEM ---
 export interface Notification {
     id: string;
-    type: 'success' | 'error' | 'warning' | 'info';
+    type: NotificationType;
     title: string;
     message: string;
 }
 
+// Added NotificationType to fix error in components/Notification.tsx
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
+
 export interface Ad {
-    id: number;
+    // Made id optional to fix error in AdvertisementPage.tsx line 78
+    id?: number;
     name: string;
     type: 'video' | 'banner';
     contentUrl: string;
@@ -357,4 +365,22 @@ export interface PaymentRequestDB {
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
     profiles?: { full_name: string; email: string; };
+}
+
+// Added missing CulturalAnalysis type to fix error in components/ResultCard.tsx
+export interface CulturalAnalysis {
+  detectedLanguage: string;
+  isoCode: string;
+  englishTranslation: string;
+  pronunciation: string;
+  friendlyResponse: string;
+  culturalFacts: string[];
+}
+
+// Added missing AppView and ChatSession types to fix errors in components/Sidebar.tsx
+export enum AppView { Chat, Settings, About }
+export interface ChatSession {
+  id: string;
+  title: string;
+  lastMessageAt: number;
 }
