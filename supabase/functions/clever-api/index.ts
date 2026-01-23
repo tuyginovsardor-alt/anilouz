@@ -1,8 +1,9 @@
 
-// Deno global o'zgaruvchisini tanitish
+// Deno muhiti uchun
 declare const Deno: any;
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,30 +11,66 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // CORS (Frontenddan so'rov kelishi uchun shart)
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { action, amount, cheque_id, user_id } = await req.json()
-    
-    // Dashboarddagi Secrets bo'limida saqlangan token
-    const token = Deno.env.get('TSPAY_TOKEN')
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-    if (!token) {
-        throw new Error("TSPAY_TOKEN topilmadi. Dashboardda Secrets-ni tekshiring.");
+    const body = await req.json()
+    console.log("Kiruvchi so'rov:", body)
+
+    // 1. TsPay WEBHOOK (To'lov yakunlanganda TsPay serveridan keladi)
+    const isWebhook = !body.action && (body.pay_status || body.status);
+    
+    if (isWebhook) {
+      const status = body.pay_status || body.status;
+      const amount = Number(body.amount);
+      const comment = body.comment || "";
+      const orderId = body.id || body.cheque_id || 0;
+
+      if (status === 'paid' || status === 'success') {
+        // Comment ichidan User UUID ni ajratish
+        const userIdMatch = comment.match(/([a-f0-9-]{36})/i);
+        const userId = userIdMatch ? userIdMatch[1] : null;
+
+        if (userId && amount) {
+          const { error: rpcError } = await supabaseAdmin.rpc('record_tspay_success', {
+            u_id: userId,
+            amt: amount,
+            o_id: Number(orderId)
+          });
+
+          if (rpcError) {
+            console.error("RPC Error:", rpcError);
+            return new Response(JSON.stringify({ error: "DB Error" }), { status: 500 });
+          }
+          console.log(`Muvaffaqiyatli: User ${userId} +${amount} UZS`);
+        }
+      }
+      
+      return new Response(JSON.stringify({ status: 'ok' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
     }
 
-    if (action === 'create') {
+    // 2. FRONTEND SO'ROVLARI (To'lov yaratish)
+    const token = Deno.env.get('TSPAY_TOKEN')
+
+    if (body.action === 'create') {
       const response = await fetch('https://tspay.uz/api/v1/transactions/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: amount,
+          amount: body.amount,
           access_token: token,
-          comment: `Anilo.uz User ID: ${user_id}`,
-          redirect_url: 'https://anilo.uz/dashboard'
+          comment: `Anilo.uz. User ID: ${body.user_id}`,
+          redirect_url: 'https://www.anilo.uz/dashboard/account'
         })
       })
       const data = await response.json()
@@ -43,8 +80,9 @@ serve(async (req) => {
       })
     }
 
-    if (action === 'check') {
-      const response = await fetch(`https://tspay.uz/api/v1/transactions/${cheque_id}/?access_token=${token}`)
+    // 3. FRONTEND SO'ROVLARI (Holatni tekshirish - fallback)
+    if (body.action === 'check') {
+      const response = await fetch(`https://tspay.uz/api/v1/transactions/${body.cheque_id}/?access_token=${token}`)
       const data = await response.json()
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -55,6 +93,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Noma\'lum amal' }), { status: 400 })
 
   } catch (error) {
+    console.error("Global Error:", error.message)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
