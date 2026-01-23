@@ -1,27 +1,51 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabaseClient';
-import { Users, Film, CreditCard, MessageSquare, TrendingUp, AlertCircle } from 'lucide-react';
+import { Users, Film, CreditCard, MessageSquare, TrendingUp, AlertCircle, Check, X as XIcon, Eye } from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { getDashboardStats } from './services/dbService';
+import { getDashboardStats, getPendingFandubUploads, approveFandubUpload, rejectFandubUpload } from './services/dbService';
+import { FandubUpload } from './types';
+import { useNotification } from './hooks/useNotification';
 
 export const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [pendingUploads, setPendingUploads] = useState<FandubUpload[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { addNotification } = useNotification();
 
     useEffect(() => { loadData(); }, []);
 
     const loadData = async () => {
         try {
-            const data = await getDashboardStats();
-            // Bildirishnomalarni RPC orqali olamiz
-            const { data: counts } = await supabase.rpc('get_admin_counts');
-            setStats({ ...data, pendingFandub: counts?.fandub_pending || 0 });
+            const [d, u] = await Promise.all([
+                getDashboardStats(),
+                getPendingFandubUploads()
+            ]);
+            setStats(d);
+            setPendingUploads(u);
         } catch (e) { console.error(e); }
-        finally { setIsLoading(false); }
+        finally { setLoading(false); }
     };
 
-    if (isLoading) return <div className="flex justify-center items-center h-full"><LoadingSpinner /></div>;
+    const handleApprove = async (id: number) => {
+        try {
+            await approveFandubUpload(id);
+            addNotification({ type: 'success', title: 'Tasdiqlandi', message: 'Anime katalogga qo\'shildi.' });
+            setPendingUploads(prev => prev.filter(u => u.id !== id));
+        } catch (e) { console.error(e); }
+    };
+
+    const handleReject = async (id: number) => {
+        const comment = prompt("Rad etish sababi:");
+        if (!comment) return;
+        try {
+            await rejectFandubUpload(id, comment);
+            addNotification({ type: 'warning', title: 'Rad etildi', message: 'Foydalanuvchiga xabar yuborildi.' });
+            setPendingUploads(prev => prev.filter(u => u.id !== id));
+        } catch (e) { console.error(e); }
+    };
+
+    if (loading) return <div className="flex justify-center items-center h-full"><LoadingSpinner /></div>;
 
     const cards = [
         { label: 'Jami Foydalanuvchilar', value: stats?.users || 0, icon: <Users className="text-blue-500" />, color: 'from-blue-500/10 to-transparent' },
@@ -32,19 +56,6 @@ export const AdminDashboard: React.FC = () => {
 
     return (
         <div className="animate-fade-in space-y-10 pb-10">
-            {/* Bildirishnoma (Banner) */}
-            {stats?.pendingFandub > 0 && (
-                <div className="bg-purple-600 p-4 rounded-2xl flex justify-between items-center animate-pulse shadow-lg shadow-purple-900/40">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle className="text-white" />
-                        <p className="text-white font-black uppercase text-xs tracking-widest">
-                            Yangi {stats.pendingFandub} ta Fandub yuklamalari kutilmoqda!
-                        </p>
-                    </div>
-                    <button className="px-5 py-2 bg-white text-purple-600 rounded-xl font-black text-[10px] uppercase">Tekshirish</button>
-                </div>
-            )}
-
             <h1 className="text-3xl font-bold text-white mb-8">Statistika</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                 {cards.map((card, i) => (
@@ -59,12 +70,71 @@ export const AdminDashboard: React.FC = () => {
                 ))}
             </div>
             
-            <div className="bg-gray-800/20 border border-gray-800 p-10 rounded-3xl text-center">
-                <div className="w-20 h-20 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <TrendingUp className="text-orange-500 w-10 h-10" />
+            {/* PENDING FANDUB UPLOADS SECTION */}
+            <div className="bg-gray-800/40 border border-gray-700 rounded-3xl p-8">
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle className="text-yellow-500" />
+                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">Fandub Moderatsiyasi ({pendingUploads.length})</h2>
+                    </div>
+                    <p className="text-xs text-gray-500 italic">Yangi kelgan loyihalarni tekshiring</p>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Anilo Platformasi Faol</h2>
-                <p className="text-gray-400 max-w-md mx-auto">Tizim barqaror ishlamoqda. Foydalanuvchilar soni va tomoshalar ko'rsatkichi oshmoqda.</p>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-900/50 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                            <tr>
+                                <th className="p-5">Anime</th>
+                                <th className="p-5">Yuklovchi</th>
+                                <th className="p-5">Janr / Yil</th>
+                                <th className="p-5 text-right">Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                            {pendingUploads.length === 0 ? (
+                                <tr><td colSpan={4} className="p-10 text-center text-gray-600 uppercase font-black text-xs tracking-widest italic">Hozircha yangi loyihalar yo'q.</td></tr>
+                            ) : pendingUploads.map(up => (
+                                <tr key={up.id} className="group hover:bg-gray-800/50 transition-all">
+                                    <td className="p-5">
+                                        <div className="flex items-center gap-4">
+                                            <img src={up.poster_url} className="w-12 h-16 rounded-lg object-cover shadow-lg" alt="" />
+                                            <div>
+                                                <p className="text-white font-bold">{up.title}</p>
+                                                <p className="text-[10px] text-zinc-500 line-clamp-1 max-w-[200px]">{up.description}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-5">
+                                        <p className="text-sm text-purple-400 font-bold">{(up as any).profiles?.full_name || 'Noma\'lum'}</p>
+                                        <p className="text-[10px] text-gray-500">Kanal: {(up as any).fandub_channels?.name}</p>
+                                    </td>
+                                    <td className="p-5">
+                                        <span className="bg-gray-700 px-2 py-1 rounded text-[10px] font-black text-gray-300 mr-2">{up.genre}</span>
+                                        <span className="text-xs text-gray-500 font-mono">{up.year}</span>
+                                    </td>
+                                    <td className="p-5 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <button 
+                                                onClick={() => handleApprove(up.id)}
+                                                className="p-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-all shadow-lg shadow-green-900/20"
+                                                title="Tasdiqlash"
+                                            >
+                                                <Check size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleReject(up.id)}
+                                                className="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all shadow-lg shadow-red-900/20"
+                                                title="Rad etish"
+                                            >
+                                                <XIcon size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

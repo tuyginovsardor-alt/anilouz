@@ -24,82 +24,90 @@ export const updateUserProfile = async (userId: string, updates: Partial<UserPro
     if (error) throw error;
 };
 
-export const updateUserPassword = async (newPassword: string) => {
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) throw error;
-};
-
-export const updateUserEmail = async (newEmail: string) => {
-    const { error } = await supabase.auth.updateUser({ email: newEmail });
-    if (error) throw error;
-};
-
-// --- MOVIES & FANDUB LOYIHALARI ---
+// --- MOVIES & FANDUB INTEGRATION ---
 export const getMovies = async (): Promise<Movie[]> => {
-    // Rasmiy va tasdiqlangan Fandub kinolarni birlashtirib olamiz
+    // Rasmiy kinolar va tasdiqlangan (approved) fandub yuklamalarini olamiz
     const [off, fan] = await Promise.all([
         supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false }),
-        supabase.from('fandub_uploads').select('*').eq('status', 'approved').order('created_at', { ascending: false })
+        supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'approved').order('created_at', { ascending: false })
     ]);
+
     const official = (off.data || []).map(m => ({ ...m, is_fandub: false }));
+    
     const fandub = (fan.data || []).map(m => ({
-        id: m.id, title: m.title, year: m.year, plot: m.description, posterUrl: m.poster_url,
-        videoUrl: m.video_url, genre: m.genre, language: 'JP/UZ', quality: 'HD', rating: 5.0,
-        is_fandub: true, channel_id: m.channel_id, translator: m.title.includes('Anilo') ? 'Anilo' : 'Fandub'
+        id: m.id,
+        title: m.title,
+        year: m.year,
+        plot: m.description,
+        poster_url: m.poster_url,
+        video_url: m.video_url, // Asosiy video
+        genre: m.genre,
+        language: 'JP/UZ',
+        quality: 'HD',
+        rating: 5.0,
+        is_fandub: true,
+        channel_id: m.channel_id,
+        translator: m.fandub_channels?.name || 'Fandub',
+        status: 'completed',
+        access_type: m.access_type
     }));
+
     return [...official, ...fandub] as Movie[];
 };
 
-export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
-    const { data } = await supabase.from('movies')
-        .select('*')
-        .or(`title.ilike.%${query}%,tags.ilike.%${query}%,genre.ilike.%${query}%`)
-        .eq('is_archived', false);
-    return data || [];
-};
-
 export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
+    // Agar movieId fandub_uploads jadvaliga tegishli bo'lsa
+    const { data: fandubMovie } = await supabase.from('fandub_uploads').select('episodes').eq('id', movieId).maybeSingle();
+    if (fandubMovie && fandubMovie.episodes) {
+        return fandubMovie.episodes as Episode[];
+    }
+    
+    // Aks holda rasmiy episodes jadvalidan oladi
     const { data } = await supabase.from('episodes').select('*').eq('movie_id', movieId).order('id', { ascending: true });
     return data || [];
 };
 
-export const isMovieSaved = async (userId: string, movieId: number): Promise<boolean> => {
-    const { data } = await supabase.from('saved_movies').select('id').eq('user_id', userId).eq('movie_id', movieId).maybeSingle();
-    return !!data;
+// --- FANDUB MODERATION (ADMIN) ---
+export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
+    const { data } = await supabase
+        .from('fandub_uploads')
+        .select('*, profiles(full_name, email), fandub_channels(name)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+    return data || [];
 };
 
-export const toggleSaveMovie = async (userId: string, movieId: number): Promise<boolean> => {
-    const saved = await isMovieSaved(userId, movieId);
-    if (saved) {
-        await supabase.from('saved_movies').delete().eq('user_id', userId).eq('movie_id', movieId);
-        return false;
-    } else {
-        await supabase.from('saved_movies').insert({ user_id: userId, movie_id: movieId });
-        return true;
-    }
+export const approveFandubUpload = async (id: number) => {
+    const { error } = await supabase.from('fandub_uploads').update({ status: 'approved' }).eq('id', id);
+    if (error) throw error;
 };
 
-export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
-    const { data } = await supabase.from('saved_movies').select('movies(*)').eq('user_id', userId);
-    return (data || []).map((item: any) => item.movies).filter(Boolean);
+export const rejectFandubUpload = async (id: number, comment: string) => {
+    const { error } = await supabase.from('fandub_uploads').update({ 
+        status: 'rejected', 
+        admin_comment: comment 
+    }).eq('id', id);
+    if (error) throw error;
 };
 
-export const getUserHistory = async (userId: string): Promise<Movie[]> => {
-    const { data } = await supabase.from('user_history').select('movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
-    return (data || []).map((item: any) => item.movies).filter(Boolean);
+// --- FILE UPLOADS ---
+export const uploadFile = async (file: File, bucket: string): Promise<string> => {
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substr(2,9)}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(fileName, file);
+    if (error) throw error;
+    return supabase.storage.from(bucket).getPublicUrl(fileName).data.publicUrl;
 };
 
-export const updateUserWatchTime = async (userId: string, seconds: number) => {
-    // Watch time analytics
-};
+export const uploadPoster = (file: File) => uploadFile(file, 'posters');
+export const uploadVideo = (file: File) => uploadFile(file, 'videos');
 
-// --- TRANSACTIONS ---
+// --- QOLGAN FUNKSIYALAR (Oldingidek qoladi) ---
 export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
     const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     return data || [];
 };
 
-// --- ANICONCURS (ATC) ---
 export const getATCWallet = async (userId: string): Promise<ATCWallet | null> => {
     const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
     return data as ATCWallet;
@@ -144,7 +152,6 @@ export const rewardExtraSpin = async (userId: string, count: number) => {
     await supabase.rpc('add_extra_spins', { u_id: userId, cnt: count });
 };
 
-// --- ARK TRADING ---
 export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
     const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
     return data as ArkWallet;
@@ -191,7 +198,6 @@ export const requestArkWithdrawal = async (userId: string, amountArk: number, ca
     if (error) throw error;
 };
 
-// --- SHOP ---
 export const getShopProducts = async (category = 'all', sortBy = 'newest', search = ''): Promise<ShopProduct[]> => {
     let query = supabase.from('shop_products').select('*').eq('is_active', true);
     if (category !== 'all') query = query.eq('category', category);
@@ -215,7 +221,6 @@ export const placeShopOrder = async (userId: string, productId: number, amount: 
     if (error) throw error;
 };
 
-// --- SYSTEM CONFIG ---
 export const getAppConfig = async () => {
     const { data } = await supabase.from('app_config').select('*');
     const config: Record<string, string> = {};
@@ -227,7 +232,6 @@ export const updateAppConfig = async (key: string, value: string) => {
     await supabase.from('app_config').upsert({ key, value });
 };
 
-// --- ADMIN OPS (BOSHQRUV) ---
 export const getAdminMovies = async (): Promise<Movie[]> => {
     const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
     return data || [];
@@ -311,7 +315,6 @@ export const getAdminNotificationCounts = async () => {
     return { financials: data?.payment_pending || 0, support: data?.tickets_open || 0, fandub: data?.fandub_pending || 0 };
 };
 
-// --- FANDUB CHANNEL & UPLOAD SYSTEM ---
 export const getFandubChannels = async (userId?: string): Promise<FandubChannel[]> => {
     const { data } = await supabase.from('fandub_channels').select('*').order('subscriber_count', { ascending: false });
     if (userId && data) {
@@ -367,37 +370,6 @@ export const getFandubUploads = async (userId: string): Promise<FandubUpload[]> 
     return data || [];
 };
 
-// ADMIN: Kutilayotgan Fandub loyihalarini olish
-export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
-    const { data } = await supabase.from('fandub_uploads').select('*, profiles(full_name)').eq('status', 'pending');
-    return data || [];
-};
-
-// ADMIN: Fandub loyihasini tasdiqlash
-export const approveFandubUpload = async (id: number) => {
-    const { error } = await supabase.from('fandub_uploads').update({ status: 'approved' }).eq('id', id);
-    if (error) throw error;
-};
-
-// ADMIN: Fandub loyihasini rad etish
-export const rejectFandubUpload = async (id: number, comment: string) => {
-    const { error } = await supabase.from('fandub_uploads').update({ status: 'rejected', admin_comment: comment }).eq('id', id);
-    if (error) throw error;
-};
-
-// --- FILE OPS ---
-export const uploadFile = async (file: File, bucket: string): Promise<string> => {
-    const ext = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substr(2,9)}.${ext}`;
-    const { error } = await supabase.storage.from(bucket).upload(fileName, file);
-    if (error) throw error;
-    return supabase.storage.from(bucket).getPublicUrl(fileName).data.publicUrl;
-};
-
-export const uploadPoster = (file: File) => uploadFile(file, 'posters');
-export const uploadVideo = (file: File) => uploadFile(file, 'videos');
-
-// --- DATABASE ADMIN MISC ---
 export const getSocialLinks = async (): Promise<SocialLink[]> => {
     const { data } = await supabase.from('social_links').select('*');
     return data || [];
@@ -554,7 +526,6 @@ export const incrementAdView = async (id: number) => {
     await supabase.rpc('increment_ad_view', { ad_id: id });
 };
 
-// --- ARK OPS ---
 export const updateArkSettings = async (key: string, value: string) => {
     await supabase.from('ark_settings').upsert({ key, value });
 };
@@ -602,7 +573,6 @@ export const saveArkSchedule = async (s: ArkSchedule) => {
     await updateArkSettings('market_schedule', JSON.stringify(s));
 };
 
-// --- SHOP ADMIN ---
 export const getAdminShopProducts = async (): Promise<ShopProduct[]> => {
     const { data } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
     return data || [];
@@ -645,7 +615,6 @@ export const updateShopOrderStatus = async (id: number, status: string) => {
     await supabase.from('shop_orders').update({ status }).eq('id', id);
 };
 
-// --- UTILS ---
 export const logDeviceLogin = async (userId: string, deviceId: string) => {
     const name = navigator.userAgent;
     const { error } = await supabase.from('user_devices').upsert({ user_id: userId, device_id: deviceId, device_name: name, last_active: new Date().toISOString() });
@@ -672,4 +641,100 @@ export const getMovieReviews = async (movieId: number) => {
 export const addReview = async (movieId: number, userId: string, rating: number, comment: string) => {
     const { error } = await supabase.from('reviews').insert({ movie_id: movieId, user_id: userId, rating, comment });
     if (error) throw error;
+};
+
+// --- MISSING FUNCTIONS ADDED BELOW ---
+
+/**
+ * Checks if a movie is saved by the user
+ */
+export const isMovieSaved = async (userId: string, movieId: number): Promise<boolean> => {
+    const { data } = await supabase
+        .from('saved_movies')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('movie_id', movieId)
+        .maybeSingle();
+    return !!data;
+};
+
+/**
+ * Toggles saved status of a movie for a user
+ */
+export const toggleSaveMovie = async (userId: string, movieId: number): Promise<boolean> => {
+    const { data: existing } = await supabase
+        .from('saved_movies')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('movie_id', movieId)
+        .maybeSingle();
+
+    if (existing) {
+        await supabase.from('saved_movies').delete().eq('id', existing.id);
+        return false;
+    } else {
+        await supabase.from('saved_movies').insert({ user_id: userId, movie_id: movieId });
+        return true;
+    }
+};
+
+/**
+ * Fetches watch history for a specific user
+ */
+export const getUserHistory = async (userId: string): Promise<Movie[]> => {
+    const { data } = await supabase
+        .from('user_history')
+        .select('*, movies(*)')
+        .eq('user_id', userId)
+        .order('viewed_at', { ascending: false });
+    
+    return (data || []).map((h: any) => h.movies).filter(Boolean) as Movie[];
+};
+
+/**
+ * Fetches saved movies for a specific user
+ */
+export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
+    const { data } = await supabase
+        .from('saved_movies')
+        .select('*, movies(*)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+    
+    return (data || []).map((s: any) => s.movies).filter(Boolean) as Movie[];
+};
+
+/**
+ * Searches official movies in the database
+ */
+export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
+    const { data } = await supabase
+        .from('movies')
+        .select('*')
+        .or(`title.ilike.%${query}%,genre.ilike.%${query}%,tags.ilike.%${query}%`)
+        .eq('is_archived', false);
+    return (data || []) as Movie[];
+};
+
+/**
+ * Updates the user's password using Supabase Auth
+ */
+export const updateUserPassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+};
+
+/**
+ * Updates the user's email using Supabase Auth
+ */
+export const updateUserEmail = async (email: string) => {
+    const { error } = await supabase.auth.updateUser({ email });
+    if (error) throw error;
+};
+
+/**
+ * Updates watch time statistics for a user
+ */
+export const updateUserWatchTime = async (userId: string, seconds: number) => {
+    await supabase.rpc('update_watch_time', { u_id: userId, sec: seconds });
 };

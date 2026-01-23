@@ -47,6 +47,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
         e.preventDefault();
         if (genre.length === 0) return alert("Kamida bitta janr tanlang");
         
+        // Asosiy video: serial bo'lsa 1-qism, film bo'lsa yagona video
         onSave({
             title, year, genre: genre.join(', '), desc, access, tags,
             posterType, posterFile, posterUrl,
@@ -119,7 +120,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
 
                     <div className="space-y-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-sm font-black uppercase text-zinc-400">Epizodlar (Video)</h3>
+                            <h3 className="text-sm font-black uppercase text-zinc-400">Epizodlar (Video yuklash)</h3>
                             <button type="button" onClick={handleAddEpisode} className="text-purple-500 text-[10px] font-black uppercase hover:underline">+ Qism Qo'shish</button>
                         </div>
 
@@ -138,8 +139,8 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
                                     {ep.type === 'file' ? (
                                         <div className="relative h-20 border-2 border-dashed border-zinc-800 rounded-2xl flex items-center justify-center bg-black/20 hover:border-purple-600/30 transition-all cursor-pointer">
                                             <Film size={20} className="text-zinc-800 mr-2"/>
-                                            <span className="text-[9px] font-black uppercase text-zinc-600 truncate max-w-[150px]">{ep.source ? (ep.source as File).name : 'MP4 Yuklash'}</span>
-                                            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>handleEpisodeChange(idx, 'source', e.target.files?.[0] || null)} accept="video/mp4" />
+                                            <span className="text-[9px] font-black uppercase text-zinc-600 truncate max-w-[150px]">{ep.source ? (ep.source as File).name : 'MP4/MKV Yuklash'}</span>
+                                            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>handleEpisodeChange(idx, 'source', e.target.files?.[0] || null)} />
                                         </div>
                                     ) : (
                                         <input value={ep.source as string || ''} onChange={e=>handleEpisodeChange(idx, 'source', e.target.value)} className="w-full bg-black/40 border border-zinc-800 rounded-xl p-3 text-[10px] text-zinc-400 font-mono" placeholder="Direct MP4/HLS URL..." />
