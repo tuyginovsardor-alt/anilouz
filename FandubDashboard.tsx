@@ -8,7 +8,7 @@ import {
 } from './services/dbService';
 import { 
     Mic, Film, Settings, LayoutGrid, Eye, Edit3, 
-    Plus, DollarSign, Users, Heart, Camera, Image as ImageIcon, Send, Trash2, Clock, CheckCircle, XCircle
+    Plus, DollarSign, Users, Heart, Camera, Image as ImageIcon, Send, Trash2, Clock, CheckCircle, XCircle, Upload, Save
 } from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
@@ -34,9 +34,14 @@ export const FandubDashboard: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const { addNotification } = useNotification();
 
+    // Story State
     const [storyFile, setStoryFile] = useState<File | null>(null);
+    
+    // Settings State
     const [editName, setEditName] = useState('');
     const [editBio, setEditBio] = useState('');
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [bannerFile, setBannerFile] = useState<File | null>(null);
 
     useEffect(() => { loadData(); }, []);
 
@@ -53,7 +58,10 @@ export const FandubDashboard: React.FC = () => {
             setProfile(p as UserProfile);
             setChannel(c);
             setMyUploads(u || []);
-            if (c) { setEditName(c.name); setEditBio(c.bio || ''); }
+            if (c) { 
+                setEditName(c.name); 
+                setEditBio(c.bio || ''); 
+            }
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     };
@@ -96,7 +104,59 @@ export const FandubDashboard: React.FC = () => {
         finally { setIsUploading(false); }
     };
 
-    if (loading && !isUploading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
+    const handleStoryUpload = async () => {
+        if (!storyFile || !channel || !profile) return;
+        setIsUploading(true);
+        try {
+            // Story videomi yoki rasmmi aniqlash va tegishli bucketga yuklash
+            const bucket = storyFile.type.startsWith('video') ? 'videos' : 'posters';
+            const mediaUrl = await uploadPoster(storyFile); // Using simple upload wrapper
+
+            await createFandubStory({
+                channel_id: channel.id,
+                user_id: profile.id,
+                media_url: mediaUrl,
+                media_type: storyFile.type.startsWith('video') ? 'video' : 'image'
+            });
+
+            addNotification({ type: 'success', title: 'Story Joylandi', message: 'Story 24 soat davomida ko\'rinadi.' });
+            setStoryFile(null);
+        } catch (e: any) {
+            addNotification({ type: 'error', title: 'Xatolik', message: e.message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleSettingsSave = async () => {
+        if (!channel) return;
+        setIsSaving(true);
+        try {
+            let avatarUrl = channel.avatar_url;
+            let bannerUrl = channel.banner_url;
+
+            if (avatarFile) avatarUrl = await uploadPoster(avatarFile);
+            if (bannerFile) bannerUrl = await uploadPoster(bannerFile);
+
+            await updateFandubChannel(channel.id, {
+                name: editName,
+                bio: editBio,
+                avatar_url: avatarUrl,
+                banner_url: bannerUrl
+            });
+
+            addNotification({ type: 'success', title: 'Saqlandi', message: 'Kanal sozlamalari yangilandi.' });
+            loadData(); // Refresh UI
+            setAvatarFile(null);
+            setBannerFile(null);
+        } catch (e: any) {
+            addNotification({ type: 'error', title: 'Xatolik', message: e.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (loading && !isUploading && !isSaving) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
 
     if (!channel) return (
         <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
@@ -130,8 +190,8 @@ export const FandubDashboard: React.FC = () => {
                     {[
                         { id: 'overview', label: 'Dashboard', icon: <LayoutGrid size={20}/> },
                         { id: 'content', label: 'Loyihalarim', icon: <Film size={20}/> },
-                        { id: 'story', label: 'Story', icon: <Camera size={20}/> },
-                        { id: 'settings', label: 'Kanal', icon: <Settings size={20}/> },
+                        { id: 'story', label: 'Story Yuklash', icon: <Camera size={20}/> },
+                        { id: 'settings', label: 'Kanal Sozlamalari', icon: <Settings size={20}/> },
                     ].map(tab => (
                         <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`w-full flex items-center gap-4 px-5 py-4 rounded-[1.5rem] font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === tab.id ? 'bg-purple-600 text-white' : 'text-zinc-500 hover:text-white'}`}>
                             {tab.icon} {tab.label}
@@ -201,15 +261,135 @@ export const FandubDashboard: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {activeTab === 'story' && (
+                    <div className="animate-fade-in max-w-2xl mx-auto">
+                        <div className="text-center mb-10">
+                            <h2 className="text-2xl font-black uppercase tracking-widest text-white">Story Joylash</h2>
+                            <p className="text-zinc-500 text-sm mt-2">Muxlislaringizga yangiliklarni tezkor ulashing (24 soat)</p>
+                        </div>
+
+                        <div className="bg-zinc-900 border border-white/10 rounded-[3rem] p-8 flex flex-col items-center justify-center text-center">
+                            {storyFile ? (
+                                <div className="relative w-full aspect-[9/16] max-w-xs bg-black rounded-3xl overflow-hidden shadow-2xl mb-6">
+                                    {storyFile.type.startsWith('video') ? (
+                                        <video src={URL.createObjectURL(storyFile)} className="w-full h-full object-cover" autoPlay muted loop />
+                                    ) : (
+                                        <img src={URL.createObjectURL(storyFile)} className="w-full h-full object-cover" alt="Preview" />
+                                    )}
+                                    <button 
+                                        onClick={() => setStoryFile(null)} 
+                                        className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white hover:bg-red-600 transition-colors"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="w-full aspect-video border-2 border-dashed border-zinc-800 rounded-3xl flex flex-col items-center justify-center mb-6 hover:border-purple-600/50 transition-colors group cursor-pointer relative">
+                                    <input 
+                                        type="file" 
+                                        accept="image/*,video/*" 
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                        onChange={(e) => e.target.files && setStoryFile(e.target.files[0])} 
+                                    />
+                                    <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <Upload size={28} className="text-purple-500" />
+                                    </div>
+                                    <p className="font-bold text-white uppercase text-xs">Faylni tanlang</p>
+                                    <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1">Rasm yoki Video (Max 50MB)</p>
+                                </div>
+                            )}
+
+                            <button 
+                                onClick={handleStoryUpload}
+                                disabled={!storyFile || isUploading}
+                                className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-purple-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {isUploading ? <LoadingSpinner /> : <><Send size={16}/> Storyga Chiqarish</>}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'settings' && (
+                    <div className="animate-fade-in max-w-3xl mx-auto">
+                        <h2 className="text-2xl font-black uppercase tracking-widest mb-10 text-center">Kanal Sozlamalari</h2>
+                        
+                        <div className="bg-zinc-900 border border-white/10 rounded-[3rem] p-8 md:p-12 space-y-10">
+                            {/* Banner Edit */}
+                            <div className="relative group">
+                                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4 ml-2">Kanal Muqovasi (Banner)</label>
+                                <div className="w-full h-40 md:h-52 bg-black rounded-3xl overflow-hidden relative border border-white/5">
+                                    <img 
+                                        src={bannerFile ? URL.createObjectURL(bannerFile) : (channel.banner_url || 'https://via.placeholder.com/800x300')} 
+                                        className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-all" 
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="bg-black/50 p-3 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                                            <Edit3 size={24} />
+                                        </div>
+                                    </div>
+                                    <input type="file" accept="image/*" onChange={e => e.target.files && setBannerFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                </div>
+                            </div>
+
+                            {/* Avatar Edit */}
+                            <div className="flex justify-center -mt-20 relative z-10">
+                                <div className="relative group">
+                                    <div className="w-32 h-32 rounded-[2.5rem] bg-black p-1 border-4 border-zinc-900 shadow-2xl overflow-hidden relative">
+                                        <img 
+                                            src={avatarFile ? URL.createObjectURL(avatarFile) : (channel.avatar_url || profile?.avatar_url || '')} 
+                                            className="w-full h-full object-cover rounded-[2.2rem]" 
+                                        />
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                                            <Camera size={24} />
+                                        </div>
+                                        <input type="file" accept="image/*" onChange={e => e.target.files && setAvatarFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Text Inputs */}
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Kanal Nomi</label>
+                                    <input 
+                                        value={editName}
+                                        onChange={e => setEditName(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded-2xl p-5 text-white font-bold outline-none focus:border-purple-600 transition-all"
+                                        placeholder="Studio nomi"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Tavsif (Bio)</label>
+                                    <textarea 
+                                        value={editBio}
+                                        onChange={e => setEditBio(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded-2xl p-5 text-white text-sm outline-none focus:border-purple-600 transition-all h-32 resize-none"
+                                        placeholder="Kanal haqida qisqacha..."
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={handleSettingsSave}
+                                disabled={isSaving}
+                                className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {isSaving ? <LoadingSpinner /> : <><Save size={18}/> Saqlash</>}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </main>
 
             {isUploadModalOpen && <AddFandubUploadModal onClose={() => setIsUploadModalOpen(false)} onSave={handleUpload} isUploading={isUploading} />}
             
-            {isUploading && (
+            {(isUploading || isSaving) && (
                 <div className="fixed inset-0 bg-black/80 z-[300] flex items-center justify-center flex-col gap-6 backdrop-blur-xl">
                     <LoadingSpinner />
                     <div className="text-center">
-                        <h3 className="text-2xl font-black uppercase text-white mb-2">Video yuklanmoqda...</h3>
+                        <h3 className="text-2xl font-black uppercase text-white mb-2">Jarayon bajarilmoqda...</h3>
                         <p className="text-zinc-500 text-sm">Iltimos, sahifani yopmang.</p>
                     </div>
                 </div>
