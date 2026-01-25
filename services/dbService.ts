@@ -634,7 +634,7 @@ export const startFreeTrial = async (userId: string): Promise<string> => {
 };
 
 export const getMovieReviews = async (movieId: number) => {
-    const { data } = await supabase.from('reviews').select('*, profiles(full_name, avatar_url)').eq('movie_id', movieId).order('created_at', { ascending: false });
+    const { data } = await supabase.from('reviews').select('*, profiles(full_name, avatar_url, role)').eq('movie_id', movieId).order('created_at', { ascending: false });
     return data || [];
 };
 
@@ -643,7 +643,15 @@ export const addReview = async (movieId: number, userId: string, rating: number,
     if (error) throw error;
 };
 
-// --- MISSING FUNCTIONS ADDED BELOW ---
+export const deleteReview = async (reviewId: number) => {
+    const { error } = await supabase.from('reviews').delete().eq('id', reviewId);
+    if (error) throw error;
+};
+
+export const updateReview = async (reviewId: number, comment: string) => {
+    const { error } = await supabase.from('reviews').update({ comment }).eq('id', reviewId);
+    if (error) throw error;
+};
 
 /**
  * Checks if a movie is saved by the user
