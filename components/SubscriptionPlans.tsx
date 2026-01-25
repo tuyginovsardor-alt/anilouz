@@ -2,14 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { CrownIcon } from './icons/CrownIcon';
 import { TicketIcon } from './icons/TicketIcon';
-import { QualityIcon } from './icons/QualityIcon';
-import { NoAdsIcon } from './icons/NoAdsIcon';
 import { buySubscription, redeemPromocode, getAppConfig } from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { useNotification } from '../hooks/useNotification';
 import { LoadingSpinner } from './LoadingSpinner';
-import { PlayIcon } from './icons/PlayIcon';
-import { Check, Star } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 type PlanDuration = '1-oy' | '3-oy' | '6-oy' | '1-yil';
 
@@ -21,6 +18,10 @@ interface PlanDetails {
     color: string;
     texture: string;
     perks: string[];
+}
+
+interface SubscriptionPlansProps {
+    onPlanSelect?: (plan: string) => void; // Optional prop for handling guest clicks
 }
 
 const formatCurrency = (amount: number) => {
@@ -45,28 +46,25 @@ const PlanCard: React.FC<{
     return (
         <div 
             onClick={onClick}
-            className={`relative w-full aspect-[1.58/1] rounded-3xl overflow-hidden cursor-pointer transition-all duration-500 group perspective-1000 ${selected ? 'scale-105 ring-4 ring-offset-4 ring-offset-black ring-orange-500 z-10' : 'scale-100 opacity-80 hover:opacity-100 hover:scale-[1.02]'}`}
+            className={`relative w-full aspect-[1.58/1] rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 group perspective-1000 shadow-xl ${selected ? 'ring-4 ring-offset-2 ring-offset-black ring-orange-500 z-10 scale-[1.02]' : 'opacity-90 hover:opacity-100 hover:scale-[1.01]'}`}
         >
             {/* Background & Texture */}
             <div className={`absolute inset-0 bg-gradient-to-br ${details.color}`}></div>
             <div className="absolute inset-0 opacity-30 mix-blend-overlay" style={{ backgroundImage: `url("${details.texture}")`, backgroundSize: 'cover' }}></div>
             
-            {/* Holographic Shine */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform translate-x-[-100%] group-hover:translate-x-[100%]"></div>
-
             {/* Content */}
-            <div className="absolute inset-0 p-6 flex flex-col justify-between text-white font-sans">
+            <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-between text-white font-sans">
                 <div className="flex justify-between items-start">
                     <div>
-                        <h3 className="text-2xl font-black uppercase tracking-widest italic">{details.label}</h3>
-                        <p className="text-[10px] font-bold opacity-70 tracking-[0.2em] uppercase">Premium Membership</p>
+                        <h3 className="text-xl sm:text-2xl font-black uppercase tracking-widest italic">{details.label}</h3>
+                        <p className="text-[8px] sm:text-[10px] font-bold opacity-70 tracking-[0.2em] uppercase">Premium Pass</p>
                     </div>
-                    <CrownIcon className="w-8 h-8 opacity-80" />
+                    <CrownIcon className="w-6 h-6 sm:w-8 sm:h-8 opacity-80" />
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1 my-2">
                     {details.perks.slice(0,2).map((p, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs font-bold opacity-90">
+                        <div key={i} className="flex items-center gap-2 text-[10px] sm:text-xs font-bold opacity-90">
                             <Check size={12} strokeWidth={4} /> {p}
                         </div>
                     ))}
@@ -74,19 +72,13 @@ const PlanCard: React.FC<{
 
                 <div className="flex justify-between items-end">
                     <div>
-                        <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Narxi</p>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black tracking-tighter shadow-black drop-shadow-md">{formatCurrency(finalPrice)}</span>
-                            <span className="text-xs font-bold">UZS</span>
+                        <div className="flex items-baseline gap-1 sm:gap-2">
+                            <span className="text-2xl sm:text-3xl font-black tracking-tighter shadow-black drop-shadow-md">{formatCurrency(finalPrice)}</span>
+                            <span className="text-[10px] sm:text-xs font-bold">UZS</span>
                         </div>
                         {(details.originalPrice || discount) && (
-                            <p className="text-xs line-through opacity-50">{formatCurrency(details.price)} UZS</p>
+                            <p className="text-[10px] sm:text-xs line-through opacity-50">{formatCurrency(details.price)}</p>
                         )}
-                    </div>
-                    <div className="text-right">
-                         <div className="w-12 h-8 bg-white/20 rounded-md backdrop-blur-sm border border-white/30 flex items-center justify-center">
-                             <div className="w-6 h-4 border border-white/50 rounded-sm"></div>
-                         </div>
                     </div>
                 </div>
             </div>
@@ -94,7 +86,7 @@ const PlanCard: React.FC<{
     );
 }
 
-export const SubscriptionPlans: React.FC = () => {
+export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onPlanSelect }) => {
     const [selectedPlan, setSelectedPlan] = useState<PlanDuration>('1-oy');
     const [isLoading, setIsLoading] = useState(false);
     const [isPricesLoading, setIsPricesLoading] = useState(true);
@@ -164,7 +156,14 @@ export const SubscriptionPlans: React.FC = () => {
         }
     }
 
-    const handleBuy = async () => {
+    const handleAction = async () => {
+        // Agar onPlanSelect prop berilgan bo'lsa (Guest mode), uni chaqiramiz
+        if (onPlanSelect) {
+            onPlanSelect(selectedPlan);
+            return;
+        }
+
+        // Aks holda standart to'lov jarayoni
         setIsLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -218,17 +217,19 @@ export const SubscriptionPlans: React.FC = () => {
     if (isPricesLoading) return <div className="py-10 flex justify-center"><LoadingSpinner /></div>;
 
     return (
-        <section className="relative max-w-6xl mx-auto">
+        <section className="relative w-full max-w-6xl mx-auto">
             
-            {/* Promo Trigger */}
-            <div className="flex justify-end mb-6">
-                <button onClick={() => setShowPromoModal(true)} className="flex items-center gap-2 text-xs font-bold text-orange-500 uppercase tracking-widest hover:text-white transition-colors">
-                    <TicketIcon className="w-5 h-5"/> Promokod
-                </button>
-            </div>
+            {/* Promo Trigger - Only show if not in guest select mode */}
+            {!onPlanSelect && (
+                <div className="flex justify-end mb-6">
+                    <button onClick={() => setShowPromoModal(true)} className="flex items-center gap-2 text-xs font-bold text-orange-500 uppercase tracking-widest hover:text-white transition-colors">
+                        <TicketIcon className="w-5 h-5"/> Promokod
+                    </button>
+                </div>
+            )}
 
-            {/* Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {/* Cards Grid - Responsive: 1 column on mobile, 2 on tablet, 4 on desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-24 sm:mb-10">
                 {(Object.keys(plans) as PlanDuration[]).map((key) => (
                     <PlanCard 
                         key={key} 
@@ -241,20 +242,20 @@ export const SubscriptionPlans: React.FC = () => {
                 ))}
             </div>
 
-            {/* Payment Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 flex justify-between items-center z-50 md:relative md:bg-transparent md:border-none md:p-0">
+            {/* Sticky Action Button (Mobile) or Standard Button (Desktop) */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/90 backdrop-blur-xl border-t border-white/10 flex justify-between items-center z-[60] md:relative md:bg-transparent md:border-none md:p-0 md:justify-end">
                 <div className="md:hidden">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase">Jami to'lov</p>
-                    <p className="text-xl font-black text-white">{formatCurrency(finalPrice)}</p>
+                    <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Jami to'lov</p>
+                    <p className="text-lg font-black text-white">{formatCurrency(finalPrice)}</p>
                 </div>
                 <button 
-                    onClick={handleBuy}
+                    onClick={handleAction}
                     disabled={isLoading}
-                    className="w-full md:w-auto px-12 py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                    className="w-auto px-8 md:px-12 py-3 md:py-4 bg-white text-black rounded-xl md:rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                 >
                     {isLoading ? <LoadingSpinner /> : (
                         <>
-                            <span>To'lov Qilish</span>
+                            <span>{onPlanSelect ? 'Tanlash va Kirish' : 'To\'lov Qilish'}</span>
                             <span className="hidden md:inline">| {formatCurrency(finalPrice)}</span>
                         </>
                     )}

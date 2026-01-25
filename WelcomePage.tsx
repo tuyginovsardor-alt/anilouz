@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAppConfig } from './services/dbService';
 import { Movie } from './types';
-import { Crown } from 'lucide-react';
+import { Crown, X, ArrowLeft } from 'lucide-react';
 import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 
@@ -34,6 +34,12 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
     loadContent();
   }, []);
 
+  // Handle plan selection in guest mode: Close premium modal, Open login modal
+  const handlePlanSelection = (plan: string) => {
+      setShowPremiumModal(false);
+      onStart(); // Triggers AuthModal in App.tsx
+  };
+
   // Default fallback image
   const heroBg = customBg || 'https://i.imgur.com/sC56bsu.jpg';
 
@@ -54,9 +60,8 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
       {/* 2. CONTENT (BOTTOM ALIGNED) */}
       <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-12 flex flex-col items-center text-center animate-slide-in-up">
           
-          {/* LOGO & TITLE BLOCK (Yonma-yon, dumaloq ramka, kichikroq format) */}
+          {/* LOGO & TITLE BLOCK */}
           <div className="mb-10 flex flex-row items-center gap-5">
-              {/* Logo Frame: Circular cutout */}
               <div className="w-16 h-16 rounded-full bg-black border-2 border-orange-500 overflow-hidden shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center shrink-0">
                   {customLogo ? (
                       <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -65,7 +70,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
                   )}
               </div>
               
-              {/* Text */}
               <div className="text-left">
                   <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-xl" style={{ fontFamily: 'Impact, sans-serif' }}>
                       ANILO<span className="text-orange-500">.UZ</span>
@@ -111,17 +115,41 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
           </div>
       </div>
 
-      {/* Premium Modal Popup (Tariflar) */}
+      {/* Premium Modal Popup (Resonsive) */}
       {showPremiumModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in" onClick={() => setShowPremiumModal(false)}>
-              <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setShowPremiumModal(false)} className="absolute top-5 right-5 text-zinc-500 hover:text-white transition-colors">✕</button>
-                  <div className="p-8">
-                      <h2 className="text-2xl font-black text-white text-center mb-2 flex items-center justify-center gap-2">
-                          <Crown className="text-[#f4b308] fill-[#f4b308]" /> Premium Tariflar
+          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in">
+              <div 
+                className="bg-[#0f0f0f] border-t sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-3xl w-full max-w-5xl h-[85vh] sm:h-auto sm:max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col" 
+                onClick={e => e.stopPropagation()}
+              >
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-[#0f0f0f] sticky top-0 z-20">
+                      <button onClick={() => setShowPremiumModal(false)} className="text-zinc-400 hover:text-white flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors">
+                          <ArrowLeft size={18} /> Orqaga
+                      </button>
+                      <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
+                          <Crown className="text-[#f4b308] fill-[#f4b308]" size={20} /> Premium
                       </h2>
-                      <p className="text-center text-zinc-500 text-xs font-bold uppercase tracking-widest mb-8">Eng yaxshi taklifni tanlang</p>
-                      <SubscriptionPlans />
+                      <button onClick={() => setShowPremiumModal(false)} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full">
+                          <X size={18} />
+                      </button>
+                  </div>
+
+                  {/* Modal Content - Scrollable */}
+                  <div className="p-6 overflow-y-auto custom-scrollbar flex-1 pb-24 sm:pb-6">
+                      <div className="text-center mb-8">
+                          <h3 className="text-2xl md:text-3xl font-black text-white mb-2">Eng yaxshi rejalarni tanlang</h3>
+                          <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Cheklovsiz kirish va yuqori sifat</p>
+                      </div>
+                      
+                      {/* Pass onPlanSelect to handle guest redirect */}
+                      <SubscriptionPlans onPlanSelect={handlePlanSelection} />
+                      
+                      <div className="mt-8 text-center sm:hidden">
+                          <button onClick={() => { setShowPremiumModal(false); onStart(); }} className="text-zinc-500 text-xs underline">
+                              Hisobingiz bormi? Kirish
+                          </button>
+                      </div>
                   </div>
               </div>
           </div>
