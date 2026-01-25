@@ -104,9 +104,15 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                                 onClick={() => setSelectedChannel(ch)}
                                 className="flex-shrink-0 w-72 bg-zinc-900 border border-white/5 rounded-[3rem] p-8 flex flex-col items-center text-center cursor-pointer hover:border-purple-500/30 transition-all shadow-2xl relative overflow-hidden group"
                             >
-                                <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-purple-600/10 to-transparent"></div>
-                                <div className="w-24 h-24 rounded-[2rem] overflow-hidden mb-5 border-4 border-zinc-800 shadow-2xl relative z-10">
-                                    <img src={ch.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full object-cover" alt="" />
+                                <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-purple-900/20 to-transparent">
+                                    {ch.banner_url && <img src={ch.banner_url} className="w-full h-full object-cover opacity-30" alt="" />}
+                                </div>
+                                <div className="w-24 h-24 rounded-[2rem] overflow-hidden mb-5 border-4 border-zinc-800 shadow-2xl relative z-10 bg-black">
+                                    {ch.avatar_url ? (
+                                        <img src={ch.avatar_url} className="w-full h-full object-cover" alt="" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-purple-900/50 text-purple-300 font-black text-2xl">{ch.name.charAt(0)}</div>
+                                    )}
                                 </div>
                                 <h3 className="font-black text-white uppercase text-base mb-1 tracking-tight">{ch.name}</h3>
                                 <p className="text-purple-500 text-[10px] font-black mb-6 tracking-[0.2em]">@{ch.username}</p>
@@ -153,15 +159,19 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
 
                         <div className="px-6 lg:px-16 flex flex-col lg:flex-row gap-6 lg:gap-10 -mt-20 lg:-mt-24 relative z-10 flex-shrink-0">
                             <div className="w-36 h-36 lg:w-48 lg:h-48 rounded-[2.5rem] lg:rounded-[3rem] overflow-hidden p-1.5 bg-[#050505] shadow-2xl">
-                                <img src={selectedChannel.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full rounded-[2.3rem] lg:rounded-[2.8rem] object-cover border-4 border-zinc-900" alt="" />
+                                {selectedChannel.avatar_url ? (
+                                    <img src={selectedChannel.avatar_url} className="w-full h-full rounded-[2.3rem] lg:rounded-[2.8rem] object-cover border-4 border-zinc-900" alt="" />
+                                ) : (
+                                    <div className="w-full h-full rounded-[2.3rem] lg:rounded-[2.8rem] bg-purple-900 flex items-center justify-center text-white font-black text-4xl border-4 border-zinc-900">{selectedChannel.name.charAt(0)}</div>
+                                )}
                             </div>
                             <div className="flex-1 lg:pt-24">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <h2 className="text-3xl lg:text-4xl font-black uppercase tracking-tighter">{selectedChannel.name}</h2>
+                                    <h2 className="text-3xl lg:text-4xl font-black uppercase tracking-tighter text-white">{selectedChannel.name}</h2>
                                     <CheckCircle size={20} className="text-blue-500 fill-blue-500/10"/>
                                 </div>
                                 <div className="flex flex-wrap gap-4 text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-5">
-                                    <span>@{selectedChannel.username}</span>
+                                    <span className="text-purple-500">@{selectedChannel.username}</span>
                                     <span>•</span>
                                     <span>{selectedChannel.subscriber_count} obunachi</span>
                                     <span>•</span>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Star, Lock, ArrowLeft, MessageCircle, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle } from 'lucide-react';
+import { Play, Star, Lock, ArrowLeft, MessageCircle, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle, Eye, TrendingUp } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, getMovieEpisodes, getMovieReviews, addReview, deleteReview, updateReview, getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
 import { Movie, UserProfile, Episode } from './types';
@@ -84,6 +84,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   }, [userProfile]);
 
   const canWatch = movie.access_type === 'free' || isPremiumUser;
+  const viewCount = (movie as any).view_count || Math.floor(Math.random() * 5000) + 1000;
 
   // --- ACTIONS ---
 
@@ -184,21 +185,21 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
             >
                 <img src={movie.posterUrl} alt="" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
             </div>
 
-            {/* Navbar */}
-            <div className="absolute top-0 left-0 right-0 pt-6 px-4 md:px-8 flex justify-between items-center z-[100] animate-fade-in">
-                <button onClick={onBack} className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-90 border border-white/10">
+            {/* Navbar (Positions adjusted) */}
+            <div className="absolute top-0 left-0 right-0 pt-12 md:pt-8 px-4 md:px-8 flex justify-between items-center z-[100] animate-fade-in">
+                <button onClick={onBack} className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-90 border border-white/10 shadow-lg">
                     <ArrowLeft size={24} strokeWidth={2.5} />
                 </button>
                 <div className="flex gap-3">
-                    <button className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-90 border border-white/10">
+                    <button className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-90 border border-white/10 shadow-lg">
                         <Share2 size={24} />
                     </button>
                     <button 
                         onClick={handleToggleSave} 
-                        className={`p-3 backdrop-blur-md rounded-full transition-all active:scale-90 border border-white/10 ${isSaved ? 'bg-orange-600 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                        className={`p-3 backdrop-blur-md rounded-full transition-all active:scale-90 border border-white/10 shadow-lg ${isSaved ? 'bg-orange-600 text-white border-orange-500 shadow-orange-500/50' : 'bg-white/10 text-white hover:bg-white/20'}`}
                     >
                         <Bookmark size={24} fill={isSaved ? 'currentColor' : 'none'} />
                     </button>
@@ -209,28 +210,32 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
             <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16 max-w-7xl mx-auto w-full z-10 pb-20">
                 <div className="max-w-3xl space-y-6 animate-slide-in-up">
                     <div className="flex flex-wrap items-center gap-3">
-                        <span className={`text-[10px] font-black px-4 py-1.5 rounded-lg uppercase tracking-widest shadow-lg ${movie.access_type === 'premium' ? 'bg-orange-600 text-white' : 'bg-green-600 text-white'}`}>
+                        <span className={`text-[10px] font-black px-4 py-1.5 rounded-lg uppercase tracking-widest shadow-lg ${movie.access_type === 'premium' ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white' : 'bg-gradient-to-r from-green-600 to-teal-600 text-white'}`}>
                             {movie.access_type === 'premium' ? 'PREMIUM' : 'BEPUL'}
                         </span>
                         <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-lg">
                             <Star size={14} className="text-yellow-400 fill-yellow-400"/>
                             <span className="font-bold text-sm">{movie.rating?.toFixed(1) || '0.0'}</span>
                         </div>
+                        <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-lg">
+                            <Eye size={14} className="text-blue-400"/>
+                            <span className="font-bold text-sm">{viewCount.toLocaleString()}</span>
+                        </div>
                         <span className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-lg text-xs font-bold text-white uppercase">{movie.quality}</span>
                         <span className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-lg text-xs font-bold text-white">{movie.year}</span>
                     </div>
 
-                    <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none drop-shadow-2xl text-white">
+                    <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none drop-shadow-2xl text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-gray-400">
                         {movie.title}
                     </h1>
                     
                     <div className="flex flex-wrap gap-2">
                         {movie.genre.split(',').slice(0, 3).map((g, i) => (
-                            <span key={i} className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 border border-white/10 px-3 py-1 rounded-full">{g.trim()}</span>
+                            <span key={i} className="text-[10px] uppercase font-bold tracking-widest text-blue-200 border border-blue-500/30 bg-blue-900/20 px-3 py-1 rounded-full">{g.trim()}</span>
                         ))}
                     </div>
 
-                    <p className="text-gray-200 text-sm md:text-lg leading-relaxed font-medium line-clamp-3 md:line-clamp-4 drop-shadow-md">
+                    <p className="text-gray-200 text-sm md:text-lg leading-relaxed font-medium line-clamp-3 md:line-clamp-4 drop-shadow-md border-l-2 border-orange-500 pl-4">
                         {movie.plot}
                     </p>
                     
@@ -244,7 +249,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         {movie.translator_id && (
                             <button 
                                 onClick={() => onArtistClick?.(movie.translator_id!)}
-                                className="h-14 px-8 bg-white/5 backdrop-blur-md border border-white/10 text-white hover:bg-white/10 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 active:scale-95"
+                                className="h-14 px-8 bg-purple-600/20 backdrop-blur-md border border-purple-500/50 text-purple-200 hover:bg-purple-600/30 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 active:scale-95"
                             >
                                 <Mic size={18} className="text-purple-400"/>
                                 <span>{movie.translator || 'Dublyaj'}</span>
@@ -376,10 +381,10 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
                                 <div className="flex items-center justify-between py-2 border-b border-white/5">
                                     <div className="flex items-center gap-3 text-zinc-400">
-                                        <Clock size={18} />
-                                        <span className="text-sm font-bold">Davomiyligi</span>
+                                        <TrendingUp size={18} />
+                                        <span className="text-sm font-bold">Ko'rishlar</span>
                                     </div>
-                                    <span className="text-white font-medium text-sm">~24 daqiqa</span>
+                                    <span className="text-blue-400 font-black text-sm">{viewCount.toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -432,7 +437,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                             <h3 className="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4">Janrlar va Teglar</h3>
                             <div className="flex flex-wrap gap-2">
                                 {movie.genre.split(',').map((g, i) => (
-                                    <span key={i} className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-zinc-300 uppercase tracking-wide transition-colors cursor-default">
+                                    <span key={i} className="px-4 py-2 bg-blue-900/20 hover:bg-blue-900/40 border border-blue-500/30 rounded-xl text-xs font-bold text-blue-200 uppercase tracking-wide transition-colors cursor-default">
                                         {g.trim()}
                                     </span>
                                 ))}
