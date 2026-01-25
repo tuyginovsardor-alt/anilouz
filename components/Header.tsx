@@ -6,6 +6,7 @@ import { Search, Bell, User, Play, Mic, Sparkles } from 'lucide-react';
 import * as db from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
+import { useNotification } from '../hooks/useNotification';
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
   const [customLogo, setCustomLogo] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { addNotification } = useNotification();
 
   useEffect(() => {
       db.getAppConfig().then(config => {
@@ -36,11 +38,23 @@ export const Header: React.FC<HeaderProps> = ({
 
       if (isAuthenticated) {
           fetchHeaderData();
-          // Real vaqtda bildirishnomalarni tekshirish (Polling)
-          const interval = setInterval(fetchHeaderData, 15000); // 15 sekundda bir
+          // Check for system updates once per session
+          checkSystemNotifications();
+          
+          const interval = setInterval(fetchHeaderData, 15000);
           return () => clearInterval(interval);
       }
   }, [isAuthenticated]);
+
+  const checkSystemNotifications = () => {
+      const hasSeenUpdate = sessionStorage.getItem('seen_policy_update');
+      if (!hasSeenUpdate) {
+          addNotification({ type: 'info', title: 'Qoidalar Yangilandi', message: 'Maxfiylik siyosati va Ommaviy oferta yangilandi. Iltimos tanishib chiqing.' });
+          addNotification({ type: 'success', title: 'Premium Aksiya', message: 'Yillik tarifga o\'ting va 2 oy bepul oling! Chegirma tugashiga oz qoldi.' });
+          sessionStorage.setItem('seen_policy_update', 'true');
+          setUnreadCount(prev => prev + 2); // Artificially increment for visual cue
+      }
+  };
 
   const fetchHeaderData = async () => {
       try {
@@ -50,7 +64,8 @@ export const Header: React.FC<HeaderProps> = ({
                   db.getUnreadNotificationsCount(user.id),
                   db.getUserProfile(user.id)
               ]);
-              setUnreadCount(count);
+              // Add mock count to real count if needed, or just use real
+              setUnreadCount(prev => Math.max(prev, count)); 
               if (profile) setAvatarUrl(profile.avatar_url);
           }
       } catch (e) { console.error(e); }
@@ -76,9 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                 </div>
 
-                {/* NEW PROFESSIONAL NAVIGATION (2 ITEMS) */}
                 <nav className="hidden xl:flex items-center gap-4">
-                    {/* Item 1: Katalog */}
                     <button
                         onClick={() => onNavigate('dashboard')}
                         className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all duration-300 border ${
@@ -106,7 +119,6 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                     </button>
 
-                    {/* Item 2: Fandub */}
                     <button
                         onClick={() => onNavigate('studio')}
                         className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all duration-300 border ${
@@ -136,9 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </nav>
             </div>
 
-            {/* RIGHT SIDE ACTIONS */}
             <div className="flex items-center gap-3 sm:gap-4">
-                {/* AI Assistant (Moved here) */}
                 <button 
                     onClick={() => onNavigate('ai-assistant')} 
                     className={`p-2.5 rounded-xl transition-all active:scale-95 group ${currentPage === 'ai-assistant' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-zinc-400 hover:text-blue-400 hover:bg-white/5'}`}
@@ -154,9 +164,9 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 
                 <button className="p-2 text-white hover:text-orange-500 transition-colors relative drop-shadow-md active:scale-95 group">
-                    <Bell size={26} strokeWidth={2.5} className={unreadCount > 0 ? "animate-swing" : ""} />
+                    <Bell size={26} strokeWidth={2.5} className={unreadCount > 0 ? "animate-swing text-orange-500" : ""} />
                     {unreadCount > 0 && (
-                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 rounded-full border border-black text-[8px] flex items-center justify-center text-white font-black animate-pulse">
+                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 rounded-full border border-black text-[8px] flex items-center justify-center text-white font-black animate-pulse shadow-lg shadow-red-600/50">
                             {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}

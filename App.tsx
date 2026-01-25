@@ -76,14 +76,11 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
         try {
-            // 1. Configni xavfsiz yuklash
             const config = await getAppConfig().catch(() => ({}));
             if (config['site_logo']) setLoaderLogo(config['site_logo']);
             
-            // 2. Preload (faqat bitta muhim rasm uchun, ilovani sekinlashtirmaslik kerak)
             if (config['site_logo']) await preloadImage(config['site_logo']).catch(() => {});
 
-            // 3. Sessiyani xavfsiz tekshirish
             const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
             
             if (session) {
@@ -91,6 +88,19 @@ const App: React.FC = () => {
                 await fetchUserRole(session.user.id).catch(() => {});
                 setPage('dashboard'); 
                 
+                // --- AUTO PREMIUM OFFER LOGIC ---
+                // If user is just 'user' (not premium), show an offer toast after 5 seconds
+                setTimeout(() => {
+                    if (currentUserRole === 'user') {
+                        addNotification({ 
+                            type: 'info', 
+                            title: 'Maxsus Taklif 👑', 
+                            message: 'Premium obuna bilan 4K sifat va reklamasiz rejimni sinab ko\'ring!' 
+                        });
+                    }
+                }, 5000);
+                // -------------------------------
+
                 const tspayId = localStorage.getItem('tspay_pending_id');
                 const tspayAmount = localStorage.getItem('tspay_pending_amount');
                 
@@ -113,7 +123,6 @@ const App: React.FC = () => {
             console.error("Critical Init Error:", e);
             setPage('welcome');
         } finally { 
-            // 4. Har qanday holatda ham ilovani ochish (maksimum 1.5 sek)
             setTimeout(() => setIsAppReady(true), 500); 
         }
     };
@@ -130,7 +139,7 @@ const App: React.FC = () => {
         }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, []); // currentUserRole dependency removed to avoid re-running init on role change inside init
 
   const fetchUserRole = async (userId: string) => {
       try {

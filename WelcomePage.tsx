@@ -21,134 +21,106 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
     const loadContent = async () => {
       try {
         const config = await getAppConfig();
-        if (config['site_background']) {
-          setCustomBg(config['site_background']);
-        }
-        if (config['site_logo']) {
-            setCustomLogo(config['site_logo']);
-        }
-      } catch (e) {
-        console.error(e);
-      }
+        if (config['site_background']) setCustomBg(config['site_background']);
+        if (config['site_logo']) setCustomLogo(config['site_logo']);
+      } catch (e) { console.error(e); }
     };
     loadContent();
   }, []);
 
-  // Handle plan selection in guest mode: Close premium modal, Open login modal
   const handlePlanSelection = (plan: string) => {
       setShowPremiumModal(false);
-      onStart(); // Triggers AuthModal in App.tsx
+      // Biroz kutib turib Login ni ochamiz, smooth tranzaksiya uchun
+      setTimeout(() => onStart(), 300);
   };
 
-  // Default fallback image
   const heroBg = customBg || 'https://i.imgur.com/sC56bsu.jpg';
 
   return (
     <div className="relative h-screen w-full bg-[#000000] overflow-hidden font-sans">
       
-      {/* 1. FULL SCREEN BACKGROUND IMAGE (No Borders) */}
+      {/* Background */}
       <div className="absolute inset-0 z-0">
-          <img 
-            src={heroBg} 
-            alt="Background" 
-            className="w-full h-full object-cover opacity-80"
-          />
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/95"></div>
+          <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-70 animate-pulse-slow" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black"></div>
       </div>
 
-      {/* 2. CONTENT (BOTTOM ALIGNED) */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-12 flex flex-col items-center text-center animate-slide-in-up">
+      {/* Content */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-16 flex flex-col items-center text-center animate-slide-in-up">
           
-          {/* LOGO & TITLE BLOCK */}
           <div className="mb-10 flex flex-row items-center gap-5">
-              <div className="w-16 h-16 rounded-full bg-black border-2 border-orange-500 overflow-hidden shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center shrink-0">
                   {customLogo ? (
                       <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
-                      <UzumakiLogo className="w-full h-full p-1 text-orange-500 drop-shadow-md" />
+                      <UzumakiLogo className="w-full h-full p-2 text-orange-500 drop-shadow-md" />
                   )}
               </div>
-              
               <div className="text-left">
-                  <h1 className="text-3xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-xl" style={{ fontFamily: 'Impact, sans-serif' }}>
-                      ANILO<span className="text-orange-500">.UZ</span>
+                  <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-xl font-mono">
+                      ANILO<span className="text-orange-600">.UZ</span>
                   </h1>
-                  <p className="text-[10px] text-gray-300 font-bold uppercase tracking-[0.3em] mt-1 opacity-90">
-                      Anime Olami
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.4em] mt-1 pl-1">
+                      Professional Dublyaj
                   </p>
               </div>
           </div>
 
-          <p className="text-gray-200 text-xs md:text-sm font-bold leading-relaxed drop-shadow-md opacity-80 max-w-sm mb-8">
-              Sevimli animelaringiz. Barchasi bitta joyda. Cheksiz tomosha va yuqori sifat.
+          <p className="text-gray-300 text-xs md:text-sm font-medium leading-relaxed drop-shadow-md max-w-sm mb-10 opacity-90">
+              O'zbekistonning eng katta anime portali. Yuqori sifat va tezkor tarjimalar faqat bizda.
           </p>
 
-          {/* Buttons Container */}
-          <div className="w-full max-w-xs space-y-4">
-              {/* Explore Free Trial */}
+          <div className="w-full max-w-xs space-y-3">
               <button 
                 onClick={() => setShowPremiumModal(true)}
-                className="w-full py-4 bg-[#f4b308] hover:bg-[#eab308] text-black font-extrabold text-xs uppercase tracking-widest transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(244,179,8,0.4)] clip-path-slant"
-                style={{ clipPath: 'polygon(4% 0, 100% 0, 96% 100%, 0% 100%)' }}
+                className="w-full py-4 bg-white text-black hover:bg-gray-200 font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3 rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.2)]"
               >
-                <Crown size={18} fill="black" /> Explore Free Trial
+                <Crown size={16} fill="black" /> Premium Sotib Olish
               </button>
 
-              {/* Log In Button */}
               <button 
                 onClick={onStart} 
-                className="w-full py-4 bg-transparent border-2 border-white/20 text-white font-extrabold text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all active:scale-95 backdrop-blur-sm"
+                className="w-full py-4 bg-black/60 border border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-black/80 transition-all active:scale-95 backdrop-blur-md rounded-2xl"
               >
-                Log In
+                Kirish
               </button>
           </div>
 
-          {/* Create Account Link */}
-          <div className="mt-6">
-              <button 
-                onClick={onStart} 
-                className="text-orange-500 text-[10px] font-black hover:text-orange-400 transition-colors uppercase tracking-[0.2em]"
-              >
-                Create Account
+          <div className="mt-8">
+              <button onClick={onStart} className="text-zinc-500 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-[0.2em]">
+                Hisob yaratish
               </button>
           </div>
       </div>
 
-      {/* Premium Modal Popup (Resonsive) */}
+      {/* PREMIUM MODAL (Responsive Bottom Sheet) */}
       {showPremiumModal && (
-          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in">
+          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowPremiumModal(false)}>
               <div 
-                className="bg-[#0f0f0f] border-t sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-3xl w-full max-w-5xl h-[85vh] sm:h-auto sm:max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col" 
+                className="bg-[#0a0a0a] border-t sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-6xl h-[90vh] sm:h-auto sm:max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col transition-transform duration-300" 
                 onClick={e => e.stopPropagation()}
               >
-                  {/* Modal Header */}
-                  <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-[#0f0f0f] sticky top-0 z-20">
-                      <button onClick={() => setShowPremiumModal(false)} className="text-zinc-400 hover:text-white flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors">
-                          <ArrowLeft size={18} /> Orqaga
-                      </button>
-                      <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
-                          <Crown className="text-[#f4b308] fill-[#f4b308]" size={20} /> Premium
-                      </h2>
-                      <button onClick={() => setShowPremiumModal(false)} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full">
-                          <X size={18} />
+                  {/* Handle bar for mobile feel */}
+                  <div className="w-full flex justify-center pt-3 pb-1 sm:hidden" onClick={() => setShowPremiumModal(false)}>
+                      <div className="w-12 h-1.5 bg-zinc-800 rounded-full"></div>
+                  </div>
+
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 sticky top-0 z-20 bg-[#0a0a0a]/95 backdrop-blur-md">
+                      <div className="flex items-center gap-3">
+                          <div className="p-2 bg-orange-600/20 rounded-lg text-orange-500"><Crown size={20} /></div>
+                          <div>
+                              <h2 className="text-lg font-black text-white uppercase tracking-tight">Premium Rejalar</h2>
+                              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Cheklovsiz kirish</p>
+                          </div>
+                      </div>
+                      <button onClick={() => setShowPremiumModal(false)} className="text-zinc-500 hover:text-white transition-colors p-2 bg-white/5 rounded-full">
+                          <X size={20} />
                       </button>
                   </div>
 
-                  {/* Modal Content - Scrollable */}
-                  <div className="p-6 overflow-y-auto custom-scrollbar flex-1 pb-24 sm:pb-6">
-                      <div className="text-center mb-8">
-                          <h3 className="text-2xl md:text-3xl font-black text-white mb-2">Eng yaxshi rejalarni tanlang</h3>
-                          <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Cheklovsiz kirish va yuqori sifat</p>
-                      </div>
-                      
-                      {/* Pass onPlanSelect to handle guest redirect */}
-                      <SubscriptionPlans onPlanSelect={handlePlanSelection} />
-                      
-                      <div className="mt-8 text-center sm:hidden">
-                          <button onClick={() => { setShowPremiumModal(false); onStart(); }} className="text-zinc-500 text-xs underline">
-                              Hisobingiz bormi? Kirish
-                          </button>
+                  <div className="p-0 overflow-y-auto custom-scrollbar flex-1 bg-[#0a0a0a]">
+                      <div className="py-6 px-4">
+                          <SubscriptionPlans onPlanSelect={handlePlanSelection} />
                       </div>
                   </div>
               </div>
