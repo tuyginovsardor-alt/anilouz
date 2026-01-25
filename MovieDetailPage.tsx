@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Star, Lock, ArrowLeft, MessageCircle, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, MoreHorizontal, CheckCircle } from 'lucide-react';
+import { Play, Star, Lock, ArrowLeft, MessageCircle, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, getMovieEpisodes, getMovieReviews, addReview, deleteReview, updateReview, getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
 import { Movie, UserProfile, Episode } from './types';
@@ -24,7 +24,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   const [relatedMovies, setRelatedMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'episodes' | 'comments'>('episodes');
+  const [activeTab, setActiveTab] = useState<'episodes' | 'info' | 'comments'>('episodes');
   const [scrollY, setScrollY] = useState(0);
 
   // Comment State
@@ -261,47 +261,61 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-30" ref={contentRef}>
             
-            {/* GLASSMORPHIC TABS */}
+            {/* GLASSMORPHIC TABS (UPDATED FOR 3 ITEMS) */}
             <div className="flex justify-center mb-10">
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-1.5 rounded-full flex relative">
-                    <button 
-                        onClick={() => setActiveTab('episodes')}
-                        className={`relative z-10 px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${activeTab === 'episodes' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}
-                    >
-                        <Play size={14} fill={activeTab==='episodes' ? 'currentColor' : 'none'}/> Qismlar
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('comments')}
-                        className={`relative z-10 px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${activeTab === 'comments' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}
-                    >
-                        <MessageCircle size={14} fill={activeTab==='comments' ? 'currentColor' : 'none'}/> Hamjamiyat
-                    </button>
-                    
-                    {/* Sliding Indicator */}
-                    <div 
-                        className={`absolute top-1.5 bottom-1.5 bg-white rounded-full transition-all duration-300 shadow-lg ${activeTab === 'episodes' ? 'left-1.5 w-[140px]' : 'left-[145px] w-[165px]'}`}
-                    ></div>
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-1.5 rounded-full w-full max-w-lg shadow-2xl">
+                    <div className="grid grid-cols-3 relative">
+                        {/* Sliding Indicator */}
+                        <div 
+                            className={`absolute top-0 bottom-0 bg-white rounded-full transition-all duration-300 shadow-lg`}
+                            style={{ 
+                                left: activeTab === 'episodes' ? '0%' : activeTab === 'info' ? '33.33%' : '66.66%',
+                                width: '33.33%'
+                            }}
+                        ></div>
+
+                        <button 
+                            onClick={() => setActiveTab('episodes')}
+                            className={`relative z-10 py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${activeTab === 'episodes' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}
+                        >
+                            <Play size={14} fill={activeTab==='episodes' ? 'currentColor' : 'none'}/> <span className="hidden sm:inline">Qismlar</span><span className="sm:hidden">Kino</span>
+                        </button>
+                        
+                        <button 
+                            onClick={() => setActiveTab('info')}
+                            className={`relative z-10 py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${activeTab === 'info' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}
+                        >
+                            <Info size={14} fill={activeTab==='info' ? 'currentColor' : 'none'}/> <span className="hidden sm:inline">Ma'lumotlar</span><span className="sm:hidden">Info</span>
+                        </button>
+
+                        <button 
+                            onClick={() => setActiveTab('comments')}
+                            className={`relative z-10 py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${activeTab === 'comments' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}
+                        >
+                            <MessageCircle size={14} fill={activeTab==='comments' ? 'currentColor' : 'none'}/> <span className="hidden sm:inline">Hamjamiyat</span><span className="sm:hidden">Chat</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div className="animate-fade-in min-h-[400px]">
                 {/* EPISODES TAB */}
                 {activeTab === 'episodes' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-slide-in-up">
                         {episodes.length > 0 ? episodes.map((ep, i) => (
                             <div 
                                 key={ep.id} 
                                 onClick={() => handleEpisodeClick(ep)}
-                                className="group flex items-center p-4 bg-zinc-900/80 border border-white/5 hover:border-orange-500/50 transition-all cursor-pointer rounded-2xl hover:bg-zinc-800"
+                                className="group flex items-center p-3 bg-zinc-900/80 border border-white/5 hover:border-orange-500/50 transition-all cursor-pointer rounded-2xl hover:bg-zinc-800"
                             >
-                                <div className="relative w-32 h-20 bg-black rounded-xl overflow-hidden flex-shrink-0 mr-4">
+                                <div className="relative w-28 h-16 sm:w-32 sm:h-20 bg-black rounded-xl overflow-hidden flex-shrink-0 mr-4">
                                     <img src={movie.posterUrl} className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-500" alt=""/>
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-full flex items-center justify-center group-hover:bg-orange-600 transition-colors">
                                             <Play size={12} fill="white" className="text-white ml-0.5"/>
                                         </div>
                                     </div>
-                                    <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 rounded text-[8px] font-bold text-white">24:00</div>
+                                    <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 rounded text-[8px] font-bold text-white">HD</div>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-white font-bold text-sm truncate group-hover:text-orange-500 transition-colors">{ep.title}</h4>
@@ -317,9 +331,124 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     </div>
                 )}
 
+                {/* INFO TAB - FULL DETAILS */}
+                {activeTab === 'info' && (
+                    <div className="max-w-4xl mx-auto space-y-8 animate-slide-in-up">
+                        {/* Summary Card */}
+                        <div className="bg-zinc-900/50 border border-white/5 rounded-[2rem] p-6 md:p-8">
+                            <h3 className="text-xl font-black uppercase tracking-tight text-white mb-4 pl-2 border-l-4 border-orange-500">
+                                Syujet
+                            </h3>
+                            <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                                {movie.plot || "Ushbu anime uchun tavsif hali kiritilmagan."}
+                            </p>
+                        </div>
+
+                        {/* Details Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Left Column */}
+                            <div className="bg-zinc-900/50 border border-white/5 rounded-[2rem] p-6 space-y-5">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4">Ma'lumotlar</h3>
+                                
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <Layers size={18} />
+                                        <span className="text-sm font-bold">Nomi</span>
+                                    </div>
+                                    <span className="text-white font-medium text-sm text-right truncate max-w-[50%]">{movie.title}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <Calendar size={18} />
+                                        <span className="text-sm font-bold">Yil</span>
+                                    </div>
+                                    <span className="text-white font-medium text-sm">{movie.year}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <Globe size={18} />
+                                        <span className="text-sm font-bold">Davlat</span>
+                                    </div>
+                                    <span className="text-white font-medium text-sm">Yaponiya</span>
+                                </div>
+
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <Clock size={18} />
+                                        <span className="text-sm font-bold">Davomiyligi</span>
+                                    </div>
+                                    <span className="text-white font-medium text-sm">~24 daqiqa</span>
+                                </div>
+                            </div>
+
+                            {/* Right Column */}
+                            <div className="bg-zinc-900/50 border border-white/5 rounded-[2rem] p-6 space-y-5">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4">Ishlab Chiqarish</h3>
+
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <Mic size={18} />
+                                        <span className="text-sm font-bold">Ovoz Berdi</span>
+                                    </div>
+                                    <span className="text-purple-400 font-bold text-sm flex items-center gap-1">
+                                        {movie.translator || "Anilo.uz"}
+                                        {movie.translator && <CheckCircle size={12} className="text-blue-500" />}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <Star size={18} />
+                                        <span className="text-sm font-bold">Reyting</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded text-xs">
+                                        <Star size={12} className="text-yellow-500 fill-yellow-500" />
+                                        <span className="text-white font-bold">{movie.rating.toFixed(1)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <Info size={18} />
+                                        <span className="text-sm font-bold">Sifat</span>
+                                    </div>
+                                    <span className="text-green-400 font-bold text-sm bg-green-900/20 px-2 py-0.5 rounded border border-green-500/30">{movie.quality}</span>
+                                </div>
+                                
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="flex items-center gap-3 text-zinc-400">
+                                        <User size={18} />
+                                        <span className="text-sm font-bold">Yosh Chegarasi</span>
+                                    </div>
+                                    <span className="text-white font-medium text-sm">16+</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tags Section */}
+                        <div className="bg-zinc-900/50 border border-white/5 rounded-[2rem] p-6">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4">Janrlar va Teglar</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {movie.genre.split(',').map((g, i) => (
+                                    <span key={i} className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-zinc-300 uppercase tracking-wide transition-colors cursor-default">
+                                        {g.trim()}
+                                    </span>
+                                ))}
+                                {movie.tags?.split(',').map((t, i) => (
+                                    <span key={`tag-${i}`} className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-xs font-bold text-zinc-500 uppercase tracking-wide transition-colors cursor-default">
+                                        #{t.trim()}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* COMMENTS TAB */}
                 {activeTab === 'comments' && (
-                    <div className="max-w-3xl mx-auto">
+                    <div className="max-w-3xl mx-auto animate-slide-in-up">
                         {/* Comment Form */}
                         <div className="bg-zinc-900 border border-white/10 p-6 rounded-[2rem] mb-10 shadow-xl">
                             <div className="flex gap-4">
