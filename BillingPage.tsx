@@ -1,17 +1,11 @@
 
 import React, { useState } from 'react';
-import { PaymentDetailsCard } from './components/PaymentDetailsCard';
-import { createPaymentRequest, uploadFile } from './services/dbService';
+import { createTsPayTransaction } from './services/tspayService';
 import { supabase } from './services/supabaseClient';
 import { useNotification } from './hooks/useNotification';
-import { createTsPayTransaction } from './services/tspayService';
-import { CreditCard, Zap, Loader2, AlertCircle, CheckCircle, ShieldCheck, Smartphone } from 'lucide-react';
+import { CreditCard, Zap, Loader2, AlertCircle, CheckCircle, ShieldCheck, Smartphone, Send, MessageCircle, Clock, UserCheck } from 'lucide-react';
 
 export const BillingPage: React.FC = () => {
-    const [amount, setAmount] = useState('');
-    const [screenshot, setScreenshot] = useState<File | null>(null);
-    const [status, setStatus] = useState<'idle' | 'loading' | 'pending' | 'error'>('idle');
-    
     // TsPay State
     const [tsAmount, setTsAmount] = useState('');
     const [isTsPayLoading, setIsTsPayLoading] = useState(false);
@@ -57,33 +51,17 @@ export const BillingPage: React.FC = () => {
         }
     };
 
-    const handleManualSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!amount || !screenshot) return;
-        setStatus('loading');
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            const publicUrl = await uploadFile(screenshot, 'posters'); 
-            await createPaymentRequest(user!.id, Number(amount), publicUrl);
-            setStatus('pending');
-            addNotification({ type: 'success', title: 'Yuborildi', message: 'Adminlar tekshirgach hisobingiz to\'ldiriladi.' });
-        } catch (err: any) {
-            setStatus('error');
-            addNotification({ type: 'error', title: 'Xatolik', message: err.message });
-        }
-    };
-
     return (
-        <div className="animate-fade-in pb-20 max-w-6xl mx-auto">
+        <div className="animate-fade-in pb-20 max-w-6xl mx-auto px-4 pt-6">
             <div className="text-center mb-12">
                 <h1 className="text-4xl font-black text-white uppercase tracking-tight mb-2">Hisobni To'ldirish</h1>
                 <p className="text-gray-400">O'zingizga qulay to'lov usulini tanlang</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
                 
-                {/* 1. TSPAY PROFESSIONAL TERMINAL */}
-                <div className="bg-[#0f172a] border border-blue-500/20 rounded-[2.5rem] p-1 shadow-2xl relative overflow-hidden group">
+                {/* 1. TSPAY PROFESSIONAL TERMINAL (Automatic) */}
+                <div className="bg-[#0f172a] border border-blue-500/20 rounded-[2.5rem] p-1 shadow-2xl relative overflow-hidden group h-full">
                     {/* Background Glow */}
                     <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-[100px]"></div>
                     <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-600/20 rounded-full blur-[100px]"></div>
@@ -114,8 +92,8 @@ export const BillingPage: React.FC = () => {
                         </div>
 
                         {/* Input Area */}
-                        <form onSubmit={handleTsPaySubmit} className="space-y-6 flex-1">
-                            <div className="relative group/input">
+                        <form onSubmit={handleTsPaySubmit} className="space-y-6 flex-1 flex flex-col">
+                            <div className="relative group/input flex-1">
                                 <label className="text-[10px] font-black text-blue-300 uppercase tracking-widest absolute -top-2.5 left-4 bg-[#0b1120] px-2">
                                     To'lov Summasi
                                 </label>
@@ -129,20 +107,19 @@ export const BillingPage: React.FC = () => {
                                     />
                                     <span className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">UZS</span>
                                 </div>
-                            </div>
-
-                            {/* Preset Buttons */}
-                            <div className="grid grid-cols-3 gap-3">
-                                {[10000, 30000, 50000].map(val => (
-                                    <button 
-                                        key={val}
-                                        type="button"
-                                        onClick={() => setTsAmount(val.toString())}
-                                        className="py-2 rounded-xl bg-blue-900/20 border border-blue-500/20 text-blue-300 text-xs font-bold hover:bg-blue-500 hover:text-white transition-all"
-                                    >
-                                        {(val/1000)}k
-                                    </button>
-                                ))}
+                                {/* Preset Buttons */}
+                                <div className="grid grid-cols-3 gap-3 mt-4">
+                                    {[10000, 30000, 50000].map(val => (
+                                        <button 
+                                            key={val}
+                                            type="button"
+                                            onClick={() => setTsAmount(val.toString())}
+                                            className="py-2 rounded-xl bg-blue-900/20 border border-blue-500/20 text-blue-300 text-xs font-bold hover:bg-blue-500 hover:text-white transition-all"
+                                        >
+                                            {(val/1000)}k
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                             
                             {lastError && (
@@ -155,7 +132,7 @@ export const BillingPage: React.FC = () => {
                             <button 
                                 type="submit" 
                                 disabled={isTsPayLoading}
-                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-5 rounded-2xl font-black uppercase text-sm tracking-[0.2em] transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
+                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-5 rounded-2xl font-black uppercase text-sm tracking-[0.2em] transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group/btn mt-auto"
                             >
                                 {isTsPayLoading ? <Loader2 className="animate-spin" /> : (
                                     <>
@@ -173,57 +150,62 @@ export const BillingPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 2. MANUAL (CHEK YUKLASH) */}
-                <div className="bg-zinc-900/50 border border-white/5 rounded-[2.5rem] p-1 shadow-xl">
-                    <div className="bg-black/40 backdrop-blur rounded-[2.3rem] p-8 h-full">
-                        <div className="flex items-center justify-between mb-8">
-                            <div>
-                                <h2 className="text-2xl font-black text-white">MANUAL</h2>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Kartadan kartaga</p>
-                            </div>
-                            <div className="bg-gray-800 p-2 rounded-xl">
-                                <CreditCard className="text-gray-400" size={24} />
-                            </div>
+                {/* 2. TELEGRAM SUPPORT (Manual) */}
+                <div className="bg-[#229ED9]/10 border border-[#229ED9]/30 rounded-[2.5rem] p-1 shadow-2xl relative overflow-hidden group h-full">
+                    {/* Background Animation */}
+                    <div className="absolute inset-0 bg-[url('https://i.pinimg.com/originals/9a/14/78/9a1478204b774c4349446d322079044e.png')] opacity-5 bg-center bg-cover"></div>
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#229ED9]/20 rounded-full blur-[100px]"></div>
+
+                    <div className="bg-[#0b1120]/90 backdrop-blur-xl rounded-[2.3rem] p-8 h-full flex flex-col items-center text-center relative z-10">
+                        
+                        <div className="w-24 h-24 bg-gradient-to-tr from-[#229ED9] to-[#0088cc] rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-[#229ED9]/30 animate-pulse border-4 border-[#0b1120]">
+                            <Send size={44} className="text-white ml-1" fill="white" />
                         </div>
 
-                        {/* Interactive Card Component */}
-                        <div className="mb-8 transform scale-95 origin-left">
-                            <PaymentDetailsCard />
-                        </div>
+                        <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Qo'lda Faollashtirish</h2>
+                        <p className="text-[#229ED9] font-bold text-xs uppercase tracking-widest mb-8 bg-[#229ED9]/10 px-3 py-1 rounded-full border border-[#229ED9]/20">
+                            Manual To'lov
+                        </p>
 
-                        <form onSubmit={handleManualSubmit} className="space-y-5">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-gray-500 uppercase ml-4 tracking-widest">O'tkazma Summasi</label>
-                                <div className="relative">
-                                    <input 
-                                        type="number" 
-                                        value={amount} 
-                                        onChange={e => setAmount(e.target.value)} 
-                                        placeholder="0" 
-                                        className="w-full bg-zinc-900 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-orange-500 transition-all font-mono" 
-                                    />
-                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">UZS</span>
+                        <div className="space-y-4 w-full text-left mb-8 flex-1">
+                            <div className="flex items-center gap-4 bg-gray-800/50 p-4 rounded-2xl border border-gray-700">
+                                <div className="bg-gray-700 p-2 rounded-lg text-gray-300"><Clock size={20}/></div>
+                                <div>
+                                    <p className="text-white font-bold text-sm">24/7 Qo'llab-quvvatlash</p>
+                                    <p className="text-gray-500 text-xs">Istalgan vaqtda yozishingiz mumkin</p>
                                 </div>
                             </div>
                             
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-gray-500 uppercase ml-4 tracking-widest">Chek rasmi</label>
-                                <input 
-                                    type="file" 
-                                    onChange={e => setScreenshot(e.target.files?.[0] || null)} 
-                                    className="w-full bg-zinc-900 border border-white/10 rounded-2xl p-3 text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-gray-800 file:text-white hover:file:bg-gray-700 transition-all" 
-                                    accept="image/*" 
-                                />
+                            <div className="flex items-center gap-4 bg-gray-800/50 p-4 rounded-2xl border border-gray-700">
+                                <div className="bg-gray-700 p-2 rounded-lg text-gray-300"><ShieldCheck size={20}/></div>
+                                <div>
+                                    <p className="text-white font-bold text-sm">Ishonchli va Xavfsiz</p>
+                                    <p className="text-gray-500 text-xs">To'lov to'g'ridan-to'g'ri admin orqali</p>
+                                </div>
                             </div>
 
-                            <button 
-                                type="submit" 
-                                disabled={status === 'loading'} 
-                                className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all active:scale-95 disabled:opacity-50 border border-white/5"
-                            >
-                                {status === 'loading' ? 'Yuklanmoqda...' : 'Chekni Yuborish'}
-                            </button>
-                        </form>
+                            <div className="flex items-center gap-4 bg-gray-800/50 p-4 rounded-2xl border border-gray-700">
+                                <div className="bg-gray-700 p-2 rounded-lg text-gray-300"><UserCheck size={20}/></div>
+                                <div>
+                                    <p className="text-white font-bold text-sm">Tezkor Faollashtirish</p>
+                                    <p className="text-gray-500 text-xs">Chek yuborilgach, darhol hisob to'ldiriladi</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a
+                            href="https://t.me/anilo_ega"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full bg-[#229ED9] hover:bg-[#1e8ubc] text-white py-5 rounded-2xl font-black uppercase text-sm tracking-[0.2em] transition-all shadow-xl shadow-[#229ED9]/20 flex items-center justify-center gap-3 group/btn"
+                        >
+                            <MessageCircle size={20} className="group-hover/btn:scale-110 transition-transform" />
+                            @anilo_ega ga yozish
+                        </a>
+                        
+                        <p className="text-[10px] text-gray-500 mt-4 font-medium">
+                            Diqqat: Faqat rasmiy admin bilan bog'laning.
+                        </p>
                     </div>
                 </div>
             </div>
