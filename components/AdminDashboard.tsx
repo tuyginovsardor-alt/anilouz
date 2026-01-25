@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Users, Film, CreditCard, MessageSquare, TrendingUp, AlertCircle, Check, X as XIcon, Eye } from 'lucide-react';
+import { Users, Film, CreditCard, MessageSquare, TrendingUp, AlertCircle, Check, X as XIcon, Eye, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from './LoadingSpinner';
 import { getDashboardStats, getPendingFandubUploads, approveFandubUpload, rejectFandubUpload } from '../services/dbService';
 import { FandubUpload } from '../types';
@@ -11,11 +11,13 @@ export const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState<any>(null);
     const [pendingUploads, setPendingUploads] = useState<FandubUpload[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const { addNotification } = useNotification();
 
     useEffect(() => { loadData(); }, []);
 
     const loadData = async () => {
+        setRefreshing(true);
         try {
             const [d, u] = await Promise.all([
                 getDashboardStats(),
@@ -24,7 +26,10 @@ export const AdminDashboard: React.FC = () => {
             setStats(d);
             setPendingUploads(u);
         } catch (e) { console.error(e); }
-        finally { setLoading(false); }
+        finally { 
+            setLoading(false); 
+            setRefreshing(false);
+        }
     };
 
     const handleApprove = async (id: number) => {
@@ -79,7 +84,17 @@ export const AdminDashboard: React.FC = () => {
                         <AlertCircle className="text-yellow-500" />
                         <h2 className="text-xl font-bold text-white uppercase tracking-tight">Fandub Moderatsiyasi ({pendingUploads.length})</h2>
                     </div>
-                    <p className="text-xs text-gray-500 italic">Yangi kelgan loyihalarni tekshiring</p>
+                    <div className="flex items-center gap-3">
+                        <p className="text-xs text-gray-500 italic hidden sm:block">Yangi kelgan loyihalarni tekshiring</p>
+                        <button 
+                            onClick={loadData} 
+                            disabled={refreshing}
+                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-full text-white transition-all active:scale-90"
+                            title="Yangilash"
+                        >
+                            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''}/>
+                        </button>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">

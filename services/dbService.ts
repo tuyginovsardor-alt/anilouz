@@ -69,12 +69,26 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
 
 // --- FANDUB MODERATION (ADMIN) ---
 export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
-    const { data } = await supabase
-        .from('fandub_uploads')
-        .select('*, profiles(full_name, email), fandub_channels(name)')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-    return data || [];
+    try {
+        // 1-Urinish: To'liq ma'lumotlar bilan (Relation)
+        const { data, error } = await supabase
+            .from('fandub_uploads')
+            .select('*, profiles(full_name, email), fandub_channels(name)')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+    } catch (e) {
+        // 2-Urinish: Agar relation xato bersa, oddiy yuklash (Fallback)
+        console.warn("Fandub relation fetch failed, using simple fetch.", e);
+        const { data } = await supabase
+            .from('fandub_uploads')
+            .select('*')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false });
+        return data || [];
+    }
 };
 
 export const approveFandubUpload = async (id: number) => {
