@@ -28,6 +28,7 @@ export const AdminDashboard: React.FC = () => {
     };
 
     const handleApprove = async (id: number) => {
+        if(!window.confirm("Tasdiqlashni istaysizmi? Anime katalogda faollashadi.")) return;
         try {
             await approveFandubUpload(id);
             addNotification({ type: 'success', title: 'Tasdiqlandi', message: 'Anime katalogga qo\'shildi.' });
@@ -36,10 +37,11 @@ export const AdminDashboard: React.FC = () => {
     };
 
     const handleReject = async (id: number) => {
-        const comment = prompt("Rad etish sababi:");
-        if (!comment) return;
+        const comment = prompt("Rad etish sababi (Foydalanuvchiga ko'rinadi):");
+        if (comment === null) return; // Cancelled
+        
         try {
-            await rejectFandubUpload(id, comment);
+            await rejectFandubUpload(id, comment || "Sabab ko'rsatilmagan");
             addNotification({ type: 'warning', title: 'Rad etildi', message: 'Foydalanuvchiga xabar yuborildi.' });
             setPendingUploads(prev => prev.filter(u => u.id !== id));
         } catch (e) { console.error(e); }
@@ -97,16 +99,19 @@ export const AdminDashboard: React.FC = () => {
                                 <tr key={up.id} className="group hover:bg-gray-800/50 transition-all">
                                     <td className="p-5">
                                         <div className="flex items-center gap-4">
-                                            <img src={up.poster_url} className="w-12 h-16 rounded-lg object-cover shadow-lg" alt="" />
+                                            <div className="relative group/poster cursor-pointer">
+                                                <img src={up.poster_url} className="w-12 h-16 rounded-lg object-cover shadow-lg group-hover/poster:scale-150 transition-transform origin-left z-10 relative" alt="" />
+                                            </div>
                                             <div>
                                                 <p className="text-white font-bold">{up.title}</p>
-                                                <p className="text-[10px] text-zinc-500 line-clamp-1 max-w-[200px]">{up.description}</p>
+                                                <p className="text-[10px] text-zinc-500 line-clamp-1 max-w-[200px]" title={up.description}>{up.description}</p>
+                                                <a href={up.video_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-400 hover:underline flex items-center gap-1 mt-1"><Eye size={10}/> Videoni ko'rish</a>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="p-5">
                                         <p className="text-sm text-purple-400 font-bold">{(up as any).profiles?.full_name || 'Noma\'lum'}</p>
-                                        <p className="text-[10px] text-gray-500">ID: {up.channel_id.slice(0,8)}...</p>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{(up as any).fandub_channels?.name || 'Studio'}</p>
                                     </td>
                                     <td className="p-5">
                                         <span className="bg-gray-700 px-2 py-1 rounded text-[10px] font-black text-gray-300 mr-2">{up.genre}</span>
