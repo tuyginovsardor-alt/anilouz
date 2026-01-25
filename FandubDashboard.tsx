@@ -8,7 +8,7 @@ import {
 } from './services/dbService';
 import { 
     Mic, Film, Settings, LayoutGrid, Eye, Edit3, 
-    Plus, DollarSign, Users, Heart, Camera, Image as ImageIcon, Send, Trash2, Clock, CheckCircle, XCircle, Upload, Save
+    Plus, DollarSign, Users, Link, Camera, Image as ImageIcon, Send, Trash2, Clock, CheckCircle, XCircle, Upload, Save
 } from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
@@ -35,7 +35,10 @@ export const FandubDashboard: React.FC = () => {
     const { addNotification } = useNotification();
 
     // Story State
+    const [storyType, setStoryType] = useState<'file' | 'url'>('file');
     const [storyFile, setStoryFile] = useState<File | null>(null);
+    const [storyUrl, setStoryUrl] = useState('');
+    const [storyMediaType, setStoryMediaType] = useState<'image' | 'video'>('image'); // URL uchun
     
     // Settings State
     const [editName, setEditName] = useState('');
@@ -105,22 +108,31 @@ export const FandubDashboard: React.FC = () => {
     };
 
     const handleStoryUpload = async () => {
-        if (!storyFile || !channel || !profile) return;
+        if (!channel || !profile) return;
+        if (storyType === 'file' && !storyFile) return addNotification({ type: 'warning', title: 'Xato', message: 'Fayl tanlanmagan.' });
+        if (storyType === 'url' && !storyUrl) return addNotification({ type: 'warning', title: 'Xato', message: 'URL kiritilmagan.' });
+
         setIsUploading(true);
         try {
-            // Story videomi yoki rasmmi aniqlash va tegishli bucketga yuklash
-            const bucket = storyFile.type.startsWith('video') ? 'videos' : 'posters';
-            const mediaUrl = await uploadPoster(storyFile); // Using simple upload wrapper
+            let mediaUrl = storyUrl;
+            let mediaType = storyMediaType;
+
+            if (storyType === 'file' && storyFile) {
+                const bucket = storyFile.type.startsWith('video') ? 'videos' : 'posters';
+                mediaType = storyFile.type.startsWith('video') ? 'video' : 'image';
+                mediaUrl = await uploadPoster(storyFile); // Reusing upload wrapper (handles generic upload)
+            }
 
             await createFandubStory({
                 channel_id: channel.id,
                 user_id: profile.id,
                 media_url: mediaUrl,
-                media_type: storyFile.type.startsWith('video') ? 'video' : 'image'
+                media_type: mediaType
             });
 
             addNotification({ type: 'success', title: 'Story Joylandi', message: 'Story 24 soat davomida ko\'rinadi.' });
             setStoryFile(null);
+            setStoryUrl('');
         } catch (e: any) {
             addNotification({ type: 'error', title: 'Xatolik', message: e.message });
         } finally {
@@ -270,39 +282,71 @@ export const FandubDashboard: React.FC = () => {
                         </div>
 
                         <div className="bg-zinc-900 border border-white/10 rounded-[3rem] p-8 flex flex-col items-center justify-center text-center">
-                            {storyFile ? (
-                                <div className="relative w-full aspect-[9/16] max-w-xs bg-black rounded-3xl overflow-hidden shadow-2xl mb-6">
-                                    {storyFile.type.startsWith('video') ? (
-                                        <video src={URL.createObjectURL(storyFile)} className="w-full h-full object-cover" autoPlay muted loop />
-                                    ) : (
-                                        <img src={URL.createObjectURL(storyFile)} className="w-full h-full object-cover" alt="Preview" />
-                                    )}
-                                    <button 
-                                        onClick={() => setStoryFile(null)} 
-                                        className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white hover:bg-red-600 transition-colors"
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="w-full aspect-video border-2 border-dashed border-zinc-800 rounded-3xl flex flex-col items-center justify-center mb-6 hover:border-purple-600/50 transition-colors group cursor-pointer relative">
-                                    <input 
-                                        type="file" 
-                                        accept="image/*,video/*" 
-                                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                        onChange={(e) => e.target.files && setStoryFile(e.target.files[0])} 
-                                    />
-                                    <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                        <Upload size={28} className="text-purple-500" />
+                            
+                            {/* Source Type Toggle */}
+                            <div className="flex bg-black p-1 rounded-xl mb-6 border border-white/5">
+                                <button onClick={() => setStoryType('file')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase transition-all ${storyType === 'file' ? 'bg-purple-600 text-white' : 'text-zinc-500'}`}>Fayl Yuklash</button>
+                                <button onClick={() => setStoryType('url')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase transition-all ${storyType === 'url' ? 'bg-purple-600 text-white' : 'text-zinc-500'}`}>Link (URL)</button>
+                            </div>
+
+                            {storyType === 'file' ? (
+                                storyFile ? (
+                                    <div className="relative w-full aspect-[9/16] max-w-xs bg-black rounded-3xl overflow-hidden shadow-2xl mb-6">
+                                        {storyFile.type.startsWith('video') ? (
+                                            <video src={URL.createObjectURL(storyFile)} className="w-full h-full object-cover" autoPlay muted loop />
+                                        ) : (
+                                            <img src={URL.createObjectURL(storyFile)} className="w-full h-full object-cover" alt="Preview" />
+                                        )}
+                                        <button 
+                                            onClick={() => setStoryFile(null)} 
+                                            className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white hover:bg-red-600 transition-colors"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
                                     </div>
-                                    <p className="font-bold text-white uppercase text-xs">Faylni tanlang</p>
-                                    <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1">Rasm yoki Video (Max 50MB)</p>
+                                ) : (
+                                    <div className="w-full aspect-video border-2 border-dashed border-zinc-800 rounded-3xl flex flex-col items-center justify-center mb-6 hover:border-purple-600/50 transition-colors group cursor-pointer relative">
+                                        <input 
+                                            type="file" 
+                                            accept="image/*,video/*" 
+                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                            onChange={(e) => e.target.files && setStoryFile(e.target.files[0])} 
+                                        />
+                                        <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                            <Upload size={28} className="text-purple-500" />
+                                        </div>
+                                        <p className="font-bold text-white uppercase text-xs">Faylni tanlang</p>
+                                        <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1">Rasm yoki Video (Max 50MB)</p>
+                                    </div>
+                                )
+                            ) : (
+                                <div className="w-full mb-6 space-y-4">
+                                    <div className="flex gap-4 justify-center">
+                                        <label className="flex items-center gap-2 text-xs text-white"><input type="radio" checked={storyMediaType === 'image'} onChange={() => setStoryMediaType('image')} className="accent-purple-500"/> Rasm</label>
+                                        <label className="flex items-center gap-2 text-xs text-white"><input type="radio" checked={storyMediaType === 'video'} onChange={() => setStoryMediaType('video')} className="accent-purple-500"/> Video</label>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        value={storyUrl}
+                                        onChange={(e) => setStoryUrl(e.target.value)}
+                                        placeholder="https://..."
+                                        className="w-full bg-black border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-purple-600"
+                                    />
+                                    {storyUrl && (
+                                        <div className="relative w-full aspect-[9/16] max-w-xs bg-black rounded-3xl overflow-hidden shadow-2xl mx-auto border border-white/5">
+                                            {storyMediaType === 'video' ? (
+                                                <video src={storyUrl} className="w-full h-full object-cover" controls />
+                                            ) : (
+                                                <img src={storyUrl} className="w-full h-full object-cover" alt="Preview" onError={(e) => (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Xato+URL'} />
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
                             <button 
                                 onClick={handleStoryUpload}
-                                disabled={!storyFile || isUploading}
+                                disabled={(!storyFile && !storyUrl) || isUploading}
                                 className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-purple-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 {isUploading ? <LoadingSpinner /> : <><Send size={16}/> Storyga Chiqarish</>}

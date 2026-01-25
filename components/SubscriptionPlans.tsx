@@ -2,30 +2,102 @@
 import React, { useState, useEffect } from 'react';
 import { CrownIcon } from './icons/CrownIcon';
 import { TicketIcon } from './icons/TicketIcon';
+import { QualityIcon } from './icons/QualityIcon';
+import { NoAdsIcon } from './icons/NoAdsIcon';
 import { buySubscription, redeemPromocode, getAppConfig } from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { useNotification } from '../hooks/useNotification';
 import { LoadingSpinner } from './LoadingSpinner';
-import { Check, Zap, Star, Shield, Clock } from 'lucide-react';
+import { PlayIcon } from './icons/PlayIcon';
+import { Check, Star } from 'lucide-react';
 
 type PlanDuration = '1-oy' | '3-oy' | '6-oy' | '1-yil';
 
 interface PlanDetails {
     price: number;
+    originalPrice?: number;
     monthlyPrice?: number;
     label: string;
-    features: string[];
-    isBest?: boolean;
-    gradient: string;
-    icon: React.ReactNode;
+    color: string;
+    texture: string;
+    perks: string[];
 }
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('uz-UZ').format(amount);
 };
 
+// Card Component
+const PlanCard: React.FC<{ 
+    planKey: PlanDuration, 
+    details: PlanDetails, 
+    selected: boolean, 
+    onClick: () => void,
+    discount?: { value: number, type: 'percentage' | 'fixed' } | null
+}> = ({ planKey, details, selected, onClick, discount }) => {
+    
+    let finalPrice = details.price;
+    if (discount) {
+        if (discount.type === 'percentage') finalPrice = Math.round(details.price * (1 - discount.value / 100));
+        else finalPrice = Math.max(0, details.price - discount.value);
+    }
+
+    return (
+        <div 
+            onClick={onClick}
+            className={`relative w-full aspect-[1.58/1] rounded-3xl overflow-hidden cursor-pointer transition-all duration-500 group perspective-1000 ${selected ? 'scale-105 ring-4 ring-offset-4 ring-offset-black ring-orange-500 z-10' : 'scale-100 opacity-80 hover:opacity-100 hover:scale-[1.02]'}`}
+        >
+            {/* Background & Texture */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${details.color}`}></div>
+            <div className="absolute inset-0 opacity-30 mix-blend-overlay" style={{ backgroundImage: `url("${details.texture}")`, backgroundSize: 'cover' }}></div>
+            
+            {/* Holographic Shine */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform translate-x-[-100%] group-hover:translate-x-[100%]"></div>
+
+            {/* Content */}
+            <div className="absolute inset-0 p-6 flex flex-col justify-between text-white font-sans">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h3 className="text-2xl font-black uppercase tracking-widest italic">{details.label}</h3>
+                        <p className="text-[10px] font-bold opacity-70 tracking-[0.2em] uppercase">Premium Membership</p>
+                    </div>
+                    <CrownIcon className="w-8 h-8 opacity-80" />
+                </div>
+
+                <div className="space-y-1">
+                    {details.perks.slice(0,2).map((p, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs font-bold opacity-90">
+                            <Check size={12} strokeWidth={4} /> {p}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex justify-between items-end">
+                    <div>
+                        <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Narxi</p>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black tracking-tighter shadow-black drop-shadow-md">{formatCurrency(finalPrice)}</span>
+                            <span className="text-xs font-bold">UZS</span>
+                        </div>
+                        {(details.originalPrice || discount) && (
+                            <p className="text-xs line-through opacity-50">{formatCurrency(details.price)} UZS</p>
+                        )}
+                    </div>
+                    <div className="text-right">
+                         <div className="w-12 h-8 bg-white/20 rounded-md backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                             <div className="w-6 h-4 border border-white/50 rounded-sm"></div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export const SubscriptionPlans: React.FC = () => {
+    const [selectedPlan, setSelectedPlan] = useState<PlanDuration>('1-oy');
     const [isLoading, setIsLoading] = useState(false);
+    const [isPricesLoading, setIsPricesLoading] = useState(true);
     const [showPromoModal, setShowPromoModal] = useState(false);
     const [promoCode, setPromoCode] = useState('');
     const [discount, setDiscount] = useState<{value: number, type: 'percentage' | 'fixed'} | null>(null);
@@ -33,33 +105,28 @@ export const SubscriptionPlans: React.FC = () => {
     
     const [plans, setPlans] = useState<Record<PlanDuration, PlanDetails>>({
         '1-oy': { 
-            price: 9999, 
-            label: 'START', 
-            features: ['HD Sifat (720p)', 'Cheksiz tomosha', 'Reklamali'], 
-            gradient: 'from-blue-600 to-blue-800',
-            icon: <Zap size={24} className="text-blue-200"/>
+            price: 9999, label: 'SILVER', 
+            color: 'from-gray-400 via-gray-200 to-gray-500', 
+            texture: 'https://www.transparenttextures.com/patterns/brushed-alum.png',
+            perks: ['HD Sifat', 'Cheksiz tomosha'] 
         },
         '3-oy': { 
-            price: 28500, 
-            label: 'STANDART', 
-            features: ['FULL HD (1080p)', 'Kam reklama', 'Tarixni saqlash', 'Tezkor player'],
-            gradient: 'from-purple-600 to-purple-800',
-            icon: <Star size={24} className="text-purple-200"/>
+            price: 28500, label: 'GOLD', 
+            color: 'from-yellow-400 via-yellow-200 to-yellow-600', 
+            texture: 'https://www.transparenttextures.com/patterns/gold-scale.png',
+            perks: ['Full HD', 'Reklamasiz']
         },
         '6-oy': { 
-            price: 51000, 
-            label: 'MAX', 
-            features: ['4K ULTRA HD', 'Reklamasiz', 'Barcha qurilmalarda', 'Premyeralar'],
-            isBest: true,
-            gradient: 'from-orange-500 to-red-600',
-            icon: <CrownIcon className="w-6 h-6 text-yellow-200"/>
+            price: 51000, label: 'PLATINUM', 
+            color: 'from-slate-400 via-slate-200 to-slate-500', 
+            texture: 'https://www.transparenttextures.com/patterns/carbon-fibre.png',
+            perks: ['4K Ultra HD', 'Barcha qurilmalarda']
         },
         '1-yil': { 
-            price: 90000, 
-            label: 'VIP', 
-            features: ['1 Yil davomida VIP', 'Eksklyuziv status', 'VIP Support', 'Eng arzon narx'],
-            gradient: 'from-zinc-800 to-black border border-orange-500/50',
-            icon: <Shield size={24} className="text-zinc-400"/>
+            price: 90000, label: 'OBSIDIAN', 
+            color: 'from-gray-900 via-black to-gray-800 border border-white/20', 
+            texture: 'https://www.transparenttextures.com/patterns/dark-matter.png',
+            perks: ['VIP Status', 'Eng arzon narx']
         },
     });
 
@@ -78,19 +145,26 @@ export const SubscriptionPlans: React.FC = () => {
                     '6-oy': { ...prev['6-oy'], price: p6 },
                     '1-yil': { ...prev['1-yil'], price: p12 },
                 }));
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error("Failed to load prices", e);
+            } finally {
+                setIsPricesLoading(false);
+            }
         };
         fetchPrices();
     }, []);
-
-    const handleBuy = async (planKey: PlanDuration) => {
-        const activePlan = plans[planKey];
-        let finalPrice = activePlan.price;
-        if (discount) {
-            if (discount.type === 'percentage') finalPrice = Math.round(activePlan.price * (1 - discount.value / 100));
-            else finalPrice = Math.max(0, activePlan.price - discount.value);
+    
+    const activePlan = plans[selectedPlan];
+    let finalPrice = activePlan.price;
+    if (discount) {
+        if (discount.type === 'percentage') {
+            finalPrice = Math.round(activePlan.price * (1 - discount.value / 100));
+        } else {
+            finalPrice = Math.max(0, activePlan.price - discount.value);
         }
+    }
 
+    const handleBuy = async () => {
         setIsLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -99,14 +173,20 @@ export const SubscriptionPlans: React.FC = () => {
                 setIsLoading(false);
                 return;
             }
-            await buySubscription(user.id, planKey, finalPrice);
-            addNotification({ type: 'success', title: 'Tabriklaymiz!', message: "Premium obuna faollashtirildi." });
-            setTimeout(() => { window.location.reload(); }, 1500);
+
+            await buySubscription(user.id, selectedPlan, finalPrice);
+            addNotification({ type: 'success', title: 'Muvaffaqiyatli!', message: "Premium obuna faollashtirildi." });
+            
+            setTimeout(() => {
+                window.location.reload(); 
+            }, 1500);
+
         } catch (error: any) {
+            console.error(error);
             if (error.message.includes("Mablag' yetarli emas")) {
                  addNotification({ type: 'error', title: 'Mablag\' yetarli emas', message: "Hisobingizni to'ldiring." });
             } else {
-                addNotification({ type: 'error', title: 'Xatolik', message: "Xatolik yuz berdi" });
+                addNotification({ type: 'error', title: 'Xatolik', message: error.message || "Xatolik yuz berdi" });
             }
             setIsLoading(false);
         }
@@ -115,6 +195,7 @@ export const SubscriptionPlans: React.FC = () => {
     const handleRedeemPromo = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!promoCode) return;
+        
         try {
             setIsLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
@@ -122,6 +203,7 @@ export const SubscriptionPlans: React.FC = () => {
                 addNotification({ type: 'warning', title: 'Kirish kerak', message: "Tizimga kiring" });
                 return;
             }
+            
             const result = await redeemPromocode(user.id, promoCode.toUpperCase());
             setDiscount({ value: result.discount || 0, type: result.type });
             setShowPromoModal(false);
@@ -133,86 +215,55 @@ export const SubscriptionPlans: React.FC = () => {
         }
     };
 
+    if (isPricesLoading) return <div className="py-10 flex justify-center"><LoadingSpinner /></div>;
+
     return (
-        <section className="relative w-full max-w-5xl mx-auto">
-            {/* Promo Banner */}
-            <div 
-                onClick={() => setShowPromoModal(true)}
-                className="mb-10 bg-zinc-900 border border-white/10 p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-orange-500/50 transition-all group"
-            >
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
-                        <TicketIcon className="w-5 h-5"/>
-                    </div>
-                    <div>
-                        <p className="text-white font-bold text-sm">Promokod bormi?</p>
-                        <p className="text-zinc-500 text-xs">Chegirma olish uchun bosing</p>
-                    </div>
-                </div>
-                <div className="px-4 py-2 bg-white/5 rounded-lg text-xs font-bold text-zinc-400 group-hover:text-white transition-colors">
-                    KIRITISH
-                </div>
+        <section className="relative max-w-6xl mx-auto">
+            
+            {/* Promo Trigger */}
+            <div className="flex justify-end mb-6">
+                <button onClick={() => setShowPromoModal(true)} className="flex items-center gap-2 text-xs font-bold text-orange-500 uppercase tracking-widest hover:text-white transition-colors">
+                    <TicketIcon className="w-5 h-5"/> Promokod
+                </button>
             </div>
 
-            {/* Plans Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {(Object.keys(plans) as PlanDuration[]).map((key) => {
-                    const plan = plans[key];
-                    const isBest = plan.isBest;
-                    
-                    return (
-                        <div 
-                            key={key} 
-                            className={`relative flex flex-col justify-between p-6 rounded-[2rem] transition-transform hover:-translate-y-2 hover:shadow-2xl overflow-hidden ${isBest ? 'bg-zinc-900 ring-2 ring-orange-600 shadow-orange-900/20' : 'bg-zinc-900 border border-white/5'}`}
-                        >
-                            {isBest && (
-                                <div className="absolute top-0 right-0 bg-orange-600 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-bl-2xl">
-                                    Eng Ommabop
-                                </div>
-                            )}
+            {/* Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                {(Object.keys(plans) as PlanDuration[]).map((key) => (
+                    <PlanCard 
+                        key={key} 
+                        planKey={key} 
+                        details={plans[key]} 
+                        selected={selectedPlan === key} 
+                        onClick={() => setSelectedPlan(key)} 
+                        discount={discount}
+                    />
+                ))}
+            </div>
 
-                            <div>
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br ${plan.gradient} shadow-lg`}>
-                                    {plan.icon}
-                                </div>
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight">{plan.label}</h3>
-                                
-                                <div className="mt-4 mb-6">
-                                    <span className="text-2xl font-black text-white">{formatCurrency(plan.price)}</span>
-                                    <span className="text-xs text-zinc-500 font-bold block mt-1">/ {key.replace('-', ' ')}</span>
-                                </div>
-
-                                <ul className="space-y-3 mb-8">
-                                    {plan.features.map((feat, i) => (
-                                        <li key={i} className="flex items-center gap-3 text-xs font-medium text-zinc-400">
-                                            <div className="w-4 h-4 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0 text-white">
-                                                <Check size={10} />
-                                            </div>
-                                            {feat}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <button 
-                                onClick={() => handleBuy(key)}
-                                disabled={isLoading}
-                                className={`w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${
-                                    isBest 
-                                    ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-600/20' 
-                                    : 'bg-white text-black hover:bg-gray-200'
-                                }`}
-                            >
-                                {isLoading ? '...' : 'Tanlash'}
-                            </button>
-                        </div>
-                    );
-                })}
+            {/* Payment Button */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 flex justify-between items-center z-50 md:relative md:bg-transparent md:border-none md:p-0">
+                <div className="md:hidden">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase">Jami to'lov</p>
+                    <p className="text-xl font-black text-white">{formatCurrency(finalPrice)}</p>
+                </div>
+                <button 
+                    onClick={handleBuy}
+                    disabled={isLoading}
+                    className="w-full md:w-auto px-12 py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                >
+                    {isLoading ? <LoadingSpinner /> : (
+                        <>
+                            <span>To'lov Qilish</span>
+                            <span className="hidden md:inline">| {formatCurrency(finalPrice)}</span>
+                        </>
+                    )}
+                </button>
             </div>
 
             {/* Promo Modal */}
             {showPromoModal && (
-                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6 backdrop-blur-md" onClick={() => setShowPromoModal(false)}>
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[200] p-6 backdrop-blur-md" onClick={() => setShowPromoModal(false)}>
                     <div className="bg-zinc-900 border border-white/10 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                         
@@ -228,9 +279,12 @@ export const SubscriptionPlans: React.FC = () => {
                                 placeholder="CODE2025"
                                 autoFocus
                             />
-                            <button type="submit" disabled={isLoading || !promoCode} className="w-full py-4 bg-white text-black font-black rounded-2xl hover:bg-gray-200 uppercase text-xs tracking-widest">
-                                {isLoading ? '...' : 'Tasdiqlash'}
-                            </button>
+                            <div className="flex gap-3">
+                                <button type="button" onClick={() => setShowPromoModal(false)} className="flex-1 py-4 bg-zinc-800 rounded-xl text-white hover:bg-zinc-700 font-bold text-xs uppercase">Bekor qilish</button>
+                                <button type="submit" disabled={isLoading || !promoCode} className="flex-1 py-4 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-500 uppercase text-xs tracking-widest shadow-lg">
+                                    {isLoading ? '...' : 'Tasdiqlash'}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

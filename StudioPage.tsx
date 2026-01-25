@@ -10,7 +10,6 @@ import { getMovies, getFandubChannels, getActiveStories, toggleFollowChannel } f
 import { MovieCard } from './components/MovieCard';
 import { useNotification } from './hooks/useNotification';
 
-// Added onArtistClick to props interface to fix type error in App.tsx
 interface StudioPageProps {
     onMovieClick: (movie: Movie) => void;
     onArtistClick?: (userId: string) => void;
@@ -79,11 +78,16 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                         {stories.map((story, i) => (
                             <div key={story.id} onClick={() => setActiveStoryView(story)} className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
                                 <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500 shadow-2xl group-active:scale-95 transition-all duration-300">
-                                    <div className="w-full h-full rounded-full bg-black border-2 border-black overflow-hidden">
-                                        <img src={story.profiles?.avatar_url || ''} className="w-full h-full object-cover" alt="" />
+                                    <div className="w-full h-full rounded-full bg-black border-2 border-black overflow-hidden relative">
+                                        {/* Use media_url for story thumbnail if type is image, else use avatar */}
+                                        {story.media_type === 'image' ? (
+                                            <img src={story.media_url} className="w-full h-full object-cover" alt="" onError={(e) => (e.target as HTMLImageElement).src = story.profiles?.avatar_url || ''} />
+                                        ) : (
+                                            <video src={story.media_url} className="w-full h-full object-cover" muted />
+                                        )}
                                     </div>
                                 </div>
-                                <span className="text-[10px] font-black uppercase text-white truncate max-w-[80px] tracking-widest">{story.profiles?.username}</span>
+                                <span className="text-[10px] font-black uppercase text-white truncate max-w-[80px] tracking-widest">{story.profiles?.username || 'user'}</span>
                             </div>
                         ))}
                     </div>
@@ -97,37 +101,49 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                         <h2 className="text-3xl font-black uppercase tracking-tighter">Ommabop Kanallar</h2>
                     </div>
 
-                    <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide px-2">
+                    <div className="flex gap-6 overflow-x-auto pb-12 scrollbar-hide px-2">
                         {channels.map(ch => (
                             <div 
                                 key={ch.id} 
                                 onClick={() => setSelectedChannel(ch)}
-                                className="flex-shrink-0 w-72 bg-zinc-900 border border-white/5 rounded-[3rem] p-8 flex flex-col items-center text-center cursor-pointer hover:border-purple-500/30 transition-all shadow-2xl relative overflow-hidden group"
+                                className="flex-shrink-0 w-80 h-96 relative rounded-[2.5rem] overflow-hidden cursor-pointer group shadow-2xl transition-all duration-500 hover:scale-105"
                             >
-                                <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-purple-900/20 to-transparent">
-                                    {ch.banner_url && <img src={ch.banner_url} className="w-full h-full object-cover opacity-30" alt="" />}
-                                </div>
-                                <div className="w-24 h-24 rounded-[2rem] overflow-hidden mb-5 border-4 border-zinc-800 shadow-2xl relative z-10 bg-black">
-                                    {ch.avatar_url ? (
-                                        <img src={ch.avatar_url} className="w-full h-full object-cover" alt="" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-purple-900/50 text-purple-300 font-black text-2xl">{ch.name.charAt(0)}</div>
-                                    )}
-                                </div>
-                                <h3 className="font-black text-white uppercase text-base mb-1 tracking-tight">{ch.name}</h3>
-                                <p className="text-purple-500 text-[10px] font-black mb-6 tracking-[0.2em]">@{ch.username}</p>
-                                
-                                <div className="flex gap-8 mb-8">
-                                    <div className="text-center"><p className="text-sm font-black text-white">{ch.subscriber_count}</p><p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Muxlis</p></div>
-                                    <div className="text-center"><p className="text-sm font-black text-white">{ch.total_views}</p><p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Views</p></div>
-                                </div>
+                                {/* Background Banner */}
+                                <img 
+                                    src={ch.banner_url || 'https://i.imgur.com/8y9q1Xh.jpg'} 
+                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                    alt="" 
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90 group-hover:opacity-80 transition-opacity"></div>
 
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleFollow(ch); }}
-                                    className={`w-full py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl ${ch.is_following ? 'bg-zinc-800 text-zinc-500' : 'bg-purple-600 text-white shadow-purple-900/20 active:scale-95 hover:bg-purple-500'}`}
-                                >
-                                    {ch.is_following ? 'OBUNA BO\'LINGAN' : 'OBUNA BO\'LISH'}
-                                </button>
+                                {/* Content */}
+                                <div className="absolute inset-0 p-6 flex flex-col justify-end items-center text-center z-10">
+                                    <div className="relative mb-4">
+                                        <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-purple-500 to-pink-500 shadow-xl shadow-purple-900/50">
+                                            <div className="w-full h-full rounded-full bg-black overflow-hidden border-2 border-black">
+                                                {ch.avatar_url ? (
+                                                    <img src={ch.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-600 font-black text-2xl">{ch.name.charAt(0)}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="absolute -bottom-2 -right-2 bg-black border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <Star size={10} className="text-yellow-500 fill-yellow-500"/>
+                                            <span className="text-[10px] font-bold text-white">4.9</span>
+                                        </div>
+                                    </div>
+
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-1">{ch.name}</h3>
+                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-6">@{ch.username} • {ch.subscriber_count} Muxlis</p>
+
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleFollow(ch); }}
+                                        className={`w-full py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl backdrop-blur-md border ${ch.is_following ? 'bg-white/10 text-white border-white/20' : 'bg-purple-600 text-white border-purple-500 hover:bg-purple-500'}`}
+                                    >
+                                        {ch.is_following ? 'OBUNA BO\'LINGAN' : 'OBUNA BO\'LISH'}
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -147,6 +163,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                 </section>
             </div>
 
+            {/* CHANNEL DETAIL MODAL */}
             {selectedChannel && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 lg:p-4 animate-fade-in">
                     <div className="absolute inset-0 bg-black/98 backdrop-blur-xl" onClick={() => setSelectedChannel(null)}></div>
@@ -203,6 +220,40 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* STORY VIEWER */}
+            {activeStoryView && (
+                <div className="fixed inset-0 z-[300] bg-black flex items-center justify-center">
+                    <div className="relative w-full h-full md:w-[400px] md:h-[80vh] bg-zinc-900 md:rounded-3xl overflow-hidden shadow-2xl">
+                        {/* Media */}
+                        {activeStoryView.media_type === 'video' ? (
+                            <video src={activeStoryView.media_url} className="w-full h-full object-cover" autoPlay playsInline controls={false} 
+                                onEnded={() => setActiveStoryView(null)} // Close on end
+                            />
+                        ) : (
+                            <img src={activeStoryView.media_url} className="w-full h-full object-cover" alt="" />
+                        )}
+                        
+                        {/* Progress Bar (Mock) */}
+                        <div className="absolute top-2 left-2 right-2 flex gap-1">
+                            <div className="h-1 bg-white/30 flex-1 rounded-full overflow-hidden">
+                                <div className="h-full bg-white animate-[width_5s_linear_forwards]"></div>
+                            </div>
+                        </div>
+
+                        {/* Header */}
+                        <div className="absolute top-6 left-4 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-black border border-white/20 overflow-hidden">
+                                <img src={activeStoryView.profiles?.avatar_url || ''} className="w-full h-full object-cover"/>
+                            </div>
+                            <span className="text-white font-bold text-sm shadow-black drop-shadow-md">{activeStoryView.profiles?.username}</span>
+                        </div>
+
+                        {/* Close */}
+                        <button onClick={() => setActiveStoryView(null)} className="absolute top-6 right-4 text-white drop-shadow-md"><X size={24}/></button>
                     </div>
                 </div>
             )}
