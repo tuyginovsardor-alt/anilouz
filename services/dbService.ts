@@ -32,15 +32,22 @@ export const getMovies = async (): Promise<Movie[]> => {
         supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'approved').order('created_at', { ascending: false })
     ]);
 
-    const official = (off.data || []).map(m => ({ ...m, is_fandub: false }));
+    // Map official movies to ensure consistent field names (posterUrl, videoUrl)
+    const official = (off.data || []).map(m => ({ 
+        ...m, 
+        posterUrl: m.posterUrl || m.poster_url,
+        videoUrl: m.videoUrl || m.video_url,
+        is_fandub: false 
+    }));
     
+    // Map fandub uploads to the Movie interface
     const fandub = (fan.data || []).map(m => ({
         id: m.id,
         title: m.title,
         year: m.year,
         plot: m.description,
-        poster_url: m.poster_url,
-        video_url: m.video_url, // Asosiy video
+        posterUrl: m.poster_url,
+        videoUrl: m.video_url, // Main video
         genre: m.genre,
         language: 'JP/UZ',
         quality: 'HD',
@@ -49,20 +56,25 @@ export const getMovies = async (): Promise<Movie[]> => {
         channel_id: m.channel_id,
         translator: m.fandub_channels?.name || 'Fandub',
         status: 'completed',
-        access_type: m.access_type
+        access_type: m.access_type,
+        created_at: m.created_at
     }));
 
-    return [...official, ...fandub] as Movie[];
+    // MERGE AND SORT BY DATE: Eng yangisi tepaga
+    const merged = [...official, ...fandub].sort((a: any, b: any) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return dateB - dateA;
+    });
+
+    return merged as Movie[];
 };
 
 export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
-    // Agar movieId fandub_uploads jadvaliga tegishli bo'lsa
     const { data: fandubMovie } = await supabase.from('fandub_uploads').select('episodes').eq('id', movieId).maybeSingle();
     if (fandubMovie && fandubMovie.episodes) {
         return fandubMovie.episodes as Episode[];
     }
-    
-    // Aks holda rasmiy episodes jadvalidan oladi
     const { data } = await supabase.from('episodes').select('*').eq('movie_id', movieId).order('id', { ascending: true });
     return data || [];
 };
@@ -70,7 +82,6 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
 // --- FANDUB MODERATION (ADMIN) ---
 export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
     try {
-        // 1-Urinish: To'liq ma'lumotlar bilan (Relation)
         const { data, error } = await supabase
             .from('fandub_uploads')
             .select('*, profiles(full_name, email), fandub_channels(name)')
@@ -80,7 +91,6 @@ export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
         if (error) throw error;
         return data || [];
     } catch (e) {
-        // 2-Urinish: Agar relation xato bersa, oddiy yuklash (Fallback)
         console.warn("Fandub relation fetch failed, using simple fetch.", e);
         const { data } = await supabase
             .from('fandub_uploads')
@@ -116,7 +126,7 @@ export const uploadFile = async (file: File, bucket: string): Promise<string> =>
 export const uploadPoster = (file: File) => uploadFile(file, 'posters');
 export const uploadVideo = (file: File) => uploadFile(file, 'videos');
 
-// --- QOLGAN FUNKSIYALAR (Oldingidek qoladi) ---
+// --- QOLGAN FUNKSIYALAR ---
 export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
     const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     return data || [];
@@ -667,9 +677,6 @@ export const updateReview = async (reviewId: number, comment: string) => {
     if (error) throw error;
 };
 
-/**
- * Checks if a movie is saved by the user
- */
 export const isMovieSaved = async (userId: string, movieId: number): Promise<boolean> => {
     const { data } = await supabase
         .from('saved_movies')
@@ -680,9 +687,6 @@ export const isMovieSaved = async (userId: string, movieId: number): Promise<boo
     return !!data;
 };
 
-/**
- * Toggles saved status of a movie for a user
- */
 export const toggleSaveMovie = async (userId: string, movieId: number): Promise<boolean> => {
     const { data: existing } = await supabase
         .from('saved_movies')
@@ -700,9 +704,6 @@ export const toggleSaveMovie = async (userId: string, movieId: number): Promise<
     }
 };
 
-/**
- * Fetches watch history for a specific user
- */
 export const getUserHistory = async (userId: string): Promise<Movie[]> => {
     const { data } = await supabase
         .from('user_history')
@@ -713,9 +714,6 @@ export const getUserHistory = async (userId: string): Promise<Movie[]> => {
     return (data || []).map((h: any) => h.movies).filter(Boolean) as Movie[];
 };
 
-/**
- * Fetches saved movies for a specific user
- */
 export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
     const { data } = await supabase
         .from('saved_movies')
@@ -726,9 +724,6 @@ export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
     return (data || []).map((s: any) => s.movies).filter(Boolean) as Movie[];
 };
 
-/**
- * Searches official movies in the database
- */
 export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
     const { data } = await supabase
         .from('movies')
@@ -738,25 +733,16 @@ export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
     return (data || []) as Movie[];
 };
 
-/**
- * Updates the user's password using Supabase Auth
- */
 export const updateUserPassword = async (password: string) => {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) throw error;
 };
 
-/**
- * Updates the user's email using Supabase Auth
- */
 export const updateUserEmail = async (email: string) => {
     const { error } = await supabase.auth.updateUser({ email });
     if (error) throw error;
 };
 
-/**
- * Updates watch time statistics for a user
- */
 export const updateUserWatchTime = async (userId: string, seconds: number) => {
     await supabase.rpc('update_watch_time', { u_id: userId, sec: seconds });
 };

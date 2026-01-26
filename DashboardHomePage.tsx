@@ -13,11 +13,10 @@ interface DashboardHomePageProps {
   onMovieClick: (movie: Movie) => void;
 }
 
-// O'zgaruvchan shriftlar to'plami (Siz so'ragan effekt)
 const TITLE_STYLES = [
-    "font-sans tracking-tighter", // Modern
-    "font-serif tracking-wide italic", // Dramatic
-    "font-mono tracking-tight", // Sci-Fi / Tech
+    "font-sans tracking-tighter", 
+    "font-serif tracking-wide italic", 
+    "font-mono tracking-tight", 
 ];
 
 export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieClick }) => {
@@ -28,10 +27,8 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
     const [userId, setUserId] = useState<string | null>(null);
     const [isHeroSaved, setIsHeroSaved] = useState(false);
     
-    // Parallax & Scroll State
     const [scrollY, setScrollY] = useState(0);
     
-    // Swipe Logic State
     const [touchStart, setTouchStart] = useState<number | null>(null);
     const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
@@ -42,6 +39,7 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
         const fetch = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if(user) setUserId(user.id);
+            // getMovies endi global saralangan (eng yangisi birinchi) ro'yxatni qaytaradi
             const movies = await getMovies();
             setAllMovies(movies);
             setIsLoading(false);
@@ -56,6 +54,7 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Birinchi 6 tasi doim eng yangilari bo'ladi (dbService logic tufayli)
     const heroMovies = allMovies.slice(0, 6);
     const currentHeroMovie = heroMovies[heroIndex];
 
@@ -110,7 +109,6 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
         });
     };
 
-    // --- SWIPE HANDLERS ---
     const onTouchStart = (e: React.TouchEvent) => {
         setTouchEnd(null);
         setTouchStart(e.targetTouches[0].clientX);
@@ -152,7 +150,6 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                 >
                     {heroMovies.map((movie, idx) => (
                         <div key={movie.id} className="relative w-full h-full flex-shrink-0 overflow-hidden">
-                            {/* PARALLAX IMAGE */}
                             <div 
                                 className="absolute inset-0 w-full h-full"
                                 style={{ 
@@ -169,15 +166,18 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
                             </div>
 
-                            {/* CONTENT LAYER */}
                             <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16 lg:p-24 pb-20 md:pb-32 z-20">
                                 <div className={`transition-all duration-700 transform ${heroIndex === idx ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
                                     
-                                    {/* Badges */}
                                     <div className="flex flex-wrap items-center gap-3 mb-4 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
                                         <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-lg shadow-orange-600/40">
-                                            {movie.access_type === 'premium' ? 'PREMIUM' : 'YANGI'}
+                                            YANGI
                                         </span>
+                                        {movie.access_type === 'premium' && (
+                                            <span className="bg-yellow-500 text-black text-[10px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-lg">
+                                                PREMIUM
+                                            </span>
+                                        )}
                                         <div className="flex items-center gap-1 bg-white/10 backdrop-blur-md px-2 py-1 rounded border border-white/20">
                                             <Star size={12} className="text-yellow-400 fill-yellow-400"/>
                                             <span className="text-white font-bold text-xs">{movie.rating.toFixed(1)}</span>
@@ -187,17 +187,14 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                                         </span>
                                     </div>
                                     
-                                    {/* Dynamic Font Title */}
                                     <h1 className={`text-4xl md:text-7xl lg:text-8xl font-black text-white mb-4 uppercase leading-[0.9] drop-shadow-2xl max-w-4xl animate-slide-in-up ${TITLE_STYLES[idx % TITLE_STYLES.length]}`} style={{ animationDelay: '0.2s' }}>
                                         {movie.title}
                                     </h1>
                                     
-                                    {/* Improved Description Font */}
                                     <p className="text-gray-200 text-sm md:text-lg mb-8 max-w-xl line-clamp-3 font-medium leading-relaxed drop-shadow-md animate-slide-in-up" style={{ animationDelay: '0.3s' }}>
                                         {movie.plot}
                                     </p>
 
-                                    {/* Action Buttons - Organized */}
                                     <div className="flex flex-row items-center gap-3 animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
                                         <button 
                                             onClick={() => onMovieClick(movie)}
@@ -228,11 +225,6 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                     ))}
                 </div>
 
-                {/* Arrows */}
-                <button onClick={() => handleManualNav('prev')} className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/10 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 hidden md:flex"><ChevronLeft size={24} /></button>
-                <button onClick={() => handleManualNav('next')} className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/10 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 hidden md:flex"><ChevronRight size={24} /></button>
-
-                {/* Dots */}
                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30">
                     {heroMovies.map((_, i) => (
                         <button 
@@ -250,13 +242,9 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                     <div>
                         <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
                             <span className="w-1.5 h-8 bg-orange-600 rounded-full"></span>
-                            Katalog
+                            Yangi Qo'shilganlar
                         </h2>
-                        <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5">Eng so'nggi qo'shilganlar</p>
-                    </div>
-                    <div className="hidden md:flex bg-white/5 border border-white/10 px-5 py-2 rounded-full items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                        <TrendingUp size={14} className="text-orange-500" />
-                        Top Reyting
+                        <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5">Katalogdagi eng so'nggi yangiliklar</p>
                     </div>
                 </div>
 
