@@ -12,13 +12,16 @@ import {
 
 // --- SECURITY UTILS ---
 /**
- * Asynchronous URL Securer
- * Intercepts original URL and returns an AI-masked version
+ * Instant Static URL Securer (No AI)
+ * Uses a master key for obfuscation with unlimited validity
  */
 export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<string> => {
     if (!rawUrl) return '';
-    const result = await runAiServerManager(`URL ACCESS REQUEST: User ${userId} requested video: ${rawUrl}`);
-    return result?.maskedUrl || 'anilo-secured://access-denied';
+    // AI chaqiruvini olib tashladik. Statik kalit orqali tezkor shifrlash.
+    const MASTER_KEY = "ANILO_MASTER_V3_SECURE_KEY";
+    const data = btoa(`${rawUrl}|${MASTER_KEY}|${userId.slice(-6)}`);
+    // Shifrlangan format: cheksiz muddatli
+    return `anilo-vault://${data.split('').reverse().join('')}`;
 };
 
 // --- PROFILE & AUTH ---
@@ -63,7 +66,7 @@ export const getMovies = async (): Promise<Movie[]> => {
     const official = (off.data || []).map(m => ({ 
         ...m, 
         posterUrl: m.posterUrl || m.poster_url,
-        videoUrl: m.videoUrl || m.video_url, // Original URLs are still in DB, we mask on specific request
+        videoUrl: m.videoUrl || m.video_url,
         is_fandub: false 
     }));
     
@@ -101,8 +104,6 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
     return data || [];
 };
 
-// Rest of the dbService content remains unchanged (Notifications, Storage, etc.)
-// ... (omitted for brevity, assume the rest of the original file is here)
 export const addMovieToDB = async (movie: Partial<Movie>) => {
     const { data, error } = await supabase.from('movies').insert(movie).select().single();
     if (error) throw error;
@@ -739,7 +740,6 @@ export const getUserTransactions = async (userId: string): Promise<Transaction[]
     return data || [];
 };
 
-// Added to fix error in MovieManagementPage.tsx
 export const getAdminMovies = async (): Promise<Movie[]> => {
     const { data, error } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
     if (error) throw error;
@@ -750,24 +750,19 @@ export const getAdminMovies = async (): Promise<Movie[]> => {
     })) as Movie[];
 };
 
-// Added to fix error in SettingsPage.tsx
 export const updateUserPassword = async (password: string) => {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) throw error;
 };
 
-// Added to fix error in SettingsPage.tsx
 export const updateUserEmail = async (email: string) => {
     const { error } = await supabase.auth.updateUser({ email });
     if (error) throw error;
 };
 
-// Added to fix error in components/AuthModal.tsx
 export const checkAndTrackRegistration = async (deviceId: string) => {
-    // Basic anti-spam check: prevents multiple accounts from the same device in a short period
     const { data, error } = await supabase.rpc('check_registration_limit', { dev_id: deviceId });
     if (error) {
-        // Fallback: if RPC is not available, don't block registration
         console.warn("Registration limit check skipped:", error.message);
         return;
     }
@@ -776,7 +771,6 @@ export const checkAndTrackRegistration = async (deviceId: string) => {
     }
 };
 
-// Added to fix error in components/AuthModal.tsx
 export const logDeviceLogin = async (userId: string, deviceId: string) => {
     const userAgent = navigator.userAgent;
     const { error } = await supabase.from('user_devices').upsert({

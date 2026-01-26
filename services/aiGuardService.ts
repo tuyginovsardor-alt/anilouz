@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import * as db from "./dbService";
 
-// 1. Existing tools with improved descriptions for the AI
+// 1. Core security tools
 const blockUserTool: FunctionDeclaration = {
   name: 'blockUser',
   parameters: {
@@ -30,22 +30,7 @@ const revertSensitiveChangeTool: FunctionDeclaration = {
   },
 };
 
-const maskVideoUrlTool: FunctionDeclaration = {
-  name: 'maskVideoUrl',
-  parameters: {
-    type: Type.OBJECT,
-    description: "Haqiqiy video URL manzilini vaqtinchalik va shifrlangan token bilan yashirish.",
-    properties: {
-      originalUrl: { type: Type.STRING, description: "Bazadagi original video manzil." },
-      userId: { type: Type.STRING, description: "Foydalanuvchi UUID." },
-      ttlMinutes: { type: Type.NUMBER, description: "Tokenning amal qilish muddati (minutda)." },
-    },
-    required: ['originalUrl', 'userId', 'ttlMinutes'],
-  },
-};
-
 export const runAiServerManager = async (logContext: string) => {
-  // Always initialize new instance to ensure up-to-date API key from environment
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   try {
@@ -54,22 +39,20 @@ export const runAiServerManager = async (logContext: string) => {
       contents: `
         Siz Anilo.uz tizimining CYBER SECURITY Guard-isiz. 
         VAZIFALARINGIZ:
-        1. URL Masking: Har bir video so'roviga noyob 'maskVideoUrl' tokeni bering. 
-           Format: anilo-v2://[base64_encoded_data].[signature]
-        2. Hujum aniqlash: Agar foydalanuvchi o'z rolini 'admin' qilmoqchi bo'lsa yoki balansini noqonuniy oshirsa, uni 'blockUser' qiling.
-        3. Fake Requests: Agar 'logContext' shubhali ko'rinsa, 'maskVideoUrl' o'rniga soxta URL qaytaring.
+        1. Hujum aniqlash: Agar foydalanuvchi o'z rolini 'admin' qilmoqchi bo'lsa yoki balansini noqonuniy oshirsa, uni 'blockUser' qiling.
+        2. Qaytarish (Revert): Ruxsatsiz o'zgartirilgan maydonlarni 'revertSensitiveChange' orqali asl holiga keltiring.
+        3. Monitoring: Tizimdagi barcha shubhali harakatlarni tahlil qiling.
 
         LOGS:
         ${logContext}
       `,
       config: {
-        tools: [{ functionDeclarations: [blockUserTool, revertSensitiveChangeTool, maskVideoUrlTool] }],
+        tools: [{ functionDeclarations: [blockUserTool, revertSensitiveChangeTool] }],
       },
     });
 
     const calls = response.functionCalls;
     const executionResults: string[] = [];
-    let maskedUrl: string | null = null;
 
     if (calls && calls.length > 0) {
       for (const call of calls) {
@@ -86,23 +69,12 @@ export const runAiServerManager = async (logContext: string) => {
           await db.updateUserProfile(userId, updates, true);
           executionResults.push(`REVERTED: ${field}`);
         }
-
-        if (call.name === 'maskVideoUrl') {
-          const { originalUrl, userId, ttlMinutes } = call.args as any;
-          // Advanced masking simulation (signature based)
-          const expiry = Date.now() + (ttlMinutes * 60000);
-          const rawData = `${originalUrl}|${expiry}|${userId.slice(-4)}`;
-          const token = btoa(rawData).split('').reverse().join('');
-          maskedUrl = `anilo-v2://${token}.${Math.random().toString(36).substring(7)}`;
-          executionResults.push("URL_SECURED");
-        }
       }
     }
 
     return {
       analysis: response.text,
-      actions: executionResults,
-      maskedUrl: maskedUrl
+      actions: executionResults
     };
   } catch (error) {
     console.error("AI Guard Fail:", error);

@@ -38,7 +38,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
         return () => document.removeEventListener('fullscreenchange', handleFS);
     }, []);
 
-    // --- AI URL RESOLVER ---
+    // --- INSTANT STATIC RESOLVER ---
     useEffect(() => {
         const resolveSource = async () => {
             setIsResolving(true);
@@ -49,16 +49,15 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                 if (user) {
                     const masked = await getSecuredUrl(rawUrl, user.id);
                     
-                    if (masked.startsWith('anilo-v2://')) {
-                        // V2 Decryption: Reverse -> Base64 Decode -> Split by pipe
-                        const token = masked.replace('anilo-v2://', '').split('.')[0];
-                        const reversed = token.split('').reverse().join('');
-                        const decoded = atob(reversed);
-                        const [url, expiry, userHash] = decoded.split('|');
+                    if (masked.startsWith('anilo-vault://')) {
+                        // Vault Decryption: Un-reverse -> Base64 Decode -> Split
+                        const encoded = masked.replace('anilo-vault://', '').split('').reverse().join('');
+                        const decoded = atob(encoded);
+                        const [url, key] = decoded.split('|');
                         
-                        // Check expiry for extra security
-                        if (Number(expiry) < Date.now()) {
-                            throw new Error("Token muddati tugagan");
+                        // "Security Checking Key" verification
+                        if (key !== "ANILO_MASTER_V3_SECURE_KEY") {
+                            throw new Error("Xavfsizlik kaliti xato");
                         }
                         setPlayableSrc(url);
                     } else {
@@ -71,6 +70,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                 console.error("Resolve error", e);
                 setPlayableSrc('anilo-secured://access-denied');
             } finally {
+                // Tezkor resolving
                 setIsResolving(false);
             }
         };
@@ -99,21 +99,15 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     return (
         <div ref={containerRef} className="fixed inset-0 bg-black z-[200] flex items-center justify-center overflow-hidden select-none" onMouseMove={triggerControls}>
             {isResolving ? (
-                <div className="flex flex-col items-center gap-6">
-                    <div className="relative">
-                        <div className="w-16 h-16 border-4 border-zinc-800 border-t-orange-500 rounded-full animate-spin"></div>
-                        <Lock className="absolute inset-0 m-auto text-orange-500 w-6 h-6 animate-pulse" />
-                    </div>
-                    <div className="text-center">
-                        <p className="text-[10px] font-black uppercase text-orange-500 tracking-[0.3em] mb-1">AI Security Layer</p>
-                        <p className="text-zinc-500 text-[9px] uppercase font-bold animate-pulse">Shifrlangan aloqa o'rnatilmoqda...</p>
-                    </div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-zinc-800 border-t-orange-500 rounded-full animate-spin"></div>
+                    <p className="text-[10px] font-black uppercase text-zinc-500 tracking-widest animate-pulse">HIMOYALANGAN ALOQA...</p>
                 </div>
             ) : playableSrc === 'anilo-secured://access-denied' ? (
                 <div className="text-center p-10 max-w-sm">
                     <ShieldAlert size={64} className="text-red-500 mx-auto mb-6" />
                     <h2 className="text-2xl font-black text-white uppercase mb-2">Kirish Rad Etildi</h2>
-                    <p className="text-zinc-500 text-xs mb-8">AI tizimi ushbu so'rovni xavfli deb baholadi yoki token muddati tugadi.</p>
+                    <p className="text-zinc-500 text-xs mb-8">Xavfsizlik kaliti tasdiqlanmadi yoki ruxsat yo'q.</p>
                     <button onClick={onBack} className="w-full py-4 bg-white text-black font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all">Qaytish</button>
                 </div>
             ) : (
@@ -139,12 +133,12 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                 <button onClick={onBack} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full transition-all active:scale-90"><BackArrowIcon className="w-6 h-6"/></button>
                                 <div>
                                     <h2 className="text-white font-bold text-sm sm:text-base leading-none">{displayTitle}</h2>
-                                    <p className="text-orange-500 text-[9px] font-black uppercase tracking-widest mt-1">Anilo Protected Stream</p>
+                                    <p className="text-orange-500 text-[9px] font-black uppercase tracking-widest mt-1">Anilo Secured Stream</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-xl shadow-lg shadow-yellow-600/20 scale-90">
-                                <Zap size={14} className="text-black fill-black" />
-                                <span className="text-[10px] font-black text-black uppercase tracking-widest">SECURED V2</span>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-zinc-800 to-zinc-900 border border-white/10 rounded-xl shadow-lg scale-90">
+                                <Zap size={14} className="text-orange-500 fill-orange-500" />
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">VAULT V3</span>
                             </div>
                         </div>
 
