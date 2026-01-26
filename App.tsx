@@ -64,6 +64,18 @@ const App: React.FC = () => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
+  const refreshProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+          const profile = await getUserProfile(user.id);
+          if (profile) {
+              setUserProfile(profile);
+              setCurrentUserRole(profile.role);
+              setIsAuthenticated(true);
+          }
+      }
+  };
+
   useEffect(() => {
     const initApp = async () => {
         try {
@@ -71,14 +83,8 @@ const App: React.FC = () => {
             if (config['site_logo']) setLoaderLogo(config['site_logo']);
             
             const { data: { session } } = await supabase.auth.getSession();
-            
             if (session) {
-                setIsAuthenticated(true);
-                const profile = await getUserProfile(session.user.id);
-                if (profile) {
-                    setUserProfile(profile);
-                    setCurrentUserRole(profile.role);
-                }
+                await refreshProfile();
                 setPage('dashboard'); 
             } else {
                 setPage('welcome');
@@ -94,12 +100,7 @@ const App: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session) {
-            setIsAuthenticated(true);
-            const profile = await getUserProfile(session.user.id);
-            if (profile) {
-                setUserProfile(profile);
-                setCurrentUserRole(profile.role);
-            }
+            await refreshProfile();
         } else {
             setIsAuthenticated(false);
             setCurrentUserRole('user');
@@ -107,7 +108,14 @@ const App: React.FC = () => {
             setPage('welcome');
         }
     });
-    return () => subscription.unsubscribe();
+
+    // Event listener for profile updates (avatar changes)
+    document.addEventListener('profileUpdated', refreshProfile);
+
+    return () => {
+        subscription.unsubscribe();
+        document.removeEventListener('profileUpdated', refreshProfile);
+    };
   }, []);
 
   const handleNavigation = (targetPage: Page) => {
@@ -197,9 +205,9 @@ const App: React.FC = () => {
                     <button onClick={() => handleNavigation('shop')} className={`flex flex-col items-center gap-1 w-1/5 -mt-6 group`}><div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}><ShoppingBag size={20} /></div><span className={`text-[9px] font-black uppercase ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span></button>
                     <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}><LayoutGrid size={22} /><span className="text-[9px] font-black uppercase">Fandub</span></button>
                     
-                    <button onClick={() => setIsMenuOpen(true)} className={`flex flex-col items-center gap-1 w-1/5 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600'}`}>
+                    <button onClick={() => {if(isAuthenticated) setIsMenuOpen(true); else setIsAuthModalOpen(true);}} className={`flex flex-col items-center gap-1 w-1/5 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600'}`}>
                         {isAuthenticated && userProfile?.avatar_url ? (
-                            <div className={`w-6 h-6 rounded-full border-2 overflow-hidden ${isMenuOpen ? 'border-orange-500' : 'border-zinc-700'}`}>
+                            <div className={`w-7 h-7 rounded-full border-2 overflow-hidden ${isMenuOpen ? 'border-orange-500' : 'border-zinc-700'}`}>
                                 <img src={userProfile.avatar_url} className="w-full h-full object-cover" />
                             </div>
                         ) : (

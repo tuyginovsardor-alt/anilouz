@@ -1,16 +1,14 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { UserIcon } from './components/icons/UserIcon';
-import { CheckIcon } from './components/icons/CheckIcon';
-import { CloseIcon } from './components/icons/CloseIcon';
 import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { supabase } from './services/supabaseClient';
-import { getUserProfile, getUserHistory, updateUserProfile, getUserSessions } from './services/dbService';
+import { getUserProfile, getUserHistory, updateUserProfile, getUserSessions, uploadAvatar } from './services/dbService';
 import { UserProfile, UserDevice } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
 import { VerifiedBadge } from './components/VerifiedBadge';
-import { Monitor, Hash, Phone, Mail, Award, Mic, Edit2, Camera } from 'lucide-react';
+import { Monitor, Hash, Phone, Mail, Award, Edit2, Camera, Loader2 } from 'lucide-react';
 import { Page } from './App';
 
 interface ProfilePageProps {
@@ -26,7 +24,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
   const { addNotification } = useNotification();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [editForm, setEditForm] = useState({ full_name: '', username: '', phone: '' });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadData(); }, [viewUserId]);
 
@@ -70,17 +70,50 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       } finally { setLoading(false); }
   };
 
+  const handleAvatarClick = () => {
+      if (!viewUserId) fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !profile) return;
+
+      setIsUploadingAvatar(true);
+      try {
+          const publicUrl = await uploadAvatar(file);
+          await updateUserProfile(profile.id, { avatar_url: publicUrl });
+          setProfile({ ...profile, avatar_url: publicUrl });
+          addNotification({ type: 'success', title: 'Muvaffaqiyatli', message: 'Profil rasmi yangilandi.' });
+          
+          // Dispatch event to update global header/nav icons
+          document.dispatchEvent(new Event('profileUpdated'));
+      } catch (error: any) {
+          addNotification({ type: 'error', title: 'Yuklashda xato', message: error.message });
+      } finally {
+          setIsUploadingAvatar(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+  };
+
   if (loading && !profile) return <div className="flex justify-center py-20"><LoadingSpinner /></div>;
 
   const isPrivileged = ['admin', 'owner', 'manager'].includes(profile?.role || '');
-  const isDubRole = profile?.role === 'dub';
+  const isDubRole = profile?.role === 'dub' || profile?.role === 'fandub';
 
   return (
     <div className="animate-fade-in pb-20">
       
-      {/* 1. Header Card (New Design) */}
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        accept="image/*" 
+        className="hidden" 
+      />
+
+      {/* 1. Header Card */}
       <div className="bg-zinc-900 border border-white/5 rounded-[3rem] p-8 md:p-12 relative overflow-hidden shadow-2xl">
-        {/* Glow Effects */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-orange-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3"></div>
 
@@ -88,20 +121,31 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
             
             {/* Avatar Section */}
             <div className="relative mb-6">
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-1.5 bg-gradient-to-tr from-orange-500 to-red-600 shadow-2xl shadow-orange-500/20">
-                    <div className="w-full h-full rounded-full bg-black border-4 border-black overflow-hidden">
+                <div 
+                    onClick={handleAvatarClick}
+                    className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1.5 bg-gradient-to-tr from-orange-500 to-red-600 shadow-2xl shadow-orange-500/20 cursor-pointer group transition-transform active:scale-95`}
+                >
+                    <div className="w-full h-full rounded-full bg-black border-4 border-black overflow-hidden relative">
+                        {isUploadingAvatar ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+                                <Loader2 className="w-8 h-8 text-white animate-spin" />
+                            </div>
+                        ) : null}
+                        
                         {profile?.avatar_url ? (
                             <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-600"><UserIcon className="w-16 h-16"/></div>
                         )}
+                        
+                        {/* Hover Overlay */}
+                        {!viewUserId && (
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Camera className="text-white w-8 h-8" />
+                            </div>
+                        )}
                     </div>
                 </div>
-                {isEditing && (
-                    <button className="absolute bottom-2 right-2 p-2 bg-white text-black rounded-full shadow-lg hover:bg-gray-200 transition-colors">
-                        <Camera size={16} />
-                    </button>
-                )}
                 {!isEditing && (
                     <div className="absolute -bottom-2 -right-2 bg-zinc-900 p-2 rounded-full border border-zinc-800">
                         <VerifiedBadge type={isPrivileged || isDubRole ? 'gold' : 'silver'} className="w-6 h-6" />
@@ -135,18 +179,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
             )}
 
             {/* Edit / Save Buttons */}
-            <div className="mt-6 flex gap-3">
-                {!isEditing ? (
-                    <button onClick={() => setIsEditing(true)} className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full text-xs font-bold text-white uppercase tracking-widest transition-all flex items-center gap-2">
-                        <Edit2 size={14} /> Tahrirlash
-                    </button>
-                ) : (
-                    <>
-                        <button onClick={() => setIsEditing(false)} className="px-6 py-2 bg-zinc-800 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-zinc-700">Bekor qilish</button>
-                        <button onClick={handleSave} className="px-6 py-2 bg-orange-600 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-orange-700 shadow-lg shadow-orange-600/20">Saqlash</button>
-                    </>
-                )}
-            </div>
+            {!viewUserId && (
+                <div className="mt-6 flex gap-3">
+                    {!isEditing ? (
+                        <button onClick={() => setIsEditing(true)} className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full text-xs font-bold text-white uppercase tracking-widest transition-all flex items-center gap-2">
+                            <Edit2 size={14} /> Tahrirlash
+                        </button>
+                    ) : (
+                        <>
+                            <button onClick={() => setIsEditing(false)} className="px-6 py-2 bg-zinc-800 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-zinc-700">Bekor</button>
+                            <button onClick={handleSave} className="px-6 py-2 bg-orange-600 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-orange-700 shadow-lg shadow-orange-600/20">Saqlash</button>
+                        </>
+                    )}
+                </div>
+            )}
 
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-8 mt-10 w-full max-w-lg border-t border-white/5 pt-8">
@@ -208,47 +254,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
           </div>
       </div>
 
-      {/* 3. Special Access */}
-      {isDubRole && !viewUserId && (
-          <button 
-            onClick={() => onMainNavigate?.('dub-dashboard')}
-            className="w-full mt-4 p-6 bg-gradient-to-r from-purple-900 to-blue-900 rounded-[2rem] border border-purple-500/30 flex items-center justify-between group hover:scale-[1.01] transition-transform shadow-2xl"
-          >
-              <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-purple-500/40">
-                      <Mic size={24} />
-                  </div>
-                  <div className="text-left">
-                      <h3 className="text-lg font-black text-white uppercase tracking-tight">Studio Xona</h3>
-                      <p className="text-[10px] text-purple-200 font-bold uppercase tracking-widest">Ovoz berish va Statistika</p>
-                  </div>
-              </div>
-              <div className="bg-white/10 p-2 rounded-full text-white group-hover:bg-white group-hover:text-purple-900 transition-colors">
-                  <ArrowRightIcon />
-              </div>
-          </button>
-      )}
-
-      {/* 4. Active Sessions */}
-      <div className="mt-8">
-        <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-            <Monitor size={16} className="text-orange-500"/> Faol Qurilmalar
-        </h3>
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {sessions.map(s => (
-                <div key={s.id} className="min-w-[200px] bg-zinc-900 border border-white/5 p-5 rounded-[2rem]">
-                    <div className="flex justify-between mb-3">
-                        <Monitor size={18} className="text-zinc-600"/>
-                        <span className="text-[9px] font-black uppercase px-2 py-1 bg-green-900/30 text-green-400 rounded-lg">Online</span>
-                    </div>
-                    <p className="text-white font-bold text-xs truncate">{s.device_name}</p>
-                    <p className="text-[9px] text-zinc-500 font-mono mt-1">{s.device_id.slice(0,12)}...</p>
-                </div>
-            ))}
-        </div>
-      </div>
-
-      {!isDubRole && (
+      {!viewUserId && !isDubRole && (
           <div className="pt-10">
               <h2 className="text-xl font-black text-center text-white mb-8 uppercase tracking-widest">Premiumga o'tish</h2>
               <SubscriptionPlans />
@@ -257,9 +263,3 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
     </div>
   );
 };
-
-const ArrowRightIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-    </svg>
-);

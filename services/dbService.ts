@@ -15,6 +15,12 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     return data as UserProfile;
 };
 
+// FIX: Added getUserByEmail for admin panel search
+export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
+    const { data } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+    return data as UserProfile;
+};
+
 export const getUserSessions = async (userId: string): Promise<UserDevice[]> => {
     const { data } = await supabase.from('user_devices').select('*').eq('user_id', userId).order('last_active', { ascending: false });
     return (data || []) as UserDevice[];
@@ -23,6 +29,37 @@ export const getUserSessions = async (userId: string): Promise<UserDevice[]> => 
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>) => {
     const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
     if (error) throw error;
+};
+
+// FIX: Added updateUserPassword using Supabase Auth
+export const updateUserPassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+};
+
+// FIX: Added updateUserEmail using Supabase Auth
+export const updateUserEmail = async (newEmail: string) => {
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    if (error) throw error;
+};
+
+// FIX: Added device login logging
+export const logDeviceLogin = async (userId: string, deviceId: string) => {
+    const userAgent = navigator.userAgent;
+    await supabase.from('user_devices').upsert({
+        user_id: userId,
+        device_id: deviceId,
+        device_name: userAgent,
+        last_active: new Date().toISOString()
+    }, { onConflict: 'user_id, device_id' });
+};
+
+// FIX: Added registration tracking for anti-bot
+export const checkAndTrackRegistration = async (deviceId: string) => {
+    // Basic logic to prevent multiple registrations from same device
+    const { data, error } = await supabase.from('registration_tracking').select('*').eq('device_id', deviceId).maybeSingle();
+    if (data) throw new Error("Ushbu qurilmadan allaqachon ro'yxatdan o'tilgan.");
+    await supabase.from('registration_tracking').insert({ device_id: deviceId });
 };
 
 // --- MOVIES & FANDUB INTEGRATION ---
@@ -60,7 +97,7 @@ export const getMovies = async (): Promise<Movie[]> => {
     }));
 
     const merged = [...official, ...fandub]
-        .filter(m => !m.is_blocked) // Faqat bloklanmaganlarni ko'rsatish
+        .filter(m => !m.is_blocked)
         .sort((a: any, b: any) => {
             const dateA = new Date(a.created_at).getTime();
             const dateB = new Date(b.created_at).getTime();
@@ -70,6 +107,12 @@ export const getMovies = async (): Promise<Movie[]> => {
     return merged as Movie[];
 };
 
+// FIX: Added getAdminMovies for management panel
+export const getAdminMovies = async (): Promise<Movie[]> => {
+    const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
+    return (data || []).map(m => ({ ...m, posterUrl: m.posterUrl || m.poster_url, videoUrl: m.videoUrl || m.video_url })) as Movie[];
+};
+
 export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
     const { data: fandubMovie } = await supabase.from('fandub_uploads').select('episodes').eq('id', movieId).maybeSingle();
     if (fandubMovie && fandubMovie.episodes) return fandubMovie.episodes as Episode[];
@@ -77,7 +120,54 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
     return data || [];
 };
 
-// --- FANDUB MANAGEMENT (ADMIN & CREATOR) ---
+// FIX: Added addMovieToDB
+export const addMovieToDB = async (movie: Partial<Movie>) => {
+    const { data, error } = await supabase.from('movies').insert(movie).select().single();
+    if (error) throw error;
+    return data as Movie;
+};
+
+// FIX: Added updateMovieInDB
+export const updateMovieInDB = async (id: number, movie: Partial<Movie>) => {
+    const { error } = await supabase.from('movies').update(movie).eq('id', id);
+    if (error) throw error;
+};
+
+// FIX: Added deleteMovieFromDB
+export const deleteMovieFromDB = async (id: number) => {
+    const { error } = await supabase.from('movies').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// FIX: Added toggleMovieArchive
+export const toggleMovieArchive = async (id: number, isArchived: boolean) => {
+    const { error } = await supabase.from('movies').update({ is_archived: isArchived }).eq('id', id);
+    if (error) throw error;
+};
+
+// --- PREMIUM BUNDLES ---
+export const getPremiumBundles = async (): Promise<PremiumBundle[]> => {
+    const { data } = await supabase.from('premium_bundles').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const savePremiumBundle = async (bundle: Partial<PremiumBundle>) => {
+    const { id, ...data } = bundle;
+    let error;
+    if (id) {
+        ({ error } = await supabase.from('premium_bundles').update(data).eq('id', id));
+    } else {
+        ({ error } = await supabase.from('premium_bundles').insert(data));
+    }
+    if (error) throw error;
+};
+
+export const deletePremiumBundle = async (id: number) => {
+    const { error } = await supabase.from('premium_bundles').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// --- FANDUB MANAGEMENT ---
 export const toggleBlockFandub = async (id: number, block: boolean) => {
     const { error } = await supabase.from('fandub_uploads').update({ is_blocked: block }).eq('id', id);
     if (error) throw error;
@@ -90,6 +180,24 @@ export const deleteFandubUpload = async (id: number) => {
 
 export const updateFandubUpload = async (id: number, updates: any) => {
     const { error } = await supabase.from('fandub_uploads').update(updates).eq('id', id);
+    if (error) throw error;
+};
+
+// FIX: Added createFandubChannel
+export const createFandubChannel = async (channel: Partial<FandubChannel>) => {
+    const { error } = await supabase.from('fandub_channels').insert(channel);
+    if (error) throw error;
+};
+
+// FIX: Added updateFandubChannel
+export const updateFandubChannel = async (id: string, updates: Partial<FandubChannel>) => {
+    const { error } = await supabase.from('fandub_channels').update(updates).eq('id', id);
+    if (error) throw error;
+};
+
+// FIX: Added createFandubStory
+export const createFandubStory = async (story: Partial<FandubStory>) => {
+    const { error } = await supabase.from('fandub_stories').insert(story);
     if (error) throw error;
 };
 
@@ -109,22 +217,6 @@ export const deleteFandubPost = async (id: number) => {
     if (error) throw error;
 };
 
-// --- PREMIUM BUNDLES (YAKKA PREMIUM) ---
-export const getPremiumBundles = async (): Promise<PremiumBundle[]> => {
-    const { data } = await supabase.from('premium_bundles').select('*').order('created_at', { ascending: false });
-    return data || [];
-};
-
-export const savePremiumBundle = async (bundle: Partial<PremiumBundle>) => {
-    const { error } = await supabase.from('premium_bundles').upsert(bundle);
-    if (error) throw error;
-};
-
-export const deletePremiumBundle = async (id: number) => {
-    const { error } = await supabase.from('premium_bundles').delete().eq('id', id);
-    if (error) throw error;
-};
-
 // --- NOTIFICATIONS ---
 export const getUserNotifications = async (userId: string) => {
     const { data } = await supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20);
@@ -135,7 +227,20 @@ export const markNotificationsRead = async (userId: string) => {
     await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
 };
 
-// --- QOLGAN STANDART FUNKSIYALAR ---
+// --- STORAGE & FILE UPLOADS ---
+export const uploadFile = async (file: File, bucket: string): Promise<string> => {
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substr(2,9)}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(fileName, file);
+    if (error) throw error;
+    return supabase.storage.from(bucket).getPublicUrl(fileName).data.publicUrl;
+};
+
+export const uploadPoster = (file: File) => uploadFile(file, 'posters');
+export const uploadVideo = (file: File) => uploadFile(file, 'videos');
+export const uploadAvatar = (file: File) => uploadFile(file, 'avatars');
+
+// --- OTHER FUNCTIONS ---
 export const getFandubChannels = async (userId?: string): Promise<FandubChannel[]> => {
     const { data } = await supabase.from('fandub_channels').select('*').order('subscriber_count', { ascending: false });
     if (userId && data) {
@@ -149,11 +254,6 @@ export const getFandubChannels = async (userId?: string): Promise<FandubChannel[
 export const getFandubChannel = async (userId: string): Promise<FandubChannel | null> => {
     const { data } = await supabase.from('fandub_channels').select('*').eq('user_id', userId).maybeSingle();
     return data as FandubChannel;
-};
-
-export const updateFandubChannel = async (channelId: string, updates: Partial<FandubChannel>) => {
-    const { error } = await supabase.from('fandub_channels').update(updates).eq('id', channelId);
-    if (error) throw error;
 };
 
 export const getFandubUploads = async (userId: string): Promise<FandubUpload[]> => {
@@ -181,6 +281,11 @@ export const getAppConfig = async () => {
     const config: Record<string, string> = {};
     (data || []).forEach(item => { config[item.key] = item.value; });
     return config;
+};
+
+// FIX: Added updateAppConfig
+export const updateAppConfig = async (key: string, value: string) => {
+    await supabase.from('app_config').upsert({ key, value });
 };
 
 export const getDashboardStats = async () => {
@@ -217,19 +322,11 @@ export const getActiveStories = async (): Promise<FandubStory[]> => {
     return data || [];
 };
 
-export const uploadFile = async (file: File, bucket: string): Promise<string> => {
-    const ext = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substr(2,9)}.${ext}`;
-    const { error } = await supabase.storage.from(bucket).upload(fileName, file);
-    if (error) throw error;
-    return supabase.storage.from(bucket).getPublicUrl(fileName).data.publicUrl;
-};
-export const uploadPoster = (file: File) => uploadFile(file, 'posters');
-export const uploadVideo = (file: File) => uploadFile(file, 'videos');
 export const isMovieSaved = async (userId: string, movieId: number): Promise<boolean> => {
     const { data } = await supabase.from('saved_movies').select('id').eq('user_id', userId).eq('movie_id', movieId).maybeSingle();
     return !!data;
 };
+
 export const toggleSaveMovie = async (userId: string, movieId: number): Promise<boolean> => {
     const { data: existing } = await supabase.from('saved_movies').select('id').eq('user_id', userId).eq('movie_id', movieId).maybeSingle();
     if (existing) {
@@ -240,60 +337,486 @@ export const toggleSaveMovie = async (userId: string, movieId: number): Promise<
         return true;
     }
 };
+
 export const getUserHistory = async (userId: string): Promise<Movie[]> => {
     const { data } = await supabase.from('user_history').select('*, movies(*)').eq('user_id', userId).order('viewed_at', { ascending: false });
-    return (data || []).map((h: any) => h.movies).filter(Boolean) as Movie[];
+    return (data || []).map((h: any) => ({ ...h.movies, posterUrl: h.movies.posterUrl || h.movies.poster_url })).filter(Boolean) as Movie[];
 };
+
 export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
     const { data } = await supabase.from('saved_movies').select('*, movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
-    return (data || []).map((s: any) => s.movies).filter(Boolean) as Movie[];
+    return (data || []).map((s: any) => ({ ...s.movies, posterUrl: s.movies.posterUrl || s.movies.poster_url })).filter(Boolean) as Movie[];
 };
+
 export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
     const { data } = await supabase.from('movies').select('*').or(`title.ilike.%${query}%,genre.ilike.%${query}%,tags.ilike.%${query}%`).eq('is_archived', false);
-    return (data || []) as Movie[];
+    return (data || []).map(m => ({ ...m, posterUrl: m.posterUrl || m.poster_url })) as Movie[];
 };
+
 export const getMovieReviews = async (movieId: number) => {
     const { data } = await supabase.from('reviews').select('*, profiles(full_name, avatar_url, role)').eq('movie_id', movieId).order('created_at', { ascending: false });
     return data || [];
 };
+
 export const addReview = async (movieId: number, userId: string, rating: number, comment: string) => {
     await supabase.from('reviews').insert({ movie_id: movieId, user_id: userId, rating, comment });
 };
+
 export const deleteReview = async (reviewId: number) => {
     await supabase.from('reviews').delete().eq('id', reviewId);
 };
+
 export const updateReview = async (reviewId: number, comment: string) => {
     await supabase.from('reviews').update({ comment }).eq('id', reviewId);
 };
+
 export const buySubscription = async (userId: string, plan: string, price: number) => {
     await supabase.rpc('buy_subscription', { u_id: userId, p_name: plan, cost: price });
 };
+
 export const redeemPromocode = async (userId: string, code: string) => {
     const { data, error } = await supabase.rpc('redeem_promocode', { u_id: userId, c_str: code });
     if (error) throw error;
     return data;
 };
+
 export const getNews = async (): Promise<News[]> => {
     const { data } = await supabase.from('news').select('*').order('created_at', { ascending: false });
     return data || [];
 };
+
+// FIX: Added createNews
+export const createNews = async (title: string, content: string) => {
+    await supabase.from('news').insert({ title, content });
+};
+
+// FIX: Added deleteNews
+export const deleteNews = async (id: number) => {
+    await supabase.from('news').delete().eq('id', id);
+};
+
 export const getAllTickets = async (): Promise<SupportTicket[]> => {
     const { data } = await supabase.from('support_tickets').select('*, profiles(full_name)').order('created_at', { ascending: false });
     return data || [];
 };
+
 export const getMyTickets = async (userId: string): Promise<SupportTicket[]> => {
     const { data } = await supabase.from('support_tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     return data || [];
 };
+
 export const getTicketMessages = async (ticketId: number): Promise<TicketMessage[]> => {
     const { data } = await supabase.from('ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true });
     return data || [];
 };
+
 export const createTicket = async (userId: string) => {
     const { data, error } = await supabase.from('support_tickets').insert({ user_id: userId, status: 'open' }).select().single();
     if (error) throw error;
     return data;
 };
+
 export const sendMessage = async (ticketId: number, userId: string, message: string, isAdmin: boolean) => {
     await supabase.from('ticket_messages').insert({ ticket_id: ticketId, user_id: userId, message, is_admin: isAdmin });
+};
+
+// FIX: Added getPromocodes
+export const getPromocodes = async (): Promise<Promocode[]> => {
+    const { data } = await supabase.from('promocodes').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+// FIX: Added savePromocode
+export const savePromocode = async (promo: Promocode) => {
+    const { error } = await supabase.from('promocodes').insert(promo);
+    if (error) throw error;
+};
+
+// FIX: Added deletePromocode
+export const deletePromocode = async (id: number) => {
+    const { error } = await supabase.from('promocodes').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// FIX: Added getSocialLinks
+export const getSocialLinks = async (): Promise<SocialLink[]> => {
+    const { data } = await supabase.from('social_links').select('*').order('label', { ascending: true });
+    return data || [];
+};
+
+// FIX: Added addSocialLink
+export const addSocialLink = async (link: Partial<SocialLink>) => {
+    await supabase.from('social_links').insert(link);
+};
+
+// FIX: Added deleteSocialLink
+export const deleteSocialLink = async (id: number) => {
+    await supabase.from('social_links').delete().eq('id', id);
+};
+
+// FIX: Added getAllUsers
+export const getAllUsers = async (): Promise<UserProfile[]> => {
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+// FIX: Added deleteUser (admin only)
+export const deleteUser = async (id: string) => {
+    const { error } = await supabase.from('profiles').delete().eq('id', id);
+    if (error) throw error;
+};
+
+// FIX: Added getPaymentRequests
+export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
+    const { data } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+    return data || [];
+};
+
+// FIX: Added approvePaymentRequest
+export const approvePaymentRequest = async (requestId: number, userId: string, amount: number) => {
+    await supabase.rpc('approve_payment', { req_id: requestId, u_id: userId, amt: amount });
+};
+
+// FIX: Added rejectPaymentRequest
+export const rejectPaymentRequest = async (requestId: number) => {
+    await supabase.from('payment_requests').update({ status: 'rejected' }).eq('id', requestId);
+};
+
+// FIX: Added getPremiumUsers (users with balance > 0)
+export const getPremiumUsers = async (): Promise<UserProfile[]> => {
+    const { data } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
+    return data || [];
+};
+
+// FIX: Added adminAdjustUserBalance
+export const adminAdjustUserBalance = async (userId: string, amount: number, type: 'add' | 'deduct', description: string) => {
+    await supabase.rpc('adjust_user_balance', { u_id: userId, amt: amount, adj_type: type, desc: description });
+};
+
+// FIX: Added giveGlobalBonus
+export const giveGlobalBonus = async (amount: number, description: string) => {
+    const { data, error } = await supabase.rpc('give_global_bonus', { amt: amount, desc: description });
+    if (error) throw error;
+    return data;
+};
+
+// FIX: Added getAllSessions
+export const getAllSessions = async (): Promise<UserDevice[]> => {
+    const { data } = await supabase.from('user_devices').select('*, profiles(full_name, email, role)').order('last_active', { ascending: false });
+    return data || [];
+};
+
+// FIX: Added toggleDeviceBlock
+export const toggleDeviceBlock = async (id: number, blocked: boolean) => {
+    await supabase.from('user_devices').update({ is_blocked: blocked }).eq('id', id);
+};
+
+// FIX: Added getBroadcasts
+export const getBroadcasts = async (): Promise<Broadcast[]> => {
+    const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+// FIX: Added createBroadcast
+export const createBroadcast = async (bc: Partial<Broadcast>) => {
+    await supabase.from('broadcasts').insert(bc);
+};
+
+// FIX: Added deleteBroadcast
+export const deleteBroadcast = async (id: number) => {
+    await supabase.from('broadcasts').delete().eq('id', id);
+};
+
+// FIX: Added ATC functions
+export const getATCWallet = async (userId: string): Promise<ATCWallet | null> => {
+    const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
+    return data;
+};
+
+export const getATCTransactions = async (userId: string): Promise<ATCTransaction[]> => {
+    const { data } = await supabase.from('atc_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const getContestSettings = async () => {
+    const { data } = await supabase.from('contest_settings').select('*');
+    const s: any = {};
+    (data || []).forEach(i => s[i.key] = i.value);
+    return s;
+};
+
+export const updateContestSetting = async (key: string, value: any) => {
+    await supabase.from('contest_settings').upsert({ key, value });
+};
+
+export const getContestTasks = async (): Promise<ContestTask[]> => {
+    const { data } = await supabase.from('contest_tasks').select('*');
+    return data || [];
+};
+
+export const createContestTask = async (task: Partial<ContestTask>) => {
+    await supabase.from('contest_tasks').insert(task);
+};
+
+export const deleteContestTask = async (id: number) => {
+    await supabase.from('contest_tasks').delete().eq('id', id);
+};
+
+export const getContestAds = async (): Promise<ContestAd[]> => {
+    const { data } = await supabase.from('contest_ads').select('*');
+    return data || [];
+};
+
+export const createContestAd = async (ad: Partial<ContestAd>) => {
+    await supabase.from('contest_ads').insert(ad);
+};
+
+export const deleteContestAd = async (id: number) => {
+    await supabase.from('contest_ads').delete().eq('id', id);
+};
+
+export const claimATCReward = async (userId: string, amount: number, type: string, desc: string) => {
+    await supabase.rpc('claim_atc_reward', { u_id: userId, amt: amount, r_type: type, r_desc: desc });
+};
+
+export const convertATCtoUZS = async (userId: string, amount: number, rate: number) => {
+    await supabase.rpc('convert_atc_to_uzs', { u_id: userId, atc_amt: amount, ex_rate: rate });
+};
+
+export const getQuizQuestions = async (count: number): Promise<QuizQuestion[]> => {
+    const { data } = await supabase.rpc('get_random_quiz', { q_count: count });
+    return data || [];
+};
+
+export const rewardExtraSpin = async (userId: string, count: number) => {
+    await supabase.rpc('add_extra_spins', { u_id: userId, s_count: count });
+};
+
+// FIX: Added ARK Trading functions
+export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
+    const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
+    return data;
+};
+
+export const getArkMarketHistory = async (): Promise<ArkMarketData[]> => {
+    const { data } = await supabase.from('ark_market_history').select('*').order('created_at', { ascending: true });
+    return data || [];
+};
+
+export const getArkSettings = async () => {
+    const { data } = await supabase.from('ark_settings').select('*');
+    const s: any = {};
+    (data || []).forEach(i => s[i.key] = i.value);
+    return s;
+};
+
+export const updateArkSettings = async (key: string, value: any) => {
+    await supabase.from('ark_settings').upsert({ key, value });
+};
+
+export const getArkAds = async (): Promise<ArkAd[]> => {
+    const { data } = await supabase.from('ark_ads').select('*');
+    return data || [];
+};
+
+export const createArkAd = async (ad: Partial<ArkAd>) => {
+    await supabase.from('ark_ads').insert(ad);
+};
+
+export const deleteArkAd = async (id: number) => {
+    await supabase.from('ark_ads').delete().eq('id', id);
+};
+
+export const getArkQuizzes = async (): Promise<ArkQuiz[]> => {
+    const { data } = await supabase.from('ark_quizzes').select('*');
+    return data || [];
+};
+
+export const createArkQuiz = async (q: Partial<ArkQuiz>) => {
+    await supabase.from('ark_quizzes').insert(q);
+};
+
+export const deleteArkQuiz = async (id: number) => {
+    await supabase.from('ark_quizzes').delete().eq('id', id);
+};
+
+export const recordArkSpinResult = async (userId: string, prize: WheelPrize) => {
+    await supabase.rpc('process_ark_spin', { u_id: userId, p_type: prize.type, p_val: prize.value, p_lbl: prize.label });
+};
+
+export const rewardArkSpins = async (userId: string, count: number) => {
+    await supabase.rpc('add_ark_spins', { u_id: userId, s_count: count });
+};
+
+export const claimArkAdReward = async (userId: string, amount: number, title: string) => {
+    await supabase.rpc('claim_ark_ad_reward', { u_id: userId, amt: amount, ad_title: title });
+};
+
+export const getArkWithdrawals = async (): Promise<ArkWithdrawal[]> => {
+    const { data } = await supabase.from('ark_withdrawals').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const requestArkWithdrawal = async (userId: string, amount: number, card: string, holder: string) => {
+    await supabase.from('ark_withdrawals').insert({ user_id: userId, amount_ark: amount, card_number: card, card_holder: holder });
+};
+
+export const approveArkWithdrawal = async (id: number) => {
+    await supabase.from('ark_withdrawals').update({ status: 'approved' }).eq('id', id);
+};
+
+export const giveArkGlobalBonus = async (amount: number, msg: string) => {
+    await supabase.rpc('give_ark_global_bonus', { amt: amount, bonus_msg: msg });
+};
+
+export const runArkAutopilot = async () => {
+    const { data, error } = await supabase.rpc('run_ark_autopilot');
+    if (error) throw error;
+    return data;
+};
+
+export const toggleArkMarketStatus = async (status: string) => {
+    await updateArkSettings('game_status', status);
+};
+
+export const saveArkSchedule = async (schedule: ArkSchedule) => {
+    await updateArkSettings('market_schedule', JSON.stringify(schedule));
+};
+
+// FIX: Added Security Functions
+export const getAdminPin = async () => {
+    const config = await getAppConfig();
+    return config['admin_pin'] || '0000';
+};
+
+export const setAdminPin = async (pin: string) => {
+    await updateAppConfig('admin_pin', pin);
+};
+
+export const getProtectedRoutes = async (): Promise<string[]> => {
+    const config = await getAppConfig();
+    try {
+        return JSON.parse(config['protected_routes'] || '[]');
+    } catch { return []; }
+};
+
+export const setProtectedRoutes = async (routes: string[]) => {
+    await updateAppConfig('protected_routes', JSON.stringify(routes));
+};
+
+export const saveRecoveryCodes = async (codes: string[]) => {
+    await updateAppConfig('admin_recovery_codes', JSON.stringify(codes));
+};
+
+export const verifyRecoveryCode = async (code: string): Promise<boolean> => {
+    const config = await getAppConfig();
+    try {
+        const codes = JSON.parse(config['admin_recovery_codes'] || '[]');
+        return codes.includes(code);
+    } catch { return false; }
+};
+
+export const getRecoveryCodesStatus = async (): Promise<boolean> => {
+    const config = await getAppConfig();
+    try {
+        const codes = JSON.parse(config['admin_recovery_codes'] || '[]');
+        return codes.length > 0;
+    } catch { return false; }
+};
+
+// FIX: Added Shop Functions
+export const getShopProducts = async (cat?: string, sort?: string, query?: string): Promise<ShopProduct[]> => {
+    let q = supabase.from('shop_products').select('*').eq('is_active', true);
+    if (cat && cat !== 'all') q = q.eq('category', cat);
+    if (query) q = q.ilike('title', `%${query}%`);
+    
+    if (sort === 'price_asc') q = q.order('price', { ascending: true });
+    else if (sort === 'price_desc') q = q.order('price', { ascending: false });
+    else if (sort === 'popular') q = q.order('sales_count', { ascending: false });
+    else q = q.order('created_at', { ascending: false });
+    
+    const { data } = await q;
+    return data || [];
+};
+
+export const getAdminShopProducts = async (): Promise<ShopProduct[]> => {
+    const { data } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const createShopProduct = async (prod: Partial<ShopProduct>) => {
+    await supabase.from('shop_products').insert(prod);
+};
+
+export const getShopWallet = async (userId: string): Promise<ShopWallet | null> => {
+    const { data } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
+    return data;
+};
+
+export const createShopPaymentRequest = async (userId: string, amount: number, url: string) => {
+    await supabase.from('shop_payment_requests').insert({ user_id: userId, amount, screenshot_url: url });
+};
+
+export const placeShopOrder = async (userId: string, productId: number, amount: number, address: string, phone: string) => {
+    await supabase.rpc('place_shop_order', { u_id: userId, p_id: productId, amt: amount, addr: address, ph: phone });
+};
+
+export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
+    const { data } = await supabase.from('shop_orders').select('*, products(*)').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
+};
+
+// FIX: Added incrementAdView
+export const incrementAdView = async (adId: number) => {
+    await supabase.rpc('increment_ad_views', { ad_id: adId });
+};
+
+// FIX: Added getAds for ad management
+export const getAds = async (): Promise<Ad[]> => {
+    const { data } = await supabase.from('ads').select('*').order('created_at', { ascending: false });
+    return (data || []).map((ad: any) => ({
+        id: ad.id,
+        name: ad.name,
+        type: ad.type,
+        contentUrl: ad.content_url,
+        targetUrl: ad.target_url,
+        location: ad.location,
+        status: ad.status,
+        view_count: ad.view_count
+    }));
+};
+
+// FIX: Added saveAd
+export const saveAd = async (ad: Ad) => {
+    const { id, ...data } = ad;
+    const payload = {
+        name: data.name,
+        type: data.type,
+        content_url: data.contentUrl,
+        target_url: data.targetUrl,
+        location: data.location,
+        status: data.status,
+        view_count: data.view_count || 0
+    };
+    if (id) {
+        await supabase.from('ads').update(payload).eq('id', id);
+    } else {
+        await supabase.from('ads').insert(payload);
+    }
+};
+
+// FIX: Added deleteAd
+export const deleteAd = async (id: number) => {
+    await supabase.from('ads').delete().eq('id', id);
+};
+
+// FIX: Added recordTsPaySuccess (Webhook mock/manual)
+export const recordTsPaySuccess = async (userId: string, amount: number, orderId: number) => {
+    await supabase.rpc('record_tspay_success', { u_id: userId, amt: amount, o_id: orderId });
+};
+
+// FIX: Added getUserTransactions
+export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
+    const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
 };
