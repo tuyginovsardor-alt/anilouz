@@ -244,10 +244,30 @@ export interface FandubUpload {
     episodes: Episode[];
     tags?: string;
     status: 'pending' | 'approved' | 'rejected';
+    is_blocked?: boolean;
     admin_comment?: string;
     revenue_share_percent: number;
     view_count: number;
     video_url: string;
+    created_at: string;
+}
+
+// --- NEW TYPES ADDED TO FIX EXPORT ERRORS ---
+export interface FandubPost {
+    id: number;
+    channel_id: string;
+    content: string;
+    image_url?: string;
+    likes: number;
+    created_at: string;
+}
+
+export interface PremiumBundle {
+    id: number;
+    title: string;
+    price: number;
+    duration_days: number;
+    anime_ids: number[];
     created_at: string;
 }
 
