@@ -82,7 +82,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initApp = async () => {
-        // Hard timeout safety: Sayt har qanday holatda 3 soniyadan keyin ochiladi
         const safetyTimeout = setTimeout(() => setIsAppReady(true), 3000);
 
         try {
@@ -92,7 +91,7 @@ const App: React.FC = () => {
             
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                // Profil yuklanishini kutib o'tirmaymiz (non-blocking)
+                setIsAuthenticated(true); // Sessiya borligini darhol aniqlash
                 refreshProfile().then(() => {
                     setPage('dashboard');
                 }).finally(() => {
@@ -115,6 +114,7 @@ const App: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session) {
+            setIsAuthenticated(true);
             refreshProfile();
         } else {
             setIsAuthenticated(false);
@@ -230,9 +230,15 @@ const App: React.FC = () => {
                     <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}><LayoutGrid size={22} /><span className="text-[9px] font-black uppercase">Fandub</span></button>
                     
                     <button onClick={() => {if(isAuthenticated) setIsMenuOpen(true); else setIsAuthModalOpen(true);}} className={`flex flex-col items-center gap-1 w-1/5 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600'}`}>
-                        {isAuthenticated && userProfile?.avatar_url ? (
-                            <div className={`w-7 h-7 rounded-full border-2 overflow-hidden ${isMenuOpen ? 'border-orange-500' : 'border-zinc-700'}`}>
-                                <img src={userProfile.avatar_url} className="w-full h-full object-cover" />
+                        {isAuthenticated ? (
+                            <div className={`w-7 h-7 rounded-full border-2 overflow-hidden transition-all duration-300 ${isMenuOpen ? 'border-orange-500 scale-110 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'border-zinc-700'}`}>
+                                {userProfile?.avatar_url ? (
+                                    <img src={userProfile.avatar_url} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                                        <User size={14} className="text-zinc-400" />
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <User size={22} />
