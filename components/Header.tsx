@@ -121,12 +121,18 @@ export const Header: React.FC<HeaderProps> = ({
                     {showNotifications && <NotificationList notifications={notifications} onClose={() => setShowNotifications(false)} />}
                 </div>
 
-                {isAuthenticated ? (
-                    <button onClick={() => setIsMenuOpen(true)} className="w-11 h-11 rounded-full border-2 border-white/20 overflow-hidden hover:border-orange-500 transition-all shadow-lg active:scale-95">
-                        {avatarUrl ? <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-400"><User size={22} /></div>}
-                    </button>
-                ) : (
-                    <button onClick={onLoginClick} className="ml-2 bg-white text-black px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all shadow-lg">Kirish</button>
+                {/* FAQAT DESKTOPDA KO'RINSIN - MOBILDA PASTDAGI NAVIGATSIYAGA O'TDI */}
+                <div className="hidden md:block">
+                    {isAuthenticated ? (
+                        <button onClick={() => setIsMenuOpen(true)} className="w-11 h-11 rounded-full border-2 border-white/20 overflow-hidden hover:border-orange-500 transition-all shadow-lg active:scale-95">
+                            {avatarUrl ? <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-400"><User size={22} /></div>}
+                        </button>
+                    ) : (
+                        <button onClick={onLoginClick} className="ml-2 bg-white text-black px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all shadow-lg">Kirish</button>
+                    )}
+                </div>
+                {!isAuthenticated && (
+                     <button onClick={onLoginClick} className="md:hidden ml-2 bg-white text-black px-5 py-2 rounded-full font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-lg">Kirish</button>
                 )}
             </div>
         </div>
