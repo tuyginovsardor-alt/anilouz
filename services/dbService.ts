@@ -12,16 +12,10 @@ import {
 
 // --- SECURITY UTILS ---
 /**
- * Instant Static URL Securer (No AI)
- * Uses a master key for obfuscation with unlimited validity
+ * Returns raw URL without any masking or vault logic as requested.
  */
 export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<string> => {
-    if (!rawUrl) return '';
-    // AI chaqiruvini olib tashladik. Statik kalit orqali tezkor shifrlash.
-    const MASTER_KEY = "ANILO_MASTER_V3_SECURE_KEY";
-    const data = btoa(`${rawUrl}|${MASTER_KEY}|${userId.slice(-6)}`);
-    // Shifrlangan format: cheksiz muddatli
-    return `anilo-vault://${data.split('').reverse().join('')}`;
+    return rawUrl || '';
 };
 
 // --- PROFILE & AUTH ---
