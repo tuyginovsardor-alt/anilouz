@@ -1,6 +1,5 @@
 
 import { supabase } from './supabaseClient';
-import { runAiServerManager } from './aiGuardService';
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
@@ -12,7 +11,7 @@ import {
 
 // --- SECURITY UTILS ---
 /**
- * Direct pass-through. No encryption, no AI, no delay.
+ * URLni hech qanday o'zgarishsiz qaytarish.
  */
 export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<string> => {
     return rawUrl || '';
@@ -48,17 +47,6 @@ export const getUserSessions = async (userId: string): Promise<UserDevice[]> => 
 };
 
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>, isSystemAction: boolean = false) => {
-    const sensitiveFields = ['balance', 'role', 'subscription_end_at'];
-    const isChangingSensitive = Object.keys(updates).some(key => sensitiveFields.includes(key));
-
-    if (isChangingSensitive && !isSystemAction) {
-        const currentProfile = await getUserProfile(userId);
-        if (currentProfile && currentProfile.role === 'user') {
-            const securityLog = `SECURITY LOG: User ${userId} attempted updates: ${JSON.stringify(updates)}`;
-            runAiServerManager(securityLog);
-            if (updates.role || updates.balance !== undefined) throw new Error("Huquq yo'q.");
-        }
-    }
     const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
     if (error) throw error;
 };
@@ -112,7 +100,7 @@ export const getMovies = async (): Promise<Movie[]> => {
 
         return merged as Movie[];
     } catch (e) {
-        console.error("Critical error in getMovies:", e);
+        console.error("getMovies error:", e);
         return [];
     }
 };

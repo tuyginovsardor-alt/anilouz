@@ -43,15 +43,8 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
         const resolveSource = async () => {
             setIsResolving(true);
             try {
-                const { data: { user } } = await supabase.auth.getUser();
                 const rawUrl = currentEpisode ? currentEpisode.source : movie.videoUrl;
-                
-                if (user && rawUrl) {
-                    const finalUrl = await getSecuredUrl(rawUrl, user.id);
-                    setPlayableSrc(finalUrl);
-                } else {
-                    setPlayableSrc(rawUrl || '');
-                }
+                setPlayableSrc(rawUrl || '');
             } catch (e) {
                 console.error("Resolve error", e);
                 setPlayableSrc('');

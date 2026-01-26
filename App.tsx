@@ -97,7 +97,7 @@ const App: React.FC = () => {
             console.error("Init Error:", e);
             setPage('welcome');
         } finally { 
-            // Crucial: Ensure app always enters ready state
+            // Crucial: Ensure app always enters ready state to prevent endless loader
             setIsAppReady(true); 
         }
     };
