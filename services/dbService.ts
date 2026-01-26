@@ -1,5 +1,6 @@
 
 import { supabase } from './supabaseClient';
+import { runAiServerManager } from './aiGuardService';
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
@@ -15,7 +16,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     return data as UserProfile;
 };
 
-// FIX: Added getUserByEmail for admin panel search
 export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
     const { data } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
     return data as UserProfile;
@@ -26,24 +26,56 @@ export const getUserSessions = async (userId: string): Promise<UserDevice[]> => 
     return (data || []) as UserDevice[];
 };
 
-export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>) => {
+/**
+ * Enhanced Profile Update with Security Guard
+ * @param isSystemAction - If true, bypasses AI check (used for internal AI reverts or admin tools)
+ */
+export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>, isSystemAction: boolean = false) => {
+    // 1. Detect Sensitive Field Changes
+    const sensitiveFields = ['balance', 'role', 'subscription_end_at'];
+    const isChangingSensitive = Object.keys(updates).some(key => sensitiveFields.includes(key));
+
+    if (isChangingSensitive && !isSystemAction) {
+        // Fetch current profile to check existing role and balance
+        const currentProfile = await getUserProfile(userId);
+        
+        if (currentProfile && currentProfile.role === 'user') {
+            // CRITICAL: A regular user is trying to change sensitive data!
+            // Instead of blocking it here, we let AI Guard analyze and decide
+            const securityLog = `
+                SECURITY LOG:
+                User: ${currentProfile.full_name} (${userId})
+                Current Role: ${currentProfile.role}
+                Action: Attempting to update sensitive fields
+                Update Details: ${JSON.stringify(updates)}
+                Current Balance: ${currentProfile.balance}
+            `;
+            
+            // This will trigger the AI to potentially call blockUser or revertSensitiveChange
+            runAiServerManager(securityLog);
+            
+            // For immediate safety in the frontend call:
+            if (updates.role || updates.balance !== undefined) {
+                console.error("Xavfsizlik: Ushbu maydonlarni o'zgartirishga ruxsat yo'q.");
+                throw new Error("Sizda ushbu amalni bajarish uchun huquq yo'q.");
+            }
+        }
+    }
+
     const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
     if (error) throw error;
 };
 
-// FIX: Added updateUserPassword using Supabase Auth
 export const updateUserPassword = async (newPassword: string) => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
 };
 
-// FIX: Added updateUserEmail using Supabase Auth
 export const updateUserEmail = async (newEmail: string) => {
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     if (error) throw error;
 };
 
-// FIX: Added device login logging
 export const logDeviceLogin = async (userId: string, deviceId: string) => {
     const userAgent = navigator.userAgent;
     await supabase.from('user_devices').upsert({
@@ -54,9 +86,7 @@ export const logDeviceLogin = async (userId: string, deviceId: string) => {
     }, { onConflict: 'user_id, device_id' });
 };
 
-// FIX: Added registration tracking for anti-bot
 export const checkAndTrackRegistration = async (deviceId: string) => {
-    // Basic logic to prevent multiple registrations from same device
     const { data, error } = await supabase.from('registration_tracking').select('*').eq('device_id', deviceId).maybeSingle();
     if (data) throw new Error("Ushbu qurilmadan allaqachon ro'yxatdan o'tilgan.");
     await supabase.from('registration_tracking').insert({ device_id: deviceId });
@@ -107,7 +137,6 @@ export const getMovies = async (): Promise<Movie[]> => {
     return merged as Movie[];
 };
 
-// FIX: Added getAdminMovies for management panel
 export const getAdminMovies = async (): Promise<Movie[]> => {
     const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
     return (data || []).map(m => ({ ...m, posterUrl: m.posterUrl || m.poster_url, videoUrl: m.videoUrl || m.video_url })) as Movie[];
@@ -120,26 +149,22 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
     return data || [];
 };
 
-// FIX: Added addMovieToDB
 export const addMovieToDB = async (movie: Partial<Movie>) => {
     const { data, error } = await supabase.from('movies').insert(movie).select().single();
     if (error) throw error;
     return data as Movie;
 };
 
-// FIX: Added updateMovieInDB
 export const updateMovieInDB = async (id: number, movie: Partial<Movie>) => {
     const { error } = await supabase.from('movies').update(movie).eq('id', id);
     if (error) throw error;
 };
 
-// FIX: Added deleteMovieFromDB
 export const deleteMovieFromDB = async (id: number) => {
     const { error } = await supabase.from('movies').delete().eq('id', id);
     if (error) throw error;
 };
 
-// FIX: Added toggleMovieArchive
 export const toggleMovieArchive = async (id: number, isArchived: boolean) => {
     const { error } = await supabase.from('movies').update({ is_archived: isArchived }).eq('id', id);
     if (error) throw error;
@@ -183,19 +208,16 @@ export const updateFandubUpload = async (id: number, updates: any) => {
     if (error) throw error;
 };
 
-// FIX: Added createFandubChannel
 export const createFandubChannel = async (channel: Partial<FandubChannel>) => {
     const { error } = await supabase.from('fandub_channels').insert(channel);
     if (error) throw error;
 };
 
-// FIX: Added updateFandubChannel
 export const updateFandubChannel = async (id: string, updates: Partial<FandubChannel>) => {
     const { error } = await supabase.from('fandub_channels').update(updates).eq('id', id);
     if (error) throw error;
 };
 
-// FIX: Added createFandubStory
 export const createFandubStory = async (story: Partial<FandubStory>) => {
     const { error } = await supabase.from('fandub_stories').insert(story);
     if (error) throw error;
@@ -283,7 +305,6 @@ export const getAppConfig = async () => {
     return config;
 };
 
-// FIX: Added updateAppConfig
 export const updateAppConfig = async (key: string, value: string) => {
     await supabase.from('app_config').upsert({ key, value });
 };
@@ -385,12 +406,10 @@ export const getNews = async (): Promise<News[]> => {
     return data || [];
 };
 
-// FIX: Added createNews
 export const createNews = async (title: string, content: string) => {
     await supabase.from('news').insert({ title, content });
 };
 
-// FIX: Added deleteNews
 export const deleteNews = async (id: number) => {
     await supabase.from('news').delete().eq('id', id);
 };
@@ -420,114 +439,95 @@ export const sendMessage = async (ticketId: number, userId: string, message: str
     await supabase.from('ticket_messages').insert({ ticket_id: ticketId, user_id: userId, message, is_admin: isAdmin });
 };
 
-// FIX: Added getPromocodes
 export const getPromocodes = async (): Promise<Promocode[]> => {
     const { data } = await supabase.from('promocodes').select('*').order('created_at', { ascending: false });
     return data || [];
 };
 
-// FIX: Added savePromocode
 export const savePromocode = async (promo: Promocode) => {
     const { error } = await supabase.from('promocodes').insert(promo);
     if (error) throw error;
 };
 
-// FIX: Added deletePromocode
 export const deletePromocode = async (id: number) => {
     const { error } = await supabase.from('promocodes').delete().eq('id', id);
     if (error) throw error;
 };
 
-// FIX: Added getSocialLinks
 export const getSocialLinks = async (): Promise<SocialLink[]> => {
     const { data } = await supabase.from('social_links').select('*').order('label', { ascending: true });
     return data || [];
 };
 
-// FIX: Added addSocialLink
 export const addSocialLink = async (link: Partial<SocialLink>) => {
     await supabase.from('social_links').insert(link);
 };
 
-// FIX: Added deleteSocialLink
 export const deleteSocialLink = async (id: number) => {
     await supabase.from('social_links').delete().eq('id', id);
 };
 
-// FIX: Added getAllUsers
 export const getAllUsers = async (): Promise<UserProfile[]> => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     return data || [];
 };
 
-// FIX: Added deleteUser (admin only)
 export const deleteUser = async (id: string) => {
     const { error } = await supabase.from('profiles').delete().eq('id', id);
     if (error) throw error;
 };
 
-// FIX: Added getPaymentRequests
 export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
     const { data } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
     return data || [];
 };
 
-// FIX: Added approvePaymentRequest
 export const approvePaymentRequest = async (requestId: number, userId: string, amount: number) => {
     await supabase.rpc('approve_payment', { req_id: requestId, u_id: userId, amt: amount });
 };
 
-// FIX: Added rejectPaymentRequest
 export const rejectPaymentRequest = async (requestId: number) => {
     await supabase.from('payment_requests').update({ status: 'rejected' }).eq('id', requestId);
 };
 
-// FIX: Added getPremiumUsers (users with balance > 0)
 export const getPremiumUsers = async (): Promise<UserProfile[]> => {
     const { data } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
     return data || [];
 };
 
-// FIX: Added adminAdjustUserBalance
 export const adminAdjustUserBalance = async (userId: string, amount: number, type: 'add' | 'deduct', description: string) => {
     await supabase.rpc('adjust_user_balance', { u_id: userId, amt: amount, adj_type: type, desc: description });
 };
 
-// FIX: Added giveGlobalBonus
 export const giveGlobalBonus = async (amount: number, description: string) => {
     const { data, error } = await supabase.rpc('give_global_bonus', { amt: amount, desc: description });
     if (error) throw error;
     return data;
 };
 
-// FIX: Added getAllSessions
 export const getAllSessions = async (): Promise<UserDevice[]> => {
     const { data } = await supabase.from('user_devices').select('*, profiles(full_name, email, role)').order('last_active', { ascending: false });
     return data || [];
 };
 
-// FIX: Added toggleDeviceBlock
 export const toggleDeviceBlock = async (id: number, blocked: boolean) => {
     await supabase.from('user_devices').update({ is_blocked: blocked }).eq('id', id);
 };
 
-// FIX: Added getBroadcasts
 export const getBroadcasts = async (): Promise<Broadcast[]> => {
     const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
     return data || [];
 };
 
-// FIX: Added createBroadcast
 export const createBroadcast = async (bc: Partial<Broadcast>) => {
     await supabase.from('broadcasts').insert(bc);
 };
 
-// FIX: Added deleteBroadcast
 export const deleteBroadcast = async (id: number) => {
     await supabase.from('broadcasts').delete().eq('id', id);
 };
 
-// FIX: Added ATC functions
+// ATC functions
 export const getATCWallet = async (userId: string): Promise<ATCWallet | null> => {
     const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
     return data;
@@ -592,7 +592,7 @@ export const rewardExtraSpin = async (userId: string, count: number) => {
     await supabase.rpc('add_extra_spins', { u_id: userId, s_count: count });
 };
 
-// FIX: Added ARK Trading functions
+// ARK Trading functions
 export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
     const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
     return data;
@@ -683,7 +683,7 @@ export const saveArkSchedule = async (schedule: ArkSchedule) => {
     await updateArkSettings('market_schedule', JSON.stringify(schedule));
 };
 
-// FIX: Added Security Functions
+// Security Functions
 export const getAdminPin = async () => {
     const config = await getAppConfig();
     return config['admin_pin'] || '0000';
@@ -724,7 +724,7 @@ export const getRecoveryCodesStatus = async (): Promise<boolean> => {
     } catch { return false; }
 };
 
-// FIX: Added Shop Functions
+// Shop Functions
 export const getShopProducts = async (cat?: string, sort?: string, query?: string): Promise<ShopProduct[]> => {
     let q = supabase.from('shop_products').select('*').eq('is_active', true);
     if (cat && cat !== 'all') q = q.eq('category', cat);
@@ -766,12 +766,10 @@ export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
     return data || [];
 };
 
-// FIX: Added incrementAdView
 export const incrementAdView = async (adId: number) => {
     await supabase.rpc('increment_ad_views', { ad_id: adId });
 };
 
-// FIX: Added getAds for ad management
 export const getAds = async (): Promise<Ad[]> => {
     const { data } = await supabase.from('ads').select('*').order('created_at', { ascending: false });
     return (data || []).map((ad: any) => ({
@@ -786,7 +784,6 @@ export const getAds = async (): Promise<Ad[]> => {
     }));
 };
 
-// FIX: Added saveAd
 export const saveAd = async (ad: Ad) => {
     const { id, ...data } = ad;
     const payload = {
@@ -805,17 +802,14 @@ export const saveAd = async (ad: Ad) => {
     }
 };
 
-// FIX: Added deleteAd
 export const deleteAd = async (id: number) => {
     await supabase.from('ads').delete().eq('id', id);
 };
 
-// FIX: Added recordTsPaySuccess (Webhook mock/manual)
 export const recordTsPaySuccess = async (userId: string, amount: number, orderId: number) => {
     await supabase.rpc('record_tspay_success', { u_id: userId, amt: amount, o_id: orderId });
 };
 
-// FIX: Added getUserTransactions
 export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
     const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     return data || [];

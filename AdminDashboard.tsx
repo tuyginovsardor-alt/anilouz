@@ -1,9 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabaseClient';
-import { Users, Film, CreditCard, MessageSquare, TrendingUp, AlertCircle, Check, X as XIcon, Eye, RefreshCw, Lock, Unlock, Layers } from 'lucide-react';
+import { 
+    Users, Film, CreditCard, MessageSquare, TrendingUp, AlertCircle, 
+    Check, X as XIcon, Eye, RefreshCw, Lock, Unlock, Layers, Sparkles, Terminal, Activity
+} from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { getDashboardStats, getPendingFandubUploads, approveFandubUpload, rejectFandubUpload, toggleBlockFandub } from './services/dbService';
+import { runAiServerManager } from './services/aiGuardService';
 import { FandubUpload } from './types';
 import { useNotification } from './hooks/useNotification';
 
@@ -12,6 +16,12 @@ export const AdminDashboard: React.FC = () => {
     const [pendingUploads, setPendingUploads] = useState<FandubUpload[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    
+    // AI Guard State
+    const [isAiPilotActive, setIsAiPilotActive] = useState(false);
+    const [aiLogs, setAiLogs] = useState<{time: string, msg: string, type: 'info'|'action'}[]>([]);
+    const [isAiThinking, setIsAiThinking] = useState(false);
+
     const { addNotification } = useNotification();
 
     useEffect(() => { loadData(); }, []);
@@ -30,6 +40,30 @@ export const AdminDashboard: React.FC = () => {
             setLoading(false); 
             setRefreshing(false);
         }
+    };
+
+    const handleRunAiGuard = async () => {
+        setIsAiThinking(true);
+        // Create context from current dashboard state
+        const context = `
+            Hozirgi holat: ${pendingUploads.length} ta tasdiqlanmagan fandub bor.
+            Pending Fandublar: ${pendingUploads.map(u => `${u.title} (${u.description})`).join(', ')}
+            Statistika: ${stats?.users} foydalanuvchi, ${stats?.payments} to'lov.
+        `;
+        
+        const result = await runAiServerManager(context);
+        if (result) {
+            // Explicitly typing newLogs to allow both 'action' and 'info' types, fixing line 57 error
+            const newLogs: {time: string, msg: string, type: 'info'|'action'}[] = result.actions.map(a => ({ 
+                time: new Date().toLocaleTimeString(), 
+                msg: a, 
+                type: 'action' as const 
+            }));
+            if (result.analysis) newLogs.push({ time: new Date().toLocaleTimeString(), msg: result.analysis, type: 'info' as const });
+            setAiLogs(prev => [...newLogs, ...prev].slice(0, 10));
+            if (result.actions.length > 0) loadData(); // Refresh if AI changed something
+        }
+        setIsAiThinking(false);
     };
 
     const handleApprove = async (id: number) => {
@@ -61,19 +95,63 @@ export const AdminDashboard: React.FC = () => {
 
     return (
         <div className="animate-fade-in space-y-10 pb-10">
-            <h1 className="text-3xl font-bold text-white mb-8">Admin Dashboard</h1>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {cards.map((card, i) => (
-                    <div key={i} className={`bg-gray-800/40 border border-gray-700 p-6 rounded-2xl bg-gradient-to-br ${card.color}`}>
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 bg-gray-900/50 rounded-xl">{card.icon}</div>
-                            <TrendingUp className="text-gray-600 w-4 h-4" />
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+                <div className="flex gap-4">
+                    {/* AI GUARD CONTROLLER */}
+                    <div className={`flex items-center gap-3 p-1.5 pr-4 rounded-full border transition-all duration-500 ${isAiPilotActive ? 'bg-indigo-600/20 border-indigo-500' : 'bg-zinc-800 border-zinc-700'}`}>
+                        <button 
+                            onClick={() => setIsAiPilotActive(!isAiPilotActive)}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isAiPilotActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/50' : 'bg-zinc-700 text-zinc-400'}`}
+                        >
+                            <Sparkles size={18} className={isAiPilotActive ? 'animate-pulse' : ''} />
+                        </button>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">AI Pilot</span>
+                            <span className={`text-[9px] font-bold ${isAiPilotActive ? 'text-indigo-400' : 'text-zinc-500'}`}>{isAiPilotActive ? 'ACTIVE' : 'OFF'}</span>
                         </div>
-                        <p className="text-gray-400 text-sm font-medium">{card.label}</p>
-                        <h3 className="text-3xl font-bold text-white mt-1">{card.value.toLocaleString()}</h3>
                     </div>
-                ))}
+                </div>
+            </div>
+            
+            {/* AI TERMINAL MONITOR */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {cards.map((card, i) => (
+                        <div key={i} className={`bg-gray-800/40 border border-gray-700 p-6 rounded-2xl bg-gradient-to-br ${card.color}`}>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-gray-900/50 rounded-xl">{card.icon}</div>
+                                <TrendingUp className="text-gray-600 w-4 h-4" />
+                            </div>
+                            <p className="text-gray-400 text-sm font-medium">{card.label}</p>
+                            <h3 className="text-3xl font-bold text-white mt-1">{card.value.toLocaleString()}</h3>
+                        </div>
+                    ))}
+                </div>
+
+                {/* AI LIVE LOGS */}
+                <div className="bg-black/40 border border-zinc-800 rounded-2xl p-6 flex flex-col h-full">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xs font-black uppercase text-zinc-500 tracking-widest flex items-center gap-2">
+                            <Terminal size={14} className="text-indigo-500" /> AI Server Guard Log
+                        </h3>
+                        <button 
+                            onClick={handleRunAiGuard}
+                            disabled={isAiThinking}
+                            className={`p-1.5 rounded-lg transition-all ${isAiThinking ? 'bg-indigo-500 text-white animate-spin' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                        >
+                            <RefreshCw size={14} />
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto space-y-3 font-mono text-[10px] custom-scrollbar min-h-[150px]">
+                        {aiLogs.length === 0 && <p className="text-zinc-700 italic">Tizim nazorat qilinmoqda...</p>}
+                        {aiLogs.map((log, i) => (
+                            <div key={i} className={`p-2 rounded border ${log.type === 'action' ? 'bg-indigo-900/20 border-indigo-500/30 text-indigo-300' : 'bg-zinc-900/50 border-zinc-800 text-zinc-500'}`}>
+                                <span className="opacity-50">[{log.time}]</span> {log.msg}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             <div className="bg-orange-600/10 border border-orange-500/20 p-8 rounded-3xl flex justify-between items-center">
