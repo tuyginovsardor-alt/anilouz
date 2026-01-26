@@ -82,30 +82,40 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initApp = async () => {
+        // Hard timeout safety: Sayt har qanday holatda 3 soniyadan keyin ochiladi
+        const safetyTimeout = setTimeout(() => setIsAppReady(true), 3000);
+
         try {
-            const config = await getAppConfig().catch(() => ({}));
-            if (config['site_logo']) setLoaderLogo(config['site_logo']);
+            getAppConfig().then(config => {
+                if (config && config['site_logo']) setLoaderLogo(config['site_logo']);
+            }).catch(() => {});
             
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                await refreshProfile();
-                setPage('dashboard'); 
+                // Profil yuklanishini kutib o'tirmaymiz (non-blocking)
+                refreshProfile().then(() => {
+                    setPage('dashboard');
+                }).finally(() => {
+                    clearTimeout(safetyTimeout);
+                    setIsAppReady(true);
+                });
             } else {
                 setPage('welcome');
+                clearTimeout(safetyTimeout);
+                setIsAppReady(true);
             }
         } catch (e) { 
             console.error("Init Error:", e);
             setPage('welcome');
-        } finally { 
-            // Crucial: Ensure app always enters ready state to prevent endless loader
-            setIsAppReady(true); 
+            clearTimeout(safetyTimeout);
+            setIsAppReady(true);
         }
     };
     initApp();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session) {
-            await refreshProfile();
+            refreshProfile();
         } else {
             setIsAuthenticated(false);
             setCurrentUserRole('user');
@@ -139,7 +149,17 @@ const App: React.FC = () => {
     }
   };
 
-  if (!isAppReady) return <div className="h-screen w-full bg-[#050505] flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (!isAppReady) {
+      return (
+          <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center gap-4">
+              <div className="w-16 h-16 relative">
+                  <div className="absolute inset-0 border-4 border-orange-500/20 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <p className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.3em] animate-pulse">Anilo yuklanmoqda...</p>
+          </div>
+      );
+  }
 
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
