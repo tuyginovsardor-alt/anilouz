@@ -12,7 +12,7 @@ import {
 
 // --- SECURITY UTILS ---
 /**
- * Simple direct URL return. No masking, no AI.
+ * Direct pass-through. No encryption, no AI, no delay.
  */
 export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<string> => {
     return rawUrl || '';
@@ -21,7 +21,8 @@ export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<str
 // --- PROFILE & AUTH ---
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
-        const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        if (error) return null;
         return data as UserProfile;
     } catch (e) {
         return null;
@@ -29,13 +30,21 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 };
 
 export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
-    const { data } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-    return data as UserProfile;
+    try {
+        const { data } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+        return data as UserProfile;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const getUserSessions = async (userId: string): Promise<UserDevice[]> => {
-    const { data } = await supabase.from('user_devices').select('*').eq('user_id', userId).order('last_active', { ascending: false });
-    return (data || []) as UserDevice[];
+    try {
+        const { data } = await supabase.from('user_devices').select('*').eq('user_id', userId).order('last_active', { ascending: false });
+        return (data || []) as UserDevice[];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>, isSystemAction: boolean = false) => {
@@ -57,9 +66,9 @@ export const updateUserProfile = async (userId: string, updates: Partial<UserPro
 // --- MOVIES & FANDUB INTEGRATION ---
 export const getMovies = async (): Promise<Movie[]> => {
     try {
-        // Individual try-catch for each source to prevent total app failure
         const getOfficial = async () => {
-            const { data } = await supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false });
+            const { data, error } = await supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false });
+            if (error) throw error;
             return (data || []).map(m => ({ 
                 ...m, 
                 posterUrl: m.posterUrl || m.poster_url,
@@ -69,7 +78,8 @@ export const getMovies = async (): Promise<Movie[]> => {
         };
 
         const getFandub = async () => {
-            const { data } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'approved').order('created_at', { ascending: false });
+            const { data, error } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'approved').order('created_at', { ascending: false });
+            if (error) throw error;
             return (data || []).map(m => ({
                 id: m.id,
                 title: m.title,
@@ -108,10 +118,14 @@ export const getMovies = async (): Promise<Movie[]> => {
 };
 
 export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
-    const { data: fandubMovie } = await supabase.from('fandub_uploads').select('episodes').eq('id', movieId).maybeSingle();
-    if (fandubMovie && fandubMovie.episodes) return fandubMovie.episodes as Episode[];
-    const { data } = await supabase.from('episodes').select('*').eq('movie_id', movieId).order('id', { ascending: true });
-    return data || [];
+    try {
+        const { data: fandubMovie } = await supabase.from('fandub_uploads').select('episodes').eq('id', movieId).maybeSingle();
+        if (fandubMovie && fandubMovie.episodes) return fandubMovie.episodes as Episode[];
+        const { data } = await supabase.from('episodes').select('*').eq('movie_id', movieId).order('id', { ascending: true });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const addMovieToDB = async (movie: Partial<Movie>) => {
@@ -136,8 +150,12 @@ export const toggleMovieArchive = async (id: number, isArchived: boolean) => {
 };
 
 export const getPremiumBundles = async (): Promise<PremiumBundle[]> => {
-    const { data } = await supabase.from('premium_bundles').select('*').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('premium_bundles').select('*').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const savePremiumBundle = async (bundle: Partial<PremiumBundle>) => {
@@ -175,8 +193,12 @@ export const createFandubStory = async (story: Partial<FandubStory>) => {
 };
 
 export const getFandubPosts = async (channelId: string): Promise<FandubPost[]> => {
-    const { data } = await supabase.from('fandub_posts').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('fandub_posts').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createFandubPost = async (post: Partial<FandubPost>) => {
@@ -188,12 +210,18 @@ export const deleteFandubPost = async (id: number) => {
 };
 
 export const getUserNotifications = async (userId: string) => {
-    const { data } = await supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20);
-    return data || [];
+    try {
+        const { data } = await supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20);
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const markNotificationsRead = async (userId: string) => {
-    await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
+    try {
+        await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
+    } catch (e) {}
 };
 
 export const uploadFile = async (file: File, bucket: string): Promise<string> => {
@@ -209,28 +237,44 @@ export const uploadVideo = (file: File) => uploadFile(file, 'videos');
 export const uploadAvatar = (file: File) => uploadFile(file, 'avatars');
 
 export const getFandubChannels = async (userId?: string): Promise<FandubChannel[]> => {
-    const { data } = await supabase.from('fandub_channels').select('*').order('subscriber_count', { ascending: false });
-    if (userId && data) {
-        const { data: follows } = await supabase.from('fandub_follows').select('channel_id').eq('user_id', userId);
-        const followedIds = new Set((follows || []).map(f => f.channel_id));
-        return data.map(ch => ({ ...ch, is_following: followedIds.has(ch.id) }));
+    try {
+        const { data } = await supabase.from('fandub_channels').select('*').order('subscriber_count', { ascending: false });
+        if (userId && data) {
+            const { data: follows } = await supabase.from('fandub_follows').select('channel_id').eq('user_id', userId);
+            const followedIds = new Set((follows || []).map(f => f.channel_id));
+            return data.map(ch => ({ ...ch, is_following: followedIds.has(ch.id) }));
+        }
+        return data || [];
+    } catch (e) {
+        return [];
     }
-    return data || [];
 };
 
 export const getFandubChannel = async (userId: string): Promise<FandubChannel | null> => {
-    const { data } = await supabase.from('fandub_channels').select('*').eq('user_id', userId).maybeSingle();
-    return data as FandubChannel;
+    try {
+        const { data } = await supabase.from('fandub_channels').select('*').eq('user_id', userId).maybeSingle();
+        return data as FandubChannel;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const getFandubUploads = async (userId: string): Promise<FandubUpload[]> => {
-    const { data } = await supabase.from('fandub_uploads').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('fandub_uploads').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
-    const { data } = await supabase.from('fandub_uploads').select('*, profiles(full_name, email), fandub_channels(name)').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('fandub_uploads').select('*, profiles(full_name, email), fandub_channels(name)').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const approveFandubUpload = async (id: number) => {
@@ -257,73 +301,117 @@ export const updateAppConfig = async (key: string, value: string) => {
 };
 
 export const getDashboardStats = async () => {
-    const { data } = await supabase.rpc('get_dashboard_stats');
-    return data;
+    try {
+        const { data } = await supabase.rpc('get_dashboard_stats');
+        return data;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const getUnreadNotificationsCount = async (userId: string) => {
-    const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('is_read', false);
-    return count || 0;
+    try {
+        const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('is_read', false);
+        return count || 0;
+    } catch (e) {
+        return 0;
+    }
 };
 
 export const getAdminNotificationCounts = async () => {
-    const { data } = await supabase.rpc('get_admin_counts');
-    return { financials: data?.payment_pending || 0, support: data?.tickets_open || 0, fandub: data?.fandub_pending || 0 };
+    try {
+        const { data } = await supabase.rpc('get_admin_counts');
+        return { financials: data?.payment_pending || 0, support: data?.tickets_open || 0, fandub: data?.fandub_pending || 0 };
+    } catch (e) {
+        return { financials: 0, support: 0, fandub: 0 };
+    }
 };
 
 export const toggleFollowChannel = async (userId: string, channelId: string) => {
-    const { data: existing } = await supabase.from('fandub_follows').select('id').eq('user_id', userId).eq('channel_id', channelId).maybeSingle();
-    if (existing) {
-        await supabase.from('fandub_follows').delete().eq('id', existing.id);
-        await supabase.rpc('increment_subscribers', { ch_id: channelId, amt: -1 });
+    try {
+        const { data: existing } = await supabase.from('fandub_follows').select('id').eq('user_id', userId).eq('channel_id', channelId).maybeSingle();
+        if (existing) {
+            await supabase.from('fandub_follows').delete().eq('id', existing.id);
+            await supabase.rpc('increment_subscribers', { ch_id: channelId, amt: -1 });
+            return false;
+        } else {
+            await supabase.from('fandub_follows').insert({ user_id: userId, channel_id: channelId });
+            await supabase.rpc('increment_subscribers', { ch_id: channelId, amt: 1 });
+            return true;
+        }
+    } catch (e) {
         return false;
-    } else {
-        await supabase.from('fandub_follows').insert({ user_id: userId, channel_id: channelId });
-        await supabase.rpc('increment_subscribers', { ch_id: channelId, amt: 1 });
-        return true;
     }
 };
 
 export const getActiveStories = async (): Promise<FandubStory[]> => {
-    const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();
-    const { data } = await supabase.from('fandub_stories').select('*, profiles(username, avatar_url)').gt('created_at', yesterday);
-    return data || [];
+    try {
+        const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();
+        const { data } = await supabase.from('fandub_stories').select('*, profiles(username, avatar_url)').gt('created_at', yesterday);
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const isMovieSaved = async (userId: string, movieId: number): Promise<boolean> => {
-    const { data } = await supabase.from('saved_movies').select('id').eq('user_id', userId).eq('movie_id', movieId).maybeSingle();
-    return !!data;
+    try {
+        const { data } = await supabase.from('saved_movies').select('id').eq('user_id', userId).eq('movie_id', movieId).maybeSingle();
+        return !!data;
+    } catch (e) {
+        return false;
+    }
 };
 
 export const toggleSaveMovie = async (userId: string, movieId: number): Promise<boolean> => {
-    const { data: existing } = await supabase.from('saved_movies').select('id').eq('user_id', userId).eq('movie_id', movieId).maybeSingle();
-    if (existing) {
-        await supabase.from('saved_movies').delete().eq('id', existing.id);
+    try {
+        const { data: existing } = await supabase.from('saved_movies').select('id').eq('user_id', userId).eq('movie_id', movieId).maybeSingle();
+        if (existing) {
+            await supabase.from('saved_movies').delete().eq('id', existing.id);
+            return false;
+        } else {
+            await supabase.from('saved_movies').insert({ user_id: userId, movie_id: movieId });
+            return true;
+        }
+    } catch (e) {
         return false;
-    } else {
-        await supabase.from('saved_movies').insert({ user_id: userId, movie_id: movieId });
-        return true;
     }
 };
 
 export const getUserHistory = async (userId: string): Promise<Movie[]> => {
-    const { data } = await supabase.from('user_history').select('*, movies(*)').eq('user_id', userId).order('viewed_at', { ascending: false });
-    return (data || []).map((h: any) => ({ ...h.movies, posterUrl: h.movies.posterUrl || h.movies.poster_url })).filter(Boolean) as Movie[];
+    try {
+        const { data } = await supabase.from('user_history').select('*, movies(*)').eq('user_id', userId).order('viewed_at', { ascending: false });
+        return (data || []).map((h: any) => ({ ...h.movies, posterUrl: h.movies.posterUrl || h.movies.poster_url })).filter(Boolean) as Movie[];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
-    const { data } = await supabase.from('saved_movies').select('*, movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
-    return (data || []).map((s: any) => ({ ...s.movies, posterUrl: s.movies.posterUrl || s.movies.poster_url })).filter(Boolean) as Movie[];
+    try {
+        const { data } = await supabase.from('saved_movies').select('*, movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
+        return (data || []).map((s: any) => ({ ...s.movies, posterUrl: s.movies.posterUrl || s.movies.poster_url })).filter(Boolean) as Movie[];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
-    const { data } = await supabase.from('movies').select('*').or(`title.ilike.%${query}%,genre.ilike.%${query}%,tags.ilike.%${query}%`).eq('is_archived', false);
-    return (data || []).map(m => ({ ...m, posterUrl: m.posterUrl || m.poster_url })) as Movie[];
+    try {
+        const { data } = await supabase.from('movies').select('*').or(`title.ilike.%${query}%,genre.ilike.%${query}%,tags.ilike.%${query}%`).eq('is_archived', false);
+        return (data || []).map(m => ({ ...m, posterUrl: m.posterUrl || m.poster_url })) as Movie[];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getMovieReviews = async (movieId: number) => {
-    const { data } = await supabase.from('reviews').select('*, profiles(full_name, avatar_url, role)').eq('movie_id', movieId).order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('reviews').select('*, profiles(full_name, avatar_url, role)').eq('movie_id', movieId).order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const addReview = async (movieId: number, userId: string, rating: number, comment: string) => {
@@ -349,8 +437,12 @@ export const redeemPromocode = async (userId: string, code: string) => {
 };
 
 export const getNews = async (): Promise<News[]> => {
-    const { data } = await supabase.from('news').select('*').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('news').select('*').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createNews = async (title: string, content: string) => {
@@ -362,18 +454,30 @@ export const deleteNews = async (id: number) => {
 };
 
 export const getAllTickets = async (): Promise<SupportTicket[]> => {
-    const { data } = await supabase.from('support_tickets').select('*, profiles(full_name)').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('support_tickets').select('*, profiles(full_name)').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getMyTickets = async (userId: string): Promise<SupportTicket[]> => {
-    const { data } = await supabase.from('support_tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('support_tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getTicketMessages = async (ticketId: number): Promise<TicketMessage[]> => {
-    const { data } = await supabase.from('ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true });
-    return data || [];
+    try {
+        const { data } = await supabase.from('ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createTicket = async (userId: string) => {
@@ -387,8 +491,12 @@ export const sendMessage = async (ticketId: number, userId: string, message: str
 };
 
 export const getPromocodes = async (): Promise<Promocode[]> => {
-    const { data } = await supabase.from('promocodes').select('*').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('promocodes').select('*').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const savePromocode = async (promo: Promocode) => {
@@ -400,8 +508,12 @@ export const deletePromocode = async (id: number) => {
 };
 
 export const getSocialLinks = async (): Promise<SocialLink[]> => {
-    const { data } = await supabase.from('social_links').select('*').order('label', { ascending: true });
-    return data || [];
+    try {
+        const { data } = await supabase.from('social_links').select('*').order('label', { ascending: true });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const addSocialLink = async (link: Partial<SocialLink>) => {
@@ -413,8 +525,12 @@ export const deleteSocialLink = async (id: number) => {
 };
 
 export const getAllUsers = async (): Promise<UserProfile[]> => {
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const deleteUser = async (id: string) => {
@@ -422,8 +538,12 @@ export const deleteUser = async (id: string) => {
 };
 
 export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
-    const { data } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const approvePaymentRequest = async (requestId: number, userId: string, amount: number) => {
@@ -435,8 +555,12 @@ export const rejectPaymentRequest = async (requestId: number) => {
 };
 
 export const getPremiumUsers = async (): Promise<UserProfile[]> => {
-    const { data } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const adminAdjustUserBalance = async (userId: string, amount: number, type: 'add' | 'deduct', description: string) => {
@@ -450,8 +574,12 @@ export const giveGlobalBonus = async (amount: number, description: string) => {
 };
 
 export const getAllSessions = async (): Promise<UserDevice[]> => {
-    const { data } = await supabase.from('user_devices').select('*, profiles(full_name, email, role)').order('last_active', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('user_devices').select('*, profiles(full_name, email, role)').order('last_active', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const toggleDeviceBlock = async (id: number, blocked: boolean) => {
@@ -459,8 +587,12 @@ export const toggleDeviceBlock = async (id: number, blocked: boolean) => {
 };
 
 export const getBroadcasts = async (): Promise<Broadcast[]> => {
-    const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createBroadcast = async (bc: Partial<Broadcast>) => {
@@ -473,20 +605,32 @@ export const deleteBroadcast = async (id: number) => {
 
 // ATC functions
 export const getATCWallet = async (userId: string): Promise<ATCWallet | null> => {
-    const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
-    return data;
+    try {
+        const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
+        return data;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const getATCTransactions = async (userId: string): Promise<ATCTransaction[]> => {
-    const { data } = await supabase.from('atc_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('atc_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getContestSettings = async () => {
-    const { data } = await supabase.from('contest_settings').select('*');
-    const s: any = {};
-    (data || []).forEach(i => s[i.key] = i.value);
-    return s;
+    try {
+        const { data } = await supabase.from('contest_settings').select('*');
+        const s: any = {};
+        (data || []).forEach(i => s[i.key] = i.value);
+        return s;
+    } catch (e) {
+        return {};
+    }
 };
 
 export const updateContestSetting = async (key: string, value: any) => {
@@ -494,8 +638,12 @@ export const updateContestSetting = async (key: string, value: any) => {
 };
 
 export const getContestTasks = async (): Promise<ContestTask[]> => {
-    const { data } = await supabase.from('contest_tasks').select('*');
-    return data || [];
+    try {
+        const { data } = await supabase.from('contest_tasks').select('*');
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createContestTask = async (task: Partial<ContestTask>) => {
@@ -507,8 +655,12 @@ export const deleteContestTask = async (id: number) => {
 };
 
 export const getContestAds = async (): Promise<ContestAd[]> => {
-    const { data } = await supabase.from('contest_ads').select('*');
-    return data || [];
+    try {
+        const { data } = await supabase.from('contest_ads').select('*');
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createContestAd = async (ad: Partial<ContestAd>) => {
@@ -528,8 +680,12 @@ export const convertATCtoUZS = async (userId: string, amount: number, rate: numb
 };
 
 export const getQuizQuestions = async (count: number): Promise<QuizQuestion[]> => {
-    const { data } = await supabase.rpc('get_random_quiz', { q_count: count });
-    return data || [];
+    try {
+        const { data } = await supabase.rpc('get_random_quiz', { q_count: count });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const rewardExtraSpin = async (userId: string, count: number) => {
@@ -538,20 +694,32 @@ export const rewardExtraSpin = async (userId: string, count: number) => {
 
 // ARK Trading functions
 export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
-    const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
-    return data;
+    try {
+        const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
+        return data;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const getArkMarketHistory = async (): Promise<ArkMarketData[]> => {
-    const { data } = await supabase.from('ark_market_history').select('*').order('created_at', { ascending: true });
-    return data || [];
+    try {
+        const { data } = await supabase.from('ark_market_history').select('*').order('created_at', { ascending: true });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getArkSettings = async () => {
-    const { data } = await supabase.from('ark_settings').select('*');
-    const s: any = {};
-    (data || []).forEach(i => s[i.key] = i.value);
-    return s;
+    try {
+        const { data } = await supabase.from('ark_settings').select('*');
+        const s: any = {};
+        (data || []).forEach(i => s[i.key] = i.value);
+        return s;
+    } catch (e) {
+        return {};
+    }
 };
 
 export const updateArkSettings = async (key: string, value: any) => {
@@ -559,8 +727,12 @@ export const updateArkSettings = async (key: string, value: any) => {
 };
 
 export const getArkAds = async (): Promise<ArkAd[]> => {
-    const { data } = await supabase.from('ark_ads').select('*');
-    return data || [];
+    try {
+        const { data } = await supabase.from('ark_ads').select('*');
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createArkAd = async (ad: Partial<ArkAd>) => {
@@ -572,8 +744,12 @@ export const deleteArkAd = async (id: number) => {
 };
 
 export const getArkQuizzes = async (): Promise<ArkQuiz[]> => {
-    const { data } = await supabase.from('ark_quizzes').select('*');
-    return data || [];
+    try {
+        const { data } = await supabase.from('ark_quizzes').select('*');
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createArkQuiz = async (q: Partial<ArkQuiz>) => {
@@ -597,8 +773,12 @@ export const claimArkAdReward = async (userId: string, amount: number, title: st
 };
 
 export const getArkWithdrawals = async (): Promise<ArkWithdrawal[]> => {
-    const { data } = await supabase.from('ark_withdrawals').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('ark_withdrawals').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const requestArkWithdrawal = async (userId: string, amount: number, card: string, holder: string) => {
@@ -670,20 +850,28 @@ export const getRecoveryCodesStatus = async (): Promise<boolean> => {
 
 // Shop Functions
 export const getShopProducts = async (cat?: string, sort?: string, query?: string): Promise<ShopProduct[]> => {
-    let q = supabase.from('shop_products').select('*').eq('is_active', true);
-    if (cat && cat !== 'all') q = q.eq('category', cat);
-    if (query) q = q.ilike('title', `%${query}%`);
-    if (sort === 'price_asc') q = q.order('price', { ascending: true });
-    else if (sort === 'price_desc') q = q.order('price', { ascending: false });
-    else if (sort === 'popular') q = q.order('sales_count', { ascending: false });
-    else q = q.order('created_at', { ascending: false });
-    const { data } = await q;
-    return data || [];
+    try {
+        let q = supabase.from('shop_products').select('*').eq('is_active', true);
+        if (cat && cat !== 'all') q = q.eq('category', cat);
+        if (query) q = q.ilike('title', `%${query}%`);
+        if (sort === 'price_asc') q = q.order('price', { ascending: true });
+        else if (sort === 'price_desc') q = q.order('price', { ascending: false });
+        else if (sort === 'popular') q = q.order('sales_count', { ascending: false });
+        else q = q.order('created_at', { ascending: false });
+        const { data } = await q;
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getAdminShopProducts = async (): Promise<ShopProduct[]> => {
-    const { data } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const createShopProduct = async (prod: Partial<ShopProduct>) => {
@@ -691,8 +879,12 @@ export const createShopProduct = async (prod: Partial<ShopProduct>) => {
 };
 
 export const getShopWallet = async (userId: string): Promise<ShopWallet | null> => {
-    const { data } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
-    return data;
+    try {
+        const { data } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
+        return data;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const createShopPaymentRequest = async (userId: string, amount: number, url: string) => {
@@ -704,26 +896,36 @@ export const placeShopOrder = async (userId: string, productId: number, amount: 
 };
 
 export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
-    const { data } = await supabase.from('shop_orders').select('*, products(*)').eq('user_id', userId).order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('shop_orders').select('*, products(*)').eq('user_id', userId).order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const incrementAdView = async (adId: number) => {
-    await supabase.rpc('increment_ad_views', { ad_id: adId });
+    try {
+        await supabase.rpc('increment_ad_views', { ad_id: adId });
+    } catch (e) {}
 };
 
 export const getAds = async (): Promise<Ad[]> => {
-    const { data } = await supabase.from('ads').select('*').order('created_at', { ascending: false });
-    return (data || []).map((ad: any) => ({
-        id: ad.id,
-        name: ad.name,
-        type: ad.type,
-        contentUrl: ad.content_url,
-        targetUrl: ad.target_url,
-        location: ad.location,
-        status: ad.status,
-        view_count: ad.view_count
-    }));
+    try {
+        const { data } = await supabase.from('ads').select('*').order('created_at', { ascending: false });
+        return (data || []).map((ad: any) => ({
+            id: ad.id,
+            name: ad.name,
+            type: ad.type,
+            contentUrl: ad.content_url,
+            targetUrl: ad.target_url,
+            location: ad.location,
+            status: ad.status,
+            view_count: ad.view_count
+        }));
+    } catch (e) {
+        return [];
+    }
 };
 
 export const saveAd = async (ad: Ad) => {
@@ -750,18 +952,26 @@ export const recordTsPaySuccess = async (userId: string, amount: number, orderId
 };
 
 export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
-    const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    return data || [];
+    try {
+        const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        return data || [];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getAdminMovies = async (): Promise<Movie[]> => {
-    const { data, error } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return (data || []).map(m => ({
-        ...m,
-        posterUrl: m.posterUrl || m.poster_url,
-        videoUrl: m.videoUrl || m.video_url
-    })) as Movie[];
+    try {
+        const { data, error } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(m => ({
+            ...m,
+            posterUrl: m.posterUrl || m.poster_url,
+            videoUrl: m.videoUrl || m.video_url
+        })) as Movie[];
+    } catch (e) {
+        return [];
+    }
 };
 
 export const updateUserPassword = async (password: string) => {
@@ -775,23 +985,25 @@ export const updateUserEmail = async (email: string) => {
 };
 
 export const checkAndTrackRegistration = async (deviceId: string) => {
-    const { data, error } = await supabase.rpc('check_registration_limit', { dev_id: deviceId });
-    if (error) {
-        console.warn("Registration limit check skipped:", error.message);
-        return;
-    }
-    if (data && !data.allowed) {
-        throw new Error(data.message || "Ushbu qurilmadan ro'yxatdan o'tish limiti tugagan.");
+    try {
+        const { data, error } = await supabase.rpc('check_registration_limit', { dev_id: deviceId });
+        if (error) return;
+        if (data && !data.allowed) {
+            throw new Error(data.message || "Ushbu qurilmadan ro'yxatdan o'tish limiti tugagan.");
+        }
+    } catch (e: any) {
+        throw e;
     }
 };
 
 export const logDeviceLogin = async (userId: string, deviceId: string) => {
-    const userAgent = navigator.userAgent;
-    const { error } = await supabase.from('user_devices').upsert({
-        user_id: userId,
-        device_id: deviceId,
-        device_name: userAgent,
-        last_active: new Date().toISOString()
-    }, { onConflict: 'user_id, device_id' });
-    if (error) console.error("Failed to log device login:", error.message);
+    try {
+        const userAgent = navigator.userAgent;
+        await supabase.from('user_devices').upsert({
+            user_id: userId,
+            device_id: deviceId,
+            device_name: userAgent,
+            last_active: new Date().toISOString()
+        }, { onConflict: 'user_id, device_id' });
+    } catch (e) {}
 };
