@@ -65,14 +65,18 @@ const App: React.FC = () => {
   };
 
   const refreshProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-          const profile = await getUserProfile(user.id);
-          if (profile) {
-              setUserProfile(profile);
-              setCurrentUserRole(profile.role);
-              setIsAuthenticated(true);
+      try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+              const profile = await getUserProfile(user.id);
+              if (profile) {
+                  setUserProfile(profile);
+                  setCurrentUserRole(profile.role);
+                  setIsAuthenticated(true);
+              }
           }
+      } catch (e) {
+          console.error("RefreshProfile Error:", e);
       }
   };
 
@@ -93,6 +97,7 @@ const App: React.FC = () => {
             console.error("Init Error:", e);
             setPage('welcome');
         } finally { 
+            // Crucial: Ensure app always enters ready state
             setIsAppReady(true); 
         }
     };
@@ -109,7 +114,6 @@ const App: React.FC = () => {
         }
     });
 
-    // Event listener for profile updates (avatar changes)
     document.addEventListener('profileUpdated', refreshProfile);
 
     return () => {

@@ -12,7 +12,7 @@ import {
 
 // --- SECURITY UTILS ---
 /**
- * Returns raw URL without any masking or vault logic as requested.
+ * Simple direct URL return. No masking, no AI.
  */
 export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<string> => {
     return rawUrl || '';
@@ -20,8 +20,12 @@ export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<str
 
 // --- PROFILE & AUTH ---
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-    return data as UserProfile;
+    try {
+        const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        return data as UserProfile;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -52,43 +56,55 @@ export const updateUserProfile = async (userId: string, updates: Partial<UserPro
 
 // --- MOVIES & FANDUB INTEGRATION ---
 export const getMovies = async (): Promise<Movie[]> => {
-    const [off, fan] = await Promise.all([
-        supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false }),
-        supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'approved').order('created_at', { ascending: false })
-    ]);
+    try {
+        // Individual try-catch for each source to prevent total app failure
+        const getOfficial = async () => {
+            const { data } = await supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false });
+            return (data || []).map(m => ({ 
+                ...m, 
+                posterUrl: m.posterUrl || m.poster_url,
+                videoUrl: m.videoUrl || m.video_url,
+                is_fandub: false 
+            }));
+        };
 
-    const official = (off.data || []).map(m => ({ 
-        ...m, 
-        posterUrl: m.posterUrl || m.poster_url,
-        videoUrl: m.videoUrl || m.video_url,
-        is_fandub: false 
-    }));
-    
-    const fandub = (fan.data || []).map(m => ({
-        id: m.id,
-        title: m.title,
-        year: m.year,
-        plot: m.description,
-        posterUrl: m.poster_url,
-        videoUrl: m.video_url,
-        genre: m.genre,
-        language: 'JP/UZ',
-        quality: 'HD',
-        rating: 5.0,
-        is_fandub: true,
-        channel_id: m.channel_id,
-        translator: m.fandub_channels?.name || 'Fandub',
-        status: 'completed',
-        access_type: m.access_type,
-        created_at: m.created_at,
-        is_blocked: m.is_blocked || false
-    }));
+        const getFandub = async () => {
+            const { data } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'approved').order('created_at', { ascending: false });
+            return (data || []).map(m => ({
+                id: m.id,
+                title: m.title,
+                year: m.year,
+                plot: m.description,
+                posterUrl: m.poster_url,
+                videoUrl: m.video_url,
+                genre: m.genre,
+                language: 'JP/UZ',
+                quality: 'HD',
+                rating: 5.0,
+                is_fandub: true,
+                channel_id: m.channel_id,
+                translator: m.fandub_channels?.name || 'Fandub',
+                status: 'completed',
+                access_type: m.access_type,
+                created_at: m.created_at,
+                is_blocked: m.is_blocked || false
+            }));
+        };
 
-    const merged = [...official, ...fandub]
-        .filter(m => !m.is_blocked)
-        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const [official, fandub] = await Promise.all([
+            getOfficial().catch(() => []),
+            getFandub().catch(() => [])
+        ]);
 
-    return merged as Movie[];
+        const merged = [...official, ...fandub]
+            .filter(m => !m.is_blocked)
+            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        return merged as Movie[];
+    } catch (e) {
+        console.error("Critical error in getMovies:", e);
+        return [];
+    }
 };
 
 export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
@@ -226,10 +242,14 @@ export const rejectFandubUpload = async (id: number, comment: string) => {
 };
 
 export const getAppConfig = async () => {
-    const { data } = await supabase.from('app_config').select('*');
-    const config: Record<string, string> = {};
-    (data || []).forEach(item => { config[item.key] = item.value; });
-    return config;
+    try {
+        const { data } = await supabase.from('app_config').select('*');
+        const config: Record<string, string> = {};
+        (data || []).forEach(item => { config[item.key] = item.value; });
+        return config;
+    } catch (e) {
+        return {};
+    }
 };
 
 export const updateAppConfig = async (key: string, value: string) => {
