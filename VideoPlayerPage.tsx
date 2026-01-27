@@ -7,7 +7,7 @@ import { PauseIcon } from './components/icons/PauseIcon';
 import { FullscreenEnterIcon } from './components/icons/FullscreenEnterIcon';
 import { FullscreenExitIcon } from './components/icons/FullscreenExitIcon';
 import { getMovieEpisodes } from './services/dbService';
-import { Settings, X, Zap, Layers, Monitor, ChevronRight, Check } from 'lucide-react';
+import { Settings, X, Zap, Layers, Monitor, ChevronRight, Check, ShieldAlert } from 'lucide-react';
 
 interface VideoPlayerPageProps {
   movie: Movie;
