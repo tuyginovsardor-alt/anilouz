@@ -27,7 +27,7 @@ import { checkTsPayStatus } from './services/tspayService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
-import { InstallPWA } from './components/InstallPWA';
+import { PWAProvider } from './components/InstallPWA'; // Updated import
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
@@ -45,8 +45,8 @@ const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine); // Network status
-  const [showRetryButton, setShowRetryButton] = useState(false); // New state for stuck loading
+  const [isOnline, setIsOnline] = useState(navigator.onLine); 
+  const [showRetryButton, setShowRetryButton] = useState(false); 
   
   const [loaderLogo, setLoaderLogo] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -199,9 +199,9 @@ const App: React.FC = () => {
   }
 
   return (
+    <PWAProvider>
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
         <NotificationContainer />
-        <InstallPWA /> {/* Add Install Prompt Here */}
         
         {/* Offline Banner */}
         {!isOnline && (
@@ -300,6 +300,7 @@ const App: React.FC = () => {
           {legalDocType && <LegalDocs type={legalDocType} onClose={() => setLegalDocType(null)} />}
         </div>
     </NotificationContext.Provider>
+    </PWAProvider>
   );
 };
 

@@ -1,92 +1,149 @@
 
-import React, { useState, useEffect } from 'react';
-import { Download, X, Star } from 'lucide-react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { Download, X, Star, Share, PlusSquare } from 'lucide-react';
 
-export const InstallPWA: React.FC = () => {
+interface PWAContextType {
+    isInstallable: boolean;
+    isIOS: boolean;
+    installApp: () => void;
+}
+
+const PWAContext = createContext<PWAContextType>({
+    isInstallable: false,
+    isIOS: false,
+    installApp: () => {},
+});
+
+export const usePWA = () => useContext(PWAContext);
+
+export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-    const [isVisible, setIsVisible] = useState(false);
+    const [isIOS, setIsIOS] = useState(false);
+    const [isStandalone, setIsStandalone] = useState(false);
+    const [showBanner, setShowBanner] = useState(false);
+    const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
     useEffect(() => {
-        const handler = (e: any) => {
-            // Brauzerning standart install oynasini to'xtatamiz
+        // Check if already installed
+        const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+        setIsStandalone(isStandaloneMode);
+
+        // Check platform
+        const userAgent = window.navigator.userAgent.toLowerCase();
+        const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+        setIsIOS(isIosDevice);
+
+        // Handle Android/Desktop install prompt
+        const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
-            // Agar foydalanuvchi hali o'rnatmagan bo'lsa, oynani ko'rsatamiz
-            if (!localStorage.getItem('pwa_install_dismissed')) {
-                setIsVisible(true);
+            if (!isStandaloneMode) {
+                // Avtomatik banner ko'rsatish (agar xohlasangiz)
+                // setShowBanner(true); 
             }
         };
 
-        window.addEventListener('beforeinstallprompt', handler);
-
-        return () => window.removeEventListener('beforeinstallprompt', handler);
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }, []);
 
-    const handleInstallClick = async () => {
-        if (!deferredPrompt) return;
-        
-        deferredPrompt.prompt();
-        
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            setIsVisible(false);
+    const installApp = async () => {
+        if (isIOS) {
+            setShowIOSInstructions(true);
+        } else if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                setDeferredPrompt(null);
+                setShowBanner(false);
+            }
+        } else {
+            // Fallback just in case
+            alert("Ilovani brauzer menyusi orqali o'rnatishingiz mumkin.");
         }
-        setDeferredPrompt(null);
     };
 
-    const handleClose = () => {
-        setIsVisible(false);
-        // Eslatmani 1 kunga yopib qo'yamiz
-        // localStorage.setItem('pwa_install_dismissed', 'true'); 
-    };
-
-    if (!isVisible) return null;
-
-    return (
-        <div className="fixed inset-x-0 bottom-0 z-[300] p-4 animate-slide-in-up">
-            <div className="bg-[#121212] border border-white/10 rounded-[2rem] p-5 shadow-2xl relative overflow-hidden">
-                {/* Background Glow */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-
-                <div className="flex items-center gap-4 relative z-10">
-                    {/* App Icon */}
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/10 shadow-lg flex-shrink-0 bg-black">
-                        <img src="/logo.png" alt="Anilo App" className="w-full h-full object-cover" />
+    // IOS Instructions Modal
+    const IOSModal = () => (
+        <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-fade-in" onClick={() => setShowIOSInstructions(false)}>
+            <div className="bg-[#1a1a1a] w-full max-w-sm rounded-[2rem] p-6 border border-white/10 relative" onClick={e => e.stopPropagation()}>
+                <button onClick={() => setShowIOSInstructions(false)} className="absolute top-4 right-4 p-2 bg-white/5 rounded-full text-zinc-400">
+                    <X size={20} />
+                </button>
+                
+                <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/10 mb-4 shadow-2xl">
+                        <img src="/logo.png" alt="App Icon" className="w-full h-full object-cover" />
                     </div>
-
-                    <div className="flex-1 min-w-0">
-                        <h3 className="text-white font-black text-lg leading-tight">Anilo.uz</h3>
-                        <p className="text-zinc-400 text-xs font-medium mb-1">Anime Olami Ilovasi</p>
-                        <div className="flex items-center gap-1">
-                            <div className="flex text-yellow-500">
-                                <Star size={10} fill="currentColor" />
-                                <Star size={10} fill="currentColor" />
-                                <Star size={10} fill="currentColor" />
-                                <Star size={10} fill="currentColor" />
-                                <Star size={10} fill="currentColor" />
+                    <h3 className="text-xl font-black text-white mb-2">iPhone-ga o'rnatish</h3>
+                    <p className="text-sm text-zinc-400 mb-6">Ushbu ilovani yuklab olish uchun quyidagi amallarni bajaring:</p>
+                    
+                    <div className="w-full space-y-4 text-left">
+                        <div className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
+                            <div className="text-blue-500"><Share size={24} /></div>
+                            <div className="text-sm text-white">
+                                1. Pastdagi <span className="font-bold text-blue-400">"Ulashish"</span> tugmasini bosing.
                             </div>
-                            <span className="text-[10px] text-zinc-500 font-bold ml-1">4.9</span>
+                        </div>
+                        <div className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
+                            <div className="text-white"><PlusSquare size={24} /></div>
+                            <div className="text-sm text-white">
+                                2. <span className="font-bold">"Ekran"ga qo'shish</span> (Add to Home Screen) ni tanlang.
+                            </div>
                         </div>
                     </div>
-
-                    <button 
-                        onClick={handleClose} 
-                        className="absolute top-0 right-0 p-2 text-zinc-600 hover:text-white"
-                    >
-                        <X size={18} />
-                    </button>
                 </div>
-
-                <div className="mt-5 flex gap-3 relative z-10">
-                    <button 
-                        onClick={handleInstallClick}
-                        className="flex-1 bg-white text-black py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-gray-200 transition-all active:scale-95 shadow-lg shadow-white/10"
-                    >
-                        <Download size={16} />
-                        O'rnatish
-                    </button>
+                
+                <div className="mt-6 text-center">
+                    <button onClick={() => setShowIOSInstructions(false)} className="text-orange-500 font-bold text-sm">Tushundim</button>
                 </div>
             </div>
         </div>
     );
+
+    // Floating Banner (Optional - shows at bottom if prompted)
+    const FloatingBanner = () => {
+        if (!deferredPrompt && !showBanner) return null;
+        if (isStandalone) return null;
+
+        return (
+            <div className="fixed inset-x-0 bottom-20 z-[90] px-4 md:hidden pointer-events-none">
+                <div className="bg-[#121212] border border-orange-500/30 rounded-2xl p-4 shadow-2xl flex items-center justify-between pointer-events-auto animate-slide-in-up">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-black rounded-lg border border-white/10 p-0.5">
+                            <img src="/logo.png" className="w-full h-full object-cover rounded-md"/>
+                        </div>
+                        <div>
+                            <p className="text-white font-bold text-sm">Anilo.uz</p>
+                            <p className="text-zinc-500 text-[10px]">Rasmiy Ilova</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={installApp}
+                        className="bg-white text-black px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider"
+                    >
+                        O'rnatish
+                    </button>
+                    <button onClick={() => setDeferredPrompt(null)} className="absolute -top-2 -right-2 bg-zinc-800 rounded-full p-1 border border-zinc-700 text-zinc-400">
+                        <X size={12}/>
+                    </button>
+                </div>
+            </div>
+        )
+    };
+
+    return (
+        <PWAContext.Provider value={{ isInstallable: !!deferredPrompt || isIOS, isIOS, installApp }}>
+            {children}
+            {showIOSInstructions && <IOSModal />}
+            <FloatingBanner /> 
+        </PWAContext.Provider>
+    );
+};
+
+// Default export for backward compatibility if needed, but prefer named export
+export const InstallPWA = () => {
+    const { isInstallable, installApp } = usePWA();
+    if (!isInstallable) return null;
+    return null; // Logic moved to provider/hooks
 };

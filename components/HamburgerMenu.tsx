@@ -1,16 +1,15 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { 
     X, CreditCard, History, Bookmark, 
     Settings, LogOut, ChevronRight, User, 
-    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic
+    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic, Download
 } from 'lucide-react';
 import { DashboardSubPage, Page, LegalDocType } from '../App';
 import { supabase } from '../services/supabaseClient';
 import { getUserProfile } from '../services/dbService';
 import { UserRole, UserProfile } from '../types';
+import { usePWA } from './InstallPWA'; // Import hook
 
 interface HamburgerMenuProps {
     isOpen: boolean;
@@ -62,6 +61,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     isOpen, onClose, onLogout, onMainNavigate, onDashboardNavigate, onSwitchRole, onOpenLegal 
 }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const { isInstallable, installApp } = usePWA(); // Access PWA logic
 
     useEffect(() => {
         if (isOpen) {
@@ -80,10 +80,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         if (type === 'main') {
             onMainNavigate(target);
         } else {
-            // 1. Asosiy sahifani Dashboard ga o'tkazamiz
             onMainNavigate('dashboard');
-            // 2. Ichki sahifani (masalan: profile) biroz kechikish bilan o'rnatamiz
-            // Bu App.tsx dagi "dashboardga kirganda main ga o'tish" logikasini chetlab o'tadi
             setTimeout(() => {
                 onDashboardNavigate(target);
             }, 50);
@@ -135,6 +132,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
                     {/* 2. Menu Items */}
                     <div className="px-6 pb-10">
+                        {/* Install App Button - Prominent */}
+                        {isInstallable && (
+                            <button 
+                                onClick={installApp}
+                                className="w-full mb-6 py-3 bg-white text-black rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all shadow-lg animate-pulse"
+                            >
+                                <Download size={16} /> Ilovani Yuklab Olish
+                            </button>
+                        )}
+
                         {/* Fandub Special Section */}
                         {profile?.role === 'fandub' && (
                             <div className="mb-6">
@@ -207,7 +214,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         </div>
                         
                         <div className="mt-8 text-center">
-                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Anilo v1.0.4</p>
+                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Anilo v1.0.5</p>
                         </div>
                     </div>
                 </div>

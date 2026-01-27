@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Page, DashboardSubPage } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, User, Play, Mic, Sparkles } from 'lucide-react';
+import { Search, Bell, User, Play, Mic, Sparkles, Download } from 'lucide-react';
 import * as db from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
 import { useNotification } from '../hooks/useNotification';
 import { NotificationList } from './NotificationList';
+import { usePWA } from './InstallPWA'; // Import Hook
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
@@ -34,6 +35,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [notifications, setNotifications] = useState<any[]>([]);
   const { addNotification } = useNotification();
   const notificationRef = useRef<HTMLDivElement>(null);
+  
+  const { isInstallable, installApp } = usePWA(); // Access PWA Context
 
   useEffect(() => {
       db.getAppConfig().then(config => {
@@ -108,6 +111,18 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="flex items-center gap-3 sm:gap-4 relative" ref={notificationRef}>
+                
+                {/* Install Button (Small) */}
+                {isInstallable && (
+                    <button 
+                        onClick={installApp} 
+                        className="p-2.5 rounded-xl bg-white/10 text-white hover:bg-white hover:text-black transition-all active:scale-95 border border-white/10 animate-pulse"
+                        title="Ilovani o'rnatish"
+                    >
+                        <Download size={20} />
+                    </button>
+                )}
+
                 <button onClick={() => onNavigate('ai-assistant')} className={`p-2.5 rounded-xl transition-all active:scale-95 ${currentPage === 'ai-assistant' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-blue-400'}`}>
                     <Sparkles size={22} className={currentPage === 'ai-assistant' ? 'animate-pulse' : ''}/>
                 </button>
