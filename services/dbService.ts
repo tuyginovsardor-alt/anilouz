@@ -1,5 +1,6 @@
 
 import { supabase } from './supabaseClient';
+import { runAiServerManager, isAiPilotEnabled } from './aiGuardService';
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
@@ -42,6 +43,14 @@ export const getUserSessions = async (userId: string): Promise<UserDevice[]> => 
 
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>) => {
     try {
+        // AI Guard Filter
+        if (isAiPilotEnabled()) {
+            const guardResult = await runAiServerManager(`User Profile Update: ${JSON.stringify(updates)}`);
+            if (guardResult && !guardResult.allowed) {
+                throw new Error(`AI Guard: ${guardResult.analysis}`);
+            }
+        }
+
         const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
         if (error) throw error;
     } catch (e) { throw e; }
@@ -233,7 +242,7 @@ export const getFandubChannel = async (userId: string): Promise<FandubChannel | 
 
 export const getFandubUploads = async (userId: string): Promise<FandubUpload[]> => {
     try {
-        const { data } = await supabase.from('fandub_uploads').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        const { data = [] } = await supabase.from('fandub_uploads').select('*').eq('user_id', userId).order('created_at', { ascending: false });
         return data || [];
     } catch (e) { return []; }
 };
@@ -359,6 +368,14 @@ export const getMovieReviews = async (movieId: number) => {
 };
 
 export const addReview = async (movieId: number, userId: string, rating: number, comment: string) => {
+    // AI Guard Filter
+    if (isAiPilotEnabled()) {
+        const guardResult = await runAiServerManager(`User Review Submission on Movie ID ${movieId}: "${comment}"`);
+        if (guardResult && !guardResult.allowed) {
+            throw new Error(`AI Guard: ${guardResult.analysis}`);
+        }
+    }
+    
     await supabase.from('reviews').insert({ movie_id: movieId, user_id: userId, rating, comment });
 };
 
@@ -367,6 +384,13 @@ export const deleteReview = async (reviewId: number) => {
 };
 
 export const updateReview = async (reviewId: number, comment: string) => {
+    // AI Guard Filter
+    if (isAiPilotEnabled()) {
+        const guardResult = await runAiServerManager(`User Review Edit: "${comment}"`);
+        if (guardResult && !guardResult.allowed) {
+            throw new Error(`AI Guard: ${guardResult.analysis}`);
+        }
+    }
     await supabase.from('reviews').update({ comment }).eq('id', reviewId);
 };
 
@@ -772,7 +796,7 @@ export const createShopProduct = async (prod: Partial<ShopProduct>) => {
 
 export const getShopWallet = async (userId: string): Promise<ShopWallet | null> => {
     try {
-        const { data } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
+        const { data = null } = await supabase.from('shop_wallets').select('*').eq('user_id', userId).maybeSingle();
         return data;
     } catch { return null; }
 };
@@ -787,7 +811,7 @@ export const placeShopOrder = async (userId: string, productId: number, amount: 
 
 export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
     try {
-        const { data } = await supabase.from('shop_orders').select('*, products(*)').eq('user_id', userId).order('created_at', { ascending: false });
+        const { data = [] } = await supabase.from('shop_orders').select('*, products(*)').eq('user_id', userId).order('created_at', { ascending: false });
         return data || [];
     } catch { return []; }
 };

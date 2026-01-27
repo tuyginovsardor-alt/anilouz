@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { getDashboardStats, getPendingFandubUploads, approveFandubUpload, rejectFandubUpload, toggleBlockFandub } from './services/dbService';
-import { runAiServerManager } from './services/aiGuardService';
+import { runAiServerManager, isAiPilotEnabled, setAiPilotEnabled } from './services/aiGuardService';
 import { FandubUpload } from './types';
 import { useNotification } from './hooks/useNotification';
 
@@ -18,7 +18,7 @@ export const AdminDashboard: React.FC = () => {
     const [refreshing, setRefreshing] = useState(false);
     
     // AI Guard State
-    const [isAiPilotActive, setIsAiPilotActive] = useState(false);
+    const [isAiPilotActive, setIsAiPilotActive] = useState(isAiPilotEnabled());
     const [aiLogs, setAiLogs] = useState<{time: string, msg: string, type: 'info'|'action'}[]>([]);
     const [isAiThinking, setIsAiThinking] = useState(false);
 
@@ -42,6 +42,17 @@ export const AdminDashboard: React.FC = () => {
         }
     };
 
+    const handleToggleAiPilot = () => {
+        const newState = !isAiPilotActive;
+        setIsAiPilotActive(newState);
+        setAiPilotEnabled(newState);
+        addNotification({ 
+            type: 'info', 
+            title: 'AI Pilot', 
+            message: newState ? 'AI Pilot tizimi faollashtirildi.' : 'AI Pilot o\'chirildi.' 
+        });
+    };
+
     const handleRunAiGuard = async () => {
         setIsAiThinking(true);
         // Create context from current dashboard state
@@ -53,14 +64,25 @@ export const AdminDashboard: React.FC = () => {
         
         const result = await runAiServerManager(context);
         if (result) {
-            // Explicitly typing newLogs to allow both 'action' and 'info' types, fixing line 57 error
-            const newLogs: {time: string, msg: string, type: 'info'|'action'}[] = result.actions.map(a => ({ 
-                time: new Date().toLocaleTimeString(), 
-                msg: a, 
-                type: 'action' as const 
-            }));
-            if (result.analysis) newLogs.push({ time: new Date().toLocaleTimeString(), msg: result.analysis, type: 'info' as const });
-            setAiLogs(prev => [...newLogs, ...prev].slice(0, 10));
+            const newLogs: {time: string, msg: string, type: 'info'|'action'}[] = [];
+            
+            result.actions.forEach(a => {
+                newLogs.push({ 
+                    time: new Date().toLocaleTimeString(), 
+                    msg: a, 
+                    type: 'action' as const 
+                });
+            });
+
+            if (result.analysis) {
+                newLogs.push({ 
+                    time: new Date().toLocaleTimeString(), 
+                    msg: result.analysis, 
+                    type: 'info' as const 
+                });
+            }
+
+            setAiLogs(prev => [...newLogs, ...prev].slice(0, 15));
             if (result.actions.length > 0) loadData(); // Refresh if AI changed something
         }
         setIsAiThinking(false);
@@ -101,7 +123,7 @@ export const AdminDashboard: React.FC = () => {
                     {/* AI GUARD CONTROLLER */}
                     <div className={`flex items-center gap-3 p-1.5 pr-4 rounded-full border transition-all duration-500 ${isAiPilotActive ? 'bg-indigo-600/20 border-indigo-500' : 'bg-zinc-800 border-zinc-700'}`}>
                         <button 
-                            onClick={() => setIsAiPilotActive(!isAiPilotActive)}
+                            onClick={handleToggleAiPilot}
                             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isAiPilotActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/50' : 'bg-zinc-700 text-zinc-400'}`}
                         >
                             <Sparkles size={18} className={isAiPilotActive ? 'animate-pulse' : ''} />
