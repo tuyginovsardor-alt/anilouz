@@ -155,11 +155,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       {/* --- HEADER (Fixed & Properly Spaced) --- */}
       {/* 
           z-50: Ensure it's on top
-          pt-safe: Handles notch areas (if supported by environment CSS)
+          pt-14: Increased top padding to clear status bar (pastroqqa tushirildi)
           pointer-events-none on container: Lets clicks pass through to banner
           pointer-events-auto on buttons: Re-enables clicking buttons
       */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-4 pt-8 pointer-events-none">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pt-14 pb-4 pointer-events-none">
           <button onClick={() => onMainNavigate && onMainNavigate('dashboard')} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all pointer-events-auto border border-white/10 shadow-lg">
               <ArrowLeft size={24} />
           </button>
