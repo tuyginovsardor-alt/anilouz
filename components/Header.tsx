@@ -8,7 +8,7 @@ import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
 import { useNotification } from '../hooks/useNotification';
 import { NotificationList } from './NotificationList';
-import { usePWA } from './InstallPWA'; // Import Hook
+import { usePWA } from './InstallPWA'; 
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { addNotification } = useNotification();
   const notificationRef = useRef<HTMLDivElement>(null);
   
-  const { isInstallable, installApp } = usePWA(); // Access PWA Context
+  const { isInstallable, installApp } = usePWA(); 
 
   useEffect(() => {
       db.getAppConfig().then(config => {
@@ -50,7 +50,6 @@ export const Header: React.FC<HeaderProps> = ({
       }
   }, [isAuthenticated]);
 
-  // Handle profile updates from anywhere
   useEffect(() => {
       const refreshHeader = () => fetchHeaderData();
       document.addEventListener('profileUpdated', refreshHeader);
@@ -87,9 +86,9 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between pointer-events-auto">
-            <div className="flex items-center gap-10">
+            <div className="flex items-center gap-4 md:gap-10">
                 <div className="flex items-center gap-3 cursor-pointer group" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
-                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
                         {customLogo ? (
                             <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
                         ) : (
@@ -110,32 +109,32 @@ export const Header: React.FC<HeaderProps> = ({
                 </nav>
             </div>
 
-            <div className="flex items-center gap-3 sm:gap-4 relative" ref={notificationRef}>
+            <div className="flex items-center gap-2 sm:gap-4 relative" ref={notificationRef}>
                 
-                {/* Install Button (Small) */}
+                {/* Install Button (Only visible if installable) */}
                 {isInstallable && (
                     <button 
                         onClick={installApp} 
-                        className="p-2.5 rounded-xl bg-white/10 text-white hover:bg-white hover:text-black transition-all active:scale-95 border border-white/10 animate-pulse"
+                        className="p-2 md:p-2.5 rounded-xl bg-orange-600/20 text-orange-500 hover:bg-orange-600 hover:text-white transition-all active:scale-95 border border-orange-600/30 animate-pulse"
                         title="Ilovani o'rnatish"
                     >
                         <Download size={20} />
                     </button>
                 )}
 
-                <button onClick={() => onNavigate('ai-assistant')} className={`p-2.5 rounded-xl transition-all active:scale-95 ${currentPage === 'ai-assistant' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-blue-400'}`}>
+                <button onClick={() => onNavigate('ai-assistant')} className={`p-2 md:p-2.5 rounded-xl transition-all active:scale-95 ${currentPage === 'ai-assistant' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-blue-400'}`}>
                     <Sparkles size={22} className={currentPage === 'ai-assistant' ? 'animate-pulse' : ''}/>
                 </button>
 
                 <button onClick={onSearchClick} className="p-2 text-white hover:text-orange-500 transition-colors active:scale-95">
-                    <Search size={26} strokeWidth={2.5} />
+                    <Search size={24} strokeWidth={2.5} />
                 </button>
                 
                 <div className="relative">
                     <button onClick={handleToggleNotifications} className="p-2 text-white hover:text-orange-500 transition-colors relative active:scale-95 group">
-                        <Bell size={26} strokeWidth={2.5} className={unreadCount > 0 ? "animate-swing text-orange-500" : ""} />
+                        <Bell size={24} strokeWidth={2.5} className={unreadCount > 0 ? "animate-swing text-orange-500" : ""} />
                         {unreadCount > 0 && (
-                            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 rounded-full border border-black text-[8px] flex items-center justify-center text-white font-black animate-pulse">
+                            <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-red-600 rounded-full border border-black text-[8px] flex items-center justify-center text-white font-black animate-pulse">
                                 {unreadCount > 9 ? '9+' : unreadCount}
                             </span>
                         )}
@@ -143,7 +142,6 @@ export const Header: React.FC<HeaderProps> = ({
                     {showNotifications && <NotificationList notifications={notifications} onClose={() => setShowNotifications(false)} />}
                 </div>
 
-                {/* HIDDEN ON MOBILE - MOVED TO BOTTOM NAV */}
                 <div className="hidden md:block">
                     {isAuthenticated ? (
                         <button onClick={() => setIsMenuOpen(true)} className="w-11 h-11 rounded-full border-2 border-white/20 overflow-hidden hover:border-orange-500 transition-all shadow-lg active:scale-95">

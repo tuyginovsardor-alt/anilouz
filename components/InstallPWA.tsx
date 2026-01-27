@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Download, X, Star, Share, PlusSquare } from 'lucide-react';
+import { Share, PlusSquare, X } from 'lucide-react';
 
 interface PWAContextType {
     isInstallable: boolean;
@@ -20,7 +20,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [isIOS, setIsIOS] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
-    const [showBanner, setShowBanner] = useState(false);
     const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
     useEffect(() => {
@@ -37,10 +36,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
-            if (!isStandaloneMode) {
-                // Avtomatik banner ko'rsatish (agar xohlasangiz)
-                // setShowBanner(true); 
-            }
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -55,11 +50,9 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
                 setDeferredPrompt(null);
-                setShowBanner(false);
             }
         } else {
-            // Fallback just in case
-            alert("Ilovani brauzer menyusi orqali o'rnatishingiz mumkin.");
+            alert("Ilovani brauzer menyusi (Uch nuqta -> Ilovani o'rnatish) orqali o'rnatishingiz mumkin.");
         }
     };
 
@@ -76,7 +69,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         <img src="/logo.png" alt="App Icon" className="w-full h-full object-cover" />
                     </div>
                     <h3 className="text-xl font-black text-white mb-2">iPhone-ga o'rnatish</h3>
-                    <p className="text-sm text-zinc-400 mb-6">Ushbu ilovani yuklab olish uchun quyidagi amallarni bajaring:</p>
+                    <p className="text-sm text-zinc-400 mb-6">Quyidagi amallarni bajaring:</p>
                     
                     <div className="w-full space-y-4 text-left">
                         <div className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
@@ -101,49 +94,15 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
     );
 
-    // Floating Banner (Optional - shows at bottom if prompted)
-    const FloatingBanner = () => {
-        if (!deferredPrompt && !showBanner) return null;
-        if (isStandalone) return null;
-
-        return (
-            <div className="fixed inset-x-0 bottom-20 z-[90] px-4 md:hidden pointer-events-none">
-                <div className="bg-[#121212] border border-orange-500/30 rounded-2xl p-4 shadow-2xl flex items-center justify-between pointer-events-auto animate-slide-in-up">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-black rounded-lg border border-white/10 p-0.5">
-                            <img src="/logo.png" className="w-full h-full object-cover rounded-md"/>
-                        </div>
-                        <div>
-                            <p className="text-white font-bold text-sm">Anilo.uz</p>
-                            <p className="text-zinc-500 text-[10px]">Rasmiy Ilova</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={installApp}
-                        className="bg-white text-black px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider"
-                    >
-                        O'rnatish
-                    </button>
-                    <button onClick={() => setDeferredPrompt(null)} className="absolute -top-2 -right-2 bg-zinc-800 rounded-full p-1 border border-zinc-700 text-zinc-400">
-                        <X size={12}/>
-                    </button>
-                </div>
-            </div>
-        )
-    };
+    // Floating Banner OLIB TASHLANDI - Dizayn buzilmasligi uchun
 
     return (
-        <PWAContext.Provider value={{ isInstallable: !!deferredPrompt || isIOS, isIOS, installApp }}>
+        <PWAContext.Provider value={{ isInstallable: (!!deferredPrompt || isIOS) && !isStandalone, isIOS, installApp }}>
             {children}
             {showIOSInstructions && <IOSModal />}
-            <FloatingBanner /> 
         </PWAContext.Provider>
     );
 };
 
-// Default export for backward compatibility if needed, but prefer named export
-export const InstallPWA = () => {
-    const { isInstallable, installApp } = usePWA();
-    if (!isInstallable) return null;
-    return null; // Logic moved to provider/hooks
-};
+// Default export placeholder if needed
+export const InstallPWA = () => null;
