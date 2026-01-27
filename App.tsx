@@ -27,6 +27,7 @@ import { checkTsPayStatus } from './services/tspayService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
+import { InstallPWA } from './components/InstallPWA';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
@@ -86,13 +87,11 @@ const App: React.FC = () => {
       setIsAppReady(false);
       setShowRetryButton(false);
       
-      // Safety timeout: if loading takes > 7 seconds, show retry/skip
       const safetyTimeout = setTimeout(() => {
           setShowRetryButton(true);
       }, 7000);
 
       try {
-          // Parallel fetch to speed up
           getAppConfig().then(config => {
               if (config && config['site_logo']) setLoaderLogo(config['site_logo']);
           }).catch(() => {});
@@ -130,11 +129,10 @@ const App: React.FC = () => {
         }
     });
 
-    // Online/Offline Listeners
     const handleOnline = () => {
         setIsOnline(true);
         addNotification({ type: 'success', title: 'Aloqa tiklandi', message: 'Internet tarmog\'iga ulandingiz.' });
-        refreshProfile(); // Reload data when back online
+        refreshProfile(); 
     };
     const handleOffline = () => {
         setIsOnline(false);
@@ -180,7 +178,6 @@ const App: React.FC = () => {
               <p className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.3em] animate-pulse">
                   {showRetryButton ? "Aloqa sekin..." : "Anilo yuklanmoqda..."}
               </p>
-              
               {showRetryButton && (
                   <div className="flex flex-col gap-3 mt-4 animate-fade-in">
                       <button 
@@ -204,6 +201,7 @@ const App: React.FC = () => {
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
         <NotificationContainer />
+        <InstallPWA /> {/* Add Install Prompt Here */}
         
         {/* Offline Banner */}
         {!isOnline && (
