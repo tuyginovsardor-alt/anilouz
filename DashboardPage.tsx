@@ -64,7 +64,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     const renderContent = () => {
         switch (currentPage) {
             case 'profile': return <ProfilePage viewUserId={viewUserId} onMainNavigate={onMainNavigate} />;
-            case 'settings': return <SettingsPage />;
+            case 'settings': return <SettingsPage onNavigate={onNavigate} />; // Updated prop
             case 'history': return <HistoryPage onMovieClick={onMovieClick} viewUserId={viewUserId} />;
             case 'saved': return <SavedPage onMovieClick={onMovieClick} viewUserId={viewUserId} />;
             case 'account': return <AccountPage onNavigate={onNavigate} />;
