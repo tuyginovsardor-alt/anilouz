@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { 
     X, CreditCard, History, Bookmark, 
@@ -75,8 +77,17 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     }, [isOpen]);
 
     const handleAction = (type: 'main' | 'sub', target: any) => {
-        if (type === 'main') onMainNavigate(target);
-        else onDashboardNavigate(target);
+        if (type === 'main') {
+            onMainNavigate(target);
+        } else {
+            // 1. Asosiy sahifani Dashboard ga o'tkazamiz
+            onMainNavigate('dashboard');
+            // 2. Ichki sahifani (masalan: profile) biroz kechikish bilan o'rnatamiz
+            // Bu App.tsx dagi "dashboardga kirganda main ga o'tish" logikasini chetlab o'tadi
+            setTimeout(() => {
+                onDashboardNavigate(target);
+            }, 50);
+        }
         onClose();
     };
 
@@ -137,7 +148,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                                         </div>
                                         <div className="text-left">
                                             <p className="text-sm font-black text-white uppercase">Fandub Studio</p>
-                                            <p className="text-[10px] text-zinc-400">Ijodkor paneli</p>
+                                            <p className="text--[10px] text-zinc-400">Ijodkor paneli</p>
                                         </div>
                                     </div>
                                     <ChevronRight size={18} className="text-purple-400" />
@@ -196,7 +207,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         </div>
                         
                         <div className="mt-8 text-center">
-                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Anilo v1.0.3</p>
+                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Anilo v1.0.4</p>
                         </div>
                     </div>
                 </div>
