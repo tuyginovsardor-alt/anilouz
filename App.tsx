@@ -21,7 +21,7 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw } from 'lucide-react';
 import { getAppConfig, getUserProfile, recordTsPaySuccess } from './services/dbService';
 import { checkTsPayStatus } from './services/tspayService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
@@ -45,6 +45,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine); // Network status
+  const [showRetryButton, setShowRetryButton] = useState(false); // New state for stuck loading
   
   const [loaderLogo, setLoaderLogo] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -81,36 +82,40 @@ const App: React.FC = () => {
       }
   };
 
-  useEffect(() => {
-    const initApp = async () => {
-        const safetyTimeout = setTimeout(() => setIsAppReady(true), 5000); // 5 sec timeout for slow networks
+  const initApp = async () => {
+      setIsAppReady(false);
+      setShowRetryButton(false);
+      
+      // Safety timeout: if loading takes > 7 seconds, show retry/skip
+      const safetyTimeout = setTimeout(() => {
+          setShowRetryButton(true);
+      }, 7000);
 
-        try {
-            getAppConfig().then(config => {
-                if (config && config['site_logo']) setLoaderLogo(config['site_logo']);
-            }).catch(() => {});
-            
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                setIsAuthenticated(true); 
-                refreshProfile().then(() => {
-                    setPage('dashboard');
-                }).finally(() => {
-                    clearTimeout(safetyTimeout);
-                    setIsAppReady(true);
-                });
-            } else {
-                setPage('welcome');
-                clearTimeout(safetyTimeout);
-                setIsAppReady(true);
-            }
-        } catch (e) { 
-            console.error("Init Error:", e);
-            setPage('welcome');
-            clearTimeout(safetyTimeout);
-            setIsAppReady(true);
-        }
-    };
+      try {
+          // Parallel fetch to speed up
+          getAppConfig().then(config => {
+              if (config && config['site_logo']) setLoaderLogo(config['site_logo']);
+          }).catch(() => {});
+          
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session) {
+              setIsAuthenticated(true); 
+              await refreshProfile();
+              setPage('dashboard');
+          } else {
+              setPage('welcome');
+          }
+      } catch (e) { 
+          console.error("Init Error:", e);
+          setPage('welcome');
+      } finally {
+          clearTimeout(safetyTimeout);
+          setIsAppReady(true);
+      }
+  };
+
+  useEffect(() => {
     initApp();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -167,12 +172,31 @@ const App: React.FC = () => {
 
   if (!isAppReady) {
       return (
-          <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center gap-4">
+          <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center gap-4 relative">
               <div className="w-16 h-16 relative">
                   <div className="absolute inset-0 border-4 border-orange-500/20 rounded-full"></div>
                   <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <p className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.3em] animate-pulse">Anilo yuklanmoqda...</p>
+              <p className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.3em] animate-pulse">
+                  {showRetryButton ? "Aloqa sekin..." : "Anilo yuklanmoqda..."}
+              </p>
+              
+              {showRetryButton && (
+                  <div className="flex flex-col gap-3 mt-4 animate-fade-in">
+                      <button 
+                          onClick={() => window.location.reload()} 
+                          className="px-6 py-2 bg-white text-black rounded-full font-bold text-xs flex items-center gap-2 hover:bg-gray-200"
+                      >
+                          <RefreshCw size={14} /> Qayta yuklash
+                      </button>
+                      <button 
+                          onClick={() => setIsAppReady(true)} 
+                          className="text-zinc-500 text-[10px] underline hover:text-zinc-300"
+                      >
+                          Kutmasdan kirish (Offline)
+                      </button>
+                  </div>
+              )}
           </div>
       );
   }
