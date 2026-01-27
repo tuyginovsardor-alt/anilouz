@@ -1,15 +1,18 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { UserIcon } from './components/icons/UserIcon';
-import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { supabase } from './services/supabaseClient';
-import { getUserProfile, getUserHistory, updateUserProfile, getUserSessions, uploadAvatar } from './services/dbService';
-import { UserProfile, UserDevice } from './types';
+import { getUserProfile, getUserHistory, updateUserProfile, uploadAvatar } from './services/dbService';
+import { UserProfile, Movie } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
 import { VerifiedBadge } from './components/VerifiedBadge';
-import { Monitor, Hash, Phone, Mail, Award, Edit2, Camera, Loader2 } from 'lucide-react';
+import { 
+    Phone, Info, AtSign, Calendar, Edit2, Camera, 
+    ArrowLeft, MoreVertical, Check, Image as ImageIcon,
+    Clock, Wallet
+} from 'lucide-react';
 import { Page } from './App';
+import { MovieCard } from './components/MovieCard';
 
 interface ProfilePageProps {
     viewUserId?: string | null;
@@ -19,13 +22,21 @@ interface ProfilePageProps {
 export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavigate }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [historyCount, setHistoryCount] = useState(0);
-  const [sessions, setSessions] = useState<UserDevice[]>([]);
+  const [history, setHistory] = useState<Movie[]>([]);
   const { addNotification } = useNotification();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [editForm, setEditForm] = useState({ full_name: '', username: '', phone: '' });
+  
+  // Telegram style fields
+  const [editForm, setEditForm] = useState({ 
+      full_name: '', 
+      username: '', 
+      phone: '', 
+      bio: '' 
+  });
+  
+  const [activeTab, setActiveTab] = useState<'history' | 'saved'>('history');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadData(); }, [viewUserId]);
@@ -45,13 +56,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
             full_name: profileData?.full_name || '',
             username: profileData?.username || '',
             phone: profileData?.phone || '',
+            bio: profileData?.bio || '',
         });
 
-        const history = await getUserHistory(targetUserId);
-        setHistoryCount(history.length);
-
-        const activeSessions = await getUserSessions(targetUserId);
-        setSessions(activeSessions);
+        const historyData = await getUserHistory(targetUserId);
+        setHistory(historyData);
       }
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
@@ -59,6 +68,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
 
   const handleSave = async () => {
       if (!profile) return;
+      // Basic validation
+      if (!editForm.full_name.trim()) return addNotification({ type: 'warning', title: 'Xatolik', message: 'Ism kiritish shart' });
+
       setLoading(true);
       try {
           await updateUserProfile(profile.id, editForm);
@@ -71,7 +83,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
   };
 
   const handleAvatarClick = () => {
-      if (!viewUserId) fileInputRef.current?.click();
+      if (!viewUserId && isEditing) fileInputRef.current?.click();
+      else if (!viewUserId && !isEditing) {
+          // Just show photo preview logic if needed, or trigger edit
+          // For now, allow upload only in edit mode or always? 
+          // Telegram allows changing photo anytime.
+          fileInputRef.current?.click(); 
+      }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,8 +102,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
           await updateUserProfile(profile.id, { avatar_url: publicUrl });
           setProfile({ ...profile, avatar_url: publicUrl });
           addNotification({ type: 'success', title: 'Muvaffaqiyatli', message: 'Profil rasmi yangilandi.' });
-          
-          // Dispatch event to update global header/nav icons
           document.dispatchEvent(new Event('profileUpdated'));
       } catch (error: any) {
           addNotification({ type: 'error', title: 'Yuklashda xato', message: error.message });
@@ -95,171 +111,220 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       }
   };
 
-  if (loading && !profile) return <div className="flex justify-center py-20"><LoadingSpinner /></div>;
+  if (loading && !profile) return <div className="flex justify-center py-20 bg-[#1c1c1d] min-h-screen"><LoadingSpinner /></div>;
 
-  const isPrivileged = ['admin', 'owner', 'manager'].includes(profile?.role || '');
-  const isDubRole = profile?.role === 'dub' || profile?.role === 'fandub';
+  const isMyProfile = !viewUserId;
+  const bgColor = "#1c1c1d"; // Telegram Dark Background
+  const cardColor = "#2c2c2e"; // Telegram Card/Section Background
 
   return (
-    <div className="animate-fade-in pb-20">
+    <div className="min-h-screen pb-20 animate-fade-in font-sans" style={{ backgroundColor: bgColor }}>
       
-      {/* Hidden File Input */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        accept="image/*" 
-        className="hidden" 
-      />
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
-      {/* 1. Header Card */}
-      <div className="bg-zinc-900 border border-white/5 rounded-[3rem] p-8 md:p-12 relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3"></div>
-
-        <div className="relative z-10 flex flex-col items-center">
-            
-            {/* Avatar Section */}
-            <div className="relative mb-6">
-                <div 
-                    onClick={handleAvatarClick}
-                    className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1.5 bg-gradient-to-tr from-orange-500 to-red-600 shadow-2xl shadow-orange-500/20 cursor-pointer group transition-transform active:scale-95`}
-                >
-                    <div className="w-full h-full rounded-full bg-black border-4 border-black overflow-hidden relative">
-                        {isUploadingAvatar ? (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
-                                <Loader2 className="w-8 h-8 text-white animate-spin" />
-                            </div>
-                        ) : null}
-                        
-                        {profile?.avatar_url ? (
-                            <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-600"><UserIcon className="w-16 h-16"/></div>
-                        )}
-                        
-                        {/* Hover Overlay */}
-                        {!viewUserId && (
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Camera className="text-white w-8 h-8" />
-                            </div>
-                        )}
-                    </div>
-                </div>
-                {!isEditing && (
-                    <div className="absolute -bottom-2 -right-2 bg-zinc-900 p-2 rounded-full border border-zinc-800">
-                        <VerifiedBadge type={isPrivileged || isDubRole ? 'gold' : 'silver'} className="w-6 h-6" />
-                    </div>
-                )}
-            </div>
-
-            {/* Name & Username */}
-            {!isEditing ? (
-                <>
-                    <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tight text-center">{profile?.full_name || 'Foydalanuvchi'}</h2>
-                    <p className="text-orange-500 font-bold text-sm mt-1">@{profile?.username || 'username'}</p>
-                </>
-            ) : (
-                <div className="w-full max-w-sm space-y-3 mb-4">
-                    <input 
-                        type="text" 
-                        value={editForm.full_name} 
-                        onChange={e => setEditForm({...editForm, full_name: e.target.value})}
-                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center font-bold text-white focus:border-orange-500 outline-none"
-                        placeholder="Ism Familiya"
-                    />
-                    <input 
-                        type="text" 
-                        value={editForm.username} 
-                        onChange={e => setEditForm({...editForm, username: e.target.value})}
-                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-center text-orange-500 font-bold focus:border-orange-500 outline-none"
-                        placeholder="@username"
-                    />
-                </div>
-            )}
-
-            {/* Edit / Save Buttons */}
-            {!viewUserId && (
-                <div className="mt-6 flex gap-3">
-                    {!isEditing ? (
-                        <button onClick={() => setIsEditing(true)} className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full text-xs font-bold text-white uppercase tracking-widest transition-all flex items-center gap-2">
-                            <Edit2 size={14} /> Tahrirlash
-                        </button>
-                    ) : (
-                        <>
-                            <button onClick={() => setIsEditing(false)} className="px-6 py-2 bg-zinc-800 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-zinc-700">Bekor</button>
-                            <button onClick={handleSave} className="px-6 py-2 bg-orange-600 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-orange-700 shadow-lg shadow-orange-600/20">Saqlash</button>
-                        </>
-                    )}
-                </div>
-            )}
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-8 mt-10 w-full max-w-lg border-t border-white/5 pt-8">
-                <div className="text-center">
-                    <p className="text-2xl font-black text-white">{historyCount}</p>
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Ko'rildi</p>
-                </div>
-                <div className="text-center border-x border-white/5">
-                    <p className="text-2xl font-black text-orange-500">{(profile?.balance || 0).toLocaleString()}</p>
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Balans (UZS)</p>
-                </div>
-                <div className="text-center">
-                    <p className="text-2xl font-black text-white">0</p>
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Sharhlar</p>
-                </div>
-            </div>
-        </div>
+      {/* --- HEADER (Telegram Style) --- */}
+      <div className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-[#1c1c1d]/90 backdrop-blur-md">
+          <button onClick={() => onMainNavigate && onMainNavigate('dashboard')} className="p-2 -ml-2 text-white hover:bg-white/10 rounded-full transition-colors">
+              <ArrowLeft size={24} />
+          </button>
+          
+          <div className="flex gap-4 text-white">
+              {isMyProfile && (
+                  isEditing ? (
+                      <button onClick={handleSave} className="p-2 text-blue-400 hover:bg-white/10 rounded-full transition-colors">
+                          <Check size={24} />
+                      </button>
+                  ) : (
+                      <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                          <Edit2 size={22} />
+                      </button>
+                  )
+              )}
+              <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                  <MoreVertical size={24} />
+              </button>
+          </div>
       </div>
 
-      {/* 2. Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div className="bg-zinc-900 border border-white/5 p-6 rounded-[2rem] flex items-center gap-4">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-zinc-500"><Mail size={20}/></div>
-              <div>
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Email</p>
-                  <p className="text-white font-bold text-sm truncate w-48">{profile?.email}</p>
-              </div>
-          </div>
-          <div className="bg-zinc-900 border border-white/5 p-6 rounded-[2rem] flex items-center gap-4">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-zinc-500"><Phone size={20}/></div>
-              <div className="flex-1">
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Telefon</p>
-                  {isEditing ? (
-                      <input 
-                        type="tel" 
-                        value={editForm.phone} 
-                        onChange={e => setEditForm({...editForm, phone: e.target.value})}
-                        className="bg-transparent border-b border-zinc-700 text-white font-bold text-sm w-full focus:border-orange-500 outline-none"
-                        placeholder="+998..."
-                      />
+      {/* --- AVATAR & NAME SECTION --- */}
+      <div className="flex flex-col items-center pt-2 pb-8">
+          <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-black border border-white/5 relative">
+                  {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                      <p className="text-white font-bold text-sm">{profile?.phone || "Kiritilmagan"}</p>
+                      <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-4xl font-bold">
+                          {profile?.full_name?.charAt(0) || 'U'}
+                      </div>
+                  )}
+                  
+                  {isUploadingAvatar && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <LoadingSpinner />
+                      </div>
+                  )}
+                  
+                  {isMyProfile && (
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <Camera className="text-white w-8 h-8" />
+                      </div>
                   )}
               </div>
           </div>
-          <div className="bg-zinc-900 border border-white/5 p-6 rounded-[2rem] flex items-center gap-4">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-zinc-500"><Hash size={20}/></div>
-              <div>
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">ID Raqam</p>
-                  <p className="text-white font-bold text-sm">{profile?.short_id || "---"}</p>
-              </div>
+
+          <div className="mt-4 text-center px-4 w-full">
+              {isEditing ? (
+                  <input 
+                    type="text" 
+                    value={editForm.full_name}
+                    onChange={e => setEditForm({...editForm, full_name: e.target.value})}
+                    className="bg-transparent border-b border-blue-500 text-center text-2xl font-bold text-white w-full outline-none pb-1"
+                    placeholder="Ism Familiya"
+                    autoFocus
+                  />
+              ) : (
+                  <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+                      {profile?.full_name || 'Foydalanuvchi'}
+                      {(['admin', 'owner', 'dub'].includes(profile?.role || '')) && (
+                          <VerifiedBadge type="gold" className="w-5 h-5" />
+                      )}
+                  </h1>
+              )}
+              
+              <p className="text-gray-400 text-sm mt-1">
+                  {profile?.is_online ? <span className="text-blue-400">online</span> : 'yaqinda kirgan'}
+              </p>
           </div>
-          <div className="bg-zinc-900 border border-white/5 p-6 rounded-[2rem] flex items-center gap-4">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-zinc-500"><Award size={20}/></div>
-              <div>
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Maqom</p>
-                  <p className="text-white font-bold text-sm uppercase">{profile?.role}</p>
+      </div>
+
+      {/* --- INFO LIST SECTION --- */}
+      <div className="mx-0 md:mx-4 mb-6">
+          <div className="rounded-none md:rounded-xl overflow-hidden" style={{ backgroundColor: cardColor }}>
+              
+              {/* Phone */}
+              <div className="flex items-center p-4 border-b border-[#3a3a3c] hover:bg-white/5 transition-colors">
+                  <div className="mr-5 text-gray-400"><Phone size={22} /></div>
+                  <div className="flex-1">
+                      {isEditing ? (
+                          <input 
+                            type="text" 
+                            value={editForm.phone}
+                            onChange={e => setEditForm({...editForm, phone: e.target.value})}
+                            className="bg-transparent text-white text-base w-full outline-none border-b border-blue-500"
+                            placeholder="+998 90 123 45 67"
+                          />
+                      ) : (
+                          <p className="text-blue-400 text-base">{profile?.phone || 'Kiritilmagan'}</p>
+                      )}
+                      <p className="text-gray-500 text-xs mt-0.5">Mobil raqam</p>
+                  </div>
+              </div>
+
+              {/* Bio */}
+              <div className="flex items-center p-4 border-b border-[#3a3a3c] hover:bg-white/5 transition-colors">
+                  <div className="mr-5 text-gray-400"><Info size={22} /></div>
+                  <div className="flex-1">
+                      {isEditing ? (
+                          <textarea 
+                            value={editForm.bio}
+                            onChange={e => setEditForm({...editForm, bio: e.target.value})}
+                            className="bg-transparent text-white text-base w-full outline-none border-b border-blue-500 resize-none h-10"
+                            placeholder="O'zingiz haqingizda..."
+                          />
+                      ) : (
+                          <p className="text-white text-base whitespace-pre-wrap">{profile?.bio || 'Tarjimayi hol mavjud emas'}</p>
+                      )}
+                      <p className="text-gray-500 text-xs mt-0.5">Tarjimayi hol</p>
+                  </div>
+              </div>
+
+              {/* Username */}
+              <div className="flex items-center p-4 border-b border-[#3a3a3c] hover:bg-white/5 transition-colors">
+                  <div className="mr-5 text-gray-400"><AtSign size={22} /></div>
+                  <div className="flex-1">
+                      {isEditing ? (
+                          <input 
+                            type="text" 
+                            value={editForm.username}
+                            onChange={e => setEditForm({...editForm, username: e.target.value})}
+                            className="bg-transparent text-white text-base w-full outline-none border-b border-blue-500"
+                            placeholder="username"
+                          />
+                      ) : (
+                          <p className="text-blue-400 text-base">@{profile?.username || 'username'}</p>
+                      )}
+                      <p className="text-gray-500 text-xs mt-0.5">Foydalanuvchi nomi</p>
+                  </div>
+              </div>
+
+              {/* Date */}
+              <div className="flex items-center p-4 hover:bg-white/5 transition-colors">
+                  <div className="mr-5 text-gray-400"><Calendar size={22} /></div>
+                  <div className="flex-1">
+                      <p className="text-white text-base">{new Date(profile?.created_at || Date.now()).toLocaleDateString()}</p>
+                      <p className="text-gray-500 text-xs mt-0.5">Ro'yxatdan o'tgan sana</p>
+                  </div>
               </div>
           </div>
       </div>
 
-      {!viewUserId && !isDubRole && (
-          <div className="pt-10">
-              <h2 className="text-xl font-black text-center text-white mb-8 uppercase tracking-widest">Premiumga o'tish</h2>
-              <SubscriptionPlans />
+      {/* --- TABS (POSTS / MEDIA STYLE) --- */}
+      <div className="mt-4">
+          <div className="flex border-b border-[#3a3a3c] bg-[#1c1c1d]">
+              <button 
+                onClick={() => setActiveTab('history')}
+                className={`flex-1 py-3 text-sm font-bold uppercase tracking-wide text-center relative ${activeTab === 'history' ? 'text-blue-400' : 'text-gray-500'}`}
+              >
+                  Ko'rilganlar
+                  {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>}
+              </button>
+              <button 
+                onClick={() => setActiveTab('saved')}
+                className={`flex-1 py-3 text-sm font-bold uppercase tracking-wide text-center relative ${activeTab === 'saved' ? 'text-blue-400' : 'text-gray-500'}`}
+              >
+                  Moliya
+                  {activeTab === 'saved' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>}
+              </button>
           </div>
-      )}
+
+          <div className="min-h-[200px]">
+              {activeTab === 'history' && (
+                  <div className="grid grid-cols-3 gap-0.5">
+                      {history.map(movie => (
+                          <div key={movie.id} className="aspect-[2/3] relative bg-gray-800 cursor-pointer">
+                              <img src={movie.posterUrl} className="w-full h-full object-cover" alt="" />
+                              <div className="absolute inset-0 bg-black/20 flex items-end p-1">
+                                  <span className="text-[10px] text-white font-bold drop-shadow-md line-clamp-1">{movie.title}</span>
+                              </div>
+                          </div>
+                      ))}
+                      {history.length === 0 && (
+                          <div className="col-span-3 py-10 flex flex-col items-center text-gray-500">
+                              <Clock size={40} className="mb-2 opacity-50"/>
+                              <p className="text-sm">Tarix bo'sh</p>
+                          </div>
+                      )}
+                  </div>
+              )}
+
+              {activeTab === 'saved' && (
+                  <div className="p-4">
+                      <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-6 text-white shadow-lg mb-4">
+                          <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">Mening Balansim</p>
+                          <h2 className="text-3xl font-bold">{(profile?.balance || 0).toLocaleString()} <span className="text-lg">UZS</span></h2>
+                      </div>
+                      
+                      <div className="space-y-2">
+                          <button className="w-full py-3 bg-[#2c2c2e] rounded-lg text-blue-400 font-bold text-sm flex items-center justify-center gap-2">
+                              <Wallet size={18} />
+                              Hisobni to'ldirish
+                          </button>
+                      </div>
+                  </div>
+              )}
+          </div>
+      </div>
+
     </div>
   );
 };
