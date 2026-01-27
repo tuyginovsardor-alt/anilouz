@@ -1,6 +1,7 @@
 
 import { supabase } from './supabaseClient';
 import { runAiServerManager, isAiPilotEnabled } from './aiGuardService';
+import { getCache, setCache } from './cacheService'; // Import cache service
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
@@ -19,10 +20,26 @@ export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<str
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
         if (!userId) return null;
+        
+        // 1. Keshni tekshirish (5 daqiqa)
+        // Profil ma'lumotlari tez o'zgarishi mumkin (balans), shuning uchun qisqa vaqt
+        const cachedProfile = getCache<UserProfile>(`profile_${userId}`);
+        if (cachedProfile) return cachedProfile;
+
+        // 2. Tarmoqdan olish
         const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        
         if (error) return null;
+        
+        // 3. Keshga saqlash
+        if (data) {
+            setCache(`profile_${userId}`, data, 5); 
+        }
+        
         return data as UserProfile;
     } catch (e) {
+        // Xatolik bo'lsa, keshdagini qaytarishga urinib ko'rish (muddati o'tgan bo'lsa ham)
+        // Hozircha oddiy null qaytaramiz, lekin kelajakda "stale-while-revalidate" qilish mumkin
         return null;
     }
 };
@@ -53,12 +70,22 @@ export const updateUserProfile = async (userId: string, updates: Partial<UserPro
 
         const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
         if (error) throw error;
+        
+        // Update bo'lganda keshni yangilash uchun eski keshni o'chiramiz
+        localStorage.removeItem(`anilo_cache_profile_${userId}`);
     } catch (e) { throw e; }
 };
 
 // --- MOVIES & FANDUB INTEGRATION ---
 export const getMovies = async (): Promise<Movie[]> => {
     try {
+        // 1. Keshni tekshirish (1 soat - 60 daqiqa)
+        // Kinolar ro'yxati kam o'zgaradi, shuning uchun uzoqroq saqlash mumkin
+        const cachedMovies = getCache<Movie[]>('all_movies_catalog');
+        if (cachedMovies) {
+            return cachedMovies;
+        }
+
         const getOfficial = async () => {
             const { data, error } = await supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false });
             if (error) return [];
@@ -101,11 +128,19 @@ export const getMovies = async (): Promise<Movie[]> => {
             getFandub()
         ]);
 
-        return [...official, ...fandub]
+        const mergedMovies = [...official, ...fandub]
             .filter(m => !m.is_blocked)
             .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        // 2. Keshga saqlash
+        if (mergedMovies.length > 0) {
+            setCache('all_movies_catalog', mergedMovies, 60);
+        }
+
+        return mergedMovies;
     } catch (e) {
         console.error("Critical error in getMovies:", e);
+        // Agar internet umuman yo'q bo'lsa va kesh ham bo'lmasa, bo'sh qaytadi
         return [];
     }
 };
@@ -122,22 +157,27 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
 export const addMovieToDB = async (movie: Partial<Movie>) => {
     const { data, error } = await supabase.from('movies').insert(movie).select().single();
     if (error) throw error;
+    // Ro'yxat o'zgardi, keshni tozalaymiz
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
     return data as Movie;
 };
 
 export const updateMovieInDB = async (id: number, movie: Partial<Movie>) => {
     const { error } = await supabase.from('movies').update(movie).eq('id', id);
     if (error) throw error;
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const deleteMovieFromDB = async (id: number) => {
     const { error } = await supabase.from('movies').delete().eq('id', id);
     if (error) throw error;
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const toggleMovieArchive = async (id: number, isArchived: boolean) => {
     const { error } = await supabase.from('movies').update({ is_archived: isArchived }).eq('id', id);
     if (error) throw error;
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const getPremiumBundles = async (): Promise<PremiumBundle[]> => {
@@ -159,14 +199,17 @@ export const deletePremiumBundle = async (id: number) => {
 
 export const toggleBlockFandub = async (id: number, block: boolean) => {
     await supabase.from('fandub_uploads').update({ is_blocked: block }).eq('id', id);
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const deleteFandubUpload = async (id: number) => {
     await supabase.from('fandub_uploads').delete().eq('id', id);
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const updateFandubUpload = async (id: number, updates: any) => {
     await supabase.from('fandub_uploads').update(updates).eq('id', id);
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const createFandubChannel = async (channel: Partial<FandubChannel>) => {
@@ -257,6 +300,7 @@ export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
 
 export const approveFandubUpload = async (id: number) => {
     await supabase.from('fandub_uploads').update({ status: 'approved' }).eq('id', id);
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const rejectFandubUpload = async (id: number, comment: string) => {
@@ -397,6 +441,8 @@ export const updateReview = async (reviewId: number, comment: string) => {
 
 export const buySubscription = async (userId: string, plan: string, price: number) => {
     await supabase.rpc('buy_subscription', { u_id: userId, p_name: plan, cost: price });
+    // Clear profile cache so updated subscription info is fetched
+    localStorage.removeItem(`anilo_cache_profile_${userId}`);
 };
 
 export const redeemPromocode = async (userId: string, code: string) => {
@@ -501,6 +547,8 @@ export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
 
 export const approvePaymentRequest = async (requestId: number, userId: string, amount: number) => {
     await supabase.rpc('approve_payment', { req_id: requestId, u_id: userId, amt: amount });
+    // Update cache to reflect balance change
+    localStorage.removeItem(`anilo_cache_profile_${userId}`);
 };
 
 export const rejectPaymentRequest = async (requestId: number) => {
@@ -516,11 +564,15 @@ export const getPremiumUsers = async (): Promise<UserProfile[]> => {
 
 export const adminAdjustUserBalance = async (userId: string, amount: number, type: 'add' | 'deduct', description: string) => {
     await supabase.rpc('adjust_user_balance', { u_id: userId, amt: amount, adj_type: type, desc: description });
+    localStorage.removeItem(`anilo_cache_profile_${userId}`);
 };
 
 export const giveGlobalBonus = async (amount: number, description: string) => {
     const { data, error } = await supabase.rpc('give_global_bonus', { amt: amount, desc: description });
     if (error) throw error;
+    // Clear all profile caches since everyone got a bonus
+    // Note: We can't clear *all* keys easily without clearing everything, but 'clearAppCache' in cacheService handles prefixes.
+    // For now we rely on the fact that individual user cache will expire in 5 min.
     return data;
 };
 
@@ -613,6 +665,7 @@ export const claimATCReward = async (userId: string, amount: number, type: strin
 
 export const convertATCtoUZS = async (userId: string, amount: number, rate: number) => {
     await supabase.rpc('convert_atc_to_uzs', { u_id: userId, atc_amt: amount, ex_rate: rate });
+    localStorage.removeItem(`anilo_cache_profile_${userId}`);
 };
 
 export const getQuizQuestions = async (count: number): Promise<QuizQuestion[]> => {
@@ -808,6 +861,7 @@ export const createShopPaymentRequest = async (userId: string, amount: number, u
 
 export const placeShopOrder = async (userId: string, productId: number, amount: number, address: string, phone: string) => {
     await supabase.rpc('place_shop_order', { u_id: userId, p_id: productId, amt: amount, addr: address, ph: phone });
+    localStorage.removeItem(`anilo_cache_profile_${userId}`);
 };
 
 export const getMyShopOrders = async (userId: string): Promise<ShopOrder[]> => {
@@ -858,6 +912,7 @@ export const deleteAd = async (id: number) => {
 
 export const recordTsPaySuccess = async (userId: string, amount: number, orderId: number) => {
     await supabase.rpc('record_tspay_success', { u_id: userId, amt: amount, o_id: orderId });
+    localStorage.removeItem(`anilo_cache_profile_${userId}`);
 };
 
 export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
@@ -887,6 +942,9 @@ export const updateUserPassword = async (password: string) => {
 export const updateUserEmail = async (email: string) => {
     const { error } = await supabase.auth.updateUser({ email });
     if (error) throw error;
+    // Profilni qayta yuklash uchun
+    const user = await supabase.auth.getUser();
+    if(user.data.user) localStorage.removeItem(`anilo_cache_profile_${user.data.user.id}`);
 };
 
 export const checkAndTrackRegistration = async (deviceId: string) => {

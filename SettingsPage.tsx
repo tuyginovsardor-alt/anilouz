@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ToggleSwitch } from './components/ToggleSwitch';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, updateUserProfile, updateUserPassword, updateUserEmail } from './services/dbService';
+import { clearAppCache } from './services/cacheService'; // Import cache clear function
 import { UserProfile } from './types';
 import { useNotification } from './hooks/useNotification';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -137,9 +138,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
     }
 
     const clearCache = () => {
-        localStorage.removeItem('anilo_device_id'); 
-        // Keep auth tokens, clear other stuff if needed
-        addNotification({ type: 'success', title: 'Tozalandi', message: 'Kesh xotira tozalandi.' });
+        // Local storage device ID ni saqlab qolamiz
+        const deviceId = localStorage.getItem('anilo_device_id');
+        
+        clearAppCache(); // Clear new caching system
+        
+        // Restore essential keys if needed
+        if (deviceId) localStorage.setItem('anilo_device_id', deviceId);
+        
+        addNotification({ type: 'success', title: 'Tozalandi', message: 'Kesh xotira tozalandi. Sahifa yangilanadi.' });
+        setTimeout(() => window.location.reload(), 1000);
     };
 
     const handleDeleteAccount = async () => {
@@ -231,7 +239,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
                     <SettingsItem 
                         icon={<HardDrive size={18}/>} 
                         label="Keshni tozalash" 
-                        value="4.2 MB"
+                        value="App Data"
                         onClick={clearCache}
                     />
                 </SettingsGroup>
