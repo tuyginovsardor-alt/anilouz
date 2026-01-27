@@ -8,7 +8,7 @@ import { useNotification } from './hooks/useNotification';
 import { VerifiedBadge } from './components/VerifiedBadge';
 import { 
     Phone, Info, AtSign, Calendar, Edit2, Camera, 
-    ArrowLeft, MoreVertical, Check, Clock, Wallet, ShieldCheck
+    ArrowLeft, MoreVertical, Check, Clock, Wallet
 } from 'lucide-react';
 import { Page } from './App';
 
@@ -142,8 +142,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
   if (loading && !profile) return <div className="flex justify-center py-20 bg-[#050505] min-h-screen"><LoadingSpinner /></div>;
 
   const isMyProfile = !viewUserId;
-  const bgColor = "#050505"; // Anilo Black
-  const cardColor = "#121212"; // Zinc-900
+  // Anilo Colors
+  const bgColor = "#050505"; 
+  const cardColor = "#121212"; 
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in font-sans bg-[#050505] text-gray-200">
@@ -151,9 +152,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
       <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
 
-      {/* --- HEADER (Transparent) --- */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-4 pointer-events-none">
-          <button onClick={() => onMainNavigate && onMainNavigate('dashboard')} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all pointer-events-auto border border-white/10">
+      {/* --- HEADER (Fixed & Properly Spaced) --- */}
+      {/* 
+          z-50: Ensure it's on top
+          pt-safe: Handles notch areas (if supported by environment CSS)
+          pointer-events-none on container: Lets clicks pass through to banner
+          pointer-events-auto on buttons: Re-enables clicking buttons
+      */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-4 pt-8 pointer-events-none">
+          <button onClick={() => onMainNavigate && onMainNavigate('dashboard')} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all pointer-events-auto border border-white/10 shadow-lg">
               <ArrowLeft size={24} />
           </button>
           
@@ -164,27 +171,28 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                           <Check size={24} />
                       </button>
                   ) : (
-                      <button onClick={() => setIsEditing(true)} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10">
+                      <button onClick={() => setIsEditing(true)} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 shadow-lg">
                           <Edit2 size={22} />
                       </button>
                   )
               )}
-              <button className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10">
+              <button className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 shadow-lg">
                   <MoreVertical size={24} />
               </button>
           </div>
       </div>
 
       {/* --- BANNER SECTION --- */}
-      <div className="relative h-60 w-full bg-zinc-900 group overflow-hidden">
+      <div className="relative h-64 w-full bg-zinc-900 group overflow-hidden">
           {profile?.banner_url ? (
-              <img src={profile.banner_url} alt="Cover" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700" />
+              <img src={profile.banner_url} alt="Cover" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" />
           ) : (
-              <div className="w-full h-full bg-gradient-to-br from-zinc-900 via-black to-zinc-900 flex items-center justify-center">
+              <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-[#050505] flex items-center justify-center">
                   <div className="w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
               </div>
           )}
           
+          {/* Gradient Overlay for Text Readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-black/30"></div>
 
           {/* Banner Edit Button */}
@@ -192,18 +200,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
               <button 
                 onClick={handleBannerClick}
                 disabled={isUploadingBanner}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm border border-white/20 hover:scale-110"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm border border-white/20 hover:scale-110 pointer-events-auto"
               >
                   {isUploadingBanner ? <LoadingSpinner /> : <Camera size={24} />}
               </button>
           )}
       </div>
 
-      {/* --- AVATAR & NAME SECTION (Overlapping) --- */}
+      {/* --- AVATAR & NAME SECTION (Overlapping Banner) --- */}
       <div className="px-4 -mt-16 relative z-10 flex flex-col items-center">
           {/* Avatar */}
           <div className="relative group cursor-pointer" onClick={() => isMyProfile && avatarInputRef.current?.click()}>
-              <div className="w-32 h-32 rounded-full p-1.5 bg-[#050505] shadow-2xl">
+              <div className="w-32 h-32 rounded-full p-1 bg-[#050505] shadow-2xl">
                   <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 border-2 border-zinc-800 relative">
                       {profile?.avatar_url ? (
                           <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
@@ -227,11 +235,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                   </div>
               </div>
               {/* Online Status Badge */}
-              <div className={`absolute bottom-3 right-3 w-5 h-5 rounded-full border-4 border-[#050505] ${profile?.is_online ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+              <div className={`absolute bottom-2 right-2 w-5 h-5 rounded-full border-4 border-[#050505] ${profile?.is_online ? 'bg-green-500' : 'bg-gray-500'}`}></div>
           </div>
 
           {/* Name & Role */}
-          <div className="mt-4 text-center w-full">
+          <div className="mt-3 text-center w-full">
               {isEditing ? (
                   <input 
                     type="text" 
@@ -250,45 +258,38 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                   </h1>
               )}
               
-              <div className="flex items-center justify-center gap-2 mt-2">
-                  <span className="px-3 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                      {profile?.role === 'user' ? 'Foydalanuvchi' : profile?.role}
-                  </span>
-                  {profile?.is_online && <span className="text-[10px] font-bold text-green-500 uppercase tracking-widest">Online</span>}
-              </div>
+              <p className="text-gray-400 text-sm mt-1 font-medium">
+                  {profile?.is_online ? <span className="text-green-500">online</span> : 'yaqinda kirgan'}
+              </p>
           </div>
       </div>
 
-      {/* --- INFO LIST SECTION --- */}
+      {/* --- INFO LIST SECTION (Telegram Style Card) --- */}
       <div className="px-4 mt-8">
-          <div className="bg-[#121212] border border-white/5 rounded-3xl overflow-hidden">
+          <div className="bg-[#121212] border border-white/5 rounded-2xl overflow-hidden">
               
-              {/* Bio Field (Highlight) */}
-              <div className="p-5 border-b border-white/5 bg-gradient-to-r from-orange-900/10 to-transparent">
-                  <div className="flex items-start gap-4">
-                      <div className="mt-1 p-2 bg-orange-500/10 rounded-xl text-orange-500">
-                          <Info size={20} />
-                      </div>
-                      <div className="flex-1">
-                          <p className="text-xs font-black uppercase tracking-widest text-orange-500 mb-2">Haqida (Bio)</p>
-                          {isEditing ? (
-                              <textarea 
-                                value={editForm.bio}
-                                onChange={e => setEditForm({...editForm, bio: e.target.value})}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-orange-500 resize-none h-24"
-                                placeholder="O'zingiz haqingizda qisqacha..."
-                              />
-                          ) : (
-                              <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
-                                  {profile?.bio || "Ma'lumot kiritilmagan."}
-                              </p>
-                          )}
-                      </div>
+              {/* Bio Field */}
+              <div className="flex items-start p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <div className="mr-5 text-zinc-500 mt-1"><Info size={22} /></div>
+                  <div className="flex-1">
+                      {isEditing ? (
+                          <textarea 
+                            value={editForm.bio}
+                            onChange={e => setEditForm({...editForm, bio: e.target.value})}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-white text-base outline-none focus:border-orange-500 resize-none h-20"
+                            placeholder="O'zingiz haqingizda (Bio)..."
+                          />
+                      ) : (
+                          <p className="text-white text-base leading-relaxed whitespace-pre-wrap">
+                              {profile?.bio || "Ma'lumot kiritilmagan."}
+                          </p>
+                      )}
+                      <p className="text-zinc-500 text-xs mt-1">Haqida (Bio)</p>
                   </div>
               </div>
 
-              {/* Other Info */}
-              <div className="flex items-center p-5 border-b border-white/5 hover:bg-white/5 transition-colors">
+              {/* Phone Info */}
+              <div className="flex items-center p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500"><Phone size={22} /></div>
                   <div className="flex-1">
                       {isEditing ? (
@@ -300,13 +301,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                             placeholder="+998 90 123 45 67"
                           />
                       ) : (
-                          <p className="text-blue-400 text-base font-medium font-mono">{profile?.phone || '---'}</p>
+                          <p className="text-blue-400 text-base font-medium font-mono">{profile?.phone || 'Kiritilmagan'}</p>
                       )}
-                      <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mt-1">Mobil raqam</p>
+                      <p className="text-zinc-500 text-xs mt-1">Mobil raqam</p>
                   </div>
               </div>
 
-              <div className="flex items-center p-5 border-b border-white/5 hover:bg-white/5 transition-colors">
+              {/* Username Info */}
+              <div className="flex items-center p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500"><AtSign size={22} /></div>
                   <div className="flex-1">
                       {isEditing ? (
@@ -318,17 +320,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                             placeholder="username"
                           />
                       ) : (
-                          <p className="text-white text-base font-medium">@{profile?.username || 'username'}</p>
+                          <p className="text-blue-400 text-base font-medium">@{profile?.username || 'username'}</p>
                       )}
-                      <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mt-1">Username</p>
+                      <p className="text-zinc-500 text-xs mt-1">Foydalanuvchi nomi</p>
                   </div>
               </div>
 
-              <div className="flex items-center p-5 hover:bg-white/5 transition-colors">
+              {/* Date Info */}
+              <div className="flex items-center p-4 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500"><Calendar size={22} /></div>
                   <div className="flex-1">
                       <p className="text-white text-base font-medium">{new Date(profile?.created_at || Date.now()).toLocaleDateString()}</p>
-                      <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mt-1">Ro'yxatdan o'tgan sana</p>
+                      <p className="text-zinc-500 text-xs mt-1">Ro'yxatdan o'tgan sana</p>
                   </div>
               </div>
           </div>

@@ -18,7 +18,7 @@ export interface UserProfile {
   email_notifications: boolean;
   push_notifications: boolean;
   language: string;
-  bio?: string;
+  bio?: string; // Added bio
   fans_count?: number;
   is_online?: boolean;
   last_active?: string;
