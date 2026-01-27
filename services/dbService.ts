@@ -220,6 +220,7 @@ export const uploadFile = async (file: File, bucket: string): Promise<string> =>
 export const uploadPoster = (file: File) => uploadFile(file, 'posters');
 export const uploadVideo = (file: File) => uploadFile(file, 'videos');
 export const uploadAvatar = (file: File) => uploadFile(file, 'avatars');
+export const uploadBanner = (file: File) => uploadFile(file, 'posters'); // Reuse posters bucket for profile banners
 
 export const getFandubChannels = async (userId?: string): Promise<FandubChannel[]> => {
     try {

@@ -1,18 +1,16 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from './services/supabaseClient';
-import { getUserProfile, getUserHistory, updateUserProfile, uploadAvatar } from './services/dbService';
+import { getUserProfile, getUserHistory, updateUserProfile, uploadAvatar, uploadBanner } from './services/dbService';
 import { UserProfile, Movie } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
 import { VerifiedBadge } from './components/VerifiedBadge';
 import { 
     Phone, Info, AtSign, Calendar, Edit2, Camera, 
-    ArrowLeft, MoreVertical, Check, Image as ImageIcon,
-    Clock, Wallet
+    ArrowLeft, MoreVertical, Check, Clock, Wallet, ShieldCheck
 } from 'lucide-react';
 import { Page } from './App';
-import { MovieCard } from './components/MovieCard';
 
 interface ProfilePageProps {
     viewUserId?: string | null;
@@ -27,8 +25,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
 
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   
-  // Telegram style fields
   const [editForm, setEditForm] = useState({ 
       full_name: '', 
       username: '', 
@@ -37,7 +35,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
   });
   
   const [activeTab, setActiveTab] = useState<'history' | 'saved'>('history');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadData(); }, [viewUserId]);
 
@@ -68,7 +68,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
 
   const handleSave = async () => {
       if (!profile) return;
-      // Basic validation
       if (!editForm.full_name.trim()) return addNotification({ type: 'warning', title: 'Xatolik', message: 'Ism kiritish shart' });
 
       setLoading(true);
@@ -82,17 +81,46 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       } finally { setLoading(false); }
   };
 
-  const handleAvatarClick = () => {
-      if (!viewUserId && isEditing) fileInputRef.current?.click();
-      else if (!viewUserId && !isEditing) {
-          // Just show photo preview logic if needed, or trigger edit
-          // For now, allow upload only in edit mode or always? 
-          // Telegram allows changing photo anytime.
-          fileInputRef.current?.click(); 
+  const hasBannerPermission = () => {
+      if (!profile) return false;
+      const allowedRoles = ['premium', 'admin', 'owner', 'fandub'];
+      // Check subscription too
+      const hasSub = profile.subscription_end_at && new Date(profile.subscription_end_at) > new Date();
+      return allowedRoles.includes(profile.role) || hasSub;
+  };
+
+  const handleBannerClick = () => {
+      if (!isEditing && viewUserId) return; // Viewing other profile
+      if (viewUserId) return; // Viewing other profile
+
+      if (hasBannerPermission()) {
+          bannerInputRef.current?.click();
+      } else {
+          if (window.confirm("Banner o'rnatish uchun Premium obuna kerak. Hoziroq xarid qilasizmi?")) {
+              onMainNavigate?.('shop'); // Or 'plans' if available as a main page, likely inside dashboard/shop context
+          }
       }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !profile) return;
+
+      setIsUploadingBanner(true);
+      try {
+          const publicUrl = await uploadBanner(file);
+          await updateUserProfile(profile.id, { banner_url: publicUrl });
+          setProfile({ ...profile, banner_url: publicUrl });
+          addNotification({ type: 'success', title: 'Banner Yangilandi', message: 'Profil ko\'rinishi o\'zgardi.' });
+      } catch (error: any) {
+          addNotification({ type: 'error', title: 'Xatolik', message: error.message });
+      } finally {
+          setIsUploadingBanner(false);
+          if (bannerInputRef.current) bannerInputRef.current.value = '';
+      }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file || !profile) return;
 
@@ -101,225 +129,264 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
           const publicUrl = await uploadAvatar(file);
           await updateUserProfile(profile.id, { avatar_url: publicUrl });
           setProfile({ ...profile, avatar_url: publicUrl });
-          addNotification({ type: 'success', title: 'Muvaffaqiyatli', message: 'Profil rasmi yangilandi.' });
+          addNotification({ type: 'success', title: 'Rasm Yangilandi', message: 'Profil rasmi o\'zgardi.' });
           document.dispatchEvent(new Event('profileUpdated'));
       } catch (error: any) {
-          addNotification({ type: 'error', title: 'Yuklashda xato', message: error.message });
+          addNotification({ type: 'error', title: 'Xatolik', message: error.message });
       } finally {
           setIsUploadingAvatar(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
+          if (avatarInputRef.current) avatarInputRef.current.value = '';
       }
   };
 
-  if (loading && !profile) return <div className="flex justify-center py-20 bg-[#1c1c1d] min-h-screen"><LoadingSpinner /></div>;
+  if (loading && !profile) return <div className="flex justify-center py-20 bg-[#050505] min-h-screen"><LoadingSpinner /></div>;
 
   const isMyProfile = !viewUserId;
-  const bgColor = "#1c1c1d"; // Telegram Dark Background
-  const cardColor = "#2c2c2e"; // Telegram Card/Section Background
+  const bgColor = "#050505"; // Anilo Black
+  const cardColor = "#121212"; // Zinc-900
 
   return (
-    <div className="min-h-screen pb-20 animate-fade-in font-sans" style={{ backgroundColor: bgColor }}>
+    <div className="min-h-screen pb-20 animate-fade-in font-sans bg-[#050505] text-gray-200">
       
-      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+      <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
+      <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
 
-      {/* --- HEADER (Telegram Style) --- */}
-      <div className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-[#1c1c1d]/90 backdrop-blur-md">
-          <button onClick={() => onMainNavigate && onMainNavigate('dashboard')} className="p-2 -ml-2 text-white hover:bg-white/10 rounded-full transition-colors">
+      {/* --- HEADER (Transparent) --- */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-4 pointer-events-none">
+          <button onClick={() => onMainNavigate && onMainNavigate('dashboard')} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all pointer-events-auto border border-white/10">
               <ArrowLeft size={24} />
           </button>
           
-          <div className="flex gap-4 text-white">
+          <div className="flex gap-3 pointer-events-auto">
               {isMyProfile && (
                   isEditing ? (
-                      <button onClick={handleSave} className="p-2 text-blue-400 hover:bg-white/10 rounded-full transition-colors">
+                      <button onClick={handleSave} className="p-2.5 bg-orange-600 rounded-full text-white hover:bg-orange-500 transition-all shadow-lg shadow-orange-600/30">
                           <Check size={24} />
                       </button>
                   ) : (
-                      <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                      <button onClick={() => setIsEditing(true)} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10">
                           <Edit2 size={22} />
                       </button>
                   )
               )}
-              <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <button className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10">
                   <MoreVertical size={24} />
               </button>
           </div>
       </div>
 
-      {/* --- AVATAR & NAME SECTION --- */}
-      <div className="flex flex-col items-center pt-2 pb-8">
-          <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-black border border-white/5 relative">
-                  {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-4xl font-bold">
-                          {profile?.full_name?.charAt(0) || 'U'}
-                      </div>
-                  )}
-                  
-                  {isUploadingAvatar && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <LoadingSpinner />
-                      </div>
-                  )}
-                  
-                  {isMyProfile && (
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                          <Camera className="text-white w-8 h-8" />
-                      </div>
-                  )}
+      {/* --- BANNER SECTION --- */}
+      <div className="relative h-60 w-full bg-zinc-900 group overflow-hidden">
+          {profile?.banner_url ? (
+              <img src={profile.banner_url} alt="Cover" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700" />
+          ) : (
+              <div className="w-full h-full bg-gradient-to-br from-zinc-900 via-black to-zinc-900 flex items-center justify-center">
+                  <div className="w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
               </div>
+          )}
+          
+          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-black/30"></div>
+
+          {/* Banner Edit Button */}
+          {isMyProfile && (
+              <button 
+                onClick={handleBannerClick}
+                disabled={isUploadingBanner}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm border border-white/20 hover:scale-110"
+              >
+                  {isUploadingBanner ? <LoadingSpinner /> : <Camera size={24} />}
+              </button>
+          )}
+      </div>
+
+      {/* --- AVATAR & NAME SECTION (Overlapping) --- */}
+      <div className="px-4 -mt-16 relative z-10 flex flex-col items-center">
+          {/* Avatar */}
+          <div className="relative group cursor-pointer" onClick={() => isMyProfile && avatarInputRef.current?.click()}>
+              <div className="w-32 h-32 rounded-full p-1.5 bg-[#050505] shadow-2xl">
+                  <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 border-2 border-zinc-800 relative">
+                      {profile?.avatar_url ? (
+                          <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500 font-black text-4xl">
+                              {profile?.full_name?.charAt(0) || 'U'}
+                          </div>
+                      )}
+                      
+                      {isUploadingAvatar && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <LoadingSpinner />
+                          </div>
+                      )}
+                      
+                      {isMyProfile && (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                              <Camera className="text-white w-8 h-8" />
+                          </div>
+                      )}
+                  </div>
+              </div>
+              {/* Online Status Badge */}
+              <div className={`absolute bottom-3 right-3 w-5 h-5 rounded-full border-4 border-[#050505] ${profile?.is_online ? 'bg-green-500' : 'bg-gray-500'}`}></div>
           </div>
 
-          <div className="mt-4 text-center px-4 w-full">
+          {/* Name & Role */}
+          <div className="mt-4 text-center w-full">
               {isEditing ? (
                   <input 
                     type="text" 
                     value={editForm.full_name}
                     onChange={e => setEditForm({...editForm, full_name: e.target.value})}
-                    className="bg-transparent border-b border-blue-500 text-center text-2xl font-bold text-white w-full outline-none pb-1"
+                    className="bg-transparent border-b border-orange-500 text-center text-2xl font-black text-white w-full outline-none pb-1 placeholder-zinc-600"
                     placeholder="Ism Familiya"
                     autoFocus
                   />
               ) : (
-                  <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+                  <h1 className="text-2xl font-black text-white flex items-center justify-center gap-2 uppercase tracking-tight">
                       {profile?.full_name || 'Foydalanuvchi'}
-                      {(['admin', 'owner', 'dub'].includes(profile?.role || '')) && (
+                      {(['admin', 'owner', 'dub', 'premium'].includes(profile?.role || '')) && (
                           <VerifiedBadge type="gold" className="w-5 h-5" />
                       )}
                   </h1>
               )}
               
-              <p className="text-gray-400 text-sm mt-1">
-                  {profile?.is_online ? <span className="text-blue-400">online</span> : 'yaqinda kirgan'}
-              </p>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                  <span className="px-3 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                      {profile?.role === 'user' ? 'Foydalanuvchi' : profile?.role}
+                  </span>
+                  {profile?.is_online && <span className="text-[10px] font-bold text-green-500 uppercase tracking-widest">Online</span>}
+              </div>
           </div>
       </div>
 
       {/* --- INFO LIST SECTION --- */}
-      <div className="mx-0 md:mx-4 mb-6">
-          <div className="rounded-none md:rounded-xl overflow-hidden" style={{ backgroundColor: cardColor }}>
+      <div className="px-4 mt-8">
+          <div className="bg-[#121212] border border-white/5 rounded-3xl overflow-hidden">
               
-              {/* Phone */}
-              <div className="flex items-center p-4 border-b border-[#3a3a3c] hover:bg-white/5 transition-colors">
-                  <div className="mr-5 text-gray-400"><Phone size={22} /></div>
+              {/* Bio Field (Highlight) */}
+              <div className="p-5 border-b border-white/5 bg-gradient-to-r from-orange-900/10 to-transparent">
+                  <div className="flex items-start gap-4">
+                      <div className="mt-1 p-2 bg-orange-500/10 rounded-xl text-orange-500">
+                          <Info size={20} />
+                      </div>
+                      <div className="flex-1">
+                          <p className="text-xs font-black uppercase tracking-widest text-orange-500 mb-2">Haqida (Bio)</p>
+                          {isEditing ? (
+                              <textarea 
+                                value={editForm.bio}
+                                onChange={e => setEditForm({...editForm, bio: e.target.value})}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-orange-500 resize-none h-24"
+                                placeholder="O'zingiz haqingizda qisqacha..."
+                              />
+                          ) : (
+                              <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
+                                  {profile?.bio || "Ma'lumot kiritilmagan."}
+                              </p>
+                          )}
+                      </div>
+                  </div>
+              </div>
+
+              {/* Other Info */}
+              <div className="flex items-center p-5 border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <div className="mr-5 text-zinc-500"><Phone size={22} /></div>
                   <div className="flex-1">
                       {isEditing ? (
                           <input 
                             type="text" 
                             value={editForm.phone}
                             onChange={e => setEditForm({...editForm, phone: e.target.value})}
-                            className="bg-transparent text-white text-base w-full outline-none border-b border-blue-500"
+                            className="bg-transparent text-white text-base w-full outline-none border-b border-orange-500"
                             placeholder="+998 90 123 45 67"
                           />
                       ) : (
-                          <p className="text-blue-400 text-base">{profile?.phone || 'Kiritilmagan'}</p>
+                          <p className="text-blue-400 text-base font-medium font-mono">{profile?.phone || '---'}</p>
                       )}
-                      <p className="text-gray-500 text-xs mt-0.5">Mobil raqam</p>
+                      <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mt-1">Mobil raqam</p>
                   </div>
               </div>
 
-              {/* Bio */}
-              <div className="flex items-center p-4 border-b border-[#3a3a3c] hover:bg-white/5 transition-colors">
-                  <div className="mr-5 text-gray-400"><Info size={22} /></div>
-                  <div className="flex-1">
-                      {isEditing ? (
-                          <textarea 
-                            value={editForm.bio}
-                            onChange={e => setEditForm({...editForm, bio: e.target.value})}
-                            className="bg-transparent text-white text-base w-full outline-none border-b border-blue-500 resize-none h-10"
-                            placeholder="O'zingiz haqingizda..."
-                          />
-                      ) : (
-                          <p className="text-white text-base whitespace-pre-wrap">{profile?.bio || 'Tarjimayi hol mavjud emas'}</p>
-                      )}
-                      <p className="text-gray-500 text-xs mt-0.5">Tarjimayi hol</p>
-                  </div>
-              </div>
-
-              {/* Username */}
-              <div className="flex items-center p-4 border-b border-[#3a3a3c] hover:bg-white/5 transition-colors">
-                  <div className="mr-5 text-gray-400"><AtSign size={22} /></div>
+              <div className="flex items-center p-5 border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <div className="mr-5 text-zinc-500"><AtSign size={22} /></div>
                   <div className="flex-1">
                       {isEditing ? (
                           <input 
                             type="text" 
                             value={editForm.username}
                             onChange={e => setEditForm({...editForm, username: e.target.value})}
-                            className="bg-transparent text-white text-base w-full outline-none border-b border-blue-500"
+                            className="bg-transparent text-white text-base w-full outline-none border-b border-orange-500"
                             placeholder="username"
                           />
                       ) : (
-                          <p className="text-blue-400 text-base">@{profile?.username || 'username'}</p>
+                          <p className="text-white text-base font-medium">@{profile?.username || 'username'}</p>
                       )}
-                      <p className="text-gray-500 text-xs mt-0.5">Foydalanuvchi nomi</p>
+                      <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mt-1">Username</p>
                   </div>
               </div>
 
-              {/* Date */}
-              <div className="flex items-center p-4 hover:bg-white/5 transition-colors">
-                  <div className="mr-5 text-gray-400"><Calendar size={22} /></div>
+              <div className="flex items-center p-5 hover:bg-white/5 transition-colors">
+                  <div className="mr-5 text-zinc-500"><Calendar size={22} /></div>
                   <div className="flex-1">
-                      <p className="text-white text-base">{new Date(profile?.created_at || Date.now()).toLocaleDateString()}</p>
-                      <p className="text-gray-500 text-xs mt-0.5">Ro'yxatdan o'tgan sana</p>
+                      <p className="text-white text-base font-medium">{new Date(profile?.created_at || Date.now()).toLocaleDateString()}</p>
+                      <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mt-1">Ro'yxatdan o'tgan sana</p>
                   </div>
               </div>
           </div>
       </div>
 
-      {/* --- TABS (POSTS / MEDIA STYLE) --- */}
-      <div className="mt-4">
-          <div className="flex border-b border-[#3a3a3c] bg-[#1c1c1d]">
+      {/* --- TABS (History & Wallet) --- */}
+      <div className="mt-8">
+          <div className="flex border-b border-white/10 bg-[#050505] sticky top-16 z-20">
               <button 
                 onClick={() => setActiveTab('history')}
-                className={`flex-1 py-3 text-sm font-bold uppercase tracking-wide text-center relative ${activeTab === 'history' ? 'text-blue-400' : 'text-gray-500'}`}
+                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-center relative transition-colors ${activeTab === 'history' ? 'text-orange-500' : 'text-zinc-500 hover:text-white'}`}
               >
                   Ko'rilganlar
-                  {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>}
+                  {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>}
               </button>
               <button 
                 onClick={() => setActiveTab('saved')}
-                className={`flex-1 py-3 text-sm font-bold uppercase tracking-wide text-center relative ${activeTab === 'saved' ? 'text-blue-400' : 'text-gray-500'}`}
+                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-center relative transition-colors ${activeTab === 'saved' ? 'text-orange-500' : 'text-zinc-500 hover:text-white'}`}
               >
                   Moliya
-                  {activeTab === 'saved' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>}
+                  {activeTab === 'saved' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>}
               </button>
           </div>
 
-          <div className="min-h-[200px]">
+          <div className="min-h-[200px] bg-[#050505]">
               {activeTab === 'history' && (
                   <div className="grid grid-cols-3 gap-0.5">
                       {history.map(movie => (
-                          <div key={movie.id} className="aspect-[2/3] relative bg-gray-800 cursor-pointer">
-                              <img src={movie.posterUrl} className="w-full h-full object-cover" alt="" />
-                              <div className="absolute inset-0 bg-black/20 flex items-end p-1">
-                                  <span className="text-[10px] text-white font-bold drop-shadow-md line-clamp-1">{movie.title}</span>
+                          <div key={movie.id} className="aspect-[2/3] relative bg-zinc-900 cursor-pointer group overflow-hidden">
+                              <img src={movie.posterUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100" alt="" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                              <div className="absolute bottom-0 left-0 right-0 p-2">
+                                  <span className="text-[9px] text-white font-black uppercase tracking-wider line-clamp-1 drop-shadow-md">{movie.title}</span>
                               </div>
                           </div>
                       ))}
                       {history.length === 0 && (
-                          <div className="col-span-3 py-10 flex flex-col items-center text-gray-500">
-                              <Clock size={40} className="mb-2 opacity-50"/>
-                              <p className="text-sm">Tarix bo'sh</p>
+                          <div className="col-span-3 py-20 flex flex-col items-center text-zinc-600">
+                              <Clock size={48} className="mb-4 opacity-50"/>
+                              <p className="text-xs font-bold uppercase tracking-widest">Tarix bo'sh</p>
                           </div>
                       )}
                   </div>
               )}
 
               {activeTab === 'saved' && (
-                  <div className="p-4">
-                      <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-6 text-white shadow-lg mb-4">
-                          <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">Mening Balansim</p>
-                          <h2 className="text-3xl font-bold">{(profile?.balance || 0).toLocaleString()} <span className="text-lg">UZS</span></h2>
+                  <div className="p-6">
+                      <div className="bg-gradient-to-br from-zinc-900 to-black rounded-[2rem] p-8 text-white shadow-2xl border border-white/10 relative overflow-hidden mb-6">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                          
+                          <p className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.3em] mb-2">Asosiy Balans</p>
+                          <h2 className="text-4xl font-black tracking-tight">{(profile?.balance || 0).toLocaleString()} <span className="text-lg text-orange-500 font-bold">UZS</span></h2>
                       </div>
                       
-                      <div className="space-y-2">
-                          <button className="w-full py-3 bg-[#2c2c2e] rounded-lg text-blue-400 font-bold text-sm flex items-center justify-center gap-2">
-                              <Wallet size={18} />
-                              Hisobni to'ldirish
-                          </button>
-                      </div>
+                      <button className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-zinc-200 transition-all active:scale-95">
+                          <Wallet size={18} />
+                          Hisobni to'ldirish
+                      </button>
                   </div>
               )}
           </div>

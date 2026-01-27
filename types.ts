@@ -7,6 +7,7 @@ export interface UserProfile {
   full_name: string | null;
   username: string | null;
   avatar_url: string | null;
+  banner_url?: string | null; // Added banner
   role: UserRole;
   balance: number;
   phone: string | null;
