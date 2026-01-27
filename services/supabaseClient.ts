@@ -5,20 +5,29 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config';
 const finalUrl = SUPABASE_URL || "https://placeholder-project.supabase.co";
 const finalKey = SUPABASE_ANON_KEY || "placeholder-key";
 
-// Custom fetch with Retry Logic (Aloqa uzilsa qayta ulanish uchun)
-const fetchWithRetry = async (url: any, options: any, retries = 3, backoff = 300) => {
+// Custom fetch with Aggressive Retry Logic (Mobil tarmoqlar uchun kuchaytirilgan)
+const fetchWithRetry = async (url: any, options: any, retries = 5, backoff = 500) => {
     try {
         const response = await fetch(url, options);
-        // Agar 5xx (Server xatosi) yoki 408 (Timeout) bo'lsa, xatolik deb hisoblab qayta urinamiz
-        if (!response.ok && (response.status >= 500 || response.status === 408)) {
-            throw new Error(`Retrying due to ${response.status}`);
+        
+        // 502, 503, 504 (Bad Gateway/Service Unavailable) yoki 408 (Timeout) bo'lsa qayta urinamiz
+        if (!response.ok && (response.status === 502 || response.status === 503 || response.status === 504 || response.status === 408)) {
+            throw new Error(`Server error: ${response.status}`);
         }
+        
         return response;
-    } catch (error) {
+    } catch (error: any) {
+        // Agar urinishlar soni qolgan bo'lsa
         if (retries > 0) {
+            // Tarmoq xatosi (Internet uzilishi) yoki Server xatosi bo'lsa kutib turamiz
+            // console.warn(`Retrying connection... Attempts left: ${retries}`);
+            
             await new Promise(resolve => setTimeout(resolve, backoff));
-            return fetchWithRetry(url, options, retries - 1, backoff * 2); // Exponential backoff
+            
+            // Keyingi urinishda vaqtni oshiramiz (Exponential backoff: 500ms -> 750ms -> 1125ms...)
+            return fetchWithRetry(url, options, retries - 1, backoff * 1.5); 
         }
+        // Urinishlar tugadi, xatoni qaytaramiz
         throw error;
     }
 };
@@ -44,5 +53,8 @@ export const supabase = createClient<any>(finalUrl, finalKey, {
         params: {
             eventsPerSecond: 10,
         },
+        // Avtomatik qayta ulanishni yoqish
+        // timeout qiymatini oshiramiz
+        timeout: 20000, 
     },
 });

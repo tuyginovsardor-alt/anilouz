@@ -21,7 +21,7 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff } from 'lucide-react';
 import { getAppConfig, getUserProfile, recordTsPaySuccess } from './services/dbService';
 import { checkTsPayStatus } from './services/tspayService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
@@ -44,6 +44,7 @@ const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine); // Network status
   
   const [loaderLogo, setLoaderLogo] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -82,7 +83,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initApp = async () => {
-        const safetyTimeout = setTimeout(() => setIsAppReady(true), 3000);
+        const safetyTimeout = setTimeout(() => setIsAppReady(true), 5000); // 5 sec timeout for slow networks
 
         try {
             getAppConfig().then(config => {
@@ -91,7 +92,7 @@ const App: React.FC = () => {
             
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                setIsAuthenticated(true); // Sessiya borligini darhol aniqlash
+                setIsAuthenticated(true); 
                 refreshProfile().then(() => {
                     setPage('dashboard');
                 }).finally(() => {
@@ -124,10 +125,25 @@ const App: React.FC = () => {
         }
     });
 
+    // Online/Offline Listeners
+    const handleOnline = () => {
+        setIsOnline(true);
+        addNotification({ type: 'success', title: 'Aloqa tiklandi', message: 'Internet tarmog\'iga ulandingiz.' });
+        refreshProfile(); // Reload data when back online
+    };
+    const handleOffline = () => {
+        setIsOnline(false);
+        addNotification({ type: 'error', title: 'Aloqa uzildi', message: 'Internet aloqasi yo\'qolgan ko\'rinadi.' });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
     document.addEventListener('profileUpdated', refreshProfile);
 
     return () => {
         subscription.unsubscribe();
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
         document.removeEventListener('profileUpdated', refreshProfile);
     };
   }, []);
@@ -164,6 +180,14 @@ const App: React.FC = () => {
   return (
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
         <NotificationContainer />
+        
+        {/* Offline Banner */}
+        {!isOnline && (
+            <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest text-center py-1 z-[300] animate-fade-in flex items-center justify-center gap-2">
+                <WifiOff size={12} /> Internet aloqasi yo'q
+            </div>
+        )}
+
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505]">
           
           {!isPlayerActive && !activeVideoAd && page !== 'welcome' && (
