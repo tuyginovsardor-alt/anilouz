@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Movie, Episode } from './types';
 import { BackArrowIcon } from './components/icons/BackArrowIcon';
@@ -6,7 +8,7 @@ import { PlayIcon } from './components/icons/PlayIcon';
 import { PauseIcon } from './components/icons/PauseIcon';
 import { FullscreenEnterIcon } from './components/icons/FullscreenEnterIcon';
 import { getMovieEpisodes } from './services/dbService';
-import { Settings, X, Zap, Layers, Monitor, ChevronRight, Check, AlertCircle } from 'lucide-react';
+import { Settings, X, Zap, Layers, Monitor, ChevronRight, Check, AlertCircle, Play, BarChart2 } from 'lucide-react';
 
 interface VideoPlayerPageProps {
   movie: Movie;
@@ -97,7 +99,8 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
 
     const handleEpisodeChange = (ep: Episode) => {
         setCurrentEpisode(ep);
-        setShowEpisodesList(false);
+        // Don't close drawer immediately for better UX (like YouTube)
+        // setShowEpisodesList(false); 
         setIsPlaying(true); // Auto play next
     };
 
@@ -297,36 +300,74 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                         </div>
                     )}
 
-                    {/* EPISODES DRAWER (Bottom) */}
-                    <div className={`absolute bottom-0 left-0 right-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 z-50 transition-transform duration-300 rounded-t-[2rem] flex flex-col max-h-[70vh] ${showEpisodesList ? 'translate-y-0' : 'translate-y-full'}`}>
-                        <div className="flex justify-between items-center p-6 border-b border-white/5 bg-black/20">
-                            <div>
-                                <h3 className="text-white font-bold uppercase tracking-tight text-lg">Qismlar</h3>
-                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{episodes.length} ta epizod</p>
+                    {/* EPISODES DRAWER (YouTube Style - Bottom Sheet) */}
+                    <div className={`absolute bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-white/10 z-50 transition-transform duration-300 rounded-t-2xl flex flex-col h-[70vh] shadow-2xl ${showEpisodesList ? 'translate-y-0' : 'translate-y-full'}`}>
+                        {/* Header */}
+                        <div className="flex justify-between items-center px-4 py-3 border-b border-white/5 bg-[#0f0f0f] sticky top-0 z-10 rounded-t-2xl">
+                            <div className="flex flex-col">
+                                <h3 className="text-white font-bold text-sm sm:text-base">Qismlar ro'yxati</h3>
+                                <p className="text-[10px] text-zinc-400 font-medium">"{movie.title}"</p>
                             </div>
-                            <button onClick={() => setShowEpisodesList(false)} className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all"><ChevronRight size={20} className="rotate-90"/></button>
+                            <button onClick={() => setShowEpisodesList(false)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-zinc-300">
+                                <X size={20}/>
+                            </button>
                         </div>
                         
-                        <div className="overflow-y-auto p-4 custom-scrollbar">
+                        {/* List */}
+                        <div className="flex-1 overflow-y-auto p-2 custom-scrollbar bg-[#0f0f0f]">
                             {episodes.length === 0 ? (
-                                <p className="text-center text-zinc-500 py-10 text-xs uppercase font-bold">Qismlar topilmadi</p>
+                                <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
+                                    <Layers size={32} />
+                                    <p className="text-xs uppercase font-bold">Qismlar topilmadi</p>
+                                </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                    {episodes.map((ep, i) => (
-                                        <button 
-                                            key={ep.id}
-                                            onClick={() => handleEpisodeChange(ep)}
-                                            className={`flex items-center gap-4 p-3 rounded-xl text-left transition-all border ${currentEpisode?.id === ep.id ? 'bg-orange-600/20 border-orange-500/50' : 'bg-white/5 border-transparent hover:bg-white/10'}`}
-                                        >
-                                            <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center text-zinc-500 font-black text-sm flex-shrink-0">
-                                                {i + 1}
+                                <div className="space-y-2">
+                                    {episodes.map((ep, i) => {
+                                        const isActive = currentEpisode?.id === ep.id;
+                                        return (
+                                            <div 
+                                                key={ep.id}
+                                                onClick={() => handleEpisodeChange(ep)}
+                                                className={`flex gap-3 p-2 rounded-xl cursor-pointer transition-all group ${isActive ? 'bg-[#262626] border border-white/10' : 'hover:bg-[#1f1f1f] border border-transparent'}`}
+                                            >
+                                                {/* Thumbnail Section */}
+                                                <div className="relative w-32 sm:w-40 aspect-video rounded-lg overflow-hidden shrink-0 bg-black">
+                                                    <img 
+                                                        src={movie.posterUrl} 
+                                                        className={`w-full h-full object-cover transition-transform duration-500 ${isActive ? 'opacity-60 scale-105' : 'opacity-80 group-hover:opacity-100'}`} 
+                                                        alt={ep.title}
+                                                    />
+                                                    
+                                                    {/* Duration Badge (Mocked) */}
+                                                    <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-bold px-1 rounded">
+                                                        24:00
+                                                    </span>
+
+                                                    {/* Playing Overlay */}
+                                                    {isActive && (
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <div className="flex items-end gap-0.5 h-3">
+                                                                <div className="w-1 bg-orange-500 animate-[bounce_1s_infinite] h-full"></div>
+                                                                <div className="w-1 bg-orange-500 animate-[bounce_1.2s_infinite] h-2/3"></div>
+                                                                <div className="w-1 bg-orange-500 animate-[bounce_0.8s_infinite] h-full"></div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Text Info Section */}
+                                                <div className="flex flex-col justify-center min-w-0 flex-1">
+                                                    <h4 className={`text-xs sm:text-sm font-bold line-clamp-2 leading-tight mb-1 ${isActive ? 'text-orange-400' : 'text-white'}`}>
+                                                        {ep.title}
+                                                    </h4>
+                                                    <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-medium">
+                                                        <span className="bg-white/5 px-1.5 py-0.5 rounded text-zinc-400 border border-white/5">{i + 1}-QISM</span>
+                                                        {isActive && <span className="text-orange-500 font-bold">Hozirda</span>}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="min-w-0">
-                                                <p className={`text-xs font-bold truncate ${currentEpisode?.id === ep.id ? 'text-orange-400' : 'text-white'}`}>{ep.title}</p>
-                                                {currentEpisode?.id === ep.id && <p className="text-[9px] text-orange-500/70 font-black uppercase tracking-wider mt-0.5">O'ynamoqda</p>}
-                                            </div>
-                                        </button>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
