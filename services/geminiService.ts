@@ -1,7 +1,6 @@
-import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
-import { Movie } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { GoogleGenAI, Type } from "@google/genai";
+import { Movie } from '../types';
 
 const API_TIMEOUT = 20000;
 
@@ -45,6 +44,7 @@ const parseGeminiResponse = (text: string): any => {
 
 export const getPopularMovies = async (): Promise<Movie[]> => {
     try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Provide a list of 12 highly-rated and popular anime series or movies. Include title, year, plot, posterUrl, genre, language, quality (HD/4K), and rating (0-5).`,
@@ -59,6 +59,7 @@ export const getPopularMovies = async (): Promise<Movie[]> => {
 
 export const searchMovies = async (query: string): Promise<Movie[]> => {
     try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Search for anime matching: "${query}". Provide title, year, plot, posterUrl, genre, language, quality, and rating.`,

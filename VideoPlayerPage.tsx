@@ -1,13 +1,12 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Movie, Episode } from './types';
 import { BackArrowIcon } from './components/icons/BackArrowIcon';
 import { PlayIcon } from './components/icons/PlayIcon';
 import { PauseIcon } from './components/icons/PauseIcon';
 import { FullscreenEnterIcon } from './components/icons/FullscreenEnterIcon';
-import { FullscreenExitIcon } from './components/icons/FullscreenExitIcon';
 import { getMovieEpisodes } from './services/dbService';
-import { Settings, X, Zap, Layers, Monitor, ChevronRight, Check, ShieldAlert } from 'lucide-react';
+import { Settings, X, Zap, Layers, Monitor, ChevronRight, Check, AlertCircle } from 'lucide-react';
 
 interface VideoPlayerPageProps {
   movie: Movie;
@@ -143,7 +142,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                 </div>
             ) : !playableSrc ? (
                 <div className="text-center p-10 max-w-sm">
-                    <ShieldAlert size={64} className="text-red-500 mx-auto mb-6" />
+                    <AlertCircle size={64} className="text-red-500 mx-auto mb-6" />
                     <h2 className="text-2xl font-black text-white uppercase mb-2">Video Topilmadi</h2>
                     <p className="text-zinc-500 text-xs mb-8">Ushbu anime uchun video manzili mavjud emas.</p>
                     <button onClick={onBack} className="w-full py-4 bg-white text-black font-black rounded-2xl uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all">Qaytish</button>

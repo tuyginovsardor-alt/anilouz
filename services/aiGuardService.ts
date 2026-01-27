@@ -1,8 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export interface AiGuardResult {
     allowed: boolean;
     analysis: string;
@@ -16,6 +14,9 @@ export interface AiGuardResult {
  */
 export const runAiServerManager = async (logContext: string): Promise<AiGuardResult | null> => {
     try {
+        // Initialize client lazily to avoid top-level env access issues
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Siz Anilo.uz anime portalining Xavfsizlik va Moderatsiya AI Guard tizimisiz. 
