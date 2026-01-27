@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { getAppConfig, updateAppConfig, getSocialLinks, addSocialLink, deleteSocialLink } from '../services/dbService';
 import { useNotification } from '../hooks/useNotification';
@@ -135,24 +139,47 @@ export const AdminSettings: React.FC = () => {
         }
     };
 
-    const sqlCode = `-- MUHIM: ARK (Cash Contest), PIN va boshqa sozlamalar uchun SQL
--- Bu kodni Supabase SQL Editor da yuriting
+    const sqlCode = `-- XAVFSIZ SQL KOD (MA'LUMOTLARNI O'CHIRMAYDI)
+-- Bu kod faqat yetishmayotgan narsalarni qo'shadi.
 
--- 1. ARK SETTINGS & SECURITY KEYS INIT
+-- 1. STORAGE BUCKETS (Fayl tizimi)
+-- "ON CONFLICT DO NOTHING" - Agar papka bor bo'lsa, unga tegmaydi.
+INSERT INTO storage.buckets (id, name, public) VALUES 
+('avatars', 'avatars', true),
+('posters', 'posters', true),
+('videos', 'videos', true),
+('assets', 'assets', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. SETTINGS (Sozlamalar)
+-- Agar sozlamalar avval kiritilgan bo'lsa, ularni o'zgartirmaydi.
 INSERT INTO public.ark_settings (key, value) VALUES 
 ('autopilot_config', '{"unit_views":10000,"revenue_per_unit":200000,"market_share_percent":45}'),
 ('market_schedule', '{}'),
 ('game_status', 'active')
 ON CONFLICT (key) DO NOTHING;
 
--- HIMOYA (Security) uchun config
 INSERT INTO public.app_config (key, value) VALUES 
-('admin_pin', '0000'), -- Default PIN
-('protected_routes', '[]'), -- Himoyalangan sahifalar ro'yxati
-('admin_recovery_codes', '[]') -- Qutqaruv kodlari (JSON array)
+('admin_pin', '0000'), 
+('protected_routes', '[]'),
+('admin_recovery_codes', '[]')
 ON CONFLICT (key) DO NOTHING;
 
--- 2. ARK ADS: Count views support
+-- 3. STORAGE POLICIES (Ruxsatlar)
+-- Policy larni yangilash xavfsiz, bu fayllarni o'chirmaydi.
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Upload" ON storage.objects;
+DROP POLICY IF EXISTS "Owner Delete" ON storage.objects;
+
+CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id IN ('avatars', 'posters', 'videos', 'assets') );
+CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT WITH CHECK ( auth.role() = 'authenticated' );
+CREATE POLICY "Owner Delete" ON storage.objects FOR DELETE USING ( auth.uid() = owner );
+
+-- 4. JADVALLARGA USTUN QO'SHISH (XAVFSIZ)
+-- Bu qism jadvallardagi ustunlarni tekshiradi. 
+-- Agar ustun (masalan 'view_count') yo'q bo'lsa, uni qo'shadi. Bor bo'lsa, tegmaydi.
+
+-- ark_ads jadvali uchun
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'ark_ads' AND column_name = 'view_count') THEN
@@ -160,7 +187,22 @@ BEGIN
     END IF;
 END $$;
 
--- 3. Tozalash va yangilash
+-- movies jadvali uchun (agar view_count yo'q bo'lsa)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'movies' AND column_name = 'view_count') THEN
+        ALTER TABLE public.movies ADD COLUMN view_count BIGINT DEFAULT 0;
+    END IF;
+END $$;
+
+-- ads jadvali uchun
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'ads' AND column_name = 'view_count') THEN
+        ALTER TABLE public.ads ADD COLUMN view_count BIGINT DEFAULT 0;
+    END IF;
+END $$;
+
 NOTIFY pgrst, 'reload config';`;
 
     const copySql = () => {
@@ -392,9 +434,11 @@ NOTIFY pgrst, 'reload config';`;
                         <div className="bg-red-900/20 p-4 rounded-lg border border-red-500/30 flex gap-3">
                             <Info className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                             <div className="text-sm text-red-200">
-                                <p className="font-bold mb-1">MUHIM:</p>
+                                <p className="font-bold mb-1">MUHIM (XAVFSIZ REJIM):</p>
                                 <p>
-                                    Agar ARK tizimi, Avtopilot yoki yangi ustunlar bilan muammo bo'lsa, ushbu kodni <b>Supabase SQL Editor</b> da yuriting.
+                                    Ushbu kod <b>mavjud ma'lumotlaringizni o'chirmaydi</b>. U faqat yangi funksiyalar uchun kerakli ustunlarni (view_count) va papkalarni (storage) tekshiradi va yo'q bo'lsa qo'shadi.
+                                    <br/>
+                                    Agar <b>"Bucket not found"</b> xatosi bo'lsa, buni Supabase SQL Editor da yuriting.
                                 </p>
                             </div>
                         </div>
