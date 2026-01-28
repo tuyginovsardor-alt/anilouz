@@ -212,7 +212,8 @@ const App: React.FC = () => {
 
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505]">
           
-          {!isPlayerActive && !activeVideoAd && page !== 'welcome' && (
+          {/* Header logic: Added !selectedMovie check to hide it on movie detail page */}
+          {!selectedMovie && !isPlayerActive && !activeVideoAd && page !== 'welcome' && (
             <Header 
               onNavigate={handleNavigation} 
               onDashboardNavigate={setDashboardPage}
