@@ -5,61 +5,100 @@ const CACHE_PREFIX = 'anilo_cache_';
 interface CacheItem<T> {
     data: T;
     expiry: number; // Timestamp
+    timestamp: number; // Created time for LRU (Least Recently Used) logic
 }
 
-// Keshga saqlash
+// 1. Keshni tozalash (Muddati o'tganlarni)
+export const pruneCache = (): void => {
+    try {
+        const now = new Date().getTime();
+        Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith(CACHE_PREFIX)) {
+                try {
+                    const itemStr = localStorage.getItem(key);
+                    if (itemStr) {
+                        const item: CacheItem<any> = JSON.parse(itemStr);
+                        // Agar muddati o'tgan bo'lsa, o'chiramiz
+                        if (now > item.expiry) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                } catch (e) {
+                    // Agar JSON buzilgan bo'lsa, o'chirib tashlaymiz
+                    localStorage.removeItem(key);
+                }
+            }
+        });
+    } catch (e) {
+        console.warn("Auto-prune error:", e);
+    }
+};
+
+// 2. Keshga saqlash (Xavfsiz)
 export const setCache = <T>(key: string, data: T, ttlMinutes: number = 60): void => {
     try {
-        const now = new Date();
+        const now = new Date().getTime();
         const item: CacheItem<T> = {
             data: data,
-            expiry: now.getTime() + ttlMinutes * 60 * 1000,
+            expiry: now + ttlMinutes * 60 * 1000,
+            timestamp: now
         };
         localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(item));
     } catch (e: any) {
         // Agar xotira to'lib qolsa (QuotaExceededError)
         if (e.name === 'QuotaExceededError' || e.code === 22) {
-            console.warn('LocalStorage to\'ldi. Eskilar tozalanmoqda...');
-            clearAppCache(); // Hammasini tozalab tashlaymiz
+            console.warn('LocalStorage to\'ldi. Tozalash boshlandi...');
+            
+            // A: Avval muddati o'tganlarni tozalaymiz
+            pruneCache();
+
             try {
-                // Qayta urinib ko'rish
+                // Qayta urinib ko'ramiz
                 localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
                     data: data,
-                    expiry: new Date().getTime() + ttlMinutes * 60 * 1000
+                    expiry: new Date().getTime() + ttlMinutes * 60 * 1000,
+                    timestamp: new Date().getTime()
                 }));
             } catch (retryError) {
-                console.error("Kesh saqlab bo'lmadi:", retryError);
+                // B: Agar hali ham joy yetmasa, butun 'anilo_' keshini tozalaymiz (Radikal yechim)
+                clearAppCache();
+                try {
+                    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
+                        data: data,
+                        expiry: new Date().getTime() + ttlMinutes * 60 * 1000,
+                        timestamp: new Date().getTime()
+                    }));
+                } catch (finalError) {
+                    console.error("Kesh saqlab bo'lmadi (Memory Full):", finalError);
+                }
             }
-        } else {
-            console.warn('LocalStorage xatosi:', e);
         }
     }
 };
 
-// Keshdan olish
+// 3. Keshdan olish
 export const getCache = <T>(key: string): T | null => {
     try {
         const itemStr = localStorage.getItem(CACHE_PREFIX + key);
         if (!itemStr) return null;
 
         const item: CacheItem<T> = JSON.parse(itemStr);
-        const now = new Date();
+        const now = new Date().getTime();
 
         // Agar muddati o'tgan bo'lsa, o'chirib tashlaymiz
-        if (now.getTime() > item.expiry) {
+        if (now > item.expiry) {
             localStorage.removeItem(CACHE_PREFIX + key);
             return null;
         }
 
         return item.data;
     } catch (e) {
-        // JSON parse xatosi bo'lsa, buzuq ma'lumotni o'chiramiz
         localStorage.removeItem(CACHE_PREFIX + key);
         return null;
     }
 };
 
-// Barcha keshlarni tozalash
+// 4. Barcha keshlarni tozalash (Faqat Anilo ga tegishlisini)
 export const clearAppCache = (): void => {
     try {
         Object.keys(localStorage).forEach((key) => {
@@ -67,6 +106,7 @@ export const clearAppCache = (): void => {
                 localStorage.removeItem(key);
             }
         });
+        console.log("Anilo kesh tozalandi.");
     } catch (e) {
         console.error("Kesh tozalashda xatolik:", e);
     }

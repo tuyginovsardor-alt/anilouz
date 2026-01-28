@@ -23,11 +23,12 @@ import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
 import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw } from 'lucide-react';
 import { getAppConfig, getUserProfile, recordTsPaySuccess } from './services/dbService';
+import { pruneCache } from './services/cacheService'; // Import pruneCache
 import { checkTsPayStatus } from './services/tspayService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
-import { PWAProvider } from './components/InstallPWA'; // Updated import
+import { PWAProvider } from './components/InstallPWA';
 
 export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
@@ -84,6 +85,9 @@ const App: React.FC = () => {
   };
 
   const initApp = async () => {
+      // 1. Clean up old cache on startup to prevent "Quota Exceeded"
+      pruneCache();
+
       setIsAppReady(false);
       setShowRetryButton(false);
       
