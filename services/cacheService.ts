@@ -16,8 +16,23 @@ export const setCache = <T>(key: string, data: T, ttlMinutes: number = 60): void
             expiry: now.getTime() + ttlMinutes * 60 * 1000,
         };
         localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(item));
-    } catch (e) {
-        console.warn('LocalStorage to\'ldi yoki xatolik:', e);
+    } catch (e: any) {
+        // Agar xotira to'lib qolsa (QuotaExceededError)
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            console.warn('LocalStorage to\'ldi. Eskilar tozalanmoqda...');
+            clearAppCache(); // Hammasini tozalab tashlaymiz
+            try {
+                // Qayta urinib ko'rish
+                localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
+                    data: data,
+                    expiry: new Date().getTime() + ttlMinutes * 60 * 1000
+                }));
+            } catch (retryError) {
+                console.error("Kesh saqlab bo'lmadi:", retryError);
+            }
+        } else {
+            console.warn('LocalStorage xatosi:', e);
+        }
     }
 };
 
@@ -38,15 +53,21 @@ export const getCache = <T>(key: string): T | null => {
 
         return item.data;
     } catch (e) {
+        // JSON parse xatosi bo'lsa, buzuq ma'lumotni o'chiramiz
+        localStorage.removeItem(CACHE_PREFIX + key);
         return null;
     }
 };
 
 // Barcha keshlarni tozalash
 export const clearAppCache = (): void => {
-    Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith(CACHE_PREFIX)) {
-            localStorage.removeItem(key);
-        }
-    });
+    try {
+        Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith(CACHE_PREFIX)) {
+                localStorage.removeItem(key);
+            }
+        });
+    } catch (e) {
+        console.error("Kesh tozalashda xatolik:", e);
+    }
 };
