@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Share, PlusSquare, X } from 'lucide-react';
+import { Share, PlusSquare, X, MoreVertical, Download } from 'lucide-react';
 
 interface PWAContextType {
     isInstallable: boolean;
@@ -21,6 +21,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [isIOS, setIsIOS] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
     const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+    const [showAndroidInstructions, setShowAndroidInstructions] = useState(false);
 
     useEffect(() => {
         // Check if already installed
@@ -52,7 +53,8 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 setDeferredPrompt(null);
             }
         } else {
-            alert("Ilovani brauzer menyusi (Uch nuqta -> Ilovani o'rnatish) orqali o'rnatishingiz mumkin.");
+            // Agar avtomatik oyna chiqmasa, qo'llanmani ko'rsatamiz
+            setShowAndroidInstructions(true);
         }
     };
 
@@ -94,12 +96,49 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
     );
 
-    // Floating Banner OLIB TASHLANDI - Dizayn buzilmasligi uchun
+    // Android/Desktop Manual Instructions Modal
+    const AndroidModal = () => (
+        <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-fade-in" onClick={() => setShowAndroidInstructions(false)}>
+            <div className="bg-[#1a1a1a] w-full max-w-sm rounded-[2rem] p-6 border border-white/10 relative" onClick={e => e.stopPropagation()}>
+                <button onClick={() => setShowAndroidInstructions(false)} className="absolute top-4 right-4 p-2 bg-white/5 rounded-full text-zinc-400">
+                    <X size={20} />
+                </button>
+                
+                <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/10 mb-4 shadow-2xl">
+                        <img src="/logo.png" alt="App Icon" className="w-full h-full object-cover" />
+                    </div>
+                    <h3 className="text-xl font-black text-white mb-2">Ilovani O'rnatish</h3>
+                    <p className="text-sm text-zinc-400 mb-6">Brauzer menyusi orqali o'rnatishingiz mumkin:</p>
+                    
+                    <div className="w-full space-y-4 text-left">
+                        <div className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
+                            <div className="text-zinc-400"><MoreVertical size={24} /></div>
+                            <div className="text-sm text-white">
+                                1. Yuqoridagi <span className="font-bold text-white">"Uch nuqta"</span> menyusini bosing.
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
+                            <div className="text-white"><Download size={24} /></div>
+                            <div className="text-sm text-white">
+                                2. <span className="font-bold">"Ilovani o'rnatish"</span> (Install App) ni tanlang.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="mt-6 text-center">
+                    <button onClick={() => setShowAndroidInstructions(false)} className="text-orange-500 font-bold text-sm">Tushundim</button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
-        <PWAContext.Provider value={{ isInstallable: (!!deferredPrompt || isIOS) && !isStandalone, isIOS, installApp }}>
+        <PWAContext.Provider value={{ isInstallable: !isStandalone, isIOS, installApp }}>
             {children}
             {showIOSInstructions && <IOSModal />}
+            {showAndroidInstructions && <AndroidModal />}
         </PWAContext.Provider>
     );
 };
