@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, CreditCard, History, Bookmark, 
     Settings, LogOut, ChevronRight, User, 
-    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic, Download
+    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic, Download, ExternalLink, Zap
 } from 'lucide-react';
 import { DashboardSubPage, Page, LegalDocType } from '../App';
 import { supabase } from '../services/supabaseClient';
@@ -76,7 +76,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         getActiveStories()
                     ]);
                     setProfile(p as UserProfile);
-                    // Faqat o'zimga tegishli faol istoryani qidiramiz
                     const mine = stories.filter(s => s.user_id === user.id);
                     setMyStory(mine);
                 }
@@ -108,59 +107,91 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
             <div className="relative w-full max-w-sm bg-[#0a0a0a] h-full border-l border-white/10 shadow-2xl flex flex-col overflow-hidden animate-slide-in-right">
                 
-                <div className="absolute top-4 right-4 z-20">
-                    <button onClick={onClose} className="p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all">
+                <div className="absolute top-4 right-4 z-50">
+                    <button onClick={onClose} className="p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10">
                         <X size={20} />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     
-                    <div className="pt-16 pb-8 px-6 flex flex-col items-center bg-gradient-to-b from-orange-900/20 to-transparent">
-                        <div 
-                            className="relative mb-4 group cursor-pointer" 
-                            onClick={() => {
-                                if (hasStory && isPrivileged) setShowStory(true);
-                                else handleAction('sub', 'profile');
-                            }}
-                        >
-                            <div className={`w-24 h-24 rounded-full p-1 transition-all duration-500 ${hasStory && isPrivileged ? 'bg-gradient-to-tr from-orange-500 via-pink-600 to-purple-600 animate-spin-slow' : 'bg-zinc-800'}`}>
-                                <div className="w-full h-full rounded-full bg-black overflow-hidden border-2 border-black">
-                                    {profile?.avatar_url ? (
-                                        <img src={profile.avatar_url} className="w-full h-full object-cover" alt="" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500"><User size={40}/></div>
-                                    )}
-                                </div>
-                            </div>
-                            {hasStory && isPrivileged && (
-                                <div className="absolute -top-1 -right-1 bg-orange-600 text-[8px] font-black px-2 py-0.5 rounded-full border border-black animate-bounce shadow-lg">
-                                    STORY
-                                </div>
+                    {/* --- PROFIL BANNER HUDUDI (Rasmda qizil bilan belgilangan maydon) --- */}
+                    <div className="relative pt-20 pb-10 px-6 flex flex-col items-center overflow-hidden">
+                        {/* Banner Fon Rasmi */}
+                        <div className="absolute inset-0 z-0">
+                            {profile?.banner_url ? (
+                                <img src={profile.banner_url} className="w-full h-full object-cover opacity-40 blur-[2px]" alt="" />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-orange-950 via-[#0a0a0a] to-black"></div>
                             )}
-                            {!hasStory && (
-                                <div className="absolute bottom-0 right-0 bg-white text-black p-1.5 rounded-full shadow-lg border-2 border-black">
-                                    <Edit3 size={14} />
+                            {/* Overlay Gradient (Rasmda ko'rsatilganidek pastki qismi qora bilan ulanadi) */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-black/20"></div>
+                            
+                            {/* Reklama Banneri Overlay (Agar foydalanuvchi Premium bo'lmasa yoki maxsus taklif uchun) */}
+                            {profile?.role === 'user' && (
+                                <div 
+                                    onClick={() => handleAction('sub', 'plans')}
+                                    className="absolute inset-x-4 top-4 h-10 bg-orange-600/20 backdrop-blur-md border border-orange-500/30 rounded-xl flex items-center justify-between px-4 cursor-pointer hover:bg-orange-600/30 transition-all group animate-pulse"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Zap size={14} className="text-orange-500 fill-orange-500" />
+                                        <span className="text-[9px] font-black text-white uppercase tracking-widest">Premiumga o'ting!</span>
+                                    </div>
+                                    <ExternalLink size={12} className="text-orange-500 group-hover:translate-x-1 transition-transform" />
                                 </div>
                             )}
                         </div>
-                        
-                        <h2 className="text-xl font-black text-white uppercase tracking-tight mb-1">
-                            {profile?.full_name || 'Foydalanuvchi'}
-                        </h2>
-                        <div className="flex items-center gap-2">
-                             <p className="text-sm font-bold text-orange-500">@{profile?.username}</p>
-                             {isPrivileged && <Crown size={12} className="text-yellow-500 fill-yellow-500" />}
+
+                        {/* Profil Ma'lumotlari (Banner ustida) */}
+                        <div className="relative z-10 flex flex-col items-center">
+                            <div 
+                                className="relative mb-4 group cursor-pointer" 
+                                onClick={() => {
+                                    if (hasStory && isPrivileged) setShowStory(true);
+                                    else handleAction('sub', 'profile');
+                                }}
+                            >
+                                <div className={`w-28 h-28 rounded-full p-1 transition-all duration-700 ${hasStory && isPrivileged ? 'bg-gradient-to-tr from-orange-500 via-pink-600 to-purple-600 animate-spin-slow' : 'bg-white/10 backdrop-blur-md border border-white/20'}`}>
+                                    <div className="w-full h-full rounded-full bg-black overflow-hidden border-4 border-black">
+                                        {profile?.avatar_url ? (
+                                            <img src={profile.avatar_url} className="w-full h-full object-cover" alt="" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-500"><User size={48}/></div>
+                                        )}
+                                    </div>
+                                </div>
+                                {hasStory && isPrivileged && (
+                                    <div className="absolute -top-1 -right-1 bg-orange-600 text-[8px] font-black px-2 py-0.5 rounded-full border-2 border-black animate-bounce shadow-xl">
+                                        STORY
+                                    </div>
+                                )}
+                                {!hasStory && isPrivileged && (
+                                    <div className="absolute bottom-1 right-1 bg-white text-black p-1.5 rounded-full shadow-xl border-2 border-black group-hover:scale-110 transition-transform">
+                                        <Edit3 size={14} />
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="text-center bg-black/40 backdrop-blur-sm px-6 py-2 rounded-2xl border border-white/5 shadow-2xl">
+                                <h2 className="text-xl font-black text-white uppercase tracking-tight mb-0.5">
+                                    {profile?.full_name || 'Foydalanuvchi'}
+                                </h2>
+                                <div className="flex items-center justify-center gap-2">
+                                     <p className="text-sm font-bold text-orange-500">@{profile?.username}</p>
+                                     {isPrivileged && <Crown size={12} className="text-yellow-500 fill-yellow-500" />}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
+                    {/* Menyu Qismlari */}
                     <div className="px-6 pb-10">
                         {isInstallable && (
                             <button 
                                 onClick={installApp}
-                                className="w-full mb-6 py-3 bg-white text-black rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all shadow-lg animate-pulse"
+                                className="w-full mb-6 py-3.5 bg-white text-black rounded-2xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all shadow-xl active:scale-95"
                             >
-                                <Download size={16} /> Ilovani Yuklab Olish
+                                <Download size={16} /> Ilovani O'rnatish
                             </button>
                         )}
 
@@ -176,10 +207,10 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                                         </div>
                                         <div className="text-left">
                                             <p className="text-sm font-black text-white uppercase">Fandub Studio</p>
-                                            <p className="text--[10px] text-zinc-400">Ijodkor paneli</p>
+                                            <p className="text-[9px] text-zinc-500 font-bold uppercase">Ijodkor paneli</p>
                                         </div>
                                     </div>
-                                    <ChevronRight size={18} className="text-purple-400" />
+                                    <ChevronRight size={18} className="text-purple-400 group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
                         )}
@@ -206,7 +237,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             <MenuItem 
                                 icon={<HelpCircle size={20}/>} 
                                 label="Yordam Markazi (AI)" 
-                                badge="BOT"
+                                badge="AI"
                                 onClick={() => handleAction('main', 'ai-assistant')} 
                             />
                             <MenuItem icon={<Settings size={20}/>} label="Ilova Sozlamalari" onClick={() => handleAction('sub', 'settings')} />
@@ -234,7 +265,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         </div>
                         
                         <div className="mt-8 text-center">
-                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">Anilo v1.0.5</p>
+                            <p className="text-[10px] text-zinc-700 font-black uppercase tracking-[0.3em]">Anilo Platform v2.5</p>
                         </div>
                     </div>
                 </div>
