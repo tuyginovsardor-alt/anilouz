@@ -13,8 +13,8 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// Use explicit Component from named import to ensure 'props' inheritance is recognized correctly by TypeScript
-export class ErrorBoundary extends Component<Props, State> {
+// Fix: Use React.Component specifically to ensure 'props' is correctly typed via inheritance.
+export class ErrorBoundary extends React.Component<Props, State> {
   // Initialize state
   public state: State = {
     hasError: false,
@@ -66,8 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Return children if no error occurred
-    // Ensure this.props is accessed correctly from the Component class
+    // Fix: Accessing children through this.props as guaranteed by React.Component<Props, State>
     return this.props.children;
   }
 }
