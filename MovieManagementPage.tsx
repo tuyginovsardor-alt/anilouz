@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Movie } from './types';
 import { 
     getAdminAllContent, addMovieToDB, updateMovieInDB, deleteMovieFromDB, 
-    uploadPoster, uploadVideo, toggleMovieArchive, deleteFandubProject, updateFandubUpload 
+    uploadPoster, uploadVideo, toggleMovieArchive, deleteFandubProject, updateFandubUpload, approveFandubUpload, rejectFandubUpload 
 } from './services/dbService';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { EditIcon } from './components/icons/EditIcon';
@@ -12,7 +12,7 @@ import { PlusIcon } from './components/icons/PlusIcon';
 import { AddMovieModal } from './components/AddMovieModal';
 import { useNotification } from './hooks/useNotification';
 import { Pagination } from './components/Pagination';
-import { Mic, CheckCircle, Eye } from 'lucide-react';
+import { Mic, CheckCircle, Eye, AlertCircle, Check, X } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -87,6 +87,14 @@ export const MovieManagementPage: React.FC = () => {
         }
     };
 
+    const handleApprove = async (id: number) => {
+        try {
+            await approveFandubUpload(id);
+            addNotification({ type: 'success', title: 'Tasdiqlandi', message: 'Loyiha katalogga chiqdi.' });
+            fetchData();
+        } catch { addNotification({ type: 'error', title: 'Xatolik', message: 'Tasdiqlab bo\'lmadi.' }); }
+    };
+
     const filteredContent = content.filter(item => {
         if (activeTab === 'all') return true;
         return item.type === activeTab;
@@ -127,7 +135,7 @@ export const MovieManagementPage: React.FC = () => {
                                 <th className="p-6">Anime / Sarlavha</th>
                                 <th className="p-6">Ko'rishlar</th>
                                 <th className="p-6">Turi</th>
-                                <th className="p-6">Studio / Artist</th>
+                                <th className="p-6">Holat</th>
                                 <th className="p-6 text-right">Amallar</th>
                             </tr>
                         </thead>
@@ -138,7 +146,7 @@ export const MovieManagementPage: React.FC = () => {
                                         <img src={item.posterUrl} className="w-14 h-20 rounded-xl object-cover shadow-2xl border border-white/10" alt="" />
                                         <div className="min-w-0">
                                             <p className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[200px]">{item.title}</p>
-                                            <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{item.year} • {item.genre.split(',')[0]}</p>
+                                            <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{item.year} • {item.translator || 'Anilo'}</p>
                                         </div>
                                     </td>
                                     <td className="p-6">
@@ -153,14 +161,25 @@ export const MovieManagementPage: React.FC = () => {
                                         </span>
                                     </td>
                                     <td className="p-6">
-                                        <div className="flex items-center gap-2">
-                                            <Mic size={14} className="text-zinc-600"/>
-                                            <span className="text-xs font-bold text-zinc-400">{item.translator || 'Anilo'}</span>
-                                            {item.type === 'fandub' && <CheckCircle size={12} className="text-blue-500"/>}
-                                        </div>
+                                        {item.type === 'fandub' ? (
+                                            <div className="flex items-center gap-2">
+                                                {item.status === 'pending' ? (
+                                                    <span className="flex items-center gap-1 bg-yellow-600/20 text-yellow-500 px-2 py-1 rounded text-[8px] font-black uppercase"> <AlertCircle size={10}/> Kutilmoqda</span>
+                                                ) : item.status === 'approved' ? (
+                                                    <span className="bg-green-600/20 text-green-500 px-2 py-1 rounded text-[8px] font-black uppercase">Faol</span>
+                                                ) : (
+                                                    <span className="bg-red-600/20 text-red-500 px-2 py-1 rounded text-[8px] font-black uppercase">Rad etilgan</span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-[8px] font-black uppercase">Rasmiy</span>
+                                        )}
                                     </td>
                                     <td className="p-6 text-right">
                                         <div className="flex justify-end gap-2">
+                                            {item.type === 'fandub' && item.status === 'pending' && (
+                                                <button onClick={() => handleApprove(item.id)} className="p-3 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white rounded-2xl transition-all shadow-xl" title="Tasdiqlash"><Check size={18}/></button>
+                                            )}
                                             <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="p-3 bg-white/5 hover:bg-blue-600 text-zinc-500 hover:text-white rounded-2xl transition-all shadow-xl"><EditIcon className="w-5 h-5"/></button>
                                             <button onClick={() => handleDelete(item)} className="p-3 bg-white/5 hover:bg-red-600 text-zinc-500 hover:text-white rounded-2xl transition-all shadow-xl"><DeleteIcon className="w-5 h-5"/></button>
                                         </div>

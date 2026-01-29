@@ -8,7 +8,7 @@ import { UserProfile } from './types';
 import { getAllUsers, deleteUser, deleteFandubChannel } from './services/dbService';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
-import { MicOff, Trash2, ShieldCheck } from 'lucide-react';
+import { MicOff, Trash2, ShieldCheck, XCircle } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 
 interface UserManagementPageProps {
@@ -47,11 +47,13 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ onImpers
         if (!window.confirm("DIQQAT! Ushbu foydalanuvchining KANALINI o'chirmoqchimisiz? Barcha yuklangan animelar va daromadlar ham o'chib ketadi! Bu amalni ortga qaytarib bo'lmaydi.")) return;
         
         try {
-            const { data: channel } = await supabase.from('fandub_channels').select('id').eq('user_id', userId).single();
+            const { data: channel } = await supabase.from('fandub_channels').select('id').eq('user_id', userId).maybeSingle();
             if (channel) {
                 await deleteFandubChannel(channel.id);
                 addNotification({ type: 'success', title: 'O\'chirildi', message: 'Kanal butunlay yo\'q qilindi.' });
                 loadUsers();
+            } else {
+                addNotification({ type: 'warning', title: 'Xato', message: 'Ushbu foydalanuvchida kanal topilmadi.' });
             }
         } catch (e) {
             addNotification({ type: 'error', title: 'Xatolik', message: 'Kanalni o\'chirib bo\'lmadi.' });
@@ -79,7 +81,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ onImpers
                                 <th className="p-6">Foydalanuvchi</th>
                                 <th className="p-6">Rol</th>
                                 <th className="p-6">Balans</th>
-                                <th className="p-6">Harakatlar</th>
+                                <th className="p-6 text-right">Harakatlar</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
@@ -97,13 +99,15 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ onImpers
                                     </td>
                                     <td className="p-6"><StatusBadge role={user.role} /></td>
                                     <td className="p-6 font-black text-white text-sm">{(user.balance || 0).toLocaleString()} <span className="text-orange-500 text-[10px]">UZS</span></td>
-                                    <td className="p-6">
-                                        <div className="flex gap-2">
+                                    <td className="p-6 text-right">
+                                        <div className="flex justify-end gap-2">
                                             {onImpersonate && (
                                                 <button onClick={() => onImpersonate(user.id)} className="p-3 bg-white/5 hover:bg-green-600 text-zinc-500 hover:text-white rounded-2xl transition-all shadow-xl" title="Profilga kirish"><EnterIcon className="w-5 h-5"/></button>
                                             )}
                                             {(user as any).has_channel && (
-                                                <button onClick={() => handleDeleteChannel(user.id)} className="p-3 bg-orange-600/10 hover:bg-orange-600 text-orange-500 hover:text-white rounded-2xl transition-all shadow-xl" title="Kanalni o'chirish"><MicOff size={18}/></button>
+                                                <button onClick={() => handleDeleteChannel(user.id)} className="flex items-center gap-2 px-4 py-3 bg-orange-600/10 hover:bg-orange-600 text-orange-500 hover:text-white rounded-2xl transition-all shadow-xl font-black text-[9px] uppercase tracking-widest" title="Kanalni o'chirish">
+                                                    <MicOff size={16}/> <span>Kanalni o'chirish</span>
+                                                </button>
                                             )}
                                             <button onClick={() => handleDeleteUser(user.id)} className="p-3 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all shadow-xl"><Trash2 size={18}/></button>
                                         </div>
