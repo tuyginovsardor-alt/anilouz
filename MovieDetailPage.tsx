@@ -43,8 +43,41 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [movie.id]);
+    
+    // --- SEO & GOOGLE BOT OPTIMIZATION ---
+    // Dinamik sarlavha
+    document.title = `${movie.title} - O'zbek tilida sifatli ko'rish | Anilo.uz`;
+    
+    // JSON-LD Structured Data
+    const schemaData = {
+        "@context": "https://schema.org",
+        "@type": "Movie",
+        "name": movie.title,
+        "image": movie.posterUrl,
+        "datePublished": movie.year.toString(),
+        "description": movie.plot,
+        "genre": movie.genre,
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": movie.rating.toFixed(1),
+            "bestRating": "5",
+            "ratingCount": "100"
+        }
+    };
+    
+    const script = document.createElement('script');
+    script.type = "application/ld+json";
+    script.id = "movie-schema";
+    script.text = JSON.stringify(schemaData);
+    document.head.appendChild(script);
+
+    return () => {
+        window.removeEventListener('scroll', handleScroll);
+        document.title = "Anilo.uz | Anime Olami";
+        const oldScript = document.getElementById('movie-schema');
+        if (oldScript) oldScript.remove();
+    };
+  }, [movie.id, movie.title]);
 
   const init = async () => {
       setIsLoading(true);
@@ -453,7 +486,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
                 {/* COMMENTS TAB */}
                 {activeTab === 'comments' && (
-                    <div className="max-w-3xl mx-auto animate-slide-in-up">
+                    <div className="max-w-3xl auto animate-slide-in-up">
                         {/* Comment Form */}
                         <div className="bg-zinc-900 border border-white/10 p-6 rounded-[2rem] mb-10 shadow-xl">
                             <div className="flex gap-4">

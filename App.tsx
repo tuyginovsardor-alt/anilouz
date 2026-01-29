@@ -22,7 +22,7 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
 import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
-import { getAppConfig, getUserProfile } from './services/dbService';
+import { getAppConfig, getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
@@ -94,13 +94,29 @@ const App: React.FC = () => {
               setShowRetryButton(true);
           }, 6000);
 
+          // URL Param check for SEO Deep Links
+          const params = new URLSearchParams(window.location.search);
+          const movieIdParam = params.get('movie_id');
+
           const { data: { session } } = await supabase.auth.getSession();
           
           if (session) {
               setIsAuthenticated(true); 
               await refreshProfile();
+              
+              if (movieIdParam) {
+                  const allMovies = await getMovies();
+                  const found = allMovies.find(m => m.id === Number(movieIdParam));
+                  if (found) {
+                      setSelectedMovie(found);
+                  }
+              }
               setPage('dashboard');
           } else {
+              if (movieIdParam) {
+                  // If not logged in but seeking specific movie, show auth
+                  setIsAuthModalOpen(true);
+              }
               setPage('welcome');
           }
           
@@ -146,6 +162,8 @@ const App: React.FC = () => {
     if (targetPage === 'dashboard') setDashboardPage('main');
     setSelectedMovie(null);
     setIsSearchOpen(false);
+    // Clear movie_id from URL when navigating
+    window.history.pushState({}, '', window.location.pathname);
     window.scrollTo(0, 0);
   };
 
@@ -154,8 +172,17 @@ const App: React.FC = () => {
     else {
         setSelectedMovie(movie);
         setActiveEpisode(null);
+        // Update URL for SEO (without reloading)
+        if (movie.id) {
+            window.history.pushState({ movie_id: movie.id }, '', `?movie_id=${movie.id}`);
+        }
         window.scrollTo(0, 0);
     }
+  };
+
+  const handleCloseMovieDetail = () => {
+      setSelectedMovie(null);
+      window.history.pushState({}, '', window.location.pathname);
   };
 
   if (initError) {
@@ -233,7 +260,7 @@ const App: React.FC = () => {
                 {!isPlayerActive && !activeVideoAd && (
                   <>
                     {selectedMovie ? (
-                      <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} onArtistClick={setSelectedArtistId} />
+                      <MovieDetailPage movie={selectedMovie} onBack={handleCloseMovieDetail} onPlay={() => setIsPlayerActive(true)} onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} onArtistClick={setSelectedArtistId} />
                     ) : (
                       <>
                         {page === 'welcome' && <WelcomePage onNavigate={handleNavigation} onSearch={handleNavigation as any} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}
