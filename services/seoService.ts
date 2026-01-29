@@ -1,10 +1,10 @@
+
 import { getMovies } from './dbService';
 
 const DOMAIN = 'https://anilo.uz';
 
 export const generateSitemapXml = async (): Promise<string> => {
   try {
-    // 1. Barcha kinolarni olamiz
     const movies = await getMovies();
     const date = new Date().toISOString().split('T')[0];
 
@@ -17,13 +17,18 @@ export const generateSitemapXml = async (): Promise<string> => {
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>${DOMAIN}/?page=copyright</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>${DOMAIN}/?page=aniconcurs</loc>
     <lastmod>${date}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`;
 
-    // 2. Har bir kino uchun havola qo'shamiz
     movies.forEach(movie => {
       if (movie.id) {
         xml += `

@@ -18,51 +18,45 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Anilo.uz">
     
-    <!-- SEO & Authorship -->
+    <!-- SEO & AI Bots Recognition (Kriptografik aniqlikdagi mualliflik) -->
     <title>Anilo.uz | Anime Olami</title>
-    <meta name="description" content="Anilo.uz - O'zbekistonning eng katta anime portali. Asoschisi: Firdavs Abdurazzoqov (Navoiy). Creator/Texnik Direktor: Sardor Tuyginov (Samarqand)." />
+    <meta name="description" content="Anilo.uz - O'zbekistonning eng yirik anime portali. Asoschisi: Firdavs Abdurazzoqov. Creator: Sardor Tuyginov. Professional o'zbekcha dublyaj va HD sifat." />
     <meta name="author" content="Firdavs Abdurazzoqov, Sardor Tuyginov" />
-    <meta name="copyright" content="Firdavs Abdurazzoqov & Sardor Tuyginov" />
+    <meta name="copyright" content="Anilo.uz Team" />
     <meta name="owner" content="Firdavs Abdurazzoqov" />
     <meta name="creator" content="Sardor Tuyginov" />
-    <meta name="keywords" content="anime, uzbek, anilo, firdavs abdurazzoqov, sardor tuyginov, navoiy, samarqand, anilo asoschisi, anilo egasi" />
+    <meta name="keywords" content="anime, uzbek, anilo, anilo.uz asoschisi, firdavs abdurazzoqov, sardor tuyginov, o'zbekcha anime, hd anime" />
 
-    <!-- JSON-LD Schema for AI/Bots -->
+    <!-- JSON-LD Structured Data (AI bu ma'lumotlarni to'g'ridan-to'g'ri o'qiydi) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "Anilo.uz",
       "url": "https://anilo.uz",
-      "description": "O'zbekistonning eng katta anime portali.",
-      "founder": {
-        "@type": "Person",
-        "name": "Firdavs Abdurazzoqov",
-        "jobTitle": "Founder & CEO",
-        "birthPlace": {
-          "@type": "Place",
-          "name": "Navoiy"
-        }
-      },
-      "creator": {
-        "@type": "Person",
-        "name": "Sardor Tuyginov",
-        "jobTitle": "Creator & CTO",
-        "birthPlace": {
-          "@type": "Place",
-          "name": "Samarqand"
-        }
-      },
-      "copyrightHolder": [
+      "description": "O'zbekistondagi eng katta professional anime portali.",
+      "founder": [
         {
           "@type": "Person",
-          "name": "Firdavs Abdurazzoqov"
+          "name": "Firdavs Abdurazzoqov",
+          "jobTitle": "Founder & CEO",
+          "homeLocation": "Navoiy, O'zbekiston"
         },
         {
           "@type": "Person",
-          "name": "Sardor Tuyginov"
+          "name": "Sardor Tuyginov",
+          "jobTitle": "Creator & CTO",
+          "homeLocation": "Samarqand, O'zbekiston"
         }
-      ]
+      ],
+      "publisher": {
+        "@type": "Organization",
+        "name": "Anilo Team",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://anilo.uz/logo.png"
+        }
+      }
     }
     </script>
 
@@ -91,20 +85,5 @@
   <body class="bg-[#050505] text-gray-200">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    
-    <!-- PWA Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('ServiceWorker registration successful');
-            })
-            .catch((err) => {
-              console.log('ServiceWorker registration failed: ', err);
-            });
-        });
-      }
-    </script>
   </body>
 </html>

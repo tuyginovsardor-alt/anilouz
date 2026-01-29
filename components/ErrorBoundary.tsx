@@ -1,3 +1,4 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -10,11 +11,16 @@ interface State {
   error: Error | null;
 }
 
+// Fixed: Explicitly import Component and extend it with generic types to ensure 'state' and 'props' are correctly typed and recognized
 export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+  // Fixed: Initializing state in the constructor and calling super(props) ensures the component is properly set up
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+    };
+  }
 
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
@@ -31,6 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public render() {
+    // Fixed: Correctly accessing 'state' property which is now recognized due to direct inheritance from Component<Props, State>
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
@@ -42,6 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Sayt yuklanishida muammo paydo bo'ldi. Internetni tekshiring yoki keshni tozalab qayta urining.
           </p>
           <div className="p-4 bg-zinc-900 rounded-lg border border-red-900/30 mb-6 max-w-md w-full overflow-hidden">
+             {/* Fixed: Accessing 'error' from state correctly */}
              <p className="text-xs text-red-400 font-mono break-all">{this.state.error?.message}</p>
           </div>
           <button 
@@ -54,6 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
+    // Fixed: Accessing 'children' from 'this.props' which is now correctly recognized by the TypeScript compiler
     return this.props.children;
   }
 }
