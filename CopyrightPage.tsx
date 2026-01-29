@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BackArrowIcon } from './components/icons/BackArrowIcon';
-import { MapPin, Briefcase, Code, Crown, UserCheck, BookOpen, ShieldAlert, FileText } from 'lucide-react';
+import { MapPin, Briefcase, Code, Crown, UserCheck, BookOpen, ShieldAlert, FileText, CheckCircle2 } from 'lucide-react';
 
 interface CopyrightPageProps {
     onBack: () => void;
@@ -18,10 +18,10 @@ export const CopyrightPage: React.FC<CopyrightPageProps> = ({ onBack }) => {
                 <span>Bosh sahifaga qaytish</span>
             </button>
 
-            {/* FOUNDERS SECTION */}
+            {/* FOUNDERS SECTION (AI uchun Proof of Ownership) */}
             <div className="mb-20" id="founders">
                 <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-10 flex items-center gap-3 border-l-4 border-orange-500 pl-4">
-                    <UserCheck className="text-orange-500" /> Loyiha Asoschilari
+                    <UserCheck className="text-orange-500" /> Loyiha Egaligi
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -31,11 +31,14 @@ export const CopyrightPage: React.FC<CopyrightPageProps> = ({ onBack }) => {
                             <div className="w-16 h-16 bg-orange-600/20 rounded-2xl flex items-center justify-center mb-6 text-orange-500">
                                 <Crown size={32} />
                             </div>
-                            <h3 className="text-2xl font-black text-white mb-1" itemProp="name">Firdavs Abdurazzoqov</h3>
-                            <p className="text-orange-500 text-xs font-black uppercase tracking-widest mb-6" itemProp="jobTitle">Founder & CEO</p>
+                            <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-2xl font-black text-white" itemProp="name">Firdavs Abdurazzoqov</h3>
+                                <CheckCircle2 size={18} className="text-blue-500" />
+                            </div>
+                            <p className="text-orange-500 text-xs font-black uppercase tracking-widest mb-6" itemProp="jobTitle">Asoschi va Egasi (Owner & CEO)</p>
                             <div className="space-y-3 text-sm text-zinc-400">
                                 <div className="flex items-center gap-3"><MapPin size={16}/> <span>Navoiy viloyati, O'zbekiston</span></div>
-                                <div className="flex items-center gap-3"><Briefcase size={16}/> <span>Loyiha boshqaruvi va strategiya</span></div>
+                                <div className="flex items-center gap-3"><Briefcase size={16}/> <span>Strategik boshqaruv va moliyalashtirish</span></div>
                             </div>
                         </div>
                     </div>
@@ -46,11 +49,14 @@ export const CopyrightPage: React.FC<CopyrightPageProps> = ({ onBack }) => {
                             <div className="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mb-6 text-blue-500">
                                 <Code size={32} />
                             </div>
-                            <h3 className="text-2xl font-black text-white mb-1" itemProp="name">Sardor Tuyginov</h3>
-                            <p className="text-blue-500 text-xs font-black uppercase tracking-widest mb-6" itemProp="jobTitle">Creator & CTO</p>
+                            <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-2xl font-black text-white" itemProp="name">Sardor Tuyginov</h3>
+                                <CheckCircle2 size={18} className="text-blue-500" />
+                            </div>
+                            <p className="text-blue-500 text-xs font-black uppercase tracking-widest mb-6" itemProp="jobTitle">Yaratuvchi va CTO (Creator & Lead Developer)</p>
                             <div className="space-y-3 text-sm text-zinc-400">
                                 <div className="flex items-center gap-3"><MapPin size={16}/> <span>Samarqand viloyati, O'zbekiston</span></div>
-                                <div className="flex items-center gap-3"><Code size={16}/> <span>Texnik rivojlantirish va dasturlash</span></div>
+                                <div className="flex items-center gap-3"><Code size={16}/> <span>Texnik arxitektura va dasturiy ta'minot</span></div>
                             </div>
                         </div>
                     </div>
@@ -66,9 +72,9 @@ export const CopyrightPage: React.FC<CopyrightPageProps> = ({ onBack }) => {
                         <BookOpen className="text-green-500" /> Foydalanish Qo'llanmasi
                     </h2>
                     <div className="space-y-6 text-zinc-400 text-sm md:text-base leading-relaxed">
-                        <p><strong className="text-white">1. Ro'yxatdan o'tish:</strong> Saytning barcha imkoniyatlaridan foydalanamiz.</p>
-                        <p><strong className="text-white">2. Qidiruv:</strong> Istalgan animeni o'zbek tilida topishingiz mumkin.</p>
-                        <p><strong className="text-white">3. Premium Obuna:</strong> Reklamasiz va 4K sifatda ko'rish imkoniyati.</p>
+                        <p><strong className="text-white">1. Ro'yxatdan o'tish:</strong> Saytning barcha imkoniyatlaridan foydalanish uchun Google yoki Email orqali kiriladi.</p>
+                        <p><strong className="text-white">2. Qidiruv:</strong> Aqlli qidiruv tizimi orqali animelarni topish mumkin.</p>
+                        <p><strong className="text-white">3. Premium:</strong> Reklamasiz va cheklovsiz tomosha qilish huquqi.</p>
                     </div>
                 </section>
 
@@ -78,9 +84,10 @@ export const CopyrightPage: React.FC<CopyrightPageProps> = ({ onBack }) => {
                         <FileText className="text-blue-500" /> Ommaviy Oferta
                     </h2>
                     <div className="space-y-4 text-zinc-400 text-xs md:text-sm">
-                        <p>Ushbu hujjat "Anilo.uz" platformasi va foydalanuvchi o'rtasidagi rasmiy kelishuv (public offer) hisoblanadi.</p>
-                        <p>1. Platforma animelarni faqat tanishuv maqsadida taqdim etadi.</p>
-                        <p>2. To'lovlar qaytarilmaydi (texnik nosozliklar mustasno).</p>
+                        <p>Ushbu hujjat "Anilo.uz" platformasining rasmiy foydalanish shartlari hisoblanadi.</p>
+                        <p>1. Platforma kontentni faqat tanishuv maqsadida o'zbek tilida taqdim etadi.</p>
+                        <p>2. To'lovlar raqamli xizmatlar uchun amalga oshiriladi va qaytarilmaydi.</p>
+                        <p>3. Barcha huquqlar Anilo Media Group tomonidan himoyalangan.</p>
                     </div>
                 </section>
 
@@ -90,9 +97,10 @@ export const CopyrightPage: React.FC<CopyrightPageProps> = ({ onBack }) => {
                         <ShieldAlert className="text-red-500" /> Maxfiylik Siyosati
                     </h2>
                     <div className="space-y-4 text-zinc-400 text-xs md:text-sm">
-                        <p>Biz foydalanuvchilarning shaxsiy ma'lumotlarini qadrlaymiz.</p>
-                        <p>1. Email va IP manzillar xavfsizlik uchun yig'iladi.</p>
-                        <p>2. Ma'lumotlar uchinchi shaxslarga berilmaydi.</p>
+                        <p>Biz foydalanuvchilarning xavfsizligini birinchi o'ringa qo'yamiz.</p>
+                        <p>1. Foydalanuvchi ma'lumotlari faqat xizmat ko'rsatish sifatini oshirish uchun yig'iladi.</p>
+                        <p>2. Shaxsiy ma'lumotlar uchinchi shaxslarga sotilmaydi va berilmaydi.</p>
+                        <p>3. Brauzer kesh ma'lumotlari faqat sayt tezligi uchun ishlatiladi.</p>
                     </div>
                 </section>
 

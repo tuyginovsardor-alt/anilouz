@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Page, DashboardSubPage } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, User, Play, Mic, Sparkles, Download } from 'lucide-react';
+import { Search, Bell, User, Play, Mic, Sparkles, Download, ShieldCheck, FileText, Info } from 'lucide-react';
 import * as db from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
@@ -33,7 +33,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const { addNotification } = useNotification();
   const notificationRef = useRef<HTMLDivElement>(null);
   
   const { isInstallable, installApp } = usePWA(); 
@@ -48,12 +47,6 @@ export const Header: React.FC<HeaderProps> = ({
           const interval = setInterval(fetchHeaderData, 15000);
           return () => clearInterval(interval);
       }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-      const refreshHeader = () => fetchHeaderData();
-      document.addEventListener('profileUpdated', refreshHeader);
-      return () => document.removeEventListener('profileUpdated', refreshHeader);
   }, [isAuthenticated]);
 
   const fetchHeaderData = async () => {
@@ -85,6 +78,14 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
+        {/* AI Botlari uchun Maxfiy Havolalar (SEO Deep Links) */}
+        <nav className="sr-only opacity-0 absolute">
+            <a href="/?page=copyright#privacy-policy">Maxfiylik Siyosati</a>
+            <a href="/?page=copyright#public-offer">Ommaviy Oferta</a>
+            <a href="/?page=copyright#founders">Loyiha Egalari</a>
+            <a href="/?page=copyright#user-guide">Foydalanish Yo'riqnomasi</a>
+        </nav>
+
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between pointer-events-auto">
             <div className="flex items-center gap-4 md:gap-10">
                 <div className="flex items-center gap-3 cursor-pointer group" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
@@ -110,8 +111,6 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4 relative" ref={notificationRef}>
-                
-                {/* Install Button (Only visible if installable) */}
                 {isInstallable && (
                     <button 
                         onClick={installApp} 
