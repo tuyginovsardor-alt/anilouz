@@ -21,10 +21,9 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw } from 'lucide-react';
-import { getAppConfig, getUserProfile, recordTsPaySuccess } from './services/dbService';
-import { pruneCache } from './services/cacheService'; // Import pruneCache
-import { checkTsPayStatus } from './services/tspayService';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { getAppConfig, getUserProfile } from './services/dbService';
+import { pruneCache, clearAppCache } from './services/cacheService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
@@ -48,8 +47,8 @@ const App: React.FC = () => {
   const [isAppReady, setIsAppReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine); 
   const [showRetryButton, setShowRetryButton] = useState(false); 
+  const [initError, setInitError] = useState(false);
   
-  const [loaderLogo, setLoaderLogo] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [legalDocType, setLegalDocType] = useState<LegalDocType | null>(null);
 
@@ -85,21 +84,18 @@ const App: React.FC = () => {
   };
 
   const initApp = async () => {
-      // 1. Clean up old cache on startup to prevent "Quota Exceeded"
-      pruneCache();
-
-      setIsAppReady(false);
-      setShowRetryButton(false);
-      
-      const safetyTimeout = setTimeout(() => {
-          setShowRetryButton(true);
-      }, 7000);
-
       try {
-          getAppConfig().then(config => {
-              if (config && config['site_logo']) setLoaderLogo(config['site_logo']);
-          }).catch(() => {});
+          // 1. Keshni tozalash
+          pruneCache();
           
+          setIsAppReady(false);
+          setShowRetryButton(false);
+          setInitError(false);
+          
+          const safetyTimeout = setTimeout(() => {
+              setShowRetryButton(true);
+          }, 6000);
+
           const { data: { session } } = await supabase.auth.getSession();
           
           if (session) {
@@ -109,12 +105,14 @@ const App: React.FC = () => {
           } else {
               setPage('welcome');
           }
-      } catch (e) { 
-          console.error("Init Error:", e);
-          setPage('welcome');
-      } finally {
+          
           clearTimeout(safetyTimeout);
           setIsAppReady(true);
+      } catch (e) { 
+          console.error("Init Error:", e);
+          // Agar yuklanishda jiddiy xato bo'lsa, keshni butunlay tozalab qayta urinamiz
+          setInitError(true);
+          clearAppCache();
       }
   };
 
@@ -133,25 +131,16 @@ const App: React.FC = () => {
         }
     });
 
-    const handleOnline = () => {
-        setIsOnline(true);
-        addNotification({ type: 'success', title: 'Aloqa tiklandi', message: 'Internet tarmog\'iga ulandingiz.' });
-        refreshProfile(); 
-    };
-    const handleOffline = () => {
-        setIsOnline(false);
-        addNotification({ type: 'error', title: 'Aloqa uzildi', message: 'Internet aloqasi yo\'qolgan ko\'rinadi.' });
-    };
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    document.addEventListener('profileUpdated', refreshProfile);
 
     return () => {
         subscription.unsubscribe();
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
-        document.removeEventListener('profileUpdated', refreshProfile);
     };
   }, []);
 
@@ -172,6 +161,23 @@ const App: React.FC = () => {
     }
   };
 
+  // --- RECOVERY SCREEN ---
+  if (initError) {
+      return (
+          <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
+              <AlertTriangle size={48} className="text-orange-500 mb-4 animate-pulse" />
+              <h2 className="text-xl font-black text-white uppercase mb-2">Tizimda nosozlik</h2>
+              <p className="text-zinc-500 text-sm mb-8">Ma'lumotlar keshini tozaladik. Iltimos, sahifani yangilang.</p>
+              <button 
+                  onClick={() => window.location.reload()} 
+                  className="px-10 py-4 bg-white text-black rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center gap-3"
+              >
+                  <RefreshCw size={16} /> Sahifani yangilash
+              </button>
+          </div>
+      );
+  }
+
   if (!isAppReady) {
       return (
           <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center gap-4 relative">
@@ -180,23 +186,15 @@ const App: React.FC = () => {
                   <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
               <p className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.3em] animate-pulse">
-                  {showRetryButton ? "Aloqa sekin..." : "Anilo yuklanmoqda..."}
+                  {showRetryButton ? "Internet sekin..." : "ANILO yuklanmoqda..."}
               </p>
               {showRetryButton && (
-                  <div className="flex flex-col gap-3 mt-4 animate-fade-in">
-                      <button 
-                          onClick={() => window.location.reload()} 
-                          className="px-6 py-2 bg-white text-black rounded-full font-bold text-xs flex items-center gap-2 hover:bg-gray-200"
-                      >
-                          <RefreshCw size={14} /> Qayta yuklash
-                      </button>
-                      <button 
-                          onClick={() => setIsAppReady(true)} 
-                          className="text-zinc-500 text-[10px] underline hover:text-zinc-300"
-                      >
-                          Kutmasdan kirish (Offline)
-                      </button>
-                  </div>
+                  <button 
+                      onClick={() => window.location.reload()} 
+                      className="mt-4 px-6 py-2 bg-zinc-900 border border-white/10 text-white rounded-full font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-zinc-800"
+                  >
+                      <RefreshCw size={12} /> Qayta urinish
+                  </button>
               )}
           </div>
       );
@@ -207,16 +205,14 @@ const App: React.FC = () => {
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
         <NotificationContainer />
         
-        {/* Offline Banner */}
         {!isOnline && (
             <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest text-center py-1 z-[300] animate-fade-in flex items-center justify-center gap-2">
-                <WifiOff size={12} /> Internet aloqasi yo'q
+                <WifiOff size={12} /> Offline Rejim
             </div>
         )}
 
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505]">
           
-          {/* Header logic */}
           {!selectedMovie && !isPlayerActive && !activeVideoAd && page !== 'welcome' && (
             <Header 
               onNavigate={handleNavigation} 
@@ -266,7 +262,7 @@ const App: React.FC = () => {
               <div className="fixed inset-0 z-[200] bg-[#050505] animate-fade-in flex flex-col p-6 sm:p-10">
                   <button onClick={() => setIsSearchOpen(false)} className="absolute top-6 right-6 p-3 bg-zinc-800 rounded-full text-gray-400"><X size={28} /></button>
                   <div className="max-w-4xl mx-auto w-full pt-20">
-                      <h2 className="text-4xl font-black tracking-tighter uppercase mb-8">Kashfiyot</h2>
+                      <h2 className="text-4xl font-black tracking-tighter uppercase mb-8 text-white">Kashfiyot</h2>
                       <input type="text" autoFocus placeholder="Anime nomi..." onKeyDown={(e) => { if (e.key === 'Enter') { handleNavigation('search'); setIsSearchOpen(false); } }} className="w-full bg-zinc-900 border-b-2 border-orange-600/50 py-6 px-4 text-2xl font-bold outline-none focus:border-orange-500 transition-all text-white"/>
                   </div>
               </div>

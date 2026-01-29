@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'anilo-cache-v1';
+const CACHE_NAME = 'anilo-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -7,17 +7,12 @@ const ASSETS_TO_CACHE = [
   '/logo.png'
 ];
 
-// O'rnatish (Install)
+// O'rnatish
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
   self.skipWaiting();
 });
 
-// Faollashtirish (Activate)
+// Faollashtirish
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -33,21 +28,31 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// So'rovlarni tutib olish (Fetch) - Offline rejim uchun
+// So'rovlarni tutib olish - Network First strategiyasi
 self.addEventListener('fetch', (event) => {
+  // Faqat GET so'rovlarni keshlaymiz
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Agar keshda bo'lsa, qaytaradi
-      if (response) {
-        return response;
-      }
-      // Bo'lmasa internetdan oladi
-      return fetch(event.request).catch(() => {
-        // Agar internet yo'q bo'lsa va sahifa topilmasa, index.html ni qaytarish (SPA uchun)
-        if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+    fetch(event.request)
+      .then((response) => {
+        // Tarmoqdan kelgan javobni keshga saqlaymiz
+        if (response.ok && event.request.url.startsWith(self.location.origin)) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         }
-      });
-    })
+        return response;
+      })
+      .catch(() => {
+        // Tarmoq yo'q bo'lsa, keshdan qidiramiz
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          
+          // Agar keshda ham bo'lmasa va bu sahifa bo'lsa (navigation)
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+        });
+      })
   );
 });

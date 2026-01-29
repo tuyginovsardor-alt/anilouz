@@ -4,110 +4,95 @@ const CACHE_PREFIX = 'anilo_cache_';
 
 interface CacheItem<T> {
     data: T;
-    expiry: number; // Timestamp
-    timestamp: number; // Created time for LRU (Least Recently Used) logic
+    expiry: number; 
 }
 
-// 1. Keshni tozalash (Muddati o'tganlarni)
+/**
+ * Muddati o'tgan barcha keshni tozalash
+ */
 export const pruneCache = (): void => {
     try {
-        const now = new Date().getTime();
-        Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith(CACHE_PREFIX)) {
+        const now = Date.now();
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(CACHE_PREFIX)) {
                 try {
                     const itemStr = localStorage.getItem(key);
                     if (itemStr) {
-                        const item: CacheItem<any> = JSON.parse(itemStr);
-                        // Agar muddati o'tgan bo'lsa, o'chiramiz
+                        const item = JSON.parse(itemStr);
                         if (now > item.expiry) {
                             localStorage.removeItem(key);
                         }
                     }
                 } catch (e) {
-                    // Agar JSON buzilgan bo'lsa, o'chirib tashlaymiz
+                    // Buzilgan JSON bo'lsa darhol o'chirish
                     localStorage.removeItem(key);
                 }
             }
-        });
+        }
     } catch (e) {
-        console.warn("Auto-prune error:", e);
+        console.warn("Prune error:", e);
     }
 };
 
-// 2. Keshga saqlash (Xavfsiz)
+/**
+ * Keshga ma'lumot yozish
+ */
 export const setCache = <T>(key: string, data: T, ttlMinutes: number = 60): void => {
     try {
-        const now = new Date().getTime();
         const item: CacheItem<T> = {
             data: data,
-            expiry: now + ttlMinutes * 60 * 1000,
-            timestamp: now
+            expiry: Date.now() + ttlMinutes * 60 * 1000
         };
         localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(item));
     } catch (e: any) {
-        // Agar xotira to'lib qolsa (QuotaExceededError)
+        // Joy yetmasa hammasini tozalab yuboramiz
         if (e.name === 'QuotaExceededError' || e.code === 22) {
-            console.warn('LocalStorage to\'ldi. Tozalash boshlandi...');
-            
-            // A: Avval muddati o'tganlarni tozalaymiz
-            pruneCache();
-
-            try {
-                // Qayta urinib ko'ramiz
-                localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
-                    data: data,
-                    expiry: new Date().getTime() + ttlMinutes * 60 * 1000,
-                    timestamp: new Date().getTime()
-                }));
-            } catch (retryError) {
-                // B: Agar hali ham joy yetmasa, butun 'anilo_' keshini tozalaymiz (Radikal yechim)
-                clearAppCache();
-                try {
-                    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
-                        data: data,
-                        expiry: new Date().getTime() + ttlMinutes * 60 * 1000,
-                        timestamp: new Date().getTime()
-                    }));
-                } catch (finalError) {
-                    console.error("Kesh saqlab bo'lmadi (Memory Full):", finalError);
-                }
-            }
+            clearAppCache();
         }
     }
 };
 
-// 3. Keshdan olish
+/**
+ * Keshdan ma'lumot olish
+ */
 export const getCache = <T>(key: string): T | null => {
+    const fullKey = CACHE_PREFIX + key;
     try {
-        const itemStr = localStorage.getItem(CACHE_PREFIX + key);
+        const itemStr = localStorage.getItem(fullKey);
         if (!itemStr) return null;
 
         const item: CacheItem<T> = JSON.parse(itemStr);
-        const now = new Date().getTime();
-
-        // Agar muddati o'tgan bo'lsa, o'chirib tashlaymiz
-        if (now > item.expiry) {
-            localStorage.removeItem(CACHE_PREFIX + key);
+        
+        // Muddati o'tgan bo'lsa o'chiramiz
+        if (Date.now() > item.expiry) {
+            localStorage.removeItem(fullKey);
             return null;
         }
 
         return item.data;
     } catch (e) {
-        localStorage.removeItem(CACHE_PREFIX + key);
+        // Agar parsingda xato bo'lsa kesh buzilgan, uni o'chirib tashlaymiz
+        localStorage.removeItem(fullKey);
         return null;
     }
 };
 
-// 4. Barcha keshlarni tozalash (Faqat Anilo ga tegishlisini)
+/**
+ * Saytning barcha keshini tozalash
+ */
 export const clearAppCache = (): void => {
     try {
-        Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith(CACHE_PREFIX)) {
-                localStorage.removeItem(key);
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(CACHE_PREFIX)) {
+                keysToRemove.push(key);
             }
-        });
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
         console.log("Anilo kesh tozalandi.");
     } catch (e) {
-        console.error("Kesh tozalashda xatolik:", e);
+        console.error("Cache clear error:", e);
     }
 };
