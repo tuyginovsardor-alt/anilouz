@@ -1,18 +1,23 @@
-
-const CACHE_NAME = 'anilo-cache-v2';
+const CACHE_NAME = 'anilo-app-cache-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.png'
+  '/logo.png',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap'
 ];
 
-// O'rnatish
+// Install Event
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
   self.skipWaiting();
 });
 
-// Faollashtirish
+// Activate Event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -28,31 +33,28 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// So'rovlarni tutib olish - Network First strategiyasi
+// Fetch Event - Stale While Revalidate Strategy
 self.addEventListener('fetch', (event) => {
-  // Faqat GET so'rovlarni keshlaymiz
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Tarmoqdan kelgan javobni keshga saqlaymiz
-        if (response.ok && event.request.url.startsWith(self.location.origin)) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith(self.location.origin)) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
         }
-        return response;
-      })
-      .catch(() => {
-        // Tarmoq yo'q bo'lsa, keshdan qidiramiz
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) return cachedResponse;
-          
-          // Agar keshda ham bo'lmasa va bu sahifa bo'lsa (navigation)
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-        });
-      })
+        return networkResponse;
+      }).catch(() => {
+        // Fallback to index.html for navigation requests (SPA)
+        if (event.request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+      });
+
+      return cachedResponse || fetchPromise;
+    })
   );
 });

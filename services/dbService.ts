@@ -472,7 +472,7 @@ export const getAllTickets = async (): Promise<SupportTicket[]> => {
 
 export const getMyTickets = async (userId: string): Promise<SupportTicket[]> => {
     try {
-        const { data } = await supabase.from('support_tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        const { data = [] } = await supabase.from('support_tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
         return data || [];
     } catch (e) { return []; }
 };
@@ -639,7 +639,7 @@ export const deleteContestTask = async (id: number) => {
 
 export const getContestAds = async (): Promise<ContestAd[]> => {
     try {
-        const { data } = await supabase.from('contest_ads').select('*');
+        const { data = [] } = await supabase.from('contest_ads').select('*');
         return data || [];
     } catch (e) { return []; }
 };
@@ -701,7 +701,7 @@ export const updateArkSettings = async (key: string, value: any) => {
 
 export const getArkAds = async (): Promise<ArkAd[]> => {
     try {
-        const { data } = await supabase.from('ark_ads').select('*');
+        const { data = [] } = await supabase.from('ark_ads').select('*');
         return data || [];
     } catch (e) { return []; }
 };
@@ -716,7 +716,7 @@ export const deleteArkAd = async (id: number) => {
 
 export const getArkQuizzes = async (): Promise<ArkQuiz[]> => {
     try {
-        const { data } = await supabase.from('ark_quizzes').select('*');
+        const { data = [] } = await supabase.from('ark_quizzes').select('*');
         return data || [];
     } catch (e) { return []; }
 };
@@ -805,6 +805,14 @@ export const verifyRecoveryCode = async (code: string): Promise<boolean> => {
         const config = await getAppConfig();
         const codes = JSON.parse(config['admin_recovery_codes'] || '[]');
         return codes.includes(code);
+    } catch { return false; }
+};
+
+export const verifyRecoveryCodeStatus = async (): Promise<boolean> => {
+    try {
+        const config = await getAppConfig();
+        const codes = JSON.parse(config['admin_recovery_codes'] || '[]');
+        return codes.length > 0;
     } catch { return false; }
 };
 
@@ -959,4 +967,40 @@ export const logDeviceLogin = async (userId: string, deviceId: string) => {
             last_active: new Date().toISOString()
         }, { onConflict: 'user_id, device_id' });
     } catch {}
+};
+
+/**
+ * Added missing Fandub Studio related database service functions
+ */
+export const getFandubEarnings = async (channelId: string): Promise<FandubEarning[]> => {
+    try {
+        const { data } = await supabase.from('fandub_earnings').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
+        return (data || []) as FandubEarning[];
+    } catch { return []; }
+};
+
+export const getFandubWithdrawals = async (channelId: string): Promise<FandubWithdrawal[]> => {
+    try {
+        const { data } = await supabase.from('fandub_withdrawals').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
+        return (data || []) as FandubWithdrawal[];
+    } catch { return []; }
+};
+
+export const requestFandubWithdrawal = async (channelId: string, userId: string, amount: number, card: string, holder: string) => {
+    const { error } = await supabase.from('fandub_withdrawals').insert({
+        channel_id: channelId,
+        user_id: userId,
+        amount,
+        card_number: card,
+        card_holder: holder,
+        status: 'pending'
+    });
+    if (error) throw error;
+};
+
+export const getFandubStatsSummary = async (channelId: string) => {
+    try {
+        const { data } = await supabase.rpc('get_fandub_stats_summary', { ch_id: channelId });
+        return data || { lastMonthEarnings: 0 };
+    } catch { return { lastMonthEarnings: 0 }; }
 };

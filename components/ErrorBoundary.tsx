@@ -1,3 +1,4 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -13,9 +14,9 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// Explicitly use React.Component from React for proper inheritance in TypeScript.
-// Added React. prefix to ensure inheritance is correctly typed by the compiler.
-export class ErrorBoundary extends React.Component<Props, State> {
+// Explicitly use Component from React for proper inheritance in TypeScript.
+// Using named import for better type inference in rendering context.
+export class ErrorBoundary extends Component<Props, State> {
   // Defining the state property with its types for strict mode compliance.
   public state: State = {
     hasError: false,
