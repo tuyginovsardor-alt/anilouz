@@ -13,17 +13,13 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// Fix: Extending the imported Component class directly to ensure proper typing of this.props and this.state via inheritance
+// Fix: Extending Component with Props and State generics to ensure this.props is correctly recognized.
 export class ErrorBoundary extends Component<Props, State> {
   // Initialize state
   public state: State = {
     hasError: false,
     error: null,
   };
-
-  constructor(props: Props) {
-    super(props);
-  }
 
   // Update state when an error occurs
   public static getDerivedStateFromError(error: Error): State {
@@ -66,7 +62,8 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: Using this.props.children which is correctly typed through Component inheritance
+    // Access children through this.props as defined in generics
+    // Fix: Using this.props.children here. Inheritance from Component<Props, State> ensures props property availability.
     return this.props.children;
   }
 }

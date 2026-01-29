@@ -85,9 +85,7 @@ const App: React.FC = () => {
 
   const initApp = async () => {
       try {
-          // 1. Keshni tozalash
           pruneCache();
-          
           setIsAppReady(false);
           setShowRetryButton(false);
           setInitError(false);
@@ -110,7 +108,6 @@ const App: React.FC = () => {
           setIsAppReady(true);
       } catch (e) { 
           console.error("Init Error:", e);
-          // Agar yuklanishda jiddiy xato bo'lsa, keshni butunlay tozalab qayta urinamiz
           setInitError(true);
           clearAppCache();
       }
@@ -161,7 +158,6 @@ const App: React.FC = () => {
     }
   };
 
-  // --- RECOVERY SCREEN ---
   if (initError) {
       return (
           <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
@@ -296,7 +292,13 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} onAuthSuccess={() => {setIsAuthModalOpen(false); setPage('dashboard');}} />}
+          {isAuthModalOpen && (
+            <AuthModal 
+              onClose={() => setIsAuthModalOpen(false)} 
+              onAuthSuccess={() => {setIsAuthModalOpen(false); setPage('dashboard');}} 
+              onOpenLegal={(type) => setLegalDocType(type)}
+            />
+          )}
           <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} onLogout={() => { supabase.auth.signOut(); setIsMenuOpen(false); }} onMainNavigate={handleNavigation} onDashboardNavigate={setDashboardPage} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} onOpenLegal={(type) => setLegalDocType(type)} />
           {legalDocType && <LegalDocs type={legalDocType} onClose={() => setLegalDocType(null)} />}
         </div>

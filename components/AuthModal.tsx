@@ -4,17 +4,19 @@ import { UserRole } from '../types';
 import { useNotification } from '../hooks/useNotification';
 import { supabase } from '../services/supabaseClient';
 import { checkAndTrackRegistration, logDeviceLogin } from '../services/dbService';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { GoogleIcon } from './icons/GoogleIcon'; // Import Google Icon
+import { Eye, EyeOff, Mail, Lock, Check } from 'lucide-react';
+import { GoogleIcon } from './icons/GoogleIcon';
+import { LegalDocType } from '../App';
 
 interface AuthModalProps {
     onClose: () => void;
     onAuthSuccess: (role: UserRole) => void;
+    onOpenLegal?: (type: LegalDocType) => void;
 }
 
 type AuthMode = 'login' | 'register';
 
-export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess, onOpenLegal }) => {
     const [mode, setMode] = useState<AuthMode>('login');
     const [loading, setLoading] = useState(false);
     
@@ -22,6 +24,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [isAgreed, setIsAgreed] = useState(false); // Rozilik holati
     
     // Device Tracking
     const [deviceId, setDeviceId] = useState('');
@@ -41,7 +44,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin, // Muvaffaqiyatli kirgandan so'ng qaytish manzili
+                    redirectTo: window.location.origin,
                 }
             });
             if (error) throw error;
@@ -72,6 +75,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isAgreed) {
+            addNotification({ type: 'warning', title: 'Diqqat', message: 'Davom etish uchun shartlarga rozilik berishingiz kerak.' });
+            return;
+        }
         setLoading(true);
         try {
             await checkAndTrackRegistration(deviceId);
@@ -90,27 +97,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
         setMode(mode === 'login' ? 'register' : 'login');
         setEmail('');
         setPassword('');
+        setIsAgreed(false);
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            {/* Background Blur & Overlay */}
-            <div className="absolute inset-0 bg-[#050505]/90 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
-            
+        <div className="fixed inset-0 bg-[#050505]/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
             <div className="relative w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden animate-slide-in-up" onClick={e => e.stopPropagation()}>
                 
-                {/* --- Decorative Elements (Bezaklar) --- */}
-                {/* Top Right Glow */}
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-600/20 rounded-full blur-[60px] pointer-events-none"></div>
-                {/* Bottom Left Glow */}
                 <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-600/20 rounded-full blur-[60px] pointer-events-none"></div>
-                {/* Top Border Gradient */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-50"></div>
 
-                {/* Close Button */}
                 <button onClick={onClose} className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors z-10">✕</button>
 
-                {/* Header */}
                 <div className="text-center mb-8 mt-2 relative z-10">
                     <h2 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">
                         {mode === 'login' ? 'Kirish' : 'Ro\'yxatdan o\'tish'}
@@ -121,10 +119,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
                 </div>
 
                 <div className="space-y-6 relative z-10">
-                    {/* Google Login Button */}
                     <button 
                         onClick={handleGoogleLogin}
-                        className="w-full bg-white text-black py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 hover:bg-gray-200 transition-all active:scale-95 shadow-lg shadow-white/5"
+                        className="w-full bg-white text-black py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 hover:bg-gray-200 transition-all active:scale-95 shadow-lg"
                     >
                         <GoogleIcon width="20" height="20" />
                         <span>Google bilan davom etish</span>
@@ -172,24 +169,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess }) 
                                     {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
                                 </button>
                             </div>
-                            {mode === 'login' && (
-                                <div className="text-right">
-                                    <button type="button" className="text-[10px] font-bold text-zinc-500 hover:text-orange-500 transition-colors mt-1">Parolni unutdingizmi?</button>
-                                </div>
-                            )}
                         </div>
+
+                        {mode === 'register' && (
+                            <div className="flex items-start gap-3 mt-4 px-1 animate-fade-in">
+                                <button 
+                                    type="button"
+                                    onClick={() => setIsAgreed(!isAgreed)}
+                                    className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isAgreed ? 'bg-orange-600 border-orange-600 shadow-[0_0_10px_rgba(249,115,22,0.4)]' : 'bg-zinc-900 border-white/10'}`}
+                                >
+                                    {isAgreed && <Check size={14} className="text-white" strokeWidth={4} />}
+                                </button>
+                                <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">
+                                    Men "Anilo.uz" platformasining{' '}
+                                    <button type="button" onClick={() => onOpenLegal?.('terms')} className="text-orange-500 hover:underline">Ommaviy Oferta</button>{' '}
+                                    shartlariga va{' '}
+                                    <button type="button" onClick={() => onOpenLegal?.('privacy')} className="text-orange-500 hover:underline">Maxfiylik Siyosati</button>{' '}
+                                    qoidalariga to'liq roziman.
+                                </p>
+                            </div>
+                        )}
 
                         <button 
                             type="submit" 
-                            disabled={loading}
-                            className="w-full bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-xl shadow-orange-600/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={loading || (mode === 'register' && !isAgreed)}
+                            className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-xl mt-4 disabled:opacity-50 disabled:cursor-not-allowed ${mode === 'register' && !isAgreed ? 'bg-zinc-800 text-zinc-600' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-600/20'}`}
                         >
                             {loading ? 'Yuklanmoqda...' : (mode === 'login' ? 'Tizimga Kirish' : 'Hisob Yaratish')}
                         </button>
                     </form>
                 </div>
 
-                {/* Footer Toggle */}
                 <div className="mt-8 pt-6 border-t border-white/5 text-center relative z-10">
                     <button 
                         onClick={toggleMode}
