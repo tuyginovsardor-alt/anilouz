@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Star, Lock, ArrowLeft, MessageCircle, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle, Eye, TrendingUp } from 'lucide-react';
+import { Play, Star, Lock, ArrowLeft, MessageSquare, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle, Eye, TrendingUp, XCircle, CornerUpLeft } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, getMovieEpisodes, getMovieReviews, addReview, deleteReview, updateReview, getMovies, isMovieSaved, toggleSaveMovie, getUserIdByUsername, createNotification } from './services/dbService';
 import { Movie, UserProfile, Episode } from './types';
@@ -33,7 +33,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   const [commentText, setCommentText] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
-  const [replyToUser, setReplyToUser] = useState<string | null>(null);
+  const [replyToComment, setReplyToComment] = useState<any | null>(null);
 
   const { addNotification } = useNotification();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -113,10 +113,11 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
       setIsSubmittingReview(true);
       try {
-          // 1. Mentionlarni aniqlash
-          const mentionMatch = commentText.match(/@(\w+)/);
-          if (mentionMatch && mentionMatch[1]) {
-              const mentionedUsername = mentionMatch[1];
+          // 1. Mentionlarni aniqlash va bildirishnoma yuborish
+          const mentionPattern = /@(\w+)/g;
+          let match;
+          while ((match = mentionPattern.exec(commentText)) !== null) {
+              const mentionedUsername = match[1];
               const mentionedUserId = await getUserIdByUsername(mentionedUsername);
               if (mentionedUserId && mentionedUserId !== userProfile.id) {
                   await createNotification(
@@ -133,16 +134,26 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
               setEditingReviewId(null);
               addNotification({ type: 'success', title: 'Yangilandi', message: 'Sharhingiz o\'zgartirildi.' });
           } else {
-              await addReview(movie.id!, userProfile.id, rating, commentText);
+              await addReview(movie.id!, userProfile.id, rating, commentText, replyToComment?.id);
+              
+              // Agar javob bo'lsa egasiga bildirishnoma
+              if (replyToComment && replyToComment.user_id !== userProfile.id) {
+                  await createNotification(
+                      replyToComment.user_id,
+                      "Xabaringizga javob berishdi",
+                      `@${userProfile.username} sizning "${movie.title}" animesidagi fikringizga javob berdi.`,
+                      'info'
+                  );
+              }
           }
           setCommentText('');
-          setReplyToUser(null);
+          setReplyToComment(null);
           setRating(5);
           const revs = await getMovieReviews(movie.id!);
           setReviews(revs);
           scrollToBottom();
-      } catch (e) {
-          addNotification({ type: 'error', title: 'Xatolik', message: 'Jarayonda xatolik yuz berdi.' });
+      } catch (e: any) {
+          addNotification({ type: 'error', title: 'Xatolik', message: e.message || 'Jarayonda xatolik yuz berdi.' });
       } finally {
           setIsSubmittingReview(false);
       }
@@ -159,16 +170,13 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
       }
   };
 
-  const handleEditReview = (review: any) => {
-      setEditingReviewId(review.id);
-      setCommentText(review.comment);
-      setRating(review.rating);
-      commentInputRef.current?.focus();
-  };
-
-  const handleReply = (username: string) => {
-      setReplyToUser(username);
-      setCommentText(`@${username} `);
+  const handleReply = (comment: any) => {
+      setReplyToComment({
+          id: comment.id,
+          username: comment.profiles?.username || 'user',
+          text: comment.comment,
+          user_id: comment.user_id
+      });
       commentInputRef.current?.focus();
   };
 
@@ -231,16 +239,16 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
             </div>
 
             <div className="absolute top-0 left-0 right-0 pt-12 md:pt-8 px-4 md:px-8 flex justify-between items-center z-[100] animate-fade-in">
-                <button onClick={onBack} className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-90 border border-white/10 shadow-lg">
+                <button onClick={onBack} className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-90 border border-white/10 shadow-lg">
                     <ArrowLeft size={24} strokeWidth={2.5} />
                 </button>
                 <div className="flex gap-3">
-                    <button className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-90 border border-white/10 shadow-lg">
+                    <button className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-90 border border-white/10 shadow-lg">
                         <Share2 size={24} />
                     </button>
                     <button 
                         onClick={handleToggleSave} 
-                        className={`p-3 backdrop-blur-md rounded-full transition-all active:scale-90 border border-white/10 shadow-lg ${isSaved ? 'bg-orange-600 text-white border-orange-500 shadow-orange-500/50' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                        className={`p-3 backdrop-blur-md rounded-full transition-all active:scale-90 border border-white/10 shadow-lg ${isSaved ? 'bg-orange-600 text-white border-orange-500 shadow-orange-500/50' : 'bg-black/40 text-white hover:bg-white/20'}`}
                     >
                         <Bookmark size={24} fill={isSaved ? 'currentColor' : 'none'} />
                     </button>
@@ -356,11 +364,11 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     </div>
                 )}
 
-                {/* --- CHAT STYLE COMMENTS --- */}
+                {/* --- TELEGRAM STYLE CHAT --- */}
                 {activeTab === 'comments' && (
-                    <div className="max-w-3xl mx-auto flex flex-col h-[70vh] bg-[#0a0a0a] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden relative animate-slide-in-up">
-                        {/* Chat Messages */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                    <div className="max-w-3xl mx-auto flex flex-col h-[75vh] bg-[#0a0a0a] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden relative animate-slide-in-up">
+                        {/* Messages Area */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar pb-32">
                             {reviews.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-zinc-700">
                                     <MessageSquare size={48} className="mb-4 opacity-20"/>
@@ -370,35 +378,53 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                                 reviews.map((rev) => {
                                     const isMe = userProfile?.id === rev.user_id;
                                     const isAdminComment = ['admin', 'owner'].includes(rev.profiles?.role);
+                                    const isReply = !!rev.parent_id;
 
                                     return (
-                                        <div key={rev.id} className={`flex items-start gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                        <div key={rev.id} id={`comment-${rev.id}`} className={`flex items-start gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                                             <div className="flex-shrink-0 mt-1">
-                                                <div className={`w-9 h-9 rounded-full overflow-hidden border-2 ${isAdminComment ? 'border-red-500' : 'border-zinc-800'}`}>
-                                                    {rev.profiles?.avatar_url ? <img src={rev.profiles.avatar_url} className="w-full h-full object-cover" /> : <User size={18} className="w-full h-full p-2 bg-zinc-900 text-zinc-600"/>}
+                                                <div className={`w-10 h-10 rounded-full overflow-hidden border-2 ${isAdminComment ? 'border-red-500' : 'border-zinc-800 shadow-lg'}`}>
+                                                    {rev.profiles?.avatar_url ? <img src={rev.profiles.avatar_url} className="w-full h-full object-cover" alt="avatar" /> : <User size={20} className="w-full h-full p-2 bg-zinc-900 text-zinc-600"/>}
                                                 </div>
                                             </div>
-                                            <div className={`max-w-[80%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                                <div className="flex items-center gap-2 mb-1 px-1">
+                                            <div className={`max-w-[85%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                                <div className="flex items-center gap-2 mb-1 px-2">
                                                     <span className={`text-[10px] font-black uppercase tracking-tight ${isAdminComment ? 'text-red-500' : 'text-zinc-500'}`}>
                                                         {rev.profiles?.username || 'user'}
                                                     </span>
                                                     {isAdminComment && <VerifiedBadge type="gold" className="w-3 h-3" />}
                                                 </div>
-                                                <div className={`p-4 rounded-3xl shadow-lg relative ${isMe ? 'bg-orange-600 text-white rounded-tr-none' : 'bg-zinc-900 text-zinc-200 rounded-tl-none border border-white/5'}`}>
+
+                                                <div className={`p-4 rounded-[1.8rem] shadow-xl relative transition-all active:scale-[0.98] ${isMe ? 'bg-orange-600 text-white rounded-tr-none' : 'bg-zinc-900 text-zinc-200 rounded-tl-none border border-white/5'}`}>
+                                                    
+                                                    {/* Reply UI in Bubble */}
+                                                    {isReply && (
+                                                        <div 
+                                                            onClick={() => document.getElementById(`comment-${rev.parent_id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                                                            className={`mb-3 p-3 rounded-2xl border-l-4 cursor-pointer hover:bg-black/20 transition-colors ${isMe ? 'bg-orange-700/50 border-orange-400' : 'bg-black/20 border-orange-500'}`}
+                                                        >
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-400 mb-0.5">@{rev.parent?.profiles?.username}</p>
+                                                            <p className="text-[11px] line-clamp-2 opacity-70 italic leading-tight">{rev.parent?.comment}</p>
+                                                        </div>
+                                                    )}
+
                                                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
                                                         {renderCommentText(rev.comment)}
                                                     </p>
-                                                    <div className="flex items-center gap-1 mt-2">
-                                                        {[...Array(5)].map((_, i) => (
-                                                            <Star key={i} size={8} className={i < rev.rating ? (isMe ? "text-orange-200 fill-orange-200" : "text-yellow-500 fill-yellow-500") : "opacity-20"} />
-                                                        ))}
+                                                    
+                                                    <div className="flex items-center justify-between gap-4 mt-2">
+                                                        <div className="flex items-center gap-0.5">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <Star key={i} size={8} className={i < rev.rating ? (isMe ? "text-orange-200 fill-orange-200" : "text-yellow-500 fill-yellow-500") : "opacity-20"} />
+                                                            ))}
+                                                        </div>
+                                                        <span className={`text-[8px] font-mono opacity-40`}>{new Date(rev.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-4 mt-1.5 px-2">
-                                                    <button onClick={() => handleReply(rev.profiles?.username || 'user')} className="text-[9px] font-black text-zinc-600 hover:text-white uppercase tracking-widest">Javob</button>
-                                                    {(isAdminOrOwner || isMe) && <button onClick={() => handleDeleteReview(rev.id)} className="text-[9px] font-black text-red-900/50 hover:text-red-500 uppercase tracking-widest">O'chirish</button>}
-                                                    <span className="text-[8px] font-mono text-zinc-700">{new Date(rev.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+
+                                                <div className="flex gap-4 mt-1.5 px-3">
+                                                    <button onClick={() => handleReply(rev)} className="flex items-center gap-1 text-[9px] font-black text-zinc-600 hover:text-white uppercase tracking-widest transition-colors"> <CornerUpLeft size={10}/> Javob</button>
+                                                    {(isAdminOrOwner || isMe) && <button onClick={() => handleDeleteReview(rev.id)} className="text-[9px] font-black text-red-900/50 hover:text-red-500 uppercase tracking-widest transition-colors">O'chirish</button>}
                                                 </div>
                                             </div>
                                         </div>
@@ -408,42 +434,54 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                             <div ref={commentsEndRef} />
                         </div>
 
-                        {/* Chat Input */}
-                        <form onSubmit={handleReviewSubmit} className="p-4 bg-[#121212] border-t border-white/5 flex items-end gap-3">
-                            <div className="flex-1 bg-black/40 rounded-3xl border border-white/5 px-5 py-2 flex flex-col focus-within:border-orange-500 transition-all">
-                                {replyToUser && (
-                                    <div className="flex items-center justify-between py-1 border-b border-white/5 mb-1 animate-fade-in">
-                                        <span className="text-[9px] font-black text-orange-500 uppercase">Javob: @{replyToUser}</span>
-                                        <button onClick={() => {setReplyToUser(null); setCommentText(commentText.replace(`@${replyToUser} `, ''))}}><XCircle size={12} className="text-zinc-600"/></button>
+                        {/* Sticky Bottom Chat Input */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent">
+                            <form onSubmit={handleReviewSubmit} className="max-w-2xl mx-auto flex flex-col bg-[#121212] rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden">
+                                
+                                {/* Reply Preview above input */}
+                                {replyToComment && (
+                                    <div className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 animate-fade-in">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-1 h-8 bg-orange-500 rounded-full flex-shrink-0"></div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Javob qaytarilmoqda: @{replyToComment.username}</p>
+                                                <p className="text-xs text-zinc-500 truncate italic">{replyToComment.text}</p>
+                                            </div>
+                                        </div>
+                                        <button type="button" onClick={() => setReplyToComment(null)} className="p-2 text-zinc-500 hover:text-white transition-colors">
+                                            <XCircle size={18} />
+                                        </button>
                                     </div>
                                 )}
-                                <textarea 
-                                    ref={commentInputRef}
-                                    value={commentText}
-                                    onChange={e => setCommentText(e.target.value)}
-                                    placeholder="Fikringizni yozing..."
-                                    className="w-full bg-transparent border-none text-sm text-white focus:ring-0 outline-none resize-none max-h-32 py-2"
-                                    rows={1}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleReviewSubmit(e as any);
-                                        }
-                                    }}
-                                />
-                            </div>
-                            <button 
-                                type="submit"
-                                disabled={isSubmittingReview || !commentText.trim()}
-                                className="w-12 h-12 bg-orange-600 text-white rounded-2xl flex items-center justify-center hover:bg-orange-500 transition-all active:scale-90 disabled:opacity-50 shadow-xl shadow-orange-900/20"
-                            >
-                                {isSubmittingReview ? <LoadingSpinner /> : <Send size={20} />}
-                            </button>
-                        </form>
+
+                                <div className="flex items-end gap-2 p-3">
+                                    <textarea 
+                                        ref={commentInputRef}
+                                        value={commentText}
+                                        onChange={e => setCommentText(e.target.value)}
+                                        placeholder="Xabar yozing..."
+                                        className="flex-1 bg-transparent border-none text-sm text-white focus:ring-0 outline-none resize-none max-h-32 py-3 px-3 custom-scrollbar"
+                                        rows={1}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleReviewSubmit(e as any);
+                                            }
+                                        }}
+                                    />
+                                    <button 
+                                        type="submit"
+                                        disabled={isSubmittingReview || !commentText.trim()}
+                                        className="w-12 h-12 bg-orange-600 text-white rounded-2xl flex items-center justify-center hover:bg-orange-500 transition-all active:scale-90 disabled:opacity-50 shadow-lg shadow-orange-900/30 shrink-0"
+                                    >
+                                        {isSubmittingReview ? <LoadingSpinner /> : <Send size={20} />}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 )}
             </div>
         </div>
-    </div>
-  );
+    );
 };

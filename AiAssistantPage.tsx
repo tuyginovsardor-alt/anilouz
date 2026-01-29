@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, Sender } from './types';
 import { ChatMessageItem } from './components/ChatMessageItem';
-import { Send, Bot, Sparkles, Trash2, Zap, ExternalLink } from 'lucide-react';
+import { Send, Bot, Trash2, Zap, ExternalLink, RefreshCw, Sparkles } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { getMovies } from './services/dbService';
 
@@ -56,6 +56,7 @@ export const AiAssistantPage: React.FC = () => {
     setGroundingLinks([]);
 
     try {
+      // Use process.env.API_KEY directly as required
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -75,24 +76,31 @@ export const AiAssistantPage: React.FC = () => {
         },
       });
 
+      const textOutput = response.text || "Xatolik yuz berdi.";
+      
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: response.text || "Xatolik yuz berdi.",
+        text: textOutput,
         sender: Sender.Bot,
         timestamp: Date.now()
       };
 
-      // Extract Grounding Metadata
+      // Extract Grounding Metadata for source links
       const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       if (chunks) {
-          setGroundingLinks(chunks.filter((c: any) => c.web).map((c: any) => c.web));
+          const links = chunks.filter((c: any) => c.web).map((c: any) => c.web);
+          setGroundingLinks(links);
       }
       
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
-      console.error(error);
+      console.error("AI Error:", error);
       setMessages(prev => [...prev, {
-        id: 'err', text: "Aloqa xatosi. PIN yoki internetni tekshiring.", sender: Sender.Bot, timestamp: Date.now(), isError: true
+        id: 'err', 
+        text: "Kechirasiz, xizmatda vaqtincha uzilish bo'ldi. Iltimos, qayta urinib ko'ring.", 
+        sender: Sender.Bot, 
+        timestamp: Date.now(), 
+        isError: true
       }]);
     } finally {
       setIsTyping(false);
@@ -108,11 +116,11 @@ export const AiAssistantPage: React.FC = () => {
                   <Bot size={20} className="text-white" />
               </div>
               <div>
-                  <h2 className="font-black text-white text-sm uppercase tracking-tight">Anilo GPT v3</h2>
-                  <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Grounding Search Active</p>
+                  <h2 className="font-black text-white text-sm uppercase tracking-tight">Anilo GPT</h2>
+                  <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Powered by Gemini 3</p>
               </div>
           </div>
-          <button onClick={() => setMessages([])} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
+          <button onClick={() => setMessages([messages[0]])} className="p-2 text-zinc-500 hover:text-red-500 transition-colors" title="Chatni tozalash"><Trash2 size={18} /></button>
       </div>
 
       {/* Chat messages */}
@@ -125,7 +133,7 @@ export const AiAssistantPage: React.FC = () => {
         {groundingLinks.length > 0 && !isTyping && (
             <div className="ml-9 p-4 bg-blue-950/20 border border-blue-500/20 rounded-2xl animate-fade-in">
                 <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Zap size={12}/> Manbalar (Google Search):
+                    <Zap size={12}/> Manbalar:
                 </p>
                 <div className="space-y-2">
                     {groundingLinks.map((link, i) => (
@@ -158,7 +166,7 @@ export const AiAssistantPage: React.FC = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isTyping}
-            placeholder="Search anime or ask questions..."
+            placeholder="Anime haqida so'rang..."
             className="w-full pl-5 pr-12 py-4 bg-zinc-900 border border-white/10 rounded-2xl focus:border-blue-500 outline-none text-sm text-white"
           />
           <button type="submit" disabled={!input.trim() || isTyping} className="absolute right-2 p-2.5 bg-blue-600 text-white rounded-xl active:scale-95 shadow-lg shadow-blue-600/20">

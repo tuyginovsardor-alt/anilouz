@@ -14,7 +14,7 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// FIX: Inherit from Component directly to ensure proper property resolution for 'props' and 'state' in all TS environments
+// FIX: Explicitly extending Component ensures that the 'props' and 'state' members are correctly resolved from the base class by the TypeScript compiler
 export class ErrorBoundary extends Component<Props, State> {
   // Defining the state property with its types for strict mode compliance.
   public state: State = {
@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public render(): ReactNode {
-    // FIX: Access state and props from 'this' which are now correctly inherited and recognized
+    // FIX: Accessing state and props through 'this' which are now properly recognized inherited properties
     const { hasError, error } = this.state;
     const { children } = this.props;
 
