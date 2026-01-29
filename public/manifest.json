@@ -1,25 +1,41 @@
 {
-  "name": "Anilo.uz | Anime Olami",
   "short_name": "Anilo",
-  "description": "O'zbekistonning eng katta anime portali. Professional dublyaj.",
-  "start_url": "/",
+  "name": "Anilo.uz - Anime Olami",
+  "description": "Professional anime portali. Eng so'nggi animelar o'zbek tilida.",
+  "id": "/",
+  "start_url": "/?source=pwa",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "scope": "/",
+  "orientation": "portrait",
   "background_color": "#050505",
   "theme_color": "#f97316",
-  "orientation": "portrait",
-  "scope": "/",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["entertainment", "video"],
+  "shortcuts": [
+    {
+      "name": "Katalog",
+      "url": "/?page=catalog",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
     }
   ]
 }

@@ -1,31 +1,30 @@
-const CACHE_NAME = 'anilo-app-cache-v3';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'anilo-v4-pwa';
+const OFFLINE_URL = '/index.html';
+
+const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/logo.png',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap'
+  '/index.tsx'
 ];
 
-// Install Event
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      console.log('[SW] Caching all assets');
+      return cache.addAll(ASSETS);
     })
   );
   self.skipWaiting();
 });
 
-// Activate Event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       );
     })
@@ -33,28 +32,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch Event - Stale While Revalidate Strategy
+// PWA ishlashi uchun FETCH event bo'lishi shart!
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(OFFLINE_URL);
+      })
+    );
+    return;
+  }
+  
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith(self.location.origin)) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Fallback to index.html for navigation requests (SPA)
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
-      });
-
-      return cachedResponse || fetchPromise;
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
     })
   );
 });
