@@ -1,5 +1,5 @@
 
-// ... existing imports ...
+// ... keep existing imports ...
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
@@ -12,8 +12,37 @@ import { supabase } from './supabaseClient';
 import { isAiPilotEnabled, runAiServerManager } from './aiGuardService';
 import { getCache, setCache } from './cacheService';
 
-// --- FANDUB EXTENSIONS ---
+// --- FANDUB & ADMIN EXTENSIONS ---
 
+export const getAdminAllContent = async (): Promise<any[]> => {
+    try {
+        const { data: movies } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
+        const { data: fandubs } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').order('created_at', { ascending: false });
+        
+        const official = (movies || []).map(m => ({ ...m, type: 'official', posterUrl: m.poster_url || m.posterUrl }));
+        const community = (fandubs || []).map(f => ({ 
+            ...f, 
+            type: 'fandub', 
+            posterUrl: f.poster_url, 
+            translator: f.fandub_channels?.name || 'Studio'
+        }));
+        
+        return [...official, ...community].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } catch { return []; }
+};
+
+export const deleteFandubChannel = async (id: string) => {
+    const { error } = await supabase.from('fandub_channels').delete().eq('id', id);
+    if (error) throw error;
+};
+
+export const deleteFandubProject = async (id: number) => {
+    const { error } = await supabase.from('fandub_uploads').delete().eq('id', id);
+    if (error) throw error;
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
+};
+
+// ... keep previous extensions ...
 export const getFandubEarnings = async (channelId: string): Promise<FandubEarning[]> => {
     try {
         const { data } = await supabase.from('fandub_earnings').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
@@ -39,7 +68,6 @@ export const requestFandubWithdrawal = async (channelId: string, userId: string,
     if (error) throw error;
 };
 
-// ... keep all other existing functions below ...
 export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<string> => {
     return rawUrl || '';
 };
@@ -377,7 +405,7 @@ export const getUserHistory = async (userId: string): Promise<Movie[]> => {
 
 export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
     try {
-        const { data } = await supabase.from('saved_movies').select('*, movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
+        const { data = [] } = await supabase.from('saved_movies').select('*, movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
         return (data || []).map((s: any) => ({ ...s.movies, posterUrl: s.movies.posterUrl || s.movies.poster_url })).filter(Boolean) as Movie[];
     } catch (e) { return []; }
 };
@@ -653,8 +681,8 @@ export const rewardExtraSpin = async (userId: string, count: number) => {
 
 export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
     try {
-        const { data } = await supabase.from('ark_wallets').select('*').eq('user_id', userId).maybeSingle();
-        return data;
+        const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
+        return data as any; // Hack due to previous wallet ambiguity
     } catch (e) { return null; }
 };
 

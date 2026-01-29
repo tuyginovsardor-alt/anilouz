@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CloseIcon } from './icons/CloseIcon';
 import { Plus, Trash2, Film, Image as ImageIcon, Save, CheckCircle, Info, Link, Upload } from 'lucide-react';
 import { Episode } from '../types';
@@ -9,11 +9,12 @@ interface AddFandubUploadModalProps {
   onClose: () => void;
   onSave: (data: any) => void;
   isUploading: boolean;
+  initialData?: any;
 }
 
 const GENRE_OPTIONS = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Romance', 'Sci-Fi', 'Horror', 'Isekai', 'Shonen'];
 
-export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onClose, onSave, isUploading }) => {
+export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onClose, onSave, isUploading, initialData }) => {
     const [title, setTitle] = useState('');
     const [year, setYear] = useState(new Date().getFullYear());
     const [genre, setGenre] = useState<string[]>([]);
@@ -21,13 +22,24 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
     const [access, setAccess] = useState<'free' | 'premium'>('free');
     const [tags, setTags] = useState('');
     
-    // Poster State
     const [posterType, setPosterType] = useState<'url' | 'file'>('file');
     const [posterFile, setPosterFile] = useState<File | null>(null);
     const [posterUrl, setPosterUrl] = useState('');
-
-    // Episodes State
     const [episodes, setEpisodes] = useState<any[]>([{ title: '1-qism', type: 'file', source: null }]);
+
+    useEffect(() => {
+        if (initialData) {
+            setTitle(initialData.title);
+            setYear(initialData.year);
+            setGenre(initialData.genre.split(',').map((g: string) => g.trim()));
+            setDesc(initialData.desc);
+            setAccess(initialData.access);
+            setTags(initialData.tags || '');
+            setPosterUrl(initialData.posterUrl || '');
+            setPosterType('url');
+            setEpisodes(initialData.episodes || []);
+        }
+    }, [initialData]);
 
     const toggleGenre = (g: string) => {
         setGenre(prev => prev.includes(g) ? prev.filter(i => i !== g) : [...prev, g]);
@@ -46,9 +58,8 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (genre.length === 0) return alert("Kamida bitta janr tanlang");
-        
-        // Asosiy video: serial bo'lsa 1-qism, film bo'lsa yagona video
         onSave({
+            id: initialData?.id,
             title, year, genre: genre.join(', '), desc, access, tags,
             posterType, posterFile, posterUrl,
             episodes
@@ -60,7 +71,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
             <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => !isUploading && onClose()}></div>
             <form onSubmit={handleSubmit} className="relative bg-[#0a0a0a] border border-white/10 w-full max-w-5xl rounded-[3rem] p-8 md:p-12 overflow-y-auto max-h-[90vh] animate-slide-in-up custom-scrollbar">
                 <div className="flex justify-between items-center mb-10">
-                    <h2 className="text-4xl font-black uppercase tracking-tighter text-white">Yangi Loyiha Yuklash</h2>
+                    <h2 className="text-4xl font-black uppercase tracking-tighter text-white">{initialData ? 'Loyihani Tahrirlash' : 'Yangi Loyiha Yuklash'}</h2>
                     <button type="button" onClick={onClose} className="p-2 text-zinc-500 hover:text-white transition-colors"><CloseIcon className="w-8 h-8"/></button>
                 </div>
 
@@ -139,7 +150,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
                                     {ep.type === 'file' ? (
                                         <div className="relative h-20 border-2 border-dashed border-zinc-800 rounded-2xl flex items-center justify-center bg-black/20 hover:border-purple-600/30 transition-all cursor-pointer">
                                             <Film size={20} className="text-zinc-800 mr-2"/>
-                                            <span className="text-[9px] font-black uppercase text-zinc-600 truncate max-w-[150px]">{ep.source ? (ep.source as File).name : 'MP4/MKV Yuklash'}</span>
+                                            <span className="text-[9px] font-black uppercase text-zinc-600 truncate max-w-[150px]">{ep.source && ep.source instanceof File ? ep.source.name : 'MP4/MKV Yuklash'}</span>
                                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e=>handleEpisodeChange(idx, 'source', e.target.files?.[0] || null)} />
                                         </div>
                                     ) : (
@@ -159,7 +170,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
                 <div className="mt-12 flex gap-4 pt-8 border-t border-white/5">
                     <button type="button" onClick={onClose} disabled={isUploading} className="flex-1 py-5 bg-zinc-900 text-zinc-500 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95 transition-all">Bekor qilish</button>
                     <button type="submit" disabled={isUploading} className="flex-1 py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
-                        {isUploading ? <LoadingSpinner /> : <><Save size={18}/> Moderatsiyaga yuborish</>}
+                        {isUploading ? <LoadingSpinner /> : <><Save size={18}/> {initialData ? 'O\'zgarishlarni saqlash' : 'Moderatsiyaga yuborish'}</>}
                     </button>
                 </div>
             </form>

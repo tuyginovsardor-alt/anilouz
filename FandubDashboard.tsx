@@ -5,7 +5,7 @@ import { UserProfile, FandubUpload, FandubChannel, FandubEarning, FandubWithdraw
 import { 
     getUserProfile, getFandubChannel, updateFandubChannel, 
     getFandubUploads, uploadPoster, uploadVideo, getFandubPosts, createFandubPost, 
-    deleteFandubPost, deleteFandubUpload, getFandubEarnings, getFandubWithdrawals, requestFandubWithdrawal 
+    deleteFandubPost, deleteFandubUpload, getFandubEarnings, getFandubWithdrawals, requestFandubWithdrawal, updateFandubUpload 
 } from './services/dbService';
 import { 
     Mic, Film, Settings, LayoutGrid, Eye, Edit3, 
@@ -36,6 +36,7 @@ export const FandubDashboard: React.FC = () => {
     
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [editingProject, setEditingProject] = useState<any>(null);
     const { addNotification } = useNotification();
 
     // Withdrawal Form
@@ -99,20 +100,33 @@ export const FandubDashboard: React.FC = () => {
         } catch (e) { console.error(e); }
     };
 
-    // Added handleUpload implementation
-    const handleUpload = async (data: any) => {
+    const handleEditProject = (project: FandubUpload) => {
+        setEditingProject({
+            id: project.id,
+            title: project.title,
+            year: project.year,
+            genre: project.genre,
+            desc: project.description,
+            access: project.access_type,
+            tags: project.tags,
+            posterUrl: project.poster_url,
+            posterType: 'url',
+            episodes: project.episodes
+        });
+        setIsUploadModalOpen(true);
+    };
+
+    const handleSaveProject = async (data: any) => {
         setIsUploading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user || !channel) return;
 
-            // 1. Upload Poster if file
             let posterUrl = data.posterUrl;
             if (data.posterType === 'file' && data.posterFile) {
                 posterUrl = await uploadPoster(data.posterFile);
             }
 
-            // 2. Upload Episodes
             const processedEpisodes = await Promise.all(data.episodes.map(async (ep: any) => {
                 if (ep.type === 'file' && ep.source instanceof File) {
                     const url = await uploadVideo(ep.source);
@@ -121,10 +135,7 @@ export const FandubDashboard: React.FC = () => {
                 return { title: ep.title, source: ep.source };
             }));
 
-            // 3. Insert to DB
-            const { error } = await supabase.from('fandub_uploads').insert({
-                user_id: user.id,
-                channel_id: channel.id,
+            const payload = {
                 title: data.title,
                 description: data.desc,
                 poster_url: posterUrl,
@@ -134,27 +145,40 @@ export const FandubDashboard: React.FC = () => {
                 episodes: processedEpisodes,
                 tags: data.tags,
                 video_url: processedEpisodes[0]?.source || '',
-                status: 'pending'
-            });
+                status: 'pending' // Tahrirlanganda qayta moderatsiyaga tushadi
+            };
 
-            if (error) throw error;
+            if (data.id) {
+                await updateFandubUpload(data.id, payload);
+                addNotification({ type: 'success', title: 'Yangilandi', message: 'Loyihangiz qayta moderatsiyaga yuborildi.' });
+            } else {
+                await supabase.from('fandub_uploads').insert({ ...payload, user_id: user.id, channel_id: channel.id });
+                addNotification({ type: 'success', title: 'Yuborildi', message: 'Yangi loyiha ko\'rib chiqish uchun yuborildi.' });
+            }
 
-            addNotification({ type: 'success', title: 'Yuborildi', message: 'Loyiha ko\'rib chiqish uchun yuborildi.' });
             setIsUploadModalOpen(false);
+            setEditingProject(null);
             loadData();
         } catch (e: any) {
-            console.error(e);
-            addNotification({ type: 'error', title: 'Xatolik', message: e.message || 'Yuklash jarayonida xatolik yuz berdi.' });
+            addNotification({ type: 'error', title: 'Xatolik', message: e.message });
         } finally {
             setIsUploading(false);
         }
+    };
+
+    const handleDeleteProject = async (id: number) => {
+        if (!window.confirm("Haqiqatan ham ushbu loyihani o'chirmoqchimisiz?")) return;
+        try {
+            await deleteFandubUpload(id);
+            addNotification({ type: 'warning', title: 'O\'chirildi', message: 'Loyiha butunlay olib tashlandi.' });
+            loadData();
+        } catch (e) { console.error(e); }
     };
 
     if (loading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
 
     return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col lg:flex-row">
-            {/* Sidebar Navigation */}
             <aside className="w-full lg:w-72 bg-[#0a0a0a] border-r border-white/5 p-6 flex flex-col flex-shrink-0 sticky top-0 h-screen overflow-y-auto custom-scrollbar">
                 <div className="flex flex-col items-center mb-10">
                     <div className="w-24 h-24 rounded-3xl p-1 bg-gradient-to-tr from-purple-600 via-pink-600 to-blue-600 mb-4 shadow-2xl relative">
@@ -187,10 +211,7 @@ export const FandubDashboard: React.FC = () => {
                 </div>
             </aside>
 
-            {/* Main Content Area */}
             <main className="flex-1 p-6 lg:p-12 overflow-y-auto">
-                
-                {/* --- OVERVIEW TAB --- */}
                 {activeTab === 'overview' && (
                     <div className="space-y-10 animate-fade-in">
                         <header className="flex justify-between items-end">
@@ -198,7 +219,7 @@ export const FandubDashboard: React.FC = () => {
                                 <h1 className="text-4xl font-black uppercase tracking-tighter">Studio Boshqaruvi</h1>
                                 <p className="text-zinc-500 text-sm mt-1">Xush kelibsiz, {profile?.full_name}!</p>
                             </div>
-                            <button onClick={() => setIsUploadModalOpen(true)} className="px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:scale-105 transition-all"><Plus size={18} className="inline mr-2"/> Yuklash</button>
+                            <button onClick={() => { setEditingProject(null); setIsUploadModalOpen(true); }} className="px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:scale-105 transition-all"><Plus size={18} className="inline mr-2"/> Yuklash</button>
                         </header>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -267,7 +288,6 @@ export const FandubDashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* --- CONTENT TAB --- */}
                 {activeTab === 'content' && (
                     <div className="animate-fade-in space-y-8">
                          <div className="flex justify-between items-center">
@@ -275,7 +295,7 @@ export const FandubDashboard: React.FC = () => {
                             <span className="text-xs font-black text-zinc-500 uppercase tracking-widest bg-zinc-900 px-4 py-2 rounded-full border border-white/5">{myUploads.length} TA TOTAL</span>
                          </div>
 
-                         <div className="bg-[#0a0a0a] border border-white/5 rounded-[3rem] overflow-hidden">
+                         <div className="bg-[#0a0a0a] border border-white/5 rounded-[3rem] overflow-hidden shadow-3xl">
                              <table className="w-full text-left">
                                  <thead className="bg-[#111] text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
                                      <tr>
@@ -310,8 +330,8 @@ export const FandubDashboard: React.FC = () => {
                                              </td>
                                              <td className="p-6 text-right">
                                                  <div className="flex justify-end gap-2">
-                                                     <button className="p-3 bg-white/5 hover:bg-blue-600 text-zinc-500 hover:text-white rounded-2xl transition-all"><Edit3 size={18}/></button>
-                                                     <button onClick={() => deleteFandubUpload(up.id).then(loadData)} className="p-3 bg-white/5 hover:bg-red-600 text-zinc-500 hover:text-white rounded-2xl transition-all"><Trash2 size={18}/></button>
+                                                     <button onClick={() => handleEditProject(up)} className="p-3 bg-white/5 hover:bg-blue-600 text-zinc-500 hover:text-white rounded-2xl transition-all"><Edit3 size={18}/></button>
+                                                     <button onClick={() => handleDeleteProject(up.id)} className="p-3 bg-white/5 hover:bg-red-600 text-zinc-500 hover:text-white rounded-2xl transition-all"><Trash2 size={18}/></button>
                                                  </div>
                                              </td>
                                          </tr>
@@ -322,7 +342,6 @@ export const FandubDashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* --- WALLET TAB --- */}
                 {activeTab === 'wallet' && (
                     <div className="animate-fade-in grid grid-cols-1 lg:grid-cols-2 gap-10">
                         <div className="space-y-8">
@@ -383,7 +402,6 @@ export const FandubDashboard: React.FC = () => {
                     </div>
                 )}
 
-                {/* --- SETTINGS TAB --- */}
                 {activeTab === 'settings' && (
                     <div className="animate-fade-in max-w-2xl mx-auto space-y-10">
                         <div className="bg-[#0a0a0a] border border-white/10 rounded-[3.5rem] p-10 shadow-2xl">
@@ -416,7 +434,7 @@ export const FandubDashboard: React.FC = () => {
                 )}
             </main>
 
-            {isUploadModalOpen && <AddFandubUploadModal onClose={() => setIsUploadModalOpen(false)} onSave={handleUpload} isUploading={isUploading} />}
+            {isUploadModalOpen && <AddFandubUploadModal initialData={editingProject} onClose={() => { setIsUploadModalOpen(false); setEditingProject(null); }} onSave={handleSaveProject} isUploading={isUploading} />}
         </div>
     );
 };
