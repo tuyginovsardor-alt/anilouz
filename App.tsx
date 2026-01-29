@@ -216,7 +216,7 @@ const App: React.FC = () => {
 
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505]">
           
-          {/* Header logic: Added !selectedMovie check to hide it on movie detail page */}
+          {/* Header logic */}
           {!selectedMovie && !isPlayerActive && !activeVideoAd && page !== 'welcome' && (
             <Header 
               onNavigate={handleNavigation} 
@@ -244,7 +244,7 @@ const App: React.FC = () => {
                       <MovieDetailPage movie={selectedMovie} onBack={() => setSelectedMovie(null)} onPlay={() => setIsPlayerActive(true)} onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} onArtistClick={setSelectedArtistId} />
                     ) : (
                       <>
-                        {page === 'welcome' && <WelcomePage onSearch={handleNavigation as any} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}
+                        {page === 'welcome' && <WelcomePage onNavigate={handleNavigation} onSearch={handleNavigation as any} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}
                         {page === 'search' && <SearchPage initialQuery="" onNewSearch={() => {}} onMovieClick={handleMovieClick} />}
                         {page === 'catalog' && <CatalogPage onMovieClick={handleMovieClick} />}
                         {page === 'dashboard' && <DashboardPage viewUserId={selectedArtistId} currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={() => {}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}

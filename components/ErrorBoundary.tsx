@@ -1,5 +1,4 @@
-
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -13,11 +12,11 @@ interface State {
 
 /**
  * ErrorBoundary component to catch rendering errors in child components.
- * Fixed: Explicitly using React.Component with generic types to resolve 'state' and 'props' access issues.
+ * Fix: Changed to use named Component import to help the compiler resolve inheritance.
  */
-export class ErrorBoundary extends React.Component<Props, State> {
-  // Fixed: Declare and initialize state property outside constructor for better TypeScript support
-  public override state: State = {
+export class ErrorBoundary extends Component<Props, State> {
+  // Fix: Removed 'override' which was failing because the base class was not correctly recognized.
+  public state: State = {
     hasError: false,
     error: null,
   };
@@ -41,7 +40,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   };
 
   public render() {
-    // Fixed: Correctly accessing 'state' property from the inherited React.Component
+    // Fix: Proper inheritance allows accessing this.state and this.props.
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
@@ -53,7 +52,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
             Sayt yuklanishida muammo paydo bo'ldi. Internetni tekshiring yoki keshni tozalab qayta urining.
           </p>
           <div className="p-4 bg-zinc-900 rounded-lg border border-red-900/30 mb-6 max-w-md w-full overflow-hidden">
-             {/* Fixed: Accessing 'error' from state correctly */}
              <p className="text-xs text-red-400 font-mono break-all">{this.state.error?.message}</p>
           </div>
           <button 
@@ -66,7 +64,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fixed: Accessing 'children' from 'this.props' which is now correctly recognized
     return this.props.children;
   }
 }

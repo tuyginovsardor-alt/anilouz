@@ -2,17 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { getAppConfig } from './services/dbService';
 import { Movie } from './types';
-import { Crown, X, ArrowLeft } from 'lucide-react';
+import { Crown, X, ArrowLeft, ShieldCheck, FileText, Info } from 'lucide-react';
 import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
+import { Page } from './App';
 
 interface WelcomePageProps {
   onMovieClick: (movie: Movie) => void; 
   onSearch: (query: string) => void;
-  onStart: () => void; // Bu Login modalni ochadi
+  onStart: () => void; 
+  onNavigate: (page: Page) => void; // Added onNavigate to props
 }
 
-export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
+export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart, onNavigate }) => {
   const [customBg, setCustomBg] = useState<string | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [customLogo, setCustomLogo] = useState<string | null>(null);
@@ -30,7 +32,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
 
   const handlePlanSelection = (plan: string) => {
       setShowPremiumModal(false);
-      // Biroz kutib turib Login ni ochamiz, smooth tranzaksiya uchun
       setTimeout(() => onStart(), 300);
   };
 
@@ -41,14 +42,14 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
       
       {/* Background */}
       <div className="absolute inset-0 z-0">
-          <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-70 animate-pulse-slow" />
+          <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-70" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black"></div>
       </div>
 
-      {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 pb-16 flex flex-col items-center text-center animate-slide-in-up">
+      {/* Main Content */}
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center animate-slide-in-up">
           
-          <div className="mb-10 flex flex-row items-center gap-5">
+          <div className="mb-8 flex flex-row items-center gap-5">
               <div className="w-16 h-16 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center shrink-0">
                   {customLogo ? (
                       <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -93,14 +94,40 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart }) => {
           </div>
       </div>
 
-      {/* PREMIUM MODAL (Responsive Bottom Sheet) */}
+      {/* --- FOOTER LEGAL LINKS (NEW) --- */}
+      <div className="absolute bottom-8 left-0 right-0 z-20 flex flex-col items-center gap-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div className="flex items-center gap-2 md:gap-6 bg-black/40 backdrop-blur-md border border-white/5 p-1 rounded-full px-4">
+              <button 
+                onClick={() => onNavigate('copyright')}
+                className="flex items-center gap-1.5 py-2 px-3 text-[10px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
+              >
+                  <ShieldCheck size={12} /> Maxfiylik
+              </button>
+              <div className="w-px h-3 bg-zinc-800"></div>
+              <button 
+                onClick={() => onNavigate('copyright')}
+                className="flex items-center gap-1.5 py-2 px-3 text-[10px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
+              >
+                  <FileText size={12} /> Oferta
+              </button>
+              <div className="w-px h-3 bg-zinc-800"></div>
+              <button 
+                onClick={() => onNavigate('copyright')}
+                className="flex items-center gap-1.5 py-2 px-3 text-[10px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
+              >
+                  <Info size={12} /> Biz haqimizda
+              </button>
+          </div>
+          <p className="text-[8px] text-zinc-700 font-black uppercase tracking-[0.4em]">© 2025 ANILO MEDIA GROUP</p>
+      </div>
+
+      {/* PREMIUM MODAL */}
       {showPremiumModal && (
           <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowPremiumModal(false)}>
               <div 
                 className="bg-[#0a0a0a] border-t sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-6xl h-[90vh] sm:h-auto sm:max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col transition-transform duration-300" 
                 onClick={e => e.stopPropagation()}
               >
-                  {/* Handle bar for mobile feel */}
                   <div className="w-full flex justify-center pt-3 pb-1 sm:hidden" onClick={() => setShowPremiumModal(false)}>
                       <div className="w-12 h-1.5 bg-zinc-800 rounded-full"></div>
                   </div>
