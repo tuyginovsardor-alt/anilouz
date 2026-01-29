@@ -13,9 +13,9 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// FIX: Extending Component directly from react to ensure TypeScript correctly resolves inherited properties like 'props'
-export class ErrorBoundary extends Component<Props, State> {
-  // FIX: Explicitly declaring state as a property of the class helps TypeScript resolve it correctly
+// FIX: Using React.Component explicitly to ensure that 'props' and 'state' are correctly inherited and typed
+export class ErrorBoundary extends React.Component<Props, State> {
+  // FIX: Defining the state property with its types
   public state: State = {
     hasError: false,
     error: null,
@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     // Returning children if no error occurred.
-    // FIX: Correctly access props inherited from Component.
+    // FIX: Correctly access props inherited from React.Component to resolve the TS error 'Property props does not exist'
     return this.props.children;
   }
 }

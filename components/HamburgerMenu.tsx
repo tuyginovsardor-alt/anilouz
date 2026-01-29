@@ -101,6 +101,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
     if (!isOpen) return null;
 
+    // Check if user has creator access (fandub, admin or owner)
+    const hasCreatorAccess = profile && ['fandub', 'admin', 'owner'].includes(profile.role);
+
     return (
         <div className="fixed inset-0 z-[200] flex justify-end animate-fade-in">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
@@ -115,19 +118,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     
-                    {/* --- PROFIL BANNER HUDUDI (Rasmda qizil bilan belgilangan maydon) --- */}
+                    {/* --- PROFIL BANNER HUDUDI --- */}
                     <div className="relative pt-20 pb-10 px-6 flex flex-col items-center overflow-hidden">
-                        {/* Banner Fon Rasmi */}
                         <div className="absolute inset-0 z-0">
                             {profile?.banner_url ? (
                                 <img src={profile.banner_url} className="w-full h-full object-cover opacity-40 blur-[2px]" alt="" />
                             ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-orange-950 via-[#0a0a0a] to-black"></div>
                             )}
-                            {/* Overlay Gradient (Rasmda ko'rsatilganidek pastki qismi qora bilan ulanadi) */}
                             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-black/20"></div>
                             
-                            {/* Reklama Banneri Overlay (Agar foydalanuvchi Premium bo'lmasa yoki maxsus taklif uchun) */}
                             {profile?.role === 'user' && (
                                 <div 
                                     onClick={() => handleAction('sub', 'plans')}
@@ -142,7 +142,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             )}
                         </div>
 
-                        {/* Profil Ma'lumotlari (Banner ustida) */}
                         <div className="relative z-10 flex flex-col items-center">
                             <div 
                                 className="relative mb-4 group cursor-pointer" 
@@ -184,7 +183,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         </div>
                     </div>
 
-                    {/* Menyu Qismlari */}
                     <div className="px-6 pb-10">
                         {isInstallable && (
                             <button 
@@ -195,7 +193,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             </button>
                         )}
 
-                        {profile?.role === 'fandub' && (
+                        {/* Updated role check: owner and admin can now access Fandub Studio */}
+                        {hasCreatorAccess && (
                             <div className="mb-6">
                                 <button 
                                     onClick={() => handleAction('main', 'fandub-dashboard')}
@@ -271,7 +270,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                 </div>
             </div>
 
-            {/* Story Viewer Component */}
             {showStory && myStory.length > 0 && (
                 <StoryViewer 
                     stories={myStory} 

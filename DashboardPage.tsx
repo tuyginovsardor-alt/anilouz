@@ -43,7 +43,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
     const isAdmin = ['admin', 'owner', 'manager'].includes(currentRole);
-    const isDubber = currentRole === 'dub';
+    // Updated isDubber logic to include admin and owner
+    const canAccessCreatorStudio = ['fandub', 'admin', 'owner', 'dub'].includes(currentRole);
 
     useEffect(() => {
         if (currentPage === 'more') {
@@ -64,7 +65,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     const renderContent = () => {
         switch (currentPage) {
             case 'profile': return <ProfilePage viewUserId={viewUserId} onMainNavigate={onMainNavigate} />;
-            case 'settings': return <SettingsPage onNavigate={onNavigate} />; // Updated prop
+            case 'settings': return <SettingsPage onNavigate={onNavigate} />;
             case 'history': return <HistoryPage onMovieClick={onMovieClick} viewUserId={viewUserId} />;
             case 'saved': return <SavedPage onMovieClick={onMovieClick} viewUserId={viewUserId} />;
             case 'account': return <AccountPage onNavigate={onNavigate} />;
@@ -87,10 +88,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
                         
                         <div className="grid gap-4">
-                            {/* IJODKOR XONASI TUGMASI - FAQAT DUBLLYAJCHILAR UCHUN */}
-                            {isDubber && (
+                            {/* IJODKOR XONASI TUGMASI - OWNER VA ADMIN HAM KIROLADI */}
+                            {canAccessCreatorStudio && (
                                 <button 
-                                    onClick={() => onMainNavigate('dub-dashboard')} 
+                                    onClick={() => onMainNavigate('fandub-dashboard')} 
                                     className="group w-full flex items-center justify-between p-6 bg-gradient-to-r from-purple-600/20 via-purple-600/10 to-transparent border border-purple-500/30 rounded-[2.5rem] text-purple-400 font-black transition-all hover:scale-[1.02] active:scale-95 shadow-2xl shadow-purple-500/10"
                                 >
                                     <div className="flex items-center gap-5">
