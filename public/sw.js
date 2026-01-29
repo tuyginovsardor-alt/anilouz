@@ -1,51 +1,39 @@
-const CACHE_NAME = 'anilo-v4-pwa';
-const OFFLINE_URL = '/index.html';
-
+const CACHE_NAME = 'anilo-v7';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/logo.png',
-  '/index.tsx'
+  './',
+  './index.html',
+  './manifest.json',
+  './logo.svg',
+  './logo.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching all assets');
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
-        })
-      );
-    })
+    caches.keys().then((keys) => Promise.all(
+      keys.map((key) => {
+        if (key !== CACHE_NAME) return caches.delete(key);
+      })
+    ))
   );
   self.clients.claim();
 });
 
-// PWA ishlashi uchun FETCH event bo'lishi shart!
+// PWA installable bo'lishi uchun fetch listener majburiy!
 self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(OFFLINE_URL);
-      })
-    );
-    return;
-  }
+  if (event.request.method !== 'GET') return;
   
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cached) => {
+      return cached || fetch(event.request).catch(() => {
+        if (event.request.mode === 'navigate') return caches.match('./index.html');
+      });
     })
   );
 });

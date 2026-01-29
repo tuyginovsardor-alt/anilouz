@@ -14,8 +14,7 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// Explicitly use Component from React for proper inheritance in TypeScript.
-// Using named import for better type inference in rendering context.
+// FIX: Inherit from Component directly to ensure proper property resolution for 'props' and 'state' in all TS environments
 export class ErrorBoundary extends Component<Props, State> {
   // Defining the state property with its types for strict mode compliance.
   public state: State = {
@@ -27,24 +26,24 @@ export class ErrorBoundary extends Component<Props, State> {
     super(props);
   }
 
-  // Update state when an error occurs
+  // Update state when an error occurs so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
   // Clear bad application state/cache and reload the page
   private handleReload = () => {
-    localStorage.clear(); // Clear bad cache
+    localStorage.clear(); // Clear bad cache that might be causing the crash
     window.location.reload();
   };
 
   public render(): ReactNode {
-    // FIX: Using 'this' context explicitly on state and props within a class component.
-    // TypeScript occasionally fails to infer 'props' existence if the class definition is ambiguous.
+    // FIX: Access state and props from 'this' which are now correctly inherited and recognized
     const { hasError, error } = this.state;
     const { children } = this.props;
 
