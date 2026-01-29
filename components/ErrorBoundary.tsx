@@ -14,9 +14,9 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// Fix: Using React.Component explicitly to ensure state and props are correctly inherited and recognized.
-export class ErrorBoundary extends React.Component<Props, State> {
-  // Fix: Explicitly declare state as a class property to resolve "Property 'state' does not exist" error.
+// Fix: Use the standard Component inheritance with explicit generic types for Props and State.
+export class ErrorBoundary extends Component<Props, State> {
+  // Fix: Correctly initialize state as a class property to ensure it's recognized by TypeScript.
   public state: State = {
     hasError: false,
     error: null,
@@ -24,7 +24,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    // Initializing state in constructor as well for compatibility
+    // Ensuring state is initialized correctly within the constructor context.
     this.state = {
       hasError: false,
       error: null,
@@ -49,7 +49,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   public render() {
     // Check for error state to display fallback UI
-    // Fix: Accessing this.state which is now explicitly declared and inherited correctly
+    // Fix: Accessing this.state which is correctly inherited from Component.
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
@@ -74,7 +74,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     }
 
     // Returning children if no error occurred.
-    // Fix: Accessing this.props which is now inherited correctly from React.Component
+    // Fix: Accessing this.props which is now correctly inherited from the base Component class.
     return this.props.children;
   }
 }

@@ -9,6 +9,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { getMovies, getFandubChannels, getActiveStories, toggleFollowChannel, getFandubPosts } from './services/dbService';
 import { MovieCard } from './components/MovieCard';
 import { useNotification } from './hooks/useNotification';
+import { StoryViewer } from './components/StoryViewer';
 
 interface StudioPageProps {
     onMovieClick: (movie: Movie) => void;
@@ -24,6 +25,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
     const [channelPosts, setChannelPosts] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<'content' | 'community' | 'about'>('content');
     const [activeStoryView, setActiveStoryView] = useState<FandubStory | null>(null);
+    const [storyIndex, setStoryIndex] = useState(0);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const { addNotification } = useNotification();
 
@@ -68,11 +70,17 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
         } catch (e) { console.error(e); }
     };
 
+    const handleOpenStory = (index: number) => {
+        setStoryIndex(index);
+        setActiveStoryView(stories[index]);
+    };
+
     if (loading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
 
     return (
         <div className="min-h-screen bg-[#050505] text-white pb-32 animate-fade-in font-sans">
             
+            {/* Story Bar */}
             <div className="w-full bg-[#0a0a0a]/50 border-b border-white/5 py-8 overflow-x-hidden">
                 <div className="container mx-auto px-4">
                     <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
@@ -84,7 +92,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                         </div>
 
                         {stories.map((story, i) => (
-                            <div key={story.id} onClick={() => setActiveStoryView(story)} className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+                            <div key={story.id} onClick={() => handleOpenStory(i)} className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
                                 <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500 shadow-2xl group-active:scale-95 transition-all duration-300">
                                     <div className="w-full h-full rounded-full bg-black border-2 border-black overflow-hidden relative">
                                         {story.media_type === 'image' ? (
@@ -102,6 +110,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
             </div>
 
             <div className="container mx-auto px-4 mt-16 space-y-24">
+                {/* ... existing sections ... */}
                 <section>
                     <div className="flex items-center gap-4 mb-10">
                         <div className="w-1.5 h-8 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(147,51,234,0.5)]"></div>
@@ -143,7 +152,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                 </section>
             </div>
 
-            {/* CHANNEL DETAIL MODAL (NEW DESIGN) */}
+            {/* CHANNEL DETAIL MODAL */}
             {selectedChannel && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 lg:p-4 animate-fade-in">
                     <div className="absolute inset-0 bg-black/98 backdrop-blur-xl" onClick={() => setSelectedChannel(null)}></div>
@@ -222,6 +231,15 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Story Viewer Component */}
+            {activeStoryView && (
+                <StoryViewer 
+                    stories={stories} 
+                    initialIndex={storyIndex} 
+                    onClose={() => setActiveStoryView(null)} 
+                />
             )}
         </div>
     );

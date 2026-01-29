@@ -7,9 +7,10 @@ import {
 } from 'lucide-react';
 import { DashboardSubPage, Page, LegalDocType } from '../App';
 import { supabase } from '../services/supabaseClient';
-import { getUserProfile } from '../services/dbService';
-import { UserRole, UserProfile } from '../types';
-import { usePWA } from './InstallPWA'; // Import hook
+import { getUserProfile, getActiveStories } from '../services/dbService';
+import { UserRole, UserProfile, FandubStory } from '../types';
+import { usePWA } from './InstallPWA';
+import { StoryViewer } from './StoryViewer';
 
 interface HamburgerMenuProps {
     isOpen: boolean;
@@ -61,15 +62,23 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     isOpen, onClose, onLogout, onMainNavigate, onDashboardNavigate, onSwitchRole, onOpenLegal 
 }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
-    const { isInstallable, installApp } = usePWA(); // Access PWA logic
+    const [myStory, setMyStory] = useState<FandubStory[]>([]);
+    const [showStory, setShowStory] = useState(false);
+    const { isInstallable, installApp } = usePWA();
 
     useEffect(() => {
         if (isOpen) {
             const loadData = async () => {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                    const p = await getUserProfile(user.id);
+                    const [p, stories] = await Promise.all([
+                        getUserProfile(user.id),
+                        getActiveStories()
+                    ]);
                     setProfile(p as UserProfile);
+                    // Faqat o'zimga tegishli faol istoryani qidiramiz
+                    const mine = stories.filter(s => s.user_id === user.id);
+                    setMyStory(mine);
                 }
             };
             loadData();
@@ -88,17 +97,17 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         onClose();
     };
 
+    const isPrivileged = profile && profile.role !== 'user';
+    const hasStory = myStory.length > 0;
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[200] flex justify-end animate-fade-in">
-            {/* Overlay */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
 
-            {/* Menu Panel */}
             <div className="relative w-full max-w-sm bg-[#0a0a0a] h-full border-l border-white/10 shadow-2xl flex flex-col overflow-hidden animate-slide-in-right">
                 
-                {/* Header with Close Button */}
                 <div className="absolute top-4 right-4 z-20">
                     <button onClick={onClose} className="p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all">
                         <X size={20} />
@@ -107,10 +116,15 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     
-                    {/* 1. Profile Header (Big Avatar) */}
                     <div className="pt-16 pb-8 px-6 flex flex-col items-center bg-gradient-to-b from-orange-900/20 to-transparent">
-                        <div className="relative mb-4 group cursor-pointer" onClick={() => handleAction('sub', 'profile')}>
-                            <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-orange-500 to-red-600 shadow-[0_0_30px_rgba(249,115,22,0.3)]">
+                        <div 
+                            className="relative mb-4 group cursor-pointer" 
+                            onClick={() => {
+                                if (hasStory && isPrivileged) setShowStory(true);
+                                else handleAction('sub', 'profile');
+                            }}
+                        >
+                            <div className={`w-24 h-24 rounded-full p-1 transition-all duration-500 ${hasStory && isPrivileged ? 'bg-gradient-to-tr from-orange-500 via-pink-600 to-purple-600 animate-spin-slow' : 'bg-zinc-800'}`}>
                                 <div className="w-full h-full rounded-full bg-black overflow-hidden border-2 border-black">
                                     {profile?.avatar_url ? (
                                         <img src={profile.avatar_url} className="w-full h-full object-cover" alt="" />
@@ -119,20 +133,28 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                                     )}
                                 </div>
                             </div>
-                            <div className="absolute bottom-0 right-0 bg-white text-black p-1.5 rounded-full shadow-lg border-2 border-black">
-                                <Edit3 size={14} />
-                            </div>
+                            {hasStory && isPrivileged && (
+                                <div className="absolute -top-1 -right-1 bg-orange-600 text-[8px] font-black px-2 py-0.5 rounded-full border border-black animate-bounce shadow-lg">
+                                    STORY
+                                </div>
+                            )}
+                            {!hasStory && (
+                                <div className="absolute bottom-0 right-0 bg-white text-black p-1.5 rounded-full shadow-lg border-2 border-black">
+                                    <Edit3 size={14} />
+                                </div>
+                            )}
                         </div>
                         
                         <h2 className="text-xl font-black text-white uppercase tracking-tight mb-1">
                             {profile?.full_name || 'Foydalanuvchi'}
                         </h2>
-                        <p className="text-sm font-bold text-orange-500">@{profile?.username}</p>
+                        <div className="flex items-center gap-2">
+                             <p className="text-sm font-bold text-orange-500">@{profile?.username}</p>
+                             {isPrivileged && <Crown size={12} className="text-yellow-500 fill-yellow-500" />}
+                        </div>
                     </div>
 
-                    {/* 2. Menu Items */}
                     <div className="px-6 pb-10">
-                        {/* Install App Button - Prominent */}
                         {isInstallable && (
                             <button 
                                 onClick={installApp}
@@ -142,7 +164,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             </button>
                         )}
 
-                        {/* Fandub Special Section */}
                         {profile?.role === 'fandub' && (
                             <div className="mb-6">
                                 <button 
@@ -196,7 +217,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             <MenuItem icon={<Lock size={20}/>} label="Maxfiylik Siyosati" hasArrow={false} onClick={() => {onOpenLegal('privacy'); onClose();}} />
                         </MenuSection>
 
-                        {/* Admin Section */}
                         {['admin', 'owner'].includes(profile?.role || '') && (
                             <MenuSection title="Administrator">
                                 <MenuItem icon={<ShieldCheck size={20}/>} label="Admin Panelga o'tish" onClick={() => { onSwitchRole(profile!.role); onClose(); }} />
@@ -219,6 +239,15 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Story Viewer Component */}
+            {showStory && myStory.length > 0 && (
+                <StoryViewer 
+                    stories={myStory} 
+                    initialIndex={0} 
+                    onClose={() => setShowStory(false)} 
+                />
+            )}
         </div>
     );
 };
