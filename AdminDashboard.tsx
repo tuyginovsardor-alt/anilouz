@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabaseClient';
 import { 
     Users, Film, CreditCard, MessageSquare, TrendingUp, AlertCircle, 
-    Check, X as XIcon, Eye, RefreshCw, Lock, Unlock, Layers, Sparkles, Terminal, Activity
+    Check, X as XIcon, Eye, RefreshCw, Lock, Unlock, Layers, Sparkles, Terminal, Activity, ArrowUpRight
 } from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { getDashboardStats, getPendingFandubUploads, approveFandubUpload, rejectFandubUpload, toggleBlockFandub } from './services/dbService';
@@ -11,13 +11,28 @@ import { runAiServerManager, isAiPilotEnabled, setAiPilotEnabled } from './servi
 import { FandubUpload } from './types';
 import { useNotification } from './hooks/useNotification';
 
+const StatCard: React.FC<{ label: string, value: number, icon: React.ReactNode, color: string }> = ({ label, value, icon, color }) => (
+    <div className="relative group bg-[#0a0a0a] border border-white/5 p-6 rounded-[2.5rem] overflow-hidden hover:border-orange-500/30 transition-all duration-500">
+        <div className={`absolute -right-6 -top-6 w-32 h-32 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-10 rounded-full blur-3xl transition-opacity`}></div>
+        
+        <div className="flex justify-between items-start mb-6">
+            <div className={`p-4 bg-black/50 border border-white/5 rounded-2xl group-hover:scale-110 transition-transform duration-500 shadow-xl`}>
+                {icon}
+            </div>
+            <ArrowUpRight className="text-zinc-800 group-hover:text-orange-500 transition-colors" size={20} />
+        </div>
+        
+        <h3 className="text-3xl font-black text-white tracking-tighter mb-1">{value.toLocaleString()}</h3>
+        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">{label}</p>
+    </div>
+);
+
 export const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState<any>(null);
     const [pendingUploads, setPendingUploads] = useState<FandubUpload[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     
-    // AI Guard State
     const [isAiPilotActive, setIsAiPilotActive] = useState(isAiPilotEnabled());
     const [aiLogs, setAiLogs] = useState<{time: string, msg: string, type: 'info'|'action'}[]>([]);
     const [isAiThinking, setIsAiThinking] = useState(false);
@@ -46,192 +61,141 @@ export const AdminDashboard: React.FC = () => {
         const newState = !isAiPilotActive;
         setIsAiPilotActive(newState);
         setAiPilotEnabled(newState);
-        addNotification({ 
-            type: 'info', 
-            title: 'AI Pilot', 
-            message: newState ? 'AI Pilot tizimi faollashtirildi.' : 'AI Pilot o\'chirildi.' 
-        });
+        addNotification({ type: 'info', title: 'AI Pilot', message: newState ? 'AI Pilot tizimi faollashtirildi.' : 'AI Pilot o\'chirildi.' });
     };
 
     const handleRunAiGuard = async () => {
         setIsAiThinking(true);
-        // Create context from current dashboard state
-        const context = `
-            Hozirgi holat: ${pendingUploads.length} ta tasdiqlanmagan fandub bor.
-            Pending Fandublar: ${pendingUploads.map(u => `${u.title} (${u.description})`).join(', ')}
-            Statistika: ${stats?.users} foydalanuvchi, ${stats?.payments} to'lov.
-        `;
-        
+        const context = `Hozirgi holat: ${pendingUploads.length} ta tasdiqlanmagan fandub. Statistika: ${stats?.users} users.`;
         const result = await runAiServerManager(context);
         if (result) {
-            const newLogs: {time: string, msg: string, type: 'info'|'action'}[] = [];
-            
-            result.actions.forEach(a => {
-                newLogs.push({ 
-                    time: new Date().toLocaleTimeString(), 
-                    msg: a, 
-                    type: 'action' as const 
-                });
-            });
-
-            if (result.analysis) {
-                newLogs.push({ 
-                    time: new Date().toLocaleTimeString(), 
-                    msg: result.analysis, 
-                    type: 'info' as const 
-                });
-            }
-
+            const newLogs: any[] = [];
+            result.actions.forEach(a => newLogs.push({ time: new Date().toLocaleTimeString(), msg: a, type: 'action' }));
+            if (result.analysis) newLogs.push({ time: new Date().toLocaleTimeString(), msg: result.analysis, type: 'info' });
             setAiLogs(prev => [...newLogs, ...prev].slice(0, 15));
-            if (result.actions.length > 0) loadData(); // Refresh if AI changed something
+            if (result.actions.length > 0) loadData();
         }
         setIsAiThinking(false);
     };
 
-    const handleApprove = async (id: number) => {
-        if(!window.confirm("Tasdiqlashni istaysizmi? Anime katalogda faollashadi.")) return;
-        try {
-            await approveFandubUpload(id);
-            addNotification({ type: 'success', title: 'Tasdiqlandi', message: 'Anime katalogga qo\'shildi.' });
-            loadData();
-        } catch (e) { console.error(e); }
-    };
-
-    const handleBlock = async (id: number, currentBlocked: boolean) => {
-        if(!window.confirm(currentBlocked ? "Blokdan chiqarishni istaysizmi?" : "Ushbu animeni bloklashni istaysizmi?")) return;
-        try {
-            await toggleBlockFandub(id, !currentBlocked);
-            addNotification({ type: 'info', title: !currentBlocked ? 'Bloklandi' : 'Ochildi', message: 'Muvaffaqiyatli.' });
-            loadData();
-        } catch (e) { console.error(e); }
-    };
-
-    if (loading) return <div className="flex justify-center items-center h-full"><LoadingSpinner /></div>;
-
-    const cards = [
-        { label: 'Jami Foydalanuvchilar', value: stats?.users || 0, icon: <Users className="text-blue-500" />, color: 'from-blue-500/10 to-transparent' },
-        { label: 'Barcha Animelar', value: stats?.movies || 0, icon: <Film className="text-orange-500" />, color: 'from-orange-500/10 to-transparent' },
-        { label: 'Tasdiqlangan To\'lovlar', value: stats?.payments || 0, icon: <CreditCard className="text-green-500" />, color: 'from-green-500/10 to-transparent' },
-        { label: 'Ochiq Murojaatlar', value: stats?.tickets || 0, icon: <MessageSquare className="text-red-500" />, color: 'from-red-500/10 to-transparent' },
-    ];
+    if (loading) return <div className="h-full flex items-center justify-center py-20"><LoadingSpinner /></div>;
 
     return (
-        <div className="animate-fade-in space-y-10 pb-10">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+        <div className="animate-fade-in space-y-10 pb-20 max-w-7xl mx-auto">
+            <header className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-5xl font-black uppercase tracking-tighter text-white">Xush Kelibsiz!</h1>
+                    <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px] mt-2 border-l-2 border-orange-600 pl-3">Tizim nazorati va moderatsiya paneli</p>
+                </div>
+                
                 <div className="flex gap-4">
-                    {/* AI GUARD CONTROLLER */}
-                    <div className={`flex items-center gap-3 p-1.5 pr-4 rounded-full border transition-all duration-500 ${isAiPilotActive ? 'bg-indigo-600/20 border-indigo-500' : 'bg-zinc-800 border-zinc-700'}`}>
+                    <div className={`flex items-center gap-4 p-2 pr-6 rounded-3xl border transition-all duration-500 ${isAiPilotActive ? 'bg-orange-600/10 border-orange-500/50' : 'bg-zinc-900 border-white/5'}`}>
                         <button 
                             onClick={handleToggleAiPilot}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isAiPilotActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/50' : 'bg-zinc-700 text-zinc-400'}`}
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isAiPilotActive ? 'bg-orange-600 text-white shadow-2xl shadow-orange-500/50' : 'bg-zinc-800 text-zinc-500'}`}
                         >
-                            <Sparkles size={18} className={isAiPilotActive ? 'animate-pulse' : ''} />
+                            <Sparkles size={20} className={isAiPilotActive ? 'animate-pulse' : ''} />
                         </button>
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">AI Pilot</span>
-                            <span className={`text-[9px] font-bold ${isAiPilotActive ? 'text-indigo-400' : 'text-zinc-500'}`}>{isAiPilotActive ? 'ACTIVE' : 'OFF'}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white">AI Server Guard</span>
+                            <span className={`text-[9px] font-bold ${isAiPilotActive ? 'text-orange-500' : 'text-zinc-600'}`}>{isAiPilotActive ? 'ACTIVE MONITORING' : 'STANDBY'}</span>
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
             
-            {/* AI TERMINAL MONITOR */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {cards.map((card, i) => (
-                        <div key={i} className={`bg-gray-800/40 border border-gray-700 p-6 rounded-2xl bg-gradient-to-br ${card.color}`}>
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 bg-gray-900/50 rounded-xl">{card.icon}</div>
-                                <TrendingUp className="text-gray-600 w-4 h-4" />
-                            </div>
-                            <p className="text-gray-400 text-sm font-medium">{card.label}</p>
-                            <h3 className="text-3xl font-bold text-white mt-1">{card.value.toLocaleString()}</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <StatCard label="Jami Foydalanuvchi" value={stats?.users || 0} icon={<Users size={24} className="text-blue-500" />} color="from-blue-600 to-transparent" />
+                <StatCard label="Anime Katalog" value={stats?.movies || 0} icon={<Film size={24} className="text-orange-500" />} color="from-orange-600 to-transparent" />
+                <StatCard label="To'lovlar (Jami)" value={stats?.payments || 0} icon={<CreditCard size={24} className="text-green-500" />} color="from-green-600 to-transparent" />
+                <StatCard label="Ochiq Ticketlar" value={stats?.tickets || 0} icon={<MessageSquare size={24} className="text-red-500" />} color="from-red-600 to-transparent" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* MODERATION TABLE */}
+                <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-[#0d0d0d]">
+                        <div className="flex items-center gap-3">
+                            <Activity className="text-orange-500" size={20}/>
+                            <h2 className="text-xl font-black uppercase tracking-tight text-white">Fandub Moderatsiyasi</h2>
                         </div>
-                    ))}
+                        <span className="px-3 py-1 bg-zinc-900 rounded-full text-[10px] font-black text-zinc-500 uppercase tracking-widest">{pendingUploads.length} TA KUTILMOQDA</span>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-[#111] text-zinc-600 text-[9px] font-black uppercase tracking-[0.2em]">
+                                <tr>
+                                    <th className="p-6">Ma'lumot</th>
+                                    <th className="p-6">Studio</th>
+                                    <th className="p-6 text-right">Amal</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {pendingUploads.length === 0 ? (
+                                    <tr><td colSpan={3} className="p-20 text-center text-zinc-700 font-black uppercase text-xs tracking-widest">Kutilayotgan loyihalar yo'q</td></tr>
+                                ) : pendingUploads.map(up => (
+                                    <tr key={up.id} className="group hover:bg-white/5 transition-all">
+                                        <td className="p-6 flex items-center gap-5">
+                                            <img src={up.poster_url} className="w-12 h-16 rounded-xl object-cover shadow-2xl border border-white/10" alt="" />
+                                            <div>
+                                                <p className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[150px]">{up.title}</p>
+                                                <p className="text-[9px] font-bold text-zinc-500 uppercase mt-1">{up.genre.split(',')[0]} • {up.year}</p>
+                                            </div>
+                                        </td>
+                                        <td className="p-6">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+                                                <p className="text-xs font-black text-purple-400 uppercase">{(up as any).fandub_channels?.name || 'Ijodkor'}</p>
+                                            </div>
+                                        </td>
+                                        <td className="p-6 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={() => approveFandubUpload(up.id).then(loadData)} className="p-3 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white rounded-2xl transition-all shadow-xl"><Check size={18}/></button>
+                                                <button onClick={() => toggleBlockFandub(up.id, true).then(loadData)} className="p-3 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all shadow-xl"><XIcon size={18}/></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                {/* AI LIVE LOGS */}
-                <div className="bg-black/40 border border-zinc-800 rounded-2xl p-6 flex flex-col h-full">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xs font-black uppercase text-zinc-500 tracking-widest flex items-center gap-2">
-                            <Terminal size={14} className="text-indigo-500" /> AI Server Guard Log
+                {/* AI LOGS TERMINAL */}
+                <div className="bg-black border border-white/5 rounded-[3rem] p-8 flex flex-col shadow-3xl h-full min-h-[500px]">
+                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+                        <h3 className="text-xs font-black uppercase text-zinc-500 tracking-[0.2em] flex items-center gap-3">
+                            <Terminal size={18} className="text-orange-500" /> AI Server Terminal
                         </h3>
-                        <button 
-                            onClick={handleRunAiGuard}
-                            disabled={isAiThinking}
-                            className={`p-1.5 rounded-lg transition-all ${isAiThinking ? 'bg-indigo-500 text-white animate-spin' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
-                        >
-                            <RefreshCw size={14} />
-                        </button>
+                        <div className="flex gap-2">
+                             <div className="w-2 h-2 rounded-full bg-red-500/50"></div>
+                             <div className="w-2 h-2 rounded-full bg-yellow-500/50"></div>
+                             <div className="w-2 h-2 rounded-full bg-green-500/50"></div>
+                        </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto space-y-3 font-mono text-[10px] custom-scrollbar min-h-[150px]">
-                        {aiLogs.length === 0 && <p className="text-zinc-700 italic">Tizim nazorat qilinmoqda...</p>}
+                    
+                    <div className="flex-1 overflow-y-auto space-y-4 font-mono text-[10px] custom-scrollbar">
+                        {aiLogs.length === 0 && <p className="text-zinc-800 animate-pulse italic">Tizim holati tekshirilmoqda...</p>}
                         {aiLogs.map((log, i) => (
-                            <div key={i} className={`p-2 rounded border ${log.type === 'action' ? 'bg-indigo-900/20 border-indigo-500/30 text-indigo-300' : 'bg-zinc-900/50 border-zinc-800 text-zinc-500'}`}>
-                                <span className="opacity-50">[{log.time}]</span> {log.msg}
+                            <div key={i} className={`p-4 rounded-2xl border ${log.type === 'action' ? 'bg-orange-600/10 border-orange-500/20 text-orange-400' : 'bg-zinc-900/50 border-white/5 text-zinc-600'}`}>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="opacity-40 uppercase font-black text-[8px]">{log.type}</span>
+                                    <span className="opacity-30">{log.time}</span>
+                                </div>
+                                <p className="leading-relaxed">{log.msg}</p>
                             </div>
                         ))}
                     </div>
-                </div>
-            </div>
 
-            <div className="bg-orange-600/10 border border-orange-500/20 p-8 rounded-3xl flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2"> <Layers className="text-orange-500" /> Yakka Premium To'plamlar</h2>
-                    <p className="text-zinc-500 text-sm mt-1">Eksklyuziv animelar uchun maxsus jildlar va tariflar yarating.</p>
-                </div>
-                <button className="px-8 py-3 bg-orange-600 hover:bg-orange-500 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl transition-all shadow-xl shadow-orange-900/20">Boshqarish</button>
-            </div>
-            
-            <div className="bg-gray-800/40 border border-gray-700 rounded-3xl p-8">
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle className="text-yellow-500" />
-                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">Fandub Moderatsiyasi ({pendingUploads.length})</h2>
-                    </div>
-                    <button onClick={loadData} disabled={refreshing} className="p-2 bg-gray-700 hover:bg-gray-600 rounded-full text-white transition-all">
-                        <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''}/>
+                    <button 
+                        onClick={handleRunAiGuard}
+                        disabled={isAiThinking}
+                        className={`mt-8 w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-3 border ${isAiThinking ? 'bg-orange-600/20 border-orange-500/50 text-orange-500 animate-pulse' : 'bg-white/5 border-white/10 text-zinc-500 hover:text-white hover:bg-white/10'}`}
+                    >
+                        {isAiThinking ? <RefreshCw className="animate-spin" size={14}/> : <Sparkles size={14}/>}
+                        {isAiThinking ? 'AI TAHLIL QILMOQDA' : 'MANUAL AI CHECK'}
                     </button>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-900/50 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                            <tr>
-                                <th className="p-5">Anime</th>
-                                <th className="p-5">Ijodkor</th>
-                                <th className="p-5">Status</th>
-                                <th className="p-5 text-right">Amallar</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-800">
-                            {pendingUploads.map(up => (
-                                <tr key={up.id} className="group hover:bg-gray-800/50 transition-all">
-                                    <td className="p-5 flex items-center gap-4">
-                                        <img src={up.poster_url} className="w-10 h-14 rounded object-cover shadow-lg" alt="" />
-                                        <div className="min-w-0">
-                                            <p className="text-white font-bold truncate">{up.title}</p>
-                                            <p className="text-[10px] text-zinc-500 font-mono uppercase">{up.genre}</p>
-                                        </div>
-                                    </td>
-                                    <td className="p-5">
-                                        <p className="text-sm text-purple-400 font-bold">{(up as any).fandub_channels?.name || 'Ijodkor'}</p>
-                                    </td>
-                                    <td className="p-5">
-                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${up.status === 'approved' ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>{up.status}</span>
-                                        {up.is_blocked && <span className="ml-2 px-2 py-0.5 bg-red-600/20 text-red-400 rounded text-[8px] font-black uppercase">BLOKLANGAN</span>}
-                                    </td>
-                                    <td className="p-5 text-right space-x-2">
-                                        {up.status === 'pending' && <button onClick={() => handleApprove(up.id)} className="p-2 bg-green-600 hover:bg-green-500 text-white rounded-lg"><Check size={16} /></button>}
-                                        <button onClick={() => handleBlock(up.id, !!up.is_blocked)} className={`p-2 rounded-lg ${up.is_blocked ? 'bg-orange-600' : 'bg-red-600 hover:bg-red-500'} text-white transition-all`}>
-                                            {up.is_blocked ? <Unlock size={16}/> : <Lock size={16}/>}
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>

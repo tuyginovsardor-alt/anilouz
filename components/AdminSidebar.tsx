@@ -20,7 +20,8 @@ import { GiftIcon } from './icons/GiftIcon';
 import { MapIcon } from './icons/MapIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
 import { ShieldIcon } from './icons/ShieldIcon';
-import { StampIcon } from './icons/StampIcon'; // Import
+import { StampIcon } from './icons/StampIcon';
+import { Layers } from 'lucide-react';
 
 interface AdminSidebarProps {
   currentRole: UserRole;
@@ -42,14 +43,18 @@ const NavItem: React.FC<{
         <button
             type="button"
             onClick={onClick}
-            className={`relative w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold transition-colors ${
-                isActive ? 'bg-orange-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+            className={`relative w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 group ${
+                isActive 
+                ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-600/20 translate-x-2' 
+                : 'text-zinc-500 hover:text-white hover:bg-white/5 border border-transparent'
             }`}
         >
-            {icon}
+            <span className={`${isActive ? 'text-white' : 'text-zinc-600 group-hover:text-orange-500'} transition-colors`}>
+                {icon}
+            </span>
             <span className="flex-1 text-left">{label}</span>
             {(count !== undefined && count > 0) && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-500 text-black text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm shadow-yellow-500/20 border border-yellow-600">
+                <span className={`absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-full text-[9px] font-black border ${isActive ? 'bg-white text-orange-600 border-white' : 'bg-orange-600 text-white border-orange-500 animate-pulse'}`}>
                     {count > 99 ? '99+' : count}
                 </span>
             )}
@@ -57,24 +62,24 @@ const NavItem: React.FC<{
     </li>
 );
 
-// Added 'stamp_tool'
 const allMenuItems: { page: AdminSubPage, label: string, icon: React.ReactNode, roles: UserRole[] }[] = [
-    { page: 'dashboard', label: 'Boshqaruv Paneli', icon: <DashboardIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
-    { page: 'cash_contest', label: 'CASH KONKURS (ARK)', icon: <TrendingUpIcon className="w-5 h-5" />, roles: ['owner'] }, 
-    { page: 'contest', label: 'Konkurs (O\'yin)', icon: <GiftIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
-    { page: 'sessions', label: 'Seanslar (Sessions)', icon: <MonitorIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
-    { page: 'broadcasts', label: 'Brodkast (Xabarnoma)', icon: <BroadcastIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
+    { page: 'dashboard', label: 'Boshqaruv', icon: <DashboardIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
+    { page: 'cash_contest', label: 'Cash Trading (ARK)', icon: <TrendingUpIcon className="w-5 h-5" />, roles: ['owner'] }, 
+    { page: 'contest', label: 'ATC O\'yini', icon: <GiftIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
+    { page: 'sessions', label: 'Seanslar', icon: <MonitorIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
+    { page: 'broadcasts', label: 'Brodkast', icon: <BroadcastIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'users', label: 'Foydalanuvchilar', icon: <UsersIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
-    { page: 'movies', label: 'Kinolar', icon: <MovieIcon className="w-5 h-5" />, roles: ['owner', 'admin', 'manager'] },
+    { page: 'movies', label: 'Katalog', icon: <MovieIcon className="w-5 h-5" />, roles: ['owner', 'admin', 'manager'] },
     { page: 'financials', label: 'Moliya', icon: <BillingIcon className="w-5 h-5" />, roles: ['owner', 'accountant'] },
+    { page: 'bundle_manager', label: 'Premium To\'plamlar', icon: <Layers size={20} />, roles: ['owner'] },
     { page: 'advertisements', label: 'Reklamalar', icon: <MegaphoneIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'promocodes', label: 'Promokodlar', icon: <TagIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'support', label: 'Murojaatlar', icon: <SupportIcon className="w-5 h-5" />, roles: ['owner', 'support'] },
-    { page: 'sitemap', label: 'Sitemap (SEO)', icon: <MapIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
-    { page: 'customization', label: 'Sayt Ko\'rinishi', icon: <PaletteIcon className="w-5 h-5" />, roles: ['owner'] },
-    { page: 'stamp_tool', label: 'Hujjatni Tasdiqlash', icon: <StampIcon className="w-5 h-5" />, roles: ['owner'] }, // NEW
-    { page: 'settings', label: 'Sozlamalar', icon: <SettingsIcon className="w-5 h-5" />, roles: ['owner'] },
-    { page: 'security', label: 'HIMOYA', icon: <ShieldIcon className="w-5 h-5" />, roles: ['owner'] },
+    { page: 'sitemap', label: 'SEO Generator', icon: <MapIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
+    { page: 'customization', label: 'Dizayn', icon: <PaletteIcon className="w-5 h-5" />, roles: ['owner'] },
+    { page: 'stamp_tool', label: 'E-Muhr Tool', icon: <StampIcon className="w-5 h-5" />, roles: ['owner'] },
+    { page: 'settings', label: 'Tizim Sozlamalari', icon: <SettingsIcon className="w-5 h-5" />, roles: ['owner'] },
+    { page: 'security', label: 'XAVFSIZLIK', icon: <ShieldIcon className="w-5 h-5" />, roles: ['owner'] },
 ];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -85,23 +90,23 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onLogout,
   counts = { financials: 0, support: 0 }
 }) => {
-
   const visibleMenuItems = allMenuItems.filter(item => item.roles.includes(currentRole));
   
   return (
-    <aside className="w-64 bg-gray-800 p-4 flex-shrink-0 flex flex-col border-r border-gray-700">
-      <div className="flex items-center gap-3 mb-10 px-2">
-        <div className="relative">
-            <UzumakiLogo className="w-10 h-10" />
+    <aside className="w-72 bg-[#050505] border-r border-white/5 p-6 flex flex-col flex-shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
+      <div className="flex items-center gap-4 mb-12 px-2">
+        <div className="relative group">
+            <div className="absolute inset-0 bg-orange-600 rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
+            <UzumakiLogo className="w-12 h-12 relative z-10" />
         </div>
         <div>
-            <span className="text-xl font-bold font-['Metal_Mania'] tracking-wider text-white">Anilo.uz</span>
-            <span className="block text-xs font-semibold text-orange-400 uppercase tracking-wide">Admin Paneli</span>
+            <h2 className="text-xl font-black font-mono tracking-tighter text-white uppercase leading-none">Anilo<span className="text-orange-600">.Admin</span></h2>
+            <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] mt-1">Control Panel v2.5</p>
         </div>
       </div>
 
       <nav className="flex-grow">
-        <ul className="space-y-2">
+        <ul className="space-y-1">
           {visibleMenuItems.map(item => (
             <NavItem
                 key={item.page}
@@ -115,26 +120,26 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </ul>
       </nav>
 
-      <div className="mt-auto">
+      <div className="mt-10 pt-6 border-t border-white/5">
         <ul className="space-y-2">
            <li>
                 <button
                     type="button"
                     onClick={onSwitchView}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+                    className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition-all"
                 >
-                    <SwitchUserIcon className="w-5 h-5" />
-                    <span className="flex-1 text-left">Foydalanuvchi rejimi</span>
+                    <SwitchUserIcon className="w-5 h-5 text-zinc-700" />
+                    <span>User Mode</span>
                 </button>
            </li>
            <li>
                 <button
                     type="button"
                     onClick={onLogout}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-colors"
+                    className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 transition-all"
                 >
                     <LogoutIcon className="w-5 h-5" />
-                    <span className="flex-1 text-left">Chiqish</span>
+                    <span>Log Out</span>
                 </button>
            </li>
         </ul>

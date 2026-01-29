@@ -1,4 +1,3 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -14,14 +13,16 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// Fix: Ensuring the component correctly inherits from React.Component to resolve the 'props' not existing error.
+// FIX: Extending Component directly from react to ensure TypeScript correctly resolves inherited properties like 'props'
 export class ErrorBoundary extends Component<Props, State> {
+  // FIX: Explicitly declaring state as a property of the class helps TypeScript resolve it correctly
+  public state: State = {
+    hasError: false,
+    error: null,
+  };
+
   constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-    };
   }
 
   // Update state when an error occurs
@@ -31,7 +32,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
-    // Optional: Log to error reporting service
   }
 
   // Clear bad application state/cache and reload the page
@@ -40,9 +40,8 @@ export class ErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
-  public render() {
+  public render(): ReactNode {
     // Check for error state to display fallback UI
-    // Fix: correctly access state inherited from Component.
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
@@ -67,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     // Returning children if no error occurred.
-    // Fix: correctly access props inherited from Component.
+    // FIX: Correctly access props inherited from Component.
     return this.props.children;
   }
 }

@@ -94,7 +94,6 @@ const App: React.FC = () => {
               setShowRetryButton(true);
           }, 6000);
 
-          // URL Param check for SEO Deep Links
           const params = new URLSearchParams(window.location.search);
           const movieIdParam = params.get('movie_id');
 
@@ -114,7 +113,6 @@ const App: React.FC = () => {
               setPage('dashboard');
           } else {
               if (movieIdParam) {
-                  // If not logged in but seeking specific movie, show auth
                   setIsAuthModalOpen(true);
               }
               setPage('welcome');
@@ -162,7 +160,6 @@ const App: React.FC = () => {
     if (targetPage === 'dashboard') setDashboardPage('main');
     setSelectedMovie(null);
     setIsSearchOpen(false);
-    // Clear movie_id from URL when navigating
     window.history.pushState({}, '', window.location.pathname);
     window.scrollTo(0, 0);
   };
@@ -172,7 +169,6 @@ const App: React.FC = () => {
     else {
         setSelectedMovie(movie);
         setActiveEpisode(null);
-        // Update URL for SEO (without reloading)
         if (movie.id) {
             window.history.pushState({ movie_id: movie.id }, '', `?movie_id=${movie.id}`);
         }
@@ -260,7 +256,14 @@ const App: React.FC = () => {
                 {!isPlayerActive && !activeVideoAd && (
                   <>
                     {selectedMovie ? (
-                      <MovieDetailPage movie={selectedMovie} onBack={handleCloseMovieDetail} onPlay={() => setIsPlayerActive(true)} onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} onArtistClick={setSelectedArtistId} />
+                      <MovieDetailPage 
+                        movie={selectedMovie} 
+                        onBack={handleCloseMovieDetail} 
+                        onPlay={() => setIsPlayerActive(true)} 
+                        onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} 
+                        onArtistClick={setSelectedArtistId}
+                        onMovieClick={handleMovieClick}
+                      />
                     ) : (
                       <>
                         {page === 'welcome' && <WelcomePage onNavigate={handleNavigation} onSearch={handleNavigation as any} onMovieClick={handleMovieClick} onStart={() => setIsAuthModalOpen(true)} />}

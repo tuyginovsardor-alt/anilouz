@@ -84,20 +84,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
   const hasBannerPermission = () => {
       if (!profile) return false;
       const allowedRoles = ['premium', 'admin', 'owner', 'fandub'];
-      // Check subscription too
       const hasSub = profile.subscription_end_at && new Date(profile.subscription_end_at) > new Date();
       return allowedRoles.includes(profile.role) || hasSub;
   };
 
   const handleBannerClick = () => {
-      if (!isEditing && viewUserId) return; // Viewing other profile
-      if (viewUserId) return; // Viewing other profile
+      if (!isEditing && viewUserId) return;
+      if (viewUserId) return;
 
       if (hasBannerPermission()) {
           bannerInputRef.current?.click();
       } else {
           if (window.confirm("Banner o'rnatish uchun Premium obuna kerak. Hoziroq xarid qilasizmi?")) {
-              onMainNavigate?.('shop'); // Or 'plans' if available as a main page, likely inside dashboard/shop context
+              onMainNavigate?.('shop'); 
           }
       }
   };
@@ -142,9 +141,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
   if (loading && !profile) return <div className="flex justify-center py-20 bg-[#050505] min-h-screen"><LoadingSpinner /></div>;
 
   const isMyProfile = !viewUserId;
-  // Anilo Colors
-  const bgColor = "#050505"; 
-  const cardColor = "#121212"; 
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in font-sans bg-[#050505] text-gray-200">
@@ -152,32 +148,26 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
       <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
 
-      {/* --- HEADER (Fixed & Properly Spaced) --- */}
-      {/* 
-          z-50: Ensure it's on top
-          pt-14: Increased top padding to clear status bar (pastroqqa tushirildi)
-          pointer-events-none on container: Lets clicks pass through to banner
-          pointer-events-auto on buttons: Re-enables clicking buttons
-      */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pt-14 pb-4 pointer-events-none">
+      {/* --- HEADER (Pastroqqa tushirildi: pt-14 -> pt-20) --- */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pt-20 pb-4 pointer-events-none">
           <button onClick={() => onMainNavigate && onMainNavigate('dashboard')} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all pointer-events-auto border border-white/10 shadow-lg">
-              <ArrowLeft size={24} />
+              <ArrowLeft size={22} />
           </button>
           
           <div className="flex gap-3 pointer-events-auto">
               {isMyProfile && (
                   isEditing ? (
                       <button onClick={handleSave} className="p-2.5 bg-orange-600 rounded-full text-white hover:bg-orange-500 transition-all shadow-lg shadow-orange-600/30">
-                          <Check size={24} />
+                          <Check size={22} />
                       </button>
                   ) : (
                       <button onClick={() => setIsEditing(true)} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 shadow-lg">
-                          <Edit2 size={22} />
+                          <Edit2 size={20} />
                       </button>
                   )
               )}
               <button className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 shadow-lg">
-                  <MoreVertical size={24} />
+                  <MoreVertical size={22} />
               </button>
           </div>
       </div>
@@ -192,10 +182,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
               </div>
           )}
           
-          {/* Gradient Overlay for Text Readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-black/30"></div>
 
-          {/* Banner Edit Button */}
           {isMyProfile && (
               <button 
                 onClick={handleBannerClick}
@@ -207,9 +195,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
           )}
       </div>
 
-      {/* --- AVATAR & NAME SECTION (Overlapping Banner) --- */}
+      {/* --- AVATAR & NAME SECTION --- */}
       <div className="px-4 -mt-16 relative z-10 flex flex-col items-center">
-          {/* Avatar */}
           <div className="relative group cursor-pointer" onClick={() => isMyProfile && avatarInputRef.current?.click()}>
               <div className="w-32 h-32 rounded-full p-1 bg-[#050505] shadow-2xl">
                   <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 border-2 border-zinc-800 relative">
@@ -234,11 +221,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                       )}
                   </div>
               </div>
-              {/* Online Status Badge */}
               <div className={`absolute bottom-2 right-2 w-5 h-5 rounded-full border-4 border-[#050505] ${profile?.is_online ? 'bg-green-500' : 'bg-gray-500'}`}></div>
           </div>
 
-          {/* Name & Role */}
           <div className="mt-3 text-center w-full">
               {isEditing ? (
                   <input 
@@ -264,11 +249,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
           </div>
       </div>
 
-      {/* --- INFO LIST SECTION (Telegram Style Card) --- */}
+      {/* --- INFO LIST SECTION --- */}
       <div className="px-4 mt-8">
           <div className="bg-[#121212] border border-white/5 rounded-2xl overflow-hidden">
-              
-              {/* Bio Field */}
               <div className="flex items-start p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500 mt-1"><Info size={22} /></div>
                   <div className="flex-1">
@@ -288,7 +271,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                   </div>
               </div>
 
-              {/* Phone Info */}
               <div className="flex items-center p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500"><Phone size={22} /></div>
                   <div className="flex-1">
@@ -307,7 +289,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                   </div>
               </div>
 
-              {/* Username Info */}
               <div className="flex items-center p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500"><AtSign size={22} /></div>
                   <div className="flex-1">
@@ -326,7 +307,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                   </div>
               </div>
 
-              {/* Date Info */}
               <div className="flex items-center p-4 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500"><Calendar size={22} /></div>
                   <div className="flex-1">
@@ -337,7 +317,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
           </div>
       </div>
 
-      {/* --- TABS (History & Wallet) --- */}
+      {/* --- TABS --- */}
       <div className="mt-8">
           <div className="flex border-b border-white/10 bg-[#050505] sticky top-16 z-20">
               <button 
@@ -386,7 +366,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                           <h2 className="text-4xl font-black tracking-tight">{(profile?.balance || 0).toLocaleString()} <span className="text-lg text-orange-500 font-bold">UZS</span></h2>
                       </div>
                       
-                      <button className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-zinc-200 transition-all active:scale-95">
+                      <button onClick={() => onMainNavigate?.('dashboard')} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-zinc-200 transition-all active:scale-95">
                           <Wallet size={18} />
                           Hisobni to'ldirish
                       </button>

@@ -15,9 +15,10 @@ interface MovieDetailPageProps {
   onPlay: () => void;
   onEpisodePlay?: (episode: Episode) => void;
   onArtistClick?: (userId: string) => void;
+  onMovieClick?: (movie: Movie) => void;
 }
 
-export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack, onPlay, onEpisodePlay, onArtistClick }) => {
+export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack, onPlay, onEpisodePlay, onArtistClick, onMovieClick }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -44,8 +45,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     window.addEventListener('scroll', handleScroll);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // --- SEO & GOOGLE BOT OPTIMIZATION ---
-    // Dinamik sarlavha
+    // Dynamik sarlavha
     document.title = `${movie.title} - O'zbek tilida sifatli ko'rish | Anilo.uz`;
     
     // JSON-LD Structured Data
@@ -597,7 +597,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     <h3 className="text-2xl font-black uppercase tracking-tighter text-white mb-8 pl-4 border-l-4 border-purple-600">Tavsiya Etamiz</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {relatedMovies.map(m => (
-                            <MovieCard key={m.id} movie={m} isActive={true} onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); init(); }} />
+                            <MovieCard key={m.id} movie={m} isActive={true} onClick={() => onMovieClick?.(m)} />
                         ))}
                     </div>
                 </div>

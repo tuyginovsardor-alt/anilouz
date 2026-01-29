@@ -21,7 +21,7 @@ import { CashContestPage } from './CashContestPage';
 import { SecurityPage } from './SecurityPage';
 import { PinModal } from './components/PinModal';
 import { StampToolPage } from './StampToolPage';
-import { BundleManagementPage } from './BundleManagementPage'; // NEW
+import { BundleManagementPage } from './BundleManagementPage';
 
 interface AdminPageProps {
   currentRole: UserRole;
@@ -67,7 +67,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ currentRole, currentPage, 
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard': return <AdminDashboard />;
-      case 'bundle_manager': return <BundleManagementPage />; // NEW
+      case 'bundle_manager': return <BundleManagementPage />;
       case 'users': return <UserManagementPage onImpersonate={onImpersonate} />;
       case 'sessions': return <SessionsPage />;
       case 'contest': return <ContestManagementPage />;
@@ -88,10 +88,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ currentRole, currentPage, 
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900 text-gray-200">
+    <div className="flex min-h-screen bg-[#050505] text-gray-200">
       <AdminSidebar currentRole={currentRole} currentPage={currentPage} onNavigate={handleNavigate} onSwitchView={onSwitchView} onLogout={onLogout} counts={counts} />
-      <main className="flex-1 p-6 sm:p-8 lg:p-10 overflow-y-auto custom-scrollbar">
-        {renderContent()}
+      <main className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-12 relative">
+        <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-orange-600/5 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="relative z-10">
+            {renderContent()}
+        </div>
       </main>
       {isPinModalOpen && <PinModal correctPin={correctPin} onSuccess={() => { verifiedRoutes.add(pendingRoute!); onNavigate(pendingRoute!); setIsPinModalOpen(false); }} onClose={() => setIsPinModalOpen(false)} />}
     </div>
