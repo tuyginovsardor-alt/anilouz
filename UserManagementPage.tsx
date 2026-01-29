@@ -8,7 +8,8 @@ import { UserProfile } from './types';
 import { getAllUsers, deleteUser, deleteFandubChannel } from './services/dbService';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
-import { MicOff, Trash2, AlertTriangle } from 'lucide-react';
+import { MicOff, Trash2, ShieldCheck } from 'lucide-react';
+import { supabase } from './services/supabaseClient';
 
 interface UserManagementPageProps {
     onImpersonate?: (userId: string) => void;
@@ -34,7 +35,6 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ onImpers
     const loadUsers = async () => {
         try {
             const data = await getAllUsers();
-            // Fetch also channel status for each user
             const { data: channels } = await supabase.from('fandub_channels').select('id, user_id');
             const channelMap = new Set(channels?.map(c => c.user_id));
             
@@ -44,7 +44,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ onImpers
     };
 
     const handleDeleteChannel = async (userId: string) => {
-        if (!window.confirm("DIQQAT! Ushbu foydalanuvchining KANALINI o'chirmoqchimisiz? Barcha yuklangan animelar va daromadlar ham o'chib ketadi!")) return;
+        if (!window.confirm("DIQQAT! Ushbu foydalanuvchining KANALINI o'chirmoqchimisiz? Barcha yuklangan animelar va daromadlar ham o'chib ketadi! Bu amalni ortga qaytarib bo'lmaydi.")) return;
         
         try {
             const { data: channel } = await supabase.from('fandub_channels').select('id').eq('user_id', userId).single();
@@ -100,12 +100,12 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ onImpers
                                     <td className="p-6">
                                         <div className="flex gap-2">
                                             {onImpersonate && (
-                                                <button onClick={() => onImpersonate(user.id)} className="p-3 bg-white/5 hover:bg-green-600 text-zinc-500 hover:text-white rounded-2xl transition-all" title="Profilga kirish"><EnterIcon className="w-5 h-5"/></button>
+                                                <button onClick={() => onImpersonate(user.id)} className="p-3 bg-white/5 hover:bg-green-600 text-zinc-500 hover:text-white rounded-2xl transition-all shadow-xl" title="Profilga kirish"><EnterIcon className="w-5 h-5"/></button>
                                             )}
                                             {(user as any).has_channel && (
-                                                <button onClick={() => handleDeleteChannel(user.id)} className="p-3 bg-orange-600/10 hover:bg-orange-600 text-orange-500 hover:text-white rounded-2xl transition-all" title="Kanalni o'chirish"><MicOff size={18}/></button>
+                                                <button onClick={() => handleDeleteChannel(user.id)} className="p-3 bg-orange-600/10 hover:bg-orange-600 text-orange-500 hover:text-white rounded-2xl transition-all shadow-xl" title="Kanalni o'chirish"><MicOff size={18}/></button>
                                             )}
-                                            <button onClick={() => handleDeleteUser(user.id)} className="p-3 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all"><Trash2 size={18}/></button>
+                                            <button onClick={() => handleDeleteUser(user.id)} className="p-3 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all shadow-xl"><Trash2 size={18}/></button>
                                         </div>
                                     </td>
                                 </tr>

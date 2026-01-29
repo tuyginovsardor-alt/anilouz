@@ -1,5 +1,5 @@
 
-// ... keep existing imports ...
+// ... existing imports ...
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
@@ -12,19 +12,34 @@ import { supabase } from './supabaseClient';
 import { isAiPilotEnabled, runAiServerManager } from './aiGuardService';
 import { getCache, setCache } from './cacheService';
 
-// --- FANDUB & ADMIN EXTENSIONS ---
+// --- STATS & ADMIN ACTIONS ---
+
+export const incrementView = async (movieId: number, isFandub: boolean) => {
+    try {
+        await supabase.rpc('increment_movie_views', { m_id: movieId, is_fandub: isFandub });
+    } catch (e) { console.error("Stats increment error:", e); }
+};
 
 export const getAdminAllContent = async (): Promise<any[]> => {
     try {
+        // Rasmiy animelar
         const { data: movies } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
+        // Fandub yuklamalar
         const { data: fandubs } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').order('created_at', { ascending: false });
         
-        const official = (movies || []).map(m => ({ ...m, type: 'official', posterUrl: m.poster_url || m.posterUrl }));
+        const official = (movies || []).map(m => ({ 
+            ...m, 
+            type: 'official', 
+            posterUrl: m.poster_url || m.posterUrl,
+            view_count: m.view_count || 0 
+        }));
+        
         const community = (fandubs || []).map(f => ({ 
             ...f, 
             type: 'fandub', 
             posterUrl: f.poster_url, 
-            translator: f.fandub_channels?.name || 'Studio'
+            translator: f.fandub_channels?.name || 'Studio',
+            view_count: f.view_count || 0
         }));
         
         return [...official, ...community].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -42,7 +57,25 @@ export const deleteFandubProject = async (id: number) => {
     localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
-// ... keep previous extensions ...
+export const updateFandubUpload = async (id: number, updates: any) => {
+    const { error } = await supabase.from('fandub_uploads').update(updates).eq('id', id);
+    if (error) throw error;
+    localStorage.removeItem('anilo_cache_all_movies_catalog');
+};
+
+// ... keep previous extensions (getFandubEarnings, etc.) ...
+export const getFandubStatsSummary = async (channelId: string) => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const { data: earnings } = await supabase.from('fandub_earnings').select('amount, created_at').eq('channel_id', channelId).gt('created_at', thirtyDaysAgo.toISOString());
+        return {
+            lastMonthEarnings: earnings?.reduce((acc, curr) => acc + curr.amount, 0) || 0,
+            earningsHistory: earnings || []
+        };
+    } catch { return { lastMonthEarnings: 0, earningsHistory: [] }; }
+};
+
 export const getFandubEarnings = async (channelId: string): Promise<FandubEarning[]> => {
     try {
         const { data } = await supabase.from('fandub_earnings').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
@@ -121,7 +154,8 @@ export const getMovies = async (): Promise<Movie[]> => {
                 ...m, 
                 posterUrl: m.posterUrl || m.poster_url,
                 videoUrl: m.videoUrl || m.video_url,
-                is_fandub: false 
+                is_fandub: false,
+                view_count: m.view_count || 0
             }));
         };
         const getFandub = async () => {
@@ -145,7 +179,8 @@ export const getMovies = async (): Promise<Movie[]> => {
                     status: 'completed',
                     access_type: m.access_type,
                     created_at: m.created_at,
-                    is_blocked: m.is_blocked || false
+                    is_blocked: m.is_blocked || false,
+                    view_count: m.view_count || 0
                 }));
             } catch { return []; }
         };
@@ -216,11 +251,6 @@ export const toggleBlockFandub = async (id: number, block: boolean) => {
 
 export const deleteFandubUpload = async (id: number) => {
     await supabase.from('fandub_uploads').delete().eq('id', id);
-    localStorage.removeItem('anilo_cache_all_movies_catalog');
-};
-
-export const updateFandubUpload = async (id: number, updates: any) => {
-    await supabase.from('fandub_uploads').update(updates).eq('id', id);
     localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
@@ -305,7 +335,7 @@ export const getFandubUploads = async (userId: string): Promise<FandubUpload[]> 
 
 export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
     try {
-        const { data } = await supabase.from('fandub_uploads').select('*, profiles(full_name, email), fandub_channels(name)').order('created_at', { ascending: false });
+        const { data } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'pending').order('created_at', { ascending: false });
         return data || [];
     } catch (e) { return []; }
 };

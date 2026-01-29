@@ -9,12 +9,10 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { EditIcon } from './components/icons/EditIcon';
 import { DeleteIcon } from './components/icons/DeleteIcon';
 import { PlusIcon } from './components/icons/PlusIcon';
-import { ArchiveIcon } from './components/icons/ArchiveIcon';
-import { RestoreIcon } from './components/icons/RestoreIcon';
 import { AddMovieModal } from './components/AddMovieModal';
 import { useNotification } from './hooks/useNotification';
 import { Pagination } from './components/Pagination';
-import { Mic, CheckCircle } from 'lucide-react';
+import { Mic, CheckCircle, Eye } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -46,18 +44,16 @@ export const MovieManagementPage: React.FC = () => {
     const handleSaveMovie = async (data: any) => {
         setIsSaving(true);
         try {
-            // Fandub kontentini tahrirlash uchun maxsus handling
             if (editingItem?.type === 'fandub') {
                 await updateFandubUpload(editingItem.id, {
                     title: data.title,
                     year: data.year,
                     description: data.plot,
                     genre: data.genre,
-                    status: 'approved' // Admin tahrirlasa avtomat tasdiqlanadi
+                    status: 'approved' 
                 });
                 addNotification({ type: 'success', title: 'Yangilandi', message: 'Fandub loyihasi yangilandi.' });
             } else {
-                // Rasmiy kinolar uchun mavjud logic
                 if (data.id) {
                     await updateMovieInDB(data.id, data);
                     addNotification({ type: 'success', title: 'Yangilandi', message: 'Anime yangilandi.' });
@@ -129,9 +125,9 @@ export const MovieManagementPage: React.FC = () => {
                         <thead className="bg-[#111] text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
                             <tr>
                                 <th className="p-6">Anime / Sarlavha</th>
+                                <th className="p-6">Ko'rishlar</th>
                                 <th className="p-6">Turi</th>
                                 <th className="p-6">Studio / Artist</th>
-                                <th className="p-6">Holat</th>
                                 <th className="p-6 text-right">Amallar</th>
                             </tr>
                         </thead>
@@ -146,6 +142,12 @@ export const MovieManagementPage: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="p-6">
+                                        <div className="flex items-center gap-2 text-white font-black text-sm">
+                                            <Eye size={14} className="text-blue-500"/>
+                                            {item.view_count?.toLocaleString() || 0}
+                                        </div>
+                                    </td>
+                                    <td className="p-6">
                                         <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${item.type === 'official' ? 'bg-blue-600/10 text-blue-400 border-blue-500/20' : 'bg-purple-600/10 text-purple-400 border-purple-500/20'}`}>
                                             {item.type}
                                         </span>
@@ -157,17 +159,10 @@ export const MovieManagementPage: React.FC = () => {
                                             {item.type === 'fandub' && <CheckCircle size={12} className="text-blue-500"/>}
                                         </div>
                                     </td>
-                                    <td className="p-6">
-                                        {item.is_archived ? (
-                                            <span className="bg-zinc-800 text-zinc-500 px-2 py-1 rounded text-[8px] font-black uppercase">Arxiv</span>
-                                        ) : (
-                                            <span className="bg-green-600/20 text-green-500 px-2 py-1 rounded text-[8px] font-black uppercase">Faol</span>
-                                        )}
-                                    </td>
                                     <td className="p-6 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="p-3 bg-white/5 hover:bg-blue-600 text-zinc-500 hover:text-white rounded-2xl transition-all"><EditIcon className="w-5 h-5"/></button>
-                                            <button onClick={() => handleDelete(item)} className="p-3 bg-white/5 hover:bg-red-600 text-zinc-500 hover:text-white rounded-2xl transition-all"><DeleteIcon className="w-5 h-5"/></button>
+                                            <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="p-3 bg-white/5 hover:bg-blue-600 text-zinc-500 hover:text-white rounded-2xl transition-all shadow-xl"><EditIcon className="w-5 h-5"/></button>
+                                            <button onClick={() => handleDelete(item)} className="p-3 bg-white/5 hover:bg-red-600 text-zinc-500 hover:text-white rounded-2xl transition-all shadow-xl"><DeleteIcon className="w-5 h-5"/></button>
                                         </div>
                                     </td>
                                 </tr>
