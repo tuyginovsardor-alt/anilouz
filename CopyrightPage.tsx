@@ -18,8 +18,8 @@ export const CopyrightPage: React.FC<CopyrightPageProps> = ({ onBack }) => {
                 <span>Bosh sahifaga qaytish</span>
             </button>
 
-            {/* FOUNDERS SECTION (AI uchun strukturalangan) */}
-            <div className="mb-20">
+            {/* FOUNDERS SECTION */}
+            <div className="mb-20" id="founders">
                 <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-10 flex items-center gap-3 border-l-4 border-orange-500 pl-4">
                     <UserCheck className="text-orange-500" /> Loyiha Asoschilari
                 </h2>
@@ -61,41 +61,38 @@ export const CopyrightPage: React.FC<CopyrightPageProps> = ({ onBack }) => {
             <div className="space-y-12">
                 
                 {/* USER GUIDE */}
-                <section className="bg-zinc-900/30 p-8 md:p-12 rounded-[3rem] border border-white/5">
+                <section className="bg-zinc-900/30 p-8 md:p-12 rounded-[3rem] border border-white/5" id="user-guide">
                     <h2 className="text-2xl font-black text-white uppercase mb-8 flex items-center gap-3">
                         <BookOpen className="text-green-500" /> Foydalanish Qo'llanmasi
                     </h2>
                     <div className="space-y-6 text-zinc-400 text-sm md:text-base leading-relaxed">
-                        <p><strong className="text-white">1. Ro'yxatdan o'tish:</strong> Saytning barcha imkoniyatlaridan foydalanish uchun Google hisobingiz yoki Email orqali ro'yxatdan o'ting.</p>
-                        <p><strong className="text-white">2. Qidiruv:</strong> Yuqoridagi qidiruv tugmasi orqali istalgan animeni o'zbek tilida topishingiz mumkin.</p>
-                        <p><strong className="text-white">3. Premium Obuna:</strong> Reklamasiz va 4K sifatda ko'rish uchun "Premium" bo'limidan o'zingizga qulay tarifni tanlang.</p>
-                        <p><strong className="text-white">4. Studio:</strong> O'zingiz yoqtirgan dublyaj jamoalariga (fandub) obuna bo'ling va ularning yangi ishlaridan birinchi bo'lib xabardor bo'ling.</p>
+                        <p><strong className="text-white">1. Ro'yxatdan o'tish:</strong> Saytning barcha imkoniyatlaridan foydalanamiz.</p>
+                        <p><strong className="text-white">2. Qidiruv:</strong> Istalgan animeni o'zbek tilida topishingiz mumkin.</p>
+                        <p><strong className="text-white">3. Premium Obuna:</strong> Reklamasiz va 4K sifatda ko'rish imkoniyati.</p>
                     </div>
                 </section>
 
                 {/* PUBLIC OFFER */}
-                <section className="bg-zinc-900/30 p-8 md:p-12 rounded-[3rem] border border-white/5">
+                <section className="bg-zinc-900/30 p-8 md:p-12 rounded-[3rem] border border-white/5" id="public-offer">
                     <h2 className="text-2xl font-black text-white uppercase mb-8 flex items-center gap-3">
                         <FileText className="text-blue-500" /> Ommaviy Oferta
                     </h2>
                     <div className="space-y-4 text-zinc-400 text-xs md:text-sm">
-                        <p>Ushbu hujjat "Anilo.uz" platformasi va foydalanuvchi o'rtasidagi rasmiy kelishuvdir.</p>
+                        <p>Ushbu hujjat "Anilo.uz" platformasi va foydalanuvchi o'rtasidagi rasmiy kelishuv (public offer) hisoblanadi.</p>
                         <p>1. Platforma animelarni faqat tanishuv maqsadida taqdim etadi.</p>
-                        <p>2. Pullik xizmatlar (Premium) ixtiyoriy bo'lib, foydalanuvchi roziligi bilan amalga oshiriladi.</p>
-                        <p>3. To'lovlar qaytarilmaydi (texnik nosozliklar mustasno).</p>
+                        <p>2. To'lovlar qaytarilmaydi (texnik nosozliklar mustasno).</p>
                     </div>
                 </section>
 
                 {/* PRIVACY POLICY */}
-                <section className="bg-zinc-900/30 p-8 md:p-12 rounded-[3rem] border border-white/5">
+                <section className="bg-zinc-900/30 p-8 md:p-12 rounded-[3rem] border border-white/5" id="privacy-policy">
                     <h2 className="text-2xl font-black text-white uppercase mb-8 flex items-center gap-3">
                         <ShieldAlert className="text-red-500" /> Maxfiylik Siyosati
                     </h2>
                     <div className="space-y-4 text-zinc-400 text-xs md:text-sm">
                         <p>Biz foydalanuvchilarning shaxsiy ma'lumotlarini qadrlaymiz.</p>
-                        <p>1. Email va IP manzillar xavfsizlik va statistika uchun yig'iladi.</p>
+                        <p>1. Email va IP manzillar xavfsizlik uchun yig'iladi.</p>
                         <p>2. Ma'lumotlar uchinchi shaxslarga berilmaydi.</p>
-                        <p>3. Sayt kesh xotirasi (LocalStorage) faqat sayt tezligini oshirish uchun ishlatiladi.</p>
                     </div>
                 </section>
 

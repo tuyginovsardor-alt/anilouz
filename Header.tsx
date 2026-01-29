@@ -36,7 +36,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       if (isAuthenticated) {
           fetchHeaderData();
-          // Har 10 soniyada yangi bildirishnomalarni tekshirish
           const interval = setInterval(fetchHeaderData, 10000);
           return () => clearInterval(interval);
       }
@@ -56,16 +55,18 @@ export const Header: React.FC<HeaderProps> = ({
       } catch (e) { console.error(e); }
   };
 
-  const handleLogoClick = () => {
-      if (isAuthenticated) onNavigate('dashboard');
-      else onNavigate('welcome');
-  };
-
   return (
     <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
+        {/* AI Botlari uchun ko'rinmas lekin crawl-able havolalar (SEO) */}
+        <nav className="sr-only">
+            <a href="/?page=copyright#privacy-policy">Maxfiylik Siyosati</a>
+            <a href="/?page=copyright#public-offer">Ommaviy Oferta</a>
+            <a href="/?page=copyright#founders">Asoschilar haqida</a>
+        </nav>
+
         <div className="container mx-auto px-4 md:px-8 h-16 flex items-center justify-between pointer-events-auto">
             <div className="flex items-center gap-10">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleLogoClick}>
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
                     {customLogo ? (
                         <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />

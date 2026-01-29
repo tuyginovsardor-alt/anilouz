@@ -1,5 +1,5 @@
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -11,15 +11,19 @@ interface State {
   error: Error | null;
 }
 
-// Fixed: Explicitly import Component and extend it with generic types to ensure 'state' and 'props' are correctly typed and recognized
-export class ErrorBoundary extends Component<Props, State> {
-  // Fixed: Initializing state in the constructor and calling super(props) ensures the component is properly set up
+/**
+ * ErrorBoundary component to catch rendering errors in child components.
+ * Fixed: Explicitly using React.Component with generic types to resolve 'state' and 'props' access issues.
+ */
+export class ErrorBoundary extends React.Component<Props, State> {
+  // Fixed: Declare and initialize state property outside constructor for better TypeScript support
+  public override state: State = {
+    hasError: false,
+    error: null,
+  };
+
   constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-    };
   }
 
   public static getDerivedStateFromError(error: Error): State {
@@ -37,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public render() {
-    // Fixed: Correctly accessing 'state' property which is now recognized due to direct inheritance from Component<Props, State>
+    // Fixed: Correctly accessing 'state' property from the inherited React.Component
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
@@ -62,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fixed: Accessing 'children' from 'this.props' which is now correctly recognized by the TypeScript compiler
+    // Fixed: Accessing 'children' from 'this.props' which is now correctly recognized
     return this.props.children;
   }
 }
