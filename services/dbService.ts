@@ -12,8 +12,28 @@ import { supabase } from './supabaseClient';
 import { isAiPilotEnabled, runAiServerManager } from './aiGuardService';
 import { getCache, setCache } from './cacheService';
 
-// --- STATS & ADMIN ---
+// --- CHAT & MENTIONS ---
 
+export const getUserIdByUsername = async (username: string): Promise<string | null> => {
+    try {
+        const { data } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
+        return data?.id || null;
+    } catch { return null; }
+};
+
+export const createNotification = async (userId: string, title: string, message: string, type: string = 'info') => {
+    try {
+        await supabase.from('notifications').insert({
+            user_id: userId,
+            title,
+            message,
+            type,
+            is_read: false
+        });
+    } catch (e) { console.error("Notification error:", e); }
+};
+
+// ... existing functions ...
 export const incrementView = async (movieId: number, isFandub: boolean) => {
     try {
         await supabase.rpc('increment_movie_views', { m_id: movieId, is_fandub: isFandub });
@@ -22,7 +42,6 @@ export const incrementView = async (movieId: number, isFandub: boolean) => {
 
 export const getAdminAllContent = async (): Promise<any[]> => {
     try {
-        // MUHIM: Ikkala jadvaldan ham barcha statusdagi (pending, approved, rejected) kontentni olamiz
         const { data: movies } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
         const { data: fandubs } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').order('created_at', { ascending: false });
         
@@ -39,7 +58,7 @@ export const getAdminAllContent = async (): Promise<any[]> => {
             posterUrl: f.poster_url, 
             translator: f.fandub_channels?.name || 'Studio',
             view_count: f.view_count || 0,
-            status: f.status // 'pending', 'approved', 'rejected'
+            status: f.status 
         }));
         
         return [...official, ...community].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -63,7 +82,6 @@ export const updateFandubUpload = async (id: number, updates: any) => {
     localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
-// ... keep existing functions (getUserProfile, etc.) ...
 export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<string> => {
     return rawUrl || '';
 };
@@ -303,15 +321,6 @@ export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
     } catch (e) { return []; }
 };
 
-export const approveFandubUpload = async (id: number) => {
-    await supabase.from('fandub_uploads').update({ status: 'approved' }).eq('id', id);
-    localStorage.removeItem('anilo_cache_all_movies_catalog');
-};
-
-export const rejectFandubUpload = async (id: number, comment: string) => {
-    await supabase.from('fandub_uploads').update({ status: 'rejected', admin_comment: comment }).eq('id', id);
-};
-
 export const getAppConfig = async () => {
     try {
         const { data } = await supabase.from('app_config').select('*');
@@ -412,7 +421,7 @@ export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
 
 export const getMovieReviews = async (movieId: number) => {
     try {
-        const { data } = await supabase.from('reviews').select('*, profiles(full_name, avatar_url, role)').eq('movie_id', movieId).order('created_at', { ascending: false });
+        const { data } = await supabase.from('reviews').select('*, profiles(full_name, username, avatar_url, role)').eq('movie_id', movieId).order('created_at', { ascending: true });
         return data || [];
     } catch (e) { return []; }
 };
@@ -675,7 +684,7 @@ export const rewardExtraSpin = async (userId: string, count: number) => {
 export const getArkWallet = async (userId: string): Promise<ArkWallet | null> => {
     try {
         const { data } = await supabase.from('atc_wallets').select('*').eq('user_id', userId).maybeSingle();
-        return data as any; // Hack due to previous wallet ambiguity
+        return data as any; 
     } catch (e) { return null; }
 };
 
@@ -969,9 +978,6 @@ export const logDeviceLogin = async (userId: string, deviceId: string) => {
     } catch {}
 };
 
-/**
- * Added missing Fandub Studio related database service functions
- */
 export const getFandubEarnings = async (channelId: string): Promise<FandubEarning[]> => {
     try {
         const { data } = await supabase.from('fandub_earnings').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
