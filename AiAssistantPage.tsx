@@ -2,22 +2,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, Sender } from './types';
 import { ChatMessageItem } from './components/ChatMessageItem';
-import { Send, Bot, Sparkles, Trash2, ChevronLeft, Zap } from 'lucide-react';
+import { Send, Bot, Sparkles, Trash2, Zap, ExternalLink } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { getMovies } from './services/dbService';
 
 export const AiAssistantPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
-      text: "Salom! Men Anilo.uz aqlli yordamchisiman. 🤖\n\nSizga sayt, animelar yoki loyiha asoschilari haqida ma'lumot bera olaman. Qanday yordam kerak?",
+      text: "Salom! Men Anilo.uz aqlli yordamchisiman. 🤖\n\nSizga sayt, yangi animelar yoki loyiha haqida ma'lumot bera olaman. Google Search orqali dunyo yangiliklarini ham bilaman!",
       sender: Sender.Bot,
       timestamp: Date.now()
     }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [groundingLinks, setGroundingLinks] = useState<any[]>([]);
+  const [siteMovies, setSiteMovies] = useState<string>('');
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Saytdagi bor animelar ro'yxatini yuklab olish
+    getMovies().then(movies => {
+        const titles = movies.slice(0, 50).map(m => m.title).join(', ');
+        setSiteMovies(titles);
+    });
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,6 +53,7 @@ export const AiAssistantPage: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
+    setGroundingLinks([]);
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -49,99 +61,86 @@ export const AiAssistantPage: React.FC = () => {
         model: "gemini-3-flash-preview",
         contents: userText,
         config: {
-          systemInstruction: `Siz Anilo.uz anime portalining rasmiy yordamchisiz. 
-          Sizning vazifangiz foydalanuvchilarga sayt haqida ma'lumot berish. 
+          tools: [{ googleSearch: {} }],
+          systemInstruction: `Siz Anilo.uz anime portalining rasmiy AI yordamchisiz. 
           
-          MUHIM MA'LUMOTLAR:
-          - Loyiha asoschisi va rahbari (CEO): Firdavs Abdurazzoqov. U Navoiy viloyatidan.
-          - Loyiha yaratuvchisi va texnik direktori (CTO/Creator): Sardor Tuyginov. U Samarqand viloyatidan.
-          - Saytning maqsadi: O'zbekistonda professional anime dublyajini rivojlantirish va eng sara animelarni o'zbek tilida taqdim etish.
-          - Premium narxlar: 1 oy - 9,999 so'm, 3 oy - 28,500 so'm, 1 yil - 90,000 so'm.
-          - Bot har doim xushmuomala bo'lishi va asoschilar haqida so'rashsa, g'urur bilan javob berishi kerak.
-          - Javoblaringizni o'zbek tilida, qisqa va tushunarli qilib yozing. Emoji ishlating.`,
-          temperature: 0.7,
+          SAYTDA MAVJUD ANIMELAR: ${siteMovies}
+          
+          KO'RSATMALAR:
+          1. Foydalanuvchi saytdagi animelar haqida so'rasa, yuqoridagi ro'yxatdan foydalaning.
+          2. Agar ro'yxatda yo'q narsani so'rashsa yoki umumiy ma'lumot kerak bo'lsa, Google Search (grounding) orqali eng so'nggi ma'lumotlarni toping.
+          3. Loyiha asoschilari: Firdavs Abdurazzoqov (CEO) va Sardor Tuyginov (Creator/CTO).
+          4. Premium narxlar: 1 oy - 9,999 so'm, 3 oy - 28,500 so'm, 1 yil - 90,000 so'm.
+          5. Javoblaringiz samimiy va o'zbek tilida bo'lsin.`,
         },
       });
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: response.text || "Uzr, hozirda javob bera olmayman. Birozdan so'ng urinib ko'ring.",
+        text: response.text || "Xatolik yuz berdi.",
         sender: Sender.Bot,
         timestamp: Date.now()
       };
+
+      // Extract Grounding Metadata
+      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      if (chunks) {
+          setGroundingLinks(chunks.filter((c: any) => c.web).map((c: any) => c.web));
+      }
       
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
-      console.error("AI Error:", error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Aloqada xatolik yuz berdi. Iltimos, internetingizni tekshiring.",
-        sender: Sender.Bot,
-        timestamp: Date.now(),
-        isError: true
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      console.error(error);
+      setMessages(prev => [...prev, {
+        id: 'err', text: "Aloqa xatosi. PIN yoki internetni tekshiring.", sender: Sender.Bot, timestamp: Date.now(), isError: true
+      }]);
     } finally {
       setIsTyping(false);
     }
   };
 
-  const handleClearChat = () => {
-    if (window.confirm("Suhbatni tozalashni istaysizmi?")) {
-      setMessages([{
-        id: Date.now().toString(),
-        text: "Suhbat tozalandi. Savollaringiz bo'lsa bemalol so'rang.",
-        sender: Sender.Bot,
-        timestamp: Date.now()
-      }]);
-    }
-  };
-
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-[#050505] animate-fade-in relative overflow-hidden">
-      
-      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
-
       {/* Header */}
       <div className="flex-none p-4 border-b border-white/5 bg-black/80 backdrop-blur-md z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-              <div className="relative">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
-                      <Bot size={20} className="text-white" />
-                  </div>
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-black rounded-full animate-pulse"></div>
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                  <Bot size={20} className="text-white" />
               </div>
               <div>
-                  <h2 className="font-black text-white text-sm flex items-center gap-2 tracking-tight uppercase">
-                      Anilo GPT
-                      <Sparkles size={12} className="text-blue-400" />
-                  </h2>
-                  <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Smart Assistant</p>
+                  <h2 className="font-black text-white text-sm uppercase tracking-tight">Anilo GPT v3</h2>
+                  <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Grounding Search Active</p>
               </div>
           </div>
-          <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-2 bg-blue-900/20 px-3 py-1 rounded-full border border-blue-500/20">
-                  <Zap size={10} className="text-blue-400 fill-blue-400" />
-                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Powered by Gemini 3</span>
-              </div>
-              <button 
-                  onClick={handleClearChat}
-                  className="p-2 text-zinc-500 hover:text-red-500 transition-colors"
-              >
-                  <Trash2 size={18} />
-              </button>
-          </div>
+          <button onClick={() => setMessages([])} className="p-2 text-zinc-500 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
       </div>
 
       {/* Chat messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide pb-20">
         {messages.map((msg) => (
           <ChatMessageItem key={msg.id} message={msg} />
         ))}
         
+        {/* Grounding Links UI */}
+        {groundingLinks.length > 0 && !isTyping && (
+            <div className="ml-9 p-4 bg-blue-950/20 border border-blue-500/20 rounded-2xl animate-fade-in">
+                <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Zap size={12}/> Manbalar (Google Search):
+                </p>
+                <div className="space-y-2">
+                    {groundingLinks.map((link, i) => (
+                        <a key={i} href={link.uri} target="_blank" rel="noreferrer" className="flex items-center justify-between p-2 bg-black/40 rounded-lg hover:bg-black transition-all border border-white/5 group">
+                            <span className="text-xs text-zinc-300 truncate pr-4">{link.title}</span>
+                            <ExternalLink size={12} className="text-zinc-600 group-hover:text-blue-400" />
+                        </a>
+                    ))}
+                </div>
+            </div>
+        )}
+
         {isTyping && (
-          <div className="flex justify-start animate-fade-in">
-             <div className="bg-zinc-900 border border-white/5 px-4 py-3 rounded-2xl rounded-tl-none flex items-center space-x-1.5 ml-9">
+          <div className="flex justify-start animate-fade-in ml-9">
+             <div className="bg-zinc-900 border border-white/5 px-4 py-3 rounded-2xl flex items-center space-x-1.5">
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
@@ -151,27 +150,21 @@ export const AiAssistantPage: React.FC = () => {
         <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      {/* Input section */}
+      {/* Input */}
       <div className="flex-none p-4 bg-black border-t border-white/5 pb-safe">
         <form onSubmit={handleSend} className="relative flex items-center gap-2 max-w-4xl mx-auto">
           <input
-            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isTyping}
-            placeholder={isTyping ? "AI o'ylamoqda..." : "Savol bering (masalan: Asoschilar kim?)"}
-            className="w-full pl-5 pr-12 py-4 bg-zinc-900 border border-white/10 rounded-2xl focus:border-blue-500 outline-none text-sm text-white placeholder-zinc-600 transition-all font-medium disabled:opacity-50"
+            placeholder="Search anime or ask questions..."
+            className="w-full pl-5 pr-12 py-4 bg-zinc-900 border border-white/10 rounded-2xl focus:border-blue-500 outline-none text-sm text-white"
           />
-          <button
-            type="submit"
-            disabled={!input.trim() || isTyping}
-            className="absolute right-2 p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center shadow-lg shadow-blue-600/20"
-          >
+          <button type="submit" disabled={!input.trim() || isTyping} className="absolute right-2 p-2.5 bg-blue-600 text-white rounded-xl active:scale-95 shadow-lg shadow-blue-600/20">
             <Send size={18} />
           </button>
         </form>
-        <p className="text-center text-[8px] text-zinc-600 uppercase tracking-widest mt-2">AI xato qilishi mumkin. Muhim ma'lumotlarni tekshiring.</p>
       </div>
     </div>
   );

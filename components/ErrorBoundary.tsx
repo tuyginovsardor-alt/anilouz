@@ -1,3 +1,4 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -13,13 +14,16 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// Fix: Extending Component with Props and State generics to ensure this.props is correctly recognized.
+// Explicitly using Component from react with Props and State generics to resolve property issues.
 export class ErrorBoundary extends Component<Props, State> {
-  // Initialize state
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+  // Explicitly initialize state and call super(props) to ensure this.props is available.
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+    };
+  }
 
   // Update state when an error occurs
   public static getDerivedStateFromError(error: Error): State {
@@ -62,8 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Access children through this.props as defined in generics
-    // Fix: Using this.props.children here. Inheritance from Component<Props, State> ensures props property availability.
+    // Returning children if no error occurred.
     return this.props.children;
   }
 }

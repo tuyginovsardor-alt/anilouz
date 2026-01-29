@@ -66,7 +66,7 @@ const PrivacyContent = () => (
 
 const TermsContent = () => (
     <div className="space-y-4 text-sm text-gray-800 leading-relaxed">
-        <h3 className="text-center font-bold text-lg mb-6 uppercase border-b pb-2">Foydalanish Shartlari (Ommaviy Oferta)</h3>
+        <h3 className="text-center font-bold text-lg mb-6 uppercase border-b pb-2">Ommaviy Oferta (Foydalanish shartlari)</h3>
         
         <p><strong>1. PREDMET</strong></p>
         <p>1.1. Ushbu kelishuv "Anilo.uz" ma'muriyati va Foydalanuvchi o'rtasida tuzilgan bo'lib, saytdan foydalanish tartibini belgilaydi.</p>
@@ -74,7 +74,7 @@ const TermsContent = () => (
         <p><strong>2. PREMIUM OBUNA VA TO'LOVLAR</strong></p>
         <p>2.1. Saytdagi ayrim kontentlar faqat Premium obuna orqali mavjud bo'lishi mumkin.</p>
         <p>2.2. To'langan mablag'lar, agar xizmat ko'rsatishda texnik nosozlik bo'lmasa, qaytarilmaydi.</p>
-        <p>2.3. "ARK Trading" va "AniConcurs" bo'limlaridagi yutuqlar va ballar faqat sayt ichida foydalanish uchun mo'ljallangan va real pulga naqdlashtirilmaydi (Adminning alohida qarori bundan mustasno).</p>
+        <p>2.3. "ARK Trading" va "AniConcurs" bo'limlaridagi yutuqlar va ballar faqat sayt ichida foydalanish uchun mo'ljallangan va real pulga naqdlashtirilmaydi.</p>
 
         <p><strong>3. INTELLEKTUAL MULK</strong></p>
         <p>3.1. Saytdagi barcha videolar, rasmlar va matnlar mualliflik huquqi ob'ekti hisoblanadi.</p>
@@ -82,7 +82,7 @@ const TermsContent = () => (
         <p>3.3. Agar siz mualliflik huquqi egasi bo'lsangiz va huquqingiz buzilgan deb hisoblasangiz, admin@anilo.uz manziliga murojaat qiling.</p>
 
         <p><strong>4. JAVOBGARLIKNI CHEKLASH</strong></p>
-        <p>4.1. Ma'muriyat saytning uzluksiz ishlashini ta'minlashga harakat qiladi, lekin texnik nosozliklar, internet tezligi yoki uchinchi tomonlar (xosting provayderlar) aybi bilan yuzaga kelgan uzilishlar uchun javobgar emas.</p>
+        <p>4.1. Ma'muriyat saytning uzluksiz ishlashini ta'minlashga harakat qiladi, lekin texnik nosozliklar yoki internet tezligi uchun javobgar emas.</p>
         
         <p><strong>5. KELISHUV MUDDATI</strong></p>
         <p>5.1. Ushbu kelishuv Foydalanuvchi ro'yxatdan o'tgan paytdan boshlab kuchga kiradi va hisob o'chirilgungacha amal qiladi.</p>
@@ -101,33 +101,34 @@ export const LegalDocs: React.FC<LegalDocsProps> = ({ type, onClose }) => {
     }
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white text-black rounded-xl w-full max-w-2xl h-[80vh] flex flex-col shadow-2xl border-4 border-double border-gray-300">
+        // z-[300] orqali eng ustki qavatga chiqaramiz (AuthModal z-200 da turibdi)
+        <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white text-black rounded-3xl w-full max-w-2xl h-[85vh] flex flex-col shadow-2xl border-4 border-double border-gray-300 overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-red-500"></div>
                         <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                         <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                        <span className="ml-2 text-xs font-mono text-gray-500 uppercase">Official Document: {type.toUpperCase()}.DOC</span>
+                        <span className="ml-2 text-[10px] font-mono text-gray-500 uppercase font-bold">RASMIY HUJJAT: {type.toUpperCase()}.DOC</span>
                     </div>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded text-gray-500">
+                    <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-8 font-serif bg-[#fffcf5]">
+                <div className="flex-1 overflow-y-auto p-8 md:p-12 font-serif bg-[#fffcf5] custom-scrollbar">
                     {content}
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t bg-gray-50 text-center rounded-b-xl">
+                <div className="p-6 border-t bg-gray-50 text-center">
                     <button 
                         onClick={onClose}
-                        className="bg-blue-900 hover:bg-blue-800 text-white px-8 py-2 rounded shadow-lg font-bold transition-transform active:scale-95"
+                        className="w-full sm:w-auto bg-blue-900 hover:bg-blue-800 text-white px-12 py-3 rounded-xl shadow-lg font-black uppercase text-xs tracking-widest transition-all active:scale-95"
                     >
-                        TANISHIB CHIQDIM VA YOPISH
+                        Tanishib chiqdim va yopish
                     </button>
                 </div>
             </div>
