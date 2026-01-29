@@ -1,47 +1,59 @@
 
-import { supabase } from './supabaseClient';
-import { runAiServerManager, isAiPilotEnabled } from './aiGuardService';
-import { getCache, setCache } from './cacheService'; // Import cache service
+// ... existing imports ...
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
     ATCWallet, ATCTransaction, ContestTask, WheelPrize, QuizQuestion, ContestAd,
     ArkWallet, ArkMarketData, ArkAd, ArkQuiz, ArkAutopilotConfig, ArkSchedule,
     ArkWithdrawal, ShopProduct, ShopWallet, ShopOrder, Promocode, Broadcast, PaymentRequestDB,
-    FandubPost, PremiumBundle
+    FandubPost, PremiumBundle, FandubEarning, FandubWithdrawal
 } from '../types';
+import { supabase } from './supabaseClient';
+import { isAiPilotEnabled, runAiServerManager } from './aiGuardService';
+import { getCache, setCache } from './cacheService';
 
-// --- SECURITY UTILS ---
+// --- FANDUB EXTENSIONS ---
+
+export const getFandubEarnings = async (channelId: string): Promise<FandubEarning[]> => {
+    try {
+        const { data } = await supabase.from('fandub_earnings').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
+        return data || [];
+    } catch { return []; }
+};
+
+export const getFandubWithdrawals = async (channelId: string): Promise<FandubWithdrawal[]> => {
+    try {
+        const { data } = await supabase.from('fandub_withdrawals').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
+        return data || [];
+    } catch { return []; }
+};
+
+export const requestFandubWithdrawal = async (channelId: string, userId: string, amount: number, card: string, holder: string) => {
+    const { error } = await supabase.from('fandub_withdrawals').insert({
+        channel_id: channelId,
+        user_id: userId,
+        amount,
+        card_number: card,
+        card_holder: holder
+    });
+    if (error) throw error;
+};
+
+// ... keep all other existing functions below ...
 export const getSecuredUrl = async (rawUrl: string, userId: string): Promise<string> => {
     return rawUrl || '';
 };
 
-// --- PROFILE & AUTH ---
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
         if (!userId) return null;
-        
-        // 1. Keshni tekshirish (5 daqiqa)
-        // Profil ma'lumotlari tez o'zgarishi mumkin (balans), shuning uchun qisqa vaqt
         const cachedProfile = getCache<UserProfile>(`profile_${userId}`);
         if (cachedProfile) return cachedProfile;
-
-        // 2. Tarmoqdan olish
         const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-        
         if (error) return null;
-        
-        // 3. Keshga saqlash
-        if (data) {
-            setCache(`profile_${userId}`, data, 5); 
-        }
-        
+        if (data) setCache(`profile_${userId}`, data, 5); 
         return data as UserProfile;
-    } catch (e) {
-        // Xatolik bo'lsa, keshdagini qaytarishga urinib ko'rish (muddati o'tgan bo'lsa ham)
-        // Hozircha oddiy null qaytaramiz, lekin kelajakda "stale-while-revalidate" qilish mumkin
-        return null;
-    }
+    } catch (e) { return null; }
 };
 
 export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -60,32 +72,20 @@ export const getUserSessions = async (userId: string): Promise<UserDevice[]> => 
 
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>) => {
     try {
-        // AI Guard Filter
         if (isAiPilotEnabled()) {
             const guardResult = await runAiServerManager(`User Profile Update: ${JSON.stringify(updates)}`);
-            if (guardResult && !guardResult.allowed) {
-                throw new Error(`AI Guard: ${guardResult.analysis}`);
-            }
+            if (guardResult && !guardResult.allowed) throw new Error(`AI Guard: ${guardResult.analysis}`);
         }
-
         const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
         if (error) throw error;
-        
-        // Update bo'lganda keshni yangilash uchun eski keshni o'chiramiz
         localStorage.removeItem(`anilo_cache_profile_${userId}`);
     } catch (e) { throw e; }
 };
 
-// --- MOVIES & FANDUB INTEGRATION ---
 export const getMovies = async (): Promise<Movie[]> => {
     try {
-        // 1. Keshni tekshirish (1 soat - 60 daqiqa)
-        // Kinolar ro'yxati kam o'zgaradi, shuning uchun uzoqroq saqlash mumkin
         const cachedMovies = getCache<Movie[]>('all_movies_catalog');
-        if (cachedMovies) {
-            return cachedMovies;
-        }
-
+        if (cachedMovies) return cachedMovies;
         const getOfficial = async () => {
             const { data, error } = await supabase.from('movies').select('*').eq('is_archived', false).order('created_at', { ascending: false });
             if (error) return [];
@@ -96,7 +96,6 @@ export const getMovies = async (): Promise<Movie[]> => {
                 is_fandub: false 
             }));
         };
-
         const getFandub = async () => {
             try {
                 const { data, error } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'approved').order('created_at', { ascending: false });
@@ -122,27 +121,13 @@ export const getMovies = async (): Promise<Movie[]> => {
                 }));
             } catch { return []; }
         };
-
-        const [official, fandub] = await Promise.all([
-            getOfficial(),
-            getFandub()
-        ]);
-
+        const [official, fandub] = await Promise.all([getOfficial(), getFandub()]);
         const mergedMovies = [...official, ...fandub]
             .filter(m => !m.is_blocked)
             .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        // 2. Keshga saqlash
-        if (mergedMovies.length > 0) {
-            setCache('all_movies_catalog', mergedMovies, 60);
-        }
-
+        if (mergedMovies.length > 0) setCache('all_movies_catalog', mergedMovies, 60);
         return mergedMovies;
-    } catch (e) {
-        console.error("Critical error in getMovies:", e);
-        // Agar internet umuman yo'q bo'lsa va kesh ham bo'lmasa, bo'sh qaytadi
-        return [];
-    }
+    } catch (e) { return []; }
 };
 
 export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
@@ -157,7 +142,6 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
 export const addMovieToDB = async (movie: Partial<Movie>) => {
     const { data, error } = await supabase.from('movies').insert(movie).select().single();
     if (error) throw error;
-    // Ro'yxat o'zgardi, keshni tozalaymiz
     localStorage.removeItem('anilo_cache_all_movies_catalog');
     return data as Movie;
 };
@@ -263,7 +247,7 @@ export const uploadFile = async (file: File, bucket: string): Promise<string> =>
 export const uploadPoster = (file: File) => uploadFile(file, 'posters');
 export const uploadVideo = (file: File) => uploadFile(file, 'videos');
 export const uploadAvatar = (file: File) => uploadFile(file, 'avatars');
-export const uploadBanner = (file: File) => uploadFile(file, 'posters'); // Reuse posters bucket for profile banners
+export const uploadBanner = (file: File) => uploadFile(file, 'posters');
 
 export const getFandubChannels = async (userId?: string): Promise<FandubChannel[]> => {
     try {
@@ -413,14 +397,10 @@ export const getMovieReviews = async (movieId: number) => {
 };
 
 export const addReview = async (movieId: number, userId: string, rating: number, comment: string) => {
-    // AI Guard Filter
     if (isAiPilotEnabled()) {
         const guardResult = await runAiServerManager(`User Review Submission on Movie ID ${movieId}: "${comment}"`);
-        if (guardResult && !guardResult.allowed) {
-            throw new Error(`AI Guard: ${guardResult.analysis}`);
-        }
+        if (guardResult && !guardResult.allowed) throw new Error(`AI Guard: ${guardResult.analysis}`);
     }
-    
     await supabase.from('reviews').insert({ movie_id: movieId, user_id: userId, rating, comment });
 };
 
@@ -429,19 +409,15 @@ export const deleteReview = async (reviewId: number) => {
 };
 
 export const updateReview = async (reviewId: number, comment: string) => {
-    // AI Guard Filter
     if (isAiPilotEnabled()) {
         const guardResult = await runAiServerManager(`User Review Edit: "${comment}"`);
-        if (guardResult && !guardResult.allowed) {
-            throw new Error(`AI Guard: ${guardResult.analysis}`);
-        }
+        if (guardResult && !guardResult.allowed) throw new Error(`AI Guard: ${guardResult.analysis}`);
     }
     await supabase.from('reviews').update({ comment }).eq('id', reviewId);
 };
 
 export const buySubscription = async (userId: string, plan: string, price: number) => {
     await supabase.rpc('buy_subscription', { u_id: userId, p_name: plan, cost: price });
-    // Clear profile cache so updated subscription info is fetched
     localStorage.removeItem(`anilo_cache_profile_${userId}`);
 };
 
@@ -547,7 +523,6 @@ export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
 
 export const approvePaymentRequest = async (requestId: number, userId: string, amount: number) => {
     await supabase.rpc('approve_payment', { req_id: requestId, u_id: userId, amt: amount });
-    // Update cache to reflect balance change
     localStorage.removeItem(`anilo_cache_profile_${userId}`);
 };
 
@@ -570,9 +545,6 @@ export const adminAdjustUserBalance = async (userId: string, amount: number, typ
 export const giveGlobalBonus = async (amount: number, description: string) => {
     const { data, error } = await supabase.rpc('give_global_bonus', { amt: amount, desc: description });
     if (error) throw error;
-    // Clear all profile caches since everyone got a bonus
-    // Note: We can't clear *all* keys easily without clearing everything, but 'clearAppCache' in cacheService handles prefixes.
-    // For now we rely on the fact that individual user cache will expire in 5 min.
     return data;
 };
 
@@ -942,7 +914,6 @@ export const updateUserPassword = async (password: string) => {
 export const updateUserEmail = async (email: string) => {
     const { error } = await supabase.auth.updateUser({ email });
     if (error) throw error;
-    // Profilni qayta yuklash uchun
     const user = await supabase.auth.getUser();
     if(user.data.user) localStorage.removeItem(`anilo_cache_profile_${user.data.user.id}`);
 };

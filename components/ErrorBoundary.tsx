@@ -1,5 +1,5 @@
 
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -14,8 +14,8 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// Explicitly use React.Component to ensure 'props' and 'state' are correctly inherited and typed for the TypeScript compiler.
-export class ErrorBoundary extends React.Component<Props, State> {
+// Explicitly use Component from React for proper inheritance in TypeScript.
+export class ErrorBoundary extends Component<Props, State> {
   // Defining the state property with its types for strict mode compliance.
   public state: State = {
     hasError: false,
@@ -42,7 +42,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   };
 
   public render(): ReactNode {
-    // Destructuring state and props from 'this' to help the compiler resolve inherited properties like 'props'.
+    // Correctly accessing state and props on a class component.
     const { hasError, error } = this.state;
     const { children } = this.props;
 
@@ -71,7 +71,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
     }
 
     // Returning children if no error occurred.
-    // Fixed access to children via destructured props.
     return children;
   }
 }

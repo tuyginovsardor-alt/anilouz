@@ -7,7 +7,7 @@ export interface UserProfile {
   full_name: string | null;
   username: string | null;
   avatar_url: string | null;
-  banner_url?: string | null; // Added banner
+  banner_url?: string | null;
   role: UserRole;
   balance: number;
   phone: string | null;
@@ -18,7 +18,7 @@ export interface UserProfile {
   email_notifications: boolean;
   push_notifications: boolean;
   language: string;
-  bio?: string; // Added bio
+  bio?: string;
   fans_count?: number;
   is_online?: boolean;
   last_active?: string;
@@ -54,158 +54,6 @@ export interface Episode {
     sourceType?: 'url' | 'file';
 }
 
-// --- CONCURS & ATC ---
-export interface ATCWallet {
-    user_id: string;
-    balance: number;
-    total_earned: number;
-    total_converted: number;
-    active_days: number;
-    last_spin_at: string | null;
-    extra_spins: number;
-}
-
-export interface ATCTransaction {
-    id: number;
-    user_id: string;
-    amount: number;
-    type: 'spin' | 'task' | 'convert' | 'ad_watch';
-    description: string;
-    created_at: string;
-}
-
-export interface ContestTask {
-    id: number;
-    label: string;
-    url: string;
-    reward_atc: number;
-    platform: 'telegram' | 'instagram' | 'youtube' | 'facebook' | 'other';
-}
-
-export interface WheelPrize {
-    id: number;
-    label: string;
-    value: number;
-    type: 'atc' | 'uzs' | 'box' | 'loss' | 'ark';
-    probability: number;
-    color: string;
-}
-
-export interface QuizQuestion {
-    id: number;
-    question: string;
-    option_a: string;
-    option_b: string;
-    option_c: string;
-    option_d: string;
-    correct_option: string;
-}
-
-export interface ContestAd {
-    id: number;
-    title: string;
-    media_url: string;
-    media_type: 'video' | 'image';
-    reward_atc: number;
-    duration_sec: number;
-}
-
-// --- ARK TRADING ---
-export interface ArkWallet {
-    user_id: string;
-    balance: number;
-    available_spins: number;
-    total_earned: number;
-}
-
-export interface ArkMarketData {
-    id: number;
-    price: number;
-    created_at: string;
-}
-
-export interface ArkAd {
-    id: number;
-    title: string;
-    media_url: string;
-    media_type: 'video' | 'image';
-    reward_ark: number;
-    duration_sec: number;
-    // Added is_active property to fix type mismatch in CashContestPage.tsx
-    is_active: boolean;
-}
-
-export interface ArkQuiz {
-    id: number;
-    question: string;
-    option_a: string;
-    option_b: string;
-    option_c: string;
-    option_d: string;
-    correct_option: string;
-    // Added reward_spins property to fix type mismatch in CashContestPage.tsx
-    reward_spins: number;
-}
-
-export interface ArkWithdrawal {
-    id: number;
-    user_id: string;
-    amount_ark: number;
-    amount_uzs: number;
-    card_number: string;
-    card_holder: string;
-    status: 'pending' | 'approved' | 'rejected';
-    profiles?: { full_name: string; email: string; };
-}
-
-export interface ArkAutopilotConfig {
-    unit_views: number;
-    revenue_per_unit: number;
-    market_share_percent: number;
-}
-
-export interface ArkSchedule {
-    start_date: string;
-    duration_hours: number;
-    growth_percent: number;
-    is_active: boolean;
-}
-
-// --- SHOP ---
-export interface ShopProduct {
-    id: number;
-    title: string;
-    price: number;
-    discount_percent?: number;
-    image_url: string;
-    category: 'figure' | 'clothing' | 'accessory' | 'other';
-    description: string;
-    rating?: number;
-    delivery_time?: string;
-    specifications?: Record<string, string>;
-    stock_count: number;
-    is_active: boolean;
-    sales_count?: number;
-}
-
-export interface ShopWallet {
-    user_id: string;
-    balance: number;
-}
-
-export interface ShopOrder {
-    id: number;
-    user_id: string;
-    product_id: number;
-    amount: number;
-    address: string;
-    phone: string;
-    status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
-    created_at: string;
-    products?: ShopProduct;
-}
-
-// --- FANDUB ---
 export interface FandubChannel {
     id: string;
     user_id: string;
@@ -218,18 +66,32 @@ export interface FandubChannel {
     total_likes: number;
     total_views: number;
     balance_usd: number;
+    total_withdrawn?: number;
+    is_verified?: boolean;
+    social_links?: {
+        telegram?: string;
+        instagram?: string;
+        youtube?: string;
+    };
     created_at: string;
     is_following?: boolean;
 }
 
-export interface FandubStory {
-    id: string;
-    user_id: string;
-    channel_id: string;
-    media_url: string;
-    media_type: 'image' | 'video';
+export interface FandubEarning {
+    id: number;
+    amount: number;
+    source: string;
+    movie_id?: number;
     created_at: string;
-    profiles?: { username: string | null; avatar_url: string | null; };
+}
+
+export interface FandubWithdrawal {
+    id: number;
+    amount: number;
+    card_number: string;
+    card_holder: string;
+    status: 'pending' | 'approved' | 'rejected';
+    created_at: string;
 }
 
 export interface FandubUpload {
@@ -253,26 +115,6 @@ export interface FandubUpload {
     created_at: string;
 }
 
-// --- NEW TYPES ADDED TO FIX EXPORT ERRORS ---
-export interface FandubPost {
-    id: number;
-    channel_id: string;
-    content: string;
-    image_url?: string;
-    likes: number;
-    created_at: string;
-}
-
-export interface PremiumBundle {
-    id: number;
-    title: string;
-    price: number;
-    duration_days: number;
-    anime_ids: number[];
-    created_at: string;
-}
-
-// --- SYSTEM ---
 export interface Notification {
     id: string;
     type: NotificationType;
@@ -280,11 +122,9 @@ export interface Notification {
     message: string;
 }
 
-// Added NotificationType to fix error in components/Notification.tsx
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 export interface Ad {
-    // Made id optional to fix error in AdvertisementPage.tsx line 78
     id?: number;
     name: string;
     type: 'video' | 'banner';
@@ -388,7 +228,6 @@ export interface PaymentRequestDB {
     profiles?: { full_name: string; email: string; };
 }
 
-// Added missing CulturalAnalysis type to fix error in components/ResultCard.tsx
 export interface CulturalAnalysis {
   detectedLanguage: string;
   isoCode: string;
@@ -398,10 +237,192 @@ export interface CulturalAnalysis {
   culturalFacts: string[];
 }
 
-// Added missing AppView and ChatSession types to fix errors in components/Sidebar.tsx
 export enum AppView { Chat, Settings, About }
 export interface ChatSession {
   id: string;
   title: string;
   lastMessageAt: number;
+}
+
+/* Added missing types below */
+
+export interface ATCWallet {
+  user_id: string;
+  balance: number;
+  total_earned: number;
+  total_converted: number;
+  active_days: number;
+  last_spin_at: string | null;
+  extra_spins: number;
+}
+
+export interface ATCTransaction {
+  id: number;
+  user_id: string;
+  amount: number;
+  type: string;
+  description: string;
+  created_at: string;
+}
+
+export interface ContestTask {
+  id: number;
+  label: string;
+  url: string;
+  reward_atc: number;
+  platform: 'telegram' | 'instagram' | 'youtube' | 'facebook' | 'other';
+}
+
+export interface WheelPrize {
+  id: number;
+  label: string;
+  value: number;
+  type: 'atc' | 'uzs' | 'ark' | 'loss' | 'box';
+  color: string;
+  probability: number;
+}
+
+export interface QuizQuestion {
+  id: number;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: string;
+}
+
+export interface ContestAd {
+  id: number;
+  title: string;
+  media_type: 'video' | 'image';
+  media_url: string;
+  reward_atc: number;
+  duration_sec: number;
+}
+
+export interface ArkWallet {
+  user_id: string;
+  balance: number;
+  total_earned: number;
+  available_spins: number;
+}
+
+export interface ArkMarketData {
+  id: number;
+  price: number;
+  created_at: string;
+}
+
+export interface ArkAd {
+  id: number;
+  title: string;
+  media_type: 'video' | 'image';
+  media_url: string;
+  reward_ark: number;
+  duration_sec: number;
+  is_active: boolean;
+}
+
+export interface ArkQuiz {
+  id: number;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: string;
+  reward_spins: number;
+}
+
+export interface ArkWithdrawal {
+  id: number;
+  user_id: string;
+  amount_ark: number;
+  amount_uzs: number;
+  card_number: string;
+  card_holder: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  profiles?: {
+    full_name: string;
+    email: string;
+  };
+}
+
+export interface ArkAutopilotConfig {
+  unit_views: number;
+  revenue_per_unit: number;
+  market_share_percent: number;
+}
+
+export interface ArkSchedule {
+  start_date: string;
+  duration_hours: number;
+  growth_percent: number;
+  is_active: boolean;
+}
+
+export interface FandubStory {
+  id: number;
+  user_id: string;
+  media_type: 'video' | 'image';
+  media_url: string;
+  created_at: string;
+  profiles?: {
+    username: string;
+    avatar_url: string;
+  };
+}
+
+export interface ShopProduct {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  discount_percent: number | null;
+  rating: number;
+  delivery_time: string;
+  category: 'figure' | 'clothing' | 'accessory' | 'other';
+  image_url: string;
+  specifications: Record<string, string>;
+  sales_count: number;
+  stock_count: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ShopWallet {
+  user_id: string;
+  balance: number;
+}
+
+export interface ShopOrder {
+  id: number;
+  user_id: string;
+  product_id: number;
+  amount: number;
+  address: string;
+  phone: string;
+  status: 'pending' | 'shipped' | 'delivered';
+  created_at: string;
+  products?: ShopProduct;
+}
+
+export interface FandubPost {
+  id: number;
+  channel_id: string;
+  content: string;
+  image_url?: string;
+  likes: number;
+  created_at: string;
+}
+
+export interface PremiumBundle {
+  id: number;
+  title: string;
+  price: number;
+  duration_days: number;
+  anime_ids: number[];
+  created_at: string;
 }
