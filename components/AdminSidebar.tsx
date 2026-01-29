@@ -16,9 +16,7 @@ import { TagIcon } from './icons/TagIcon';
 import { PaletteIcon } from './icons/PaletteIcon';
 import { MonitorIcon } from './icons/MonitorIcon';
 import { BroadcastIcon } from './icons/BroadcastIcon';
-import { GiftIcon } from './icons/GiftIcon';
 import { MapIcon } from './icons/MapIcon';
-import { TrendingUpIcon } from './icons/TrendingUpIcon';
 import { ShieldIcon } from './icons/ShieldIcon';
 import { StampIcon } from './icons/StampIcon';
 import { Layers } from 'lucide-react';
@@ -64,8 +62,6 @@ const NavItem: React.FC<{
 
 const allMenuItems: { page: AdminSubPage, label: string, icon: React.ReactNode, roles: UserRole[] }[] = [
     { page: 'dashboard', label: 'Boshqaruv', icon: <DashboardIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
-    { page: 'cash_contest', label: 'Cash Trading (ARK)', icon: <TrendingUpIcon className="w-5 h-5" />, roles: ['owner'] }, 
-    { page: 'contest', label: 'ATC O\'yini', icon: <GiftIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'sessions', label: 'Seanslar', icon: <MonitorIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'broadcasts', label: 'Brodkast', icon: <BroadcastIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'users', label: 'Foydalanuvchilar', icon: <UsersIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },

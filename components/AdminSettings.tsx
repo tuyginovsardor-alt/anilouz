@@ -1,13 +1,4 @@
 
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { getAppConfig, updateAppConfig, getSocialLinks, addSocialLink, deleteSocialLink } from '../services/dbService';
 import { useNotification } from '../hooks/useNotification';
@@ -75,17 +66,12 @@ export const AdminSettings: React.FC = () => {
         e.preventDefault();
         setSaving(true);
         try {
-            // Save Card Info
             await updateAppConfig('card_number', cardNumber);
             await updateAppConfig('card_holder', cardHolder.toUpperCase());
-
-            // Save Prices
             await updateAppConfig('price_1_oy', price1Month);
             await updateAppConfig('price_3_oy', price3Month);
             await updateAppConfig('price_6_oy', price6Month);
             await updateAppConfig('price_1_yil', price1Year);
-
-            // Save Free Trial
             await updateAppConfig('free_trial_minutes', freeTrialMinutes);
 
             addNotification({ type: 'success', title: 'Saqlandi', message: 'Barcha sozlamalar yangilandi.' });
@@ -103,30 +89,21 @@ export const AdminSettings: React.FC = () => {
             return;
         }
         try {
-            await addSocialLink({
-                platform: newSocialPlatform,
-                url: newSocialUrl,
-                label: newSocialLabel
-            });
+            await addSocialLink({ platform: newSocialPlatform, url: newSocialUrl, label: newSocialLabel });
             const updatedLinks = await getSocialLinks();
             setSocialLinks(updatedLinks);
-            setNewSocialUrl('');
-            setNewSocialLabel('');
+            setNewSocialUrl(''); setNewSocialLabel('');
             addNotification({ type: 'success', title: 'Qo\'shildi', message: 'Link muvaffaqiyatli qo\'shildi.' });
-        } catch (e) {
-            addNotification({ type: 'error', title: 'Xatolik', message: 'Linkni qo\'shib bo\'lmadi.' });
-        }
+        } catch (e) { addNotification({ type: 'error', title: 'Xatolik', message: 'Linkni qo\'shib bo\'lmadi.' }); }
     };
 
     const handleDeleteSocialLink = async (id: number) => {
-        if (!window.confirm("Ushbu linkni o'chirmoqchimisiz?")) return;
+        if (!window.confirm("O'chirmoqchimisiz?")) return;
         try {
             await deleteSocialLink(id);
             setSocialLinks(prev => prev.filter(l => l.id !== id));
             addNotification({ type: 'success', title: 'O\'chirildi', message: 'Link o\'chirildi.' });
-        } catch (e) {
-            addNotification({ type: 'error', title: 'Xatolik', message: 'O\'chirishda xatolik.' });
-        }
+        } catch (e) { addNotification({ type: 'error', title: 'Xatolik', message: 'O\'chirishda xatolik.' }); }
     };
 
     const getSocialIcon = (platform: string) => {
@@ -139,69 +116,57 @@ export const AdminSettings: React.FC = () => {
         }
     };
 
-    const sqlCode = `-- XAVFSIZ SQL KOD (MA'LUMOTLARNI O'CHIRMAYDI)
--- Bu kod faqat yetishmayotgan narsalarni qo'shadi.
+    const sqlCode = `-- 1. PROFIL JADVALI UCHUN RLS (ROW LEVEL SECURITY)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 1. STORAGE BUCKETS (Fayl tizimi)
--- "ON CONFLICT DO NOTHING" - Agar papka bor bo'lsa, unga tegmaydi.
+-- Eski qoidalarni tozalash (agar bo'lsa)
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admins and Owners can manage all profiles" ON public.profiles;
+
+-- Hammaning profilini hamma ko'ra oladi
+CREATE POLICY "Public profiles are viewable by everyone" 
+ON public.profiles FOR SELECT 
+USING (true);
+
+-- Har kim faqat o'z profilini tahrirlay oladi
+CREATE POLICY "Users can update own profile" 
+ON public.profiles FOR UPDATE 
+USING (auth.uid() = id);
+
+-- OWNER va ADMIN istalgan profilni boshqara oladi
+CREATE POLICY "Admins and Owners can manage all profiles" 
+ON public.profiles FOR ALL
+USING (
+  (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'owner')
+);
+
+-- 2. FANDUB UPLOADLARI UCHUN KENGAYTIRILGAN RUXSATLAR
+-- Owner va Admin barcha yuklamalarni (uploads) ko'ra va boshqara oladi
+ALTER TABLE public.fandub_uploads ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Creators can manage own uploads" ON public.fandub_uploads;
+DROP POLICY IF EXISTS "Admins and Owners can manage all fandubs" ON public.fandub_uploads;
+
+-- Ijodkorlar o'z narsasini ko'radi/boshqaradi
+CREATE POLICY "Creators can manage own uploads"
+ON public.fandub_uploads FOR ALL
+USING (auth.uid() = user_id);
+
+-- Owner va Admin hammani narsasini boshqaradi
+CREATE POLICY "Admins and Owners can manage all fandubs"
+ON public.fandub_uploads FOR ALL
+USING (
+  (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'owner')
+);
+
+-- 3. STORAGE BUCKETS
 INSERT INTO storage.buckets (id, name, public) VALUES 
 ('avatars', 'avatars', true),
 ('posters', 'posters', true),
 ('videos', 'videos', true),
 ('assets', 'assets', true)
 ON CONFLICT (id) DO NOTHING;
-
--- 2. SETTINGS (Sozlamalar)
--- Agar sozlamalar avval kiritilgan bo'lsa, ularni o'zgartirmaydi.
-INSERT INTO public.ark_settings (key, value) VALUES 
-('autopilot_config', '{"unit_views":10000,"revenue_per_unit":200000,"market_share_percent":45}'),
-('market_schedule', '{}'),
-('game_status', 'active')
-ON CONFLICT (key) DO NOTHING;
-
-INSERT INTO public.app_config (key, value) VALUES 
-('admin_pin', '0000'), 
-('protected_routes', '[]'),
-('admin_recovery_codes', '[]')
-ON CONFLICT (key) DO NOTHING;
-
--- 3. STORAGE POLICIES (Ruxsatlar)
--- Policy larni yangilash xavfsiz, bu fayllarni o'chirmaydi.
-DROP POLICY IF EXISTS "Public Access" ON storage.objects;
-DROP POLICY IF EXISTS "Auth Upload" ON storage.objects;
-DROP POLICY IF EXISTS "Owner Delete" ON storage.objects;
-
-CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id IN ('avatars', 'posters', 'videos', 'assets') );
-CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT WITH CHECK ( auth.role() = 'authenticated' );
-CREATE POLICY "Owner Delete" ON storage.objects FOR DELETE USING ( auth.uid() = owner );
-
--- 4. JADVALLARGA USTUN QO'SHISH (XAVFSIZ)
--- Bu qism jadvallardagi ustunlarni tekshiradi. 
--- Agar ustun (masalan 'view_count') yo'q bo'lsa, uni qo'shadi. Bor bo'lsa, tegmaydi.
-
--- ark_ads jadvali uchun
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'ark_ads' AND column_name = 'view_count') THEN
-        ALTER TABLE public.ark_ads ADD COLUMN view_count BIGINT DEFAULT 0;
-    END IF;
-END $$;
-
--- movies jadvali uchun (agar view_count yo'q bo'lsa)
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'movies' AND column_name = 'view_count') THEN
-        ALTER TABLE public.movies ADD COLUMN view_count BIGINT DEFAULT 0;
-    END IF;
-END $$;
-
--- ads jadvali uchun
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'ads' AND column_name = 'view_count') THEN
-        ALTER TABLE public.ads ADD COLUMN view_count BIGINT DEFAULT 0;
-    END IF;
-END $$;
 
 NOTIFY pgrst, 'reload config';`;
 
@@ -216,258 +181,98 @@ NOTIFY pgrst, 'reload config';`;
         <div className="animate-fade-in max-w-4xl mx-auto pb-10">
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold text-white">Tizim Sozlamalari</h1>
-                <button 
-                    onClick={loadSettings}
-                    className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors"
-                    title="Yangilash"
-                >
+                <button onClick={loadSettings} className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors" title="Yangilash">
                     <RefreshCw size={20} />
                 </button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-8">
-                
                 {/* FREE TRIAL SETTINGS */}
                 <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-6 border-b border-gray-700 pb-4">
                         <Clock className="text-yellow-400" size={24} />
                         <h2 className="text-xl font-bold text-white">Bepul Sinov Davri</h2>
                     </div>
-                    
                     <div className="max-w-sm">
                         <label className="block text-sm font-medium text-gray-400 mb-2">Davomiyligi (Daqiqa)</label>
                         <div className="relative">
-                            <input 
-                                type="number" 
-                                value={freeTrialMinutes}
-                                onChange={(e) => setFreeTrialMinutes(e.target.value)}
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg pl-4 pr-20 py-3 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 outline-none"
-                                placeholder="60"
-                            />
+                            <input type="number" value={freeTrialMinutes} onChange={(e) => setFreeTrialMinutes(e.target.value)} className="w-full bg-gray-900 border border-gray-600 rounded-lg pl-4 pr-20 py-3 text-white focus:border-yellow-500 outline-none" />
                             <span className="absolute right-3 top-3 text-gray-500 text-sm font-bold">MIN</span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">Foydalanuvchi ro'yxatdan o'tgach beriladigan bepul vaqt (default: 60 daqiqa).</p>
                     </div>
                 </div>
 
-                {/* SOCIAL LINKS SETTINGS */}
+                {/* SOCIAL LINKS */}
                 <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-6 border-b border-gray-700 pb-4">
                         <LinkIcon className="text-blue-400" size={24} />
-                        <h2 className="text-xl font-bold text-white">Ijtimoiy Tarmoqlar va Havolalar</h2>
+                        <h2 className="text-xl font-bold text-white">Ijtimoiy Tarmoqlar</h2>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 items-end">
-                        <div className="md:col-span-1">
-                            <label className="block text-xs text-gray-400 mb-1">Platforma</label>
-                            <select 
-                                value={newSocialPlatform}
-                                onChange={(e) => setNewSocialPlatform(e.target.value as any)}
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                            >
-                                <option value="instagram">Instagram</option>
-                                <option value="telegram">Telegram</option>
-                                <option value="youtube">YouTube</option>
-                                <option value="facebook">Facebook</option>
-                            </select>
-                        </div>
-                        <div className="md:col-span-1">
-                            <label className="block text-xs text-gray-400 mb-1">Nomi (Label)</label>
-                            <input 
-                                type="text" 
-                                value={newSocialLabel}
-                                onChange={(e) => setNewSocialLabel(e.target.value)}
-                                placeholder="Masalan: Asosiy kanal"
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                            />
-                        </div>
-                        <div className="md:col-span-1">
-                            <label className="block text-xs text-gray-400 mb-1">Havola (URL)</label>
-                            <input 
-                                type="text" 
-                                value={newSocialUrl}
-                                onChange={(e) => setNewSocialUrl(e.target.value)}
-                                placeholder="https://..."
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                            />
-                        </div>
-                        <div className="md:col-span-1">
-                            <button 
-                                type="button"
-                                onClick={handleAddSocialLink}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-                            >
-                                Qo'shish
-                            </button>
-                        </div>
+                        <select value={newSocialPlatform} onChange={(e) => setNewSocialPlatform(e.target.value as any)} className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm">
+                            <option value="instagram">Instagram</option>
+                            <option value="telegram">Telegram</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="facebook">Facebook</option>
+                        </select>
+                        <input type="text" value={newSocialLabel} onChange={(e) => setNewSocialLabel(e.target.value)} placeholder="Nomi" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" />
+                        <input type="text" value={newSocialUrl} onChange={(e) => setNewSocialUrl(e.target.value)} placeholder="URL" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" />
+                        <button type="button" onClick={handleAddSocialLink} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Qo'shish</button>
                     </div>
-
-                    {/* List of Links */}
                     <div className="space-y-2">
-                        {socialLinks.length === 0 && <p className="text-gray-500 text-sm text-center py-4">Hozircha havolalar yo'q.</p>}
                         {socialLinks.map(link => (
                             <div key={link.id} className="flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-gray-800 rounded-full text-gray-400">
-                                        {getSocialIcon(link.platform)}
-                                    </div>
+                                    <div className="p-2 bg-gray-800 rounded-full text-gray-400">{getSocialIcon(link.platform)}</div>
                                     <div>
                                         <p className="font-bold text-white text-sm">{link.label}</p>
-                                        <a href={link.url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline truncate max-w-[200px] block">{link.url}</a>
+                                        <a href={link.url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">{link.url}</a>
                                     </div>
                                 </div>
-                                <button 
-                                    type="button"
-                                    onClick={() => link.id && handleDeleteSocialLink(link.id)}
-                                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                                <button type="button" onClick={() => link.id && handleDeleteSocialLink(link.id)} className="p-2 text-gray-500 hover:text-red-400"><Trash2 size={16} /></button>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* CARD SETTINGS */}
+                {/* CARD INFO */}
                 <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-6 border-b border-gray-700 pb-4">
                         <CreditCard className="text-orange-500" size={24} />
-                        <h2 className="text-xl font-bold text-white">To'lov Kartasi Ma'lumotlari</h2>
+                        <h2 className="text-xl font-bold text-white">To'lov Kartasi</h2>
                     </div>
-                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">Karta Raqami</label>
-                            <input 
-                                type="text" 
-                                value={cardNumber}
-                                onChange={(e) => setCardNumber(e.target.value)}
-                                placeholder="8600 0000 0000 0000"
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none font-mono text-lg"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">Karta Egasi (Ism)</label>
-                            <input 
-                                type="text" 
-                                value={cardHolder}
-                                onChange={(e) => setCardHolder(e.target.value)}
-                                placeholder="ANILO UZ"
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none uppercase"
-                            />
-                        </div>
+                        <input type="text" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} placeholder="Karta Raqami" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none font-mono text-lg" />
+                        <input type="text" value={cardHolder} onChange={(e) => setCardHolder(e.target.value)} placeholder="Karta Egasi" className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none uppercase" />
                     </div>
                 </div>
 
-                {/* PRICING SETTINGS */}
-                <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-6 border-b border-gray-700 pb-4">
-                        <DollarSign className="text-green-500" size={24} />
-                        <h2 className="text-xl font-bold text-white">Premium Obuna Narxlari (UZS)</h2>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">1 Oy</label>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={price1Month}
-                                    onChange={(e) => setPrice1Month(e.target.value)}
-                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg pl-4 pr-12 py-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
-                                />
-                                <span className="absolute right-3 top-3 text-gray-500 text-sm font-bold">SO'M</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">3 Oy</label>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={price3Month}
-                                    onChange={(e) => setPrice3Month(e.target.value)}
-                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg pl-4 pr-12 py-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
-                                />
-                                <span className="absolute right-3 top-3 text-gray-500 text-sm font-bold">SO'M</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">6 Oy</label>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={price6Month}
-                                    onChange={(e) => setPrice6Month(e.target.value)}
-                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg pl-4 pr-12 py-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
-                                />
-                                <span className="absolute right-3 top-3 text-gray-500 text-sm font-bold">SO'M</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">1 Yil</label>
-                            <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={price1Year}
-                                    onChange={(e) => setPrice1Year(e.target.value)}
-                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg pl-4 pr-12 py-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
-                                />
-                                <span className="absolute right-3 top-3 text-gray-500 text-sm font-bold">SO'M</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* DATABASE RECOVERY */}
+                {/* SQL RECOVERY & RLS */}
                 <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
                     <div className="flex items-center justify-between mb-6 border-b border-gray-700 pb-4">
                         <div className="flex items-center gap-3">
                             <Database className="text-blue-500" size={24} />
-                            <h2 className="text-xl font-bold text-white">Baza Tuzilmasini Tiklash (SQL)</h2>
+                            <h2 className="text-xl font-bold text-white">Baza va RLS Tiklash</h2>
                         </div>
                         <button type="button" onClick={copySql} className="text-sm flex items-center gap-2 text-blue-400 hover:text-blue-300">
                             <Copy size={16} /> Nusxalash
                         </button>
                     </div>
-                    
-                    <div className="space-y-6">
-                        <div className="bg-red-900/20 p-4 rounded-lg border border-red-500/30 flex gap-3">
-                            <Info className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-red-200">
-                                <p className="font-bold mb-1">MUHIM (XAVFSIZ REJIM):</p>
-                                <p>
-                                    Ushbu kod <b>mavjud ma'lumotlaringizni o'chirmaydi</b>. U faqat yangi funksiyalar uchun kerakli ustunlarni (view_count) va papkalarni (storage) tekshiradi va yo'q bo'lsa qo'shadi.
-                                    <br/>
-                                    Agar <b>"Bucket not found"</b> xatosi bo'lsa, buni Supabase SQL Editor da yuriting.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* SQL Option */}
-                        <div>
-                            <div className="bg-black/50 p-4 rounded-lg font-mono text-xs text-green-400 overflow-x-auto max-h-64 border border-gray-700 relative group">
-                                <pre>{sqlCode}</pre>
-                                <button 
-                                    type="button" 
-                                    onClick={copySql} 
-                                    className="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="Nusxalash"
-                                >
-                                    <Copy size={14} />
-                                </button>
-                            </div>
-                        </div>
+                    <div className="bg-red-900/20 p-4 rounded-lg border border-red-500/30 flex gap-3 mb-4">
+                        <Info className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-red-200">
+                            <b>RLS Qoidalari:</b> Ushbu SQL kod foydalanuvchilar o'z profilini boshqarishi va <b>Owner/Admin</b> barcha ma'lumotlarga (jumladan Fandub) kirishi uchun xavfsizlik qoidalarini o'rnatadi.
+                        </p>
+                    </div>
+                    <div className="bg-black/50 p-4 rounded-lg font-mono text-[10px] text-green-400 overflow-x-auto max-h-64 border border-gray-700 relative group">
+                        <pre>{sqlCode}</pre>
                     </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
-                    <button 
-                        type="submit" 
-                        disabled={saving}
-                        className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-orange-900/20 disabled:opacity-50"
-                    >
+                    <button type="submit" disabled={saving} className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-orange-900/20 disabled:opacity-50">
                         {saving ? <LoadingSpinner /> : <Save size={20} />}
-                        <span>O'zgarishlarni Saqlash</span>
+                        <span>Saqlash</span>
                     </button>
                 </div>
             </form>

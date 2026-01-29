@@ -15,9 +15,7 @@ import { AdminSettings } from './components/AdminSettings';
 import { getAdminNotificationCounts, getAdminPin, getProtectedRoutes } from './services/dbService';
 import { SessionsPage } from './SessionsPage';
 import { BroadcastPage } from './BroadcastPage';
-import { ContestManagementPage } from './ContestManagementPage';
 import { SitemapGeneratorPage } from './SitemapGeneratorPage';
-import { CashContestPage } from './CashContestPage';
 import { SecurityPage } from './SecurityPage';
 import { PinModal } from './components/PinModal';
 import { StampToolPage } from './StampToolPage';
@@ -70,8 +68,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ currentRole, currentPage, 
       case 'bundle_manager': return <BundleManagementPage />;
       case 'users': return <UserManagementPage onImpersonate={onImpersonate} />;
       case 'sessions': return <SessionsPage />;
-      case 'contest': return <ContestManagementPage />;
-      case 'cash_contest': return currentRole === 'owner' ? <CashContestPage /> : <AdminDashboard />;
       case 'broadcasts': return <BroadcastPage />;
       case 'movies': return <MovieManagementPage />;
       case 'settings': return currentRole === 'owner' ? <AdminSettings /> : <AdminDashboard />;

@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+import React, { ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -13,9 +14,9 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// FIX: Using React.Component explicitly to ensure that 'props' and 'state' are correctly inherited and typed
+// Explicitly use React.Component to ensure 'props' and 'state' are correctly inherited and typed for the TypeScript compiler.
 export class ErrorBoundary extends React.Component<Props, State> {
-  // FIX: Defining the state property with its types
+  // Defining the state property with its types for strict mode compliance.
   public state: State = {
     hasError: false,
     error: null,
@@ -41,8 +42,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
   };
 
   public render(): ReactNode {
+    // Destructuring state and props from 'this' to help the compiler resolve inherited properties like 'props'.
+    const { hasError, error } = this.state;
+    const { children } = this.props;
+
     // Check for error state to display fallback UI
-    if (this.state.hasError) {
+    if (hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
           <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
@@ -53,7 +58,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             Sayt yuklanishida muammo paydo bo'ldi. Internetni tekshiring yoki keshni tozalab qayta urining.
           </p>
           <div className="p-4 bg-zinc-900 rounded-lg border border-red-900/30 mb-6 max-w-md w-full overflow-hidden">
-             <p className="text-xs text-red-400 font-mono break-all">{this.state.error?.message}</p>
+             <p className="text-xs text-red-400 font-mono break-all">{error?.message}</p>
           </div>
           <button 
             onClick={this.handleReload}
@@ -66,7 +71,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     }
 
     // Returning children if no error occurred.
-    // FIX: Correctly access props inherited from React.Component to resolve the TS error 'Property props does not exist'
-    return this.props.children;
+    // Fixed access to children via destructured props.
+    return children;
   }
 }
