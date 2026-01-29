@@ -1,7 +1,12 @@
 <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="512" height="512" rx="128" fill="#f97316"/>
-  <!-- Orqa fondagi spiral effekt -->
-  <path d="M256 102.4C171.2 102.4 102.4 171.2 102.4 256C102.4 340.8 171.2 409.6 256 409.6C340.8 409.6 409.6 340.8 409.6 256C409.6 171.2 340.8 102.4 256 102.4ZM256 358.4C199.4 358.4 153.6 312.6 153.6 256C153.6 199.4 199.4 153.6 256 153.6C312.6 153.6 358.4 199.4 358.4 256C358.4 312.6 312.6 358.4 256 358.4Z" fill="white" fill-opacity="0.2"/>
-  <!-- Asosiy "A" yoki ramziy chiziqlar -->
-  <path d="M179.2 358.4L281.6 153.6M230.4 358.4L332.8 153.6" stroke="white" stroke-width="50" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="200" fill="black"/>
+  <circle cx="256" cy="256" r="180" fill="#be123c"/>
+  <path 
+    d="M256 256C256 256 286 236 286 206C286 166 246 146 206 166C156 191 146 256 181 306C221 366 316 356 366 281C416 181 356 81 231 81C81 81 31 231 81 331C131 431 281 456 381 381" 
+    stroke="black" 
+    stroke-width="25" 
+    stroke-linecap="round" 
+    opacity="0.8"
+  />
 </svg>

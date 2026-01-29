@@ -8,18 +8,28 @@ export const UzumakiLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
       xmlns="http://www.w3.org/2000/svg" 
       {...props}
     >
-      <rect width="100" height="100" rx="28" fill="#f97316" />
-      {/* Swirl Effect */}
+      {/* Background: Orange */}
+      <rect width="100" height="100" rx="22" fill="#f97316" />
+      
+      {/* Outer black ring */}
+      <circle cx="50" cy="50" r="38" fill="black" />
+      
+      {/* Main red circle */}
+      <circle cx="50" cy="50" r="34" fill="#be123c" />
+      
+      {/* Uzumaki Spiral (hand-drawn style) */}
       <path 
-        d="M50 20C33.4315 20 20 33.4315 20 50C20 66.5685 33.4315 80 50 80C66.5685 80 80 66.5685 80 50C80 33.4315 66.5685 20 50 20ZM50 70C38.9543 70 30 61.0457 30 50C30 38.9543 38.9543 30 50 30C61.0457 30 70 38.9543 70 50C70 61.0457 61.0457 70 50 70Z" 
-        fill="white" 
-        fillOpacity="0.2"
+        d="M50 50C50 50 56 46 56 40C56 32 48 28 40 32C30 37 28 50 35 60C43 72 62 70 72 55C82 35 70 15 45 15C15 15 5 45 15 65C25 85 55 90 75 75" 
+        stroke="black" 
+        strokeWidth="5" 
+        strokeLinecap="round" 
+        style={{ opacity: 0.8 }}
       />
       <path 
-        d="M35 70L55 30M45 70L65 30" 
-        stroke="white" 
-        strokeWidth="12" 
-        strokeLinecap="round" 
+        d="M50 50C50 50 54 48 54 43C54 36 48 33 42 35C35 38 33 47 38 55C43 64 58 63 65 52C72 38 65 24 50 24C32 24 25 42 32 55" 
+        stroke="black" 
+        strokeWidth="3.5" 
+        strokeLinecap="round"
       />
     </svg>
   );
