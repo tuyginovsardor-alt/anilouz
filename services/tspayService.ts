@@ -13,24 +13,25 @@ export interface TsPayResponse {
 
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayResponse> => {
     try {
-        console.log("Invoking clever-api for user:", userId, "amount:", amount);
+        console.log("To'lov so'rovi yuborilmoqda...");
         
-        // Supabase invoke ba'zan URL muammosi tufayli "Failed to fetch" beradi
+        // Supabase Edge Function so'rovi
         const { data, error } = await supabase.functions.invoke('clever-api', {
             body: { action: 'create', amount, user_id: userId }
         });
 
         if (error) {
-            console.error("Invoke Error Object:", error);
-            throw new Error(error.message || "Edge Function bilan ulanib bo'lmadi.");
+            console.error("Supabase funksiya xatosi:", error);
+            // Agar CORS yoki Network xatosi bo'lsa, bu yerga tushadi
+            return { 
+                status: 'error', 
+                message: "Ulanishda xatolik. Iltimos, VPN o'chiqligini tekshiring yoki sahifani yangilang." 
+            };
         }
         
         return data as TsPayResponse;
     } catch (err: any) {
-        console.error("Critical Connection Error:", err);
-        return { 
-            status: 'error', 
-            message: "Server bilan bog'lanishda xatolik. Iltimos, internetingizni tekshiring yoki birozdan so'ng qayta urining." 
-        };
+        console.error("Kritik xatolik:", err);
+        return { status: 'error', message: "Kutilmagan xatolik yuz berdi." };
     }
 };

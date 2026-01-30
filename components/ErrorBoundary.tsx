@@ -1,4 +1,3 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -14,13 +13,16 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// FIX: Using React.Component explicitly ensures that the 'props' and 'state' members are correctly resolved by the TypeScript compiler
-export class ErrorBoundary extends React.Component<Props, State> {
-  // Defining the state property with its types for strict mode compliance.
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+// FIX: Using Component from the named import ensures that the 'props' and 'state' members are correctly resolved by the TypeScript compiler as inherited members
+export class ErrorBoundary extends Component<Props, State> {
+  // FIX: Explicit constructor and super(props) call to ensure the component is correctly initialized with generic Props type
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+    };
+  }
 
   // Update state when an error occurs so the next render will show the fallback UI.
   public static getDerivedStateFromError(error: Error): State {
@@ -39,7 +41,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   };
 
   public render(): ReactNode {
-    // FIX: Destructuring from this.state and this.props which are now properly recognized inherited properties
+    // FIX: Destructuring from this.state and this.props which are now properly recognized inherited properties from Component<Props, State>
     const { hasError, error } = this.state;
     const { children } = this.props;
 
