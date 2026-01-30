@@ -35,7 +35,7 @@ export const createNotification = async (userId: string, title: string, message:
 
 export const getMovieReviews = async (movieId: number) => {
     try {
-        // Fetch reviews with profiles AND join the parent comment for the reply feature
+        // Bizga sharh, uning muallifi va agar u javob bo'lsa (parent), o'sha parentning matni va muallifi kerak
         const { data } = await supabase
             .from('reviews')
             .select(`

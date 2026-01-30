@@ -305,6 +305,24 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         <div className="bg-zinc-900/50 border border-white/5 rounded-[2rem] p-6 md:p-8">
                             <h3 className="text-xl font-black uppercase tracking-tight text-white mb-4 pl-2 border-l-4 border-orange-500">Syujet</h3>
                             <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap font-medium">{movie.plot}</p>
+                            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Chiqarilgan yili</p>
+                                    <p className="text-sm font-bold text-white">{movie.year}</p>
+                                </div>
+                                <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Tili</p>
+                                    <p className="text-sm font-bold text-white">{movie.language}</p>
+                                </div>
+                                <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Sifati</p>
+                                    <p className="text-sm font-bold text-white">{movie.quality}</p>
+                                </div>
+                                <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Janri</p>
+                                    <p className="text-sm font-bold text-white truncate">{movie.genre.split(',')[0]}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
