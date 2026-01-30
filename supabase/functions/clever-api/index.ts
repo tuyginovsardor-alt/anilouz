@@ -6,7 +6,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 serve(async (req) => {
-  // 1. Dinamik Origin olish (CORS xatosini oldini olish uchun)
   const origin = req.headers.get('Origin') || '*';
 
   const corsHeaders = {
@@ -17,7 +16,6 @@ serve(async (req) => {
     'Access-Control-Max-Age': '86400',
   }
 
-  // 2. Preflight so'roviga darhol ruxsat berish
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders, status: 200 })
   }
@@ -28,17 +26,16 @@ serve(async (req) => {
     const tspayToken = Deno.env.get('TSPAY_TOKEN');
 
     if (!tspayToken) {
-        throw new Error("TSPAY_TOKEN topilmadi. Secrets bo'limini tekshiring.");
+        throw new Error("TSPAY_TOKEN topilmadi.");
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
     const body = await req.json().catch(() => ({}));
 
-    // To'lov yaratish
     if (body.action === 'create') {
       const amount = Math.floor(Number(body.amount));
       const userId = body.user_id;
 
+      // TsPay API ga so'rov yuborish
       const tsResponse = await fetch('https://tspay.uz/api/v1/transactions/create/', {
         method: 'POST',
         headers: { 
@@ -49,30 +46,38 @@ serve(async (req) => {
           amount: amount,
           access_token: tspayToken,
           comment: `Anilo.uz ID: ${userId}`,
-          redirect_url: `${origin}/dashboard/account` // So'rov kelgan origin'ga qaytaradi
+          redirect_url: `${origin}/dashboard/account`
         })
       });
       
       const data = await tsResponse.json();
+      console.log("TsPay Response Data:", data); // Supabase loglarida ko'rinadi
 
-      if (tsResponse.ok) {
-          const payUrl = data.pay_url || data.url || (data.data && data.data.pay_url);
+      // TsPay odatda status: true yoki success qaytaradi
+      if (tsResponse.ok && (data.status === true || data.status === 'success' || data.pay_url)) {
+          // Eng ko'p uchraydigan strukturalarni tekshiramiz
+          const payUrl = data.pay_url || (data.data && data.data.pay_url) || data.url;
+          
           if (payUrl) {
               return new Response(JSON.stringify({ 
                   status: 'success', 
-                  transaction: { url: payUrl, id: data.id || (data.data && data.data.id) } 
+                  transaction: { 
+                      url: payUrl, 
+                      id: data.id || (data.data && data.data.id) 
+                  } 
               }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
           }
       }
       
       return new Response(JSON.stringify({ 
           status: 'error', 
-          message: data.message || `TsPay xatosi: ${tsResponse.status}` 
+          message: data.message || data.error || `TsPay xatosi: ${tsResponse.status}` 
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Webhook (To'lov tasdiqlanganda TsPay tomonidan chaqiriladi)
+    // Webhook qismi (TsPay tomonidan chaqiriladi)
     if (body.pay_status === 'paid' || body.status === 'success') {
+        const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
         const comment = body.comment || "";
         const userIdMatch = comment.match(/([a-f0-9-]{36})/i);
         if (userIdMatch) {
@@ -85,7 +90,7 @@ serve(async (req) => {
         return new Response(JSON.stringify({ status: 'ok' }), { headers: corsHeaders });
     }
 
-    return new Response(JSON.stringify({ status: 'error', message: 'Noma\'lum so\'rov' }), { 
+    return new Response(JSON.stringify({ status: 'error', message: 'Noma\'lum amal' }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 

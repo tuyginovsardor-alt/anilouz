@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Props {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 interface State {
@@ -14,9 +14,10 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// FIX: Using React.Component explicitly ensures that the 'props' and 'state' members are correctly inherited and recognized by the TypeScript compiler
-export class ErrorBoundary extends React.Component<Props, State> {
-  // FIX: Explicit constructor and super(props) call to correctly initialize the component with Props and State generics
+export class ErrorBoundary extends Component<Props, State> {
+  // Fix: Explicitly declare state to resolve "Property 'state' does not exist" errors on class instance
+  public state: State;
+
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -30,7 +31,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
@@ -41,8 +42,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
     window.location.reload();
   };
 
-  public render(): React.ReactNode {
-    // FIX: Destructuring from this.state and this.props which are now properly recognized inherited properties from React.Component<Props, State>
+  public render(): ReactNode {
+    // Fix: Destructuring from this.state and this.props which are now properly recognized inherited properties
     const { hasError, error } = this.state;
     const { children } = this.props;
 
