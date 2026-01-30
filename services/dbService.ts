@@ -35,7 +35,6 @@ export const createNotification = async (userId: string, title: string, message:
 
 export const getMovieReviews = async (movieId: number) => {
     try {
-        // Bizga sharh, uning muallifi va agar u javob bo'lsa (parent), o'sha parentning matni va muallifi kerak
         const { data } = await supabase
             .from('reviews')
             .select(`
@@ -469,11 +468,6 @@ export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
     } catch (e) { return []; }
 };
 
-export const buySubscription = async (userId: string, plan: string, price: number) => {
-    await supabase.rpc('buy_subscription', { u_id: userId, p_name: plan, cost: price });
-    localStorage.removeItem(`anilo_cache_profile_${userId}`);
-};
-
 export const redeemPromocode = async (userId: string, code: string) => {
     const { data, error } = await supabase.rpc('redeem_promocode', { u_id: userId, c_str: code });
     if (error) throw error;
@@ -585,7 +579,7 @@ export const rejectPaymentRequest = async (requestId: number) => {
 
 export const getPremiumUsers = async (): Promise<UserProfile[]> => {
     try {
-        const { data } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
+        const { data = [] } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
         return data || [];
     } catch (e) { return []; }
 };
@@ -1010,7 +1004,7 @@ export const getFandubEarnings = async (channelId: string): Promise<FandubEarnin
 
 export const getFandubWithdrawals = async (channelId: string): Promise<FandubWithdrawal[]> => {
     try {
-        const { data } = await supabase.from('fandub_withdrawals').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
+        const { data = [] } = await supabase.from('fandub_withdrawals').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
         return (data || []) as FandubWithdrawal[];
     } catch { return []; }
 };
