@@ -35,7 +35,7 @@ export const createNotification = async (userId: string, title: string, message:
 
 export const getMovieReviews = async (movieId: number) => {
     try {
-        // Fetch reviews with profiles AND the parent review info (for replies)
+        // Fetch reviews with profiles AND join the parent comment for the reply feature
         const { data } = await supabase
             .from('reviews')
             .select(`
@@ -63,7 +63,7 @@ export const addReview = async (movieId: number, userId: string, rating: number,
         user_id: userId, 
         rating, 
         comment, 
-        parent_id: parentId, // Store who we are replying to
+        parent_id: parentId,
         created_at: new Date().toISOString() 
     });
 };
@@ -76,7 +76,6 @@ export const updateReview = async (reviewId: number, comment: string) => {
     await supabase.from('reviews').update({ comment }).eq('id', reviewId);
 };
 
-// ... existing code (unchanged) ...
 export const incrementView = async (movieId: number, isFandub: boolean) => {
     try {
         await supabase.rpc('increment_movie_views', { m_id: movieId, is_fandub: isFandub });

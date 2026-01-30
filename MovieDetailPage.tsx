@@ -130,7 +130,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
               await addReview(movie.id!, userProfile.id, rating, commentText, replyToComment?.id);
               
-              if (replyToComment && replyToComment.profiles?.id !== userProfile.id) {
+              if (replyToComment && replyToComment.user_id !== userProfile.id) {
                   await createNotification(replyToComment.user_id, "Javob berishdi", `@${userProfile.username} xabaringizga javob yozdi.`);
               }
           }
@@ -433,5 +433,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 )}
             </div>
         </div>
-    );
+    </div>
+  );
 };
