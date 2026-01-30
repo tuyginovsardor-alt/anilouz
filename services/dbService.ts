@@ -1,5 +1,4 @@
 
-// ... (oldingi importlar o'zgarishsiz qoladi) ...
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
@@ -12,7 +11,7 @@ import { supabase } from './supabaseClient';
 import { isAiPilotEnabled, runAiServerManager } from './aiGuardService';
 import { getCache, setCache } from './cacheService';
 
-// --- CHAT & MENTIONS & NOTIFICATIONS ---
+// --- CHAT & NOTIFICATIONS ---
 
 export const getUserIdByUsername = async (username: string): Promise<string | null> => {
     try {
@@ -36,13 +35,17 @@ export const createNotification = async (userId: string, title: string, message:
 
 export const getMovieReviews = async (movieId: number) => {
     try {
-        // parent_id bo'yicha bog'langan xabarlarni olish uchun join qo'shamiz
+        // Fetch reviews with profiles AND the parent review info (for replies)
         const { data } = await supabase
             .from('reviews')
             .select(`
                 *,
                 profiles(full_name, username, avatar_url, role),
-                parent:parent_id(comment, profiles(username))
+                parent:parent_id (
+                    id,
+                    comment,
+                    profiles(username)
+                )
             `)
             .eq('movie_id', movieId)
             .order('created_at', { ascending: true });
@@ -52,7 +55,7 @@ export const getMovieReviews = async (movieId: number) => {
 
 export const addReview = async (movieId: number, userId: string, rating: number, comment: string, parentId: number | null = null) => {
     if (isAiPilotEnabled()) {
-        const guardResult = await runAiServerManager(`User Review Submission on Movie ID ${movieId}: "${comment}"`);
+        const guardResult = await runAiServerManager(`User Review Submission: "${comment}"`);
         if (guardResult && !guardResult.allowed) throw new Error(`AI Guard: ${guardResult.analysis}`);
     }
     await supabase.from('reviews').insert({ 
@@ -60,12 +63,20 @@ export const addReview = async (movieId: number, userId: string, rating: number,
         user_id: userId, 
         rating, 
         comment, 
-        parent_id: parentId, // Javob berilayotgan xabar IDsi
+        parent_id: parentId, // Store who we are replying to
         created_at: new Date().toISOString() 
     });
 };
 
-// ... (qolgan barcha funksiyalar o'zgarishsiz qoladi) ...
+export const deleteReview = async (reviewId: number) => {
+    await supabase.from('reviews').delete().eq('id', reviewId);
+};
+
+export const updateReview = async (reviewId: number, comment: string) => {
+    await supabase.from('reviews').update({ comment }).eq('id', reviewId);
+};
+
+// ... existing code (unchanged) ...
 export const incrementView = async (movieId: number, isFandub: boolean) => {
     try {
         await supabase.rpc('increment_movie_views', { m_id: movieId, is_fandub: isFandub });
@@ -457,18 +468,6 @@ export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
         const { data } = await supabase.from('movies').select('*').or(`title.ilike.%${query}%,genre.ilike.%${query}%,tags.ilike.%${query}%`).eq('is_archived', false);
         return (data || []).map(m => ({ ...m, posterUrl: m.posterUrl || m.poster_url })) as Movie[];
     } catch (e) { return []; }
-};
-
-export const deleteReview = async (reviewId: number) => {
-    await supabase.from('reviews').delete().eq('id', reviewId);
-};
-
-export const updateReview = async (reviewId: number, comment: string) => {
-    if (isAiPilotEnabled()) {
-        const guardResult = await runAiServerManager(`User Review Edit: "${comment}"`);
-        if (guardResult && !guardResult.allowed) throw new Error(`AI Guard: ${guardResult.analysis}`);
-    }
-    await supabase.from('reviews').update({ comment }).eq('id', reviewId);
 };
 
 export const buySubscription = async (userId: string, plan: string, price: number) => {
