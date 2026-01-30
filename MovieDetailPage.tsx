@@ -160,7 +160,12 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   };
 
   const handleReply = (comment: any) => {
-      setReplyToComment(comment);
+      setReplyToComment({
+          id: comment.id,
+          username: comment.profiles?.username || 'user',
+          text: comment.comment,
+          user_id: comment.user_id
+      });
       commentInputRef.current?.focus();
   };
 
@@ -455,8 +460,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                                         <div className="flex items-center gap-4 min-w-0">
                                             <div className="w-1 h-10 bg-orange-600 rounded-full flex-shrink-0 shadow-[0_0_15px_rgba(234,88,12,0.5)]"></div>
                                             <div className="min-w-0">
-                                                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-2"> <Reply size={12} className="-scale-x-100"/> Javob berilmoqda: @{replyToComment.profiles?.username}</p>
-                                                <p className="text-xs text-zinc-500 truncate italic font-medium mt-0.5">{replyToComment.comment}</p>
+                                                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-2"> <Reply size={12} className="-scale-x-100"/> Javob berilmoqda: @{replyToComment.username}</p>
+                                                <p className="text-xs text-zinc-500 truncate italic font-medium mt-0.5">{replyToComment.text}</p>
                                             </div>
                                         </div>
                                         <button type="button" onClick={() => setReplyToComment(null)} className="p-2.5 text-zinc-600 hover:text-white transition-colors bg-white/5 rounded-full">
