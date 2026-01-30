@@ -1,4 +1,5 @@
-const CACHE_NAME = 'anilo-v7';
+
+const CACHE_NAME = 'anilo-v8'; // Versiya yangilandi
 const ASSETS = [
   './',
   './index.html',
@@ -18,7 +19,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
       keys.map((key) => {
-        if (key !== CACHE_NAME) return caches.delete(key);
+        // Eski kesh versiyalarini o'chirish
+        if (key !== CACHE_NAME) {
+            console.log('SW: Eski kesh o\'chirilmoqda:', key);
+            return caches.delete(key);
+        }
       })
     ))
   );
@@ -31,6 +36,7 @@ self.addEventListener('fetch', (event) => {
   
   event.respondWith(
     caches.match(event.request).then((cached) => {
+      // Keshda bo'lsa keshdan, bo'lmasa tarmoqdan
       return cached || fetch(event.request).catch(() => {
         if (event.request.mode === 'navigate') return caches.match('./index.html');
       });

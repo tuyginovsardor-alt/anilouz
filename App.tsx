@@ -21,7 +21,7 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { getAppConfig, getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
 import { UzumakiLogo } from './components/icons/UzumakiLogo';
@@ -47,7 +47,7 @@ const App: React.FC = () => {
   const [isAppReady, setIsAppReady] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine); 
   const [showRetryButton, setShowRetryButton] = useState(false); 
-  const [initError, setInitError] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [legalDocType, setLegalDocType] = useState<LegalDocType | null>(null);
@@ -85,20 +85,25 @@ const App: React.FC = () => {
 
   const initApp = async () => {
       try {
-          pruneCache();
           setIsAppReady(false);
+          setInitError(null);
           setShowRetryButton(false);
-          setInitError(false);
+          
+          // 1. Keshni tekshirish va tozalash
+          pruneCache();
           
           const safetyTimeout = setTimeout(() => {
               setShowRetryButton(true);
-          }, 6000);
+          }, 8000);
 
           const params = new URLSearchParams(window.location.search);
           const movieIdParam = params.get('movie_id');
 
-          const { data: { session } } = await supabase.auth.getSession();
+          // 2. Supabase sessiyasini olish (Xavfsiz)
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession().catch(err => ({ data: { session: null }, error: err }));
           
+          if (sessionError) throw sessionError;
+
           if (session) {
               setIsAuthenticated(true); 
               await refreshProfile();
@@ -120,9 +125,10 @@ const App: React.FC = () => {
           
           clearTimeout(safetyTimeout);
           setIsAppReady(true);
-      } catch (e) { 
-          console.error("Init Error:", e);
-          setInitError(true);
+      } catch (e: any) { 
+          console.error("FATAL INIT ERROR:", e);
+          setInitError(e.message || "Tizim yuklanishida xatolik");
+          // Xatolik bo'lsa keshni o'chirib yuborishga harakat qilamiz
           clearAppCache();
       }
   };
@@ -181,18 +187,37 @@ const App: React.FC = () => {
       window.history.pushState({}, '', window.location.pathname);
   };
 
+  // --- REPAIR / FIX SYSTEM ---
+  const handleRepair = () => {
+      clearAppCache();
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/';
+  };
+
   if (initError) {
       return (
-          <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
-              <AlertTriangle size={48} className="text-orange-500 mb-4 animate-pulse" />
-              <h2 className="text-xl font-black text-white uppercase mb-2">Tizimda nosozlik</h2>
-              <p className="text-zinc-500 text-sm mb-8">Ma'lumotlar keshini tozaladik. Iltimos, sahifani yangilang.</p>
-              <button 
-                  onClick={() => window.location.reload()} 
-                  className="px-10 py-4 bg-white text-black rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center gap-3"
-              >
-                  <RefreshCw size={16} /> Sahifani yangilash
-              </button>
+          <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center p-8 text-center">
+              <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mb-6 border border-red-500/30">
+                  <AlertTriangle size={48} className="text-red-500 animate-pulse" />
+              </div>
+              <h2 className="text-2xl font-black text-white uppercase mb-2">Tizimda nosozlik</h2>
+              <p className="text-zinc-500 text-sm mb-10 max-w-sm">Kesh yoki sessiya ma'lumotlari buzilgan bo'lishi mumkin. Saytni qayta tiklashni maslahat beramiz.</p>
+              
+              <div className="flex flex-col gap-4 w-full max-w-xs">
+                  <button 
+                      onClick={handleRepair} 
+                      className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center justify-center gap-3 hover:bg-orange-500 transition-all active:scale-95"
+                  >
+                      <RefreshCw size={16} /> Tizimni Ta'mirlash
+                  </button>
+                  <button 
+                      onClick={() => window.location.reload()} 
+                      className="w-full py-4 bg-zinc-900 text-zinc-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:text-white transition-all"
+                  >
+                      Shunchaki yangilash
+                  </button>
+              </div>
           </div>
       );
   }
@@ -205,15 +230,18 @@ const App: React.FC = () => {
                   <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
               <p className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.3em] animate-pulse">
-                  {showRetryButton ? "Internet sekin..." : "ANILO yuklanmoqda..."}
+                  {showRetryButton ? "Internet sekinlashmoqda..." : "ANILO yuklanmoqda..."}
               </p>
               {showRetryButton && (
-                  <button 
-                      onClick={() => window.location.reload()} 
-                      className="mt-4 px-6 py-2 bg-zinc-900 border border-white/10 text-white rounded-full font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-zinc-800"
-                  >
-                      <RefreshCw size={12} /> Qayta urinish
-                  </button>
+                  <div className="flex flex-col items-center gap-3 animate-fade-in mt-4">
+                      <button 
+                          onClick={() => window.location.reload()} 
+                          className="px-8 py-3 bg-zinc-900 border border-white/10 text-white rounded-full font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-zinc-800"
+                      >
+                          <RefreshCw size={12} /> Qayta urinish
+                      </button>
+                      <button onClick={handleRepair} className="text-[9px] text-zinc-700 font-bold uppercase hover:text-zinc-500">Keshni tozalab kirish</button>
+                  </div>
               )}
           </div>
       );

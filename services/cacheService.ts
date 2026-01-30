@@ -13,23 +13,29 @@ interface CacheItem<T> {
 export const pruneCache = (): void => {
     try {
         const now = Date.now();
+        const keysToRemove: string[] = [];
+        
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith(CACHE_PREFIX)) {
-                try {
-                    const itemStr = localStorage.getItem(key);
-                    if (itemStr) {
-                        const item = JSON.parse(itemStr);
-                        if (now > item.expiry) {
-                            localStorage.removeItem(key);
-                        }
-                    }
-                } catch (e) {
-                    // Buzilgan JSON bo'lsa darhol o'chirish
-                    localStorage.removeItem(key);
-                }
+                keysToRemove.push(key);
             }
         }
+
+        keysToRemove.forEach(key => {
+            try {
+                const itemStr = localStorage.getItem(key);
+                if (itemStr) {
+                    const item = JSON.parse(itemStr);
+                    if (now > item.expiry) {
+                        localStorage.removeItem(key);
+                    }
+                }
+            } catch (e) {
+                // Agar parsingda xato bo'lsa (buzilgan JSON), o'chiramiz
+                localStorage.removeItem(key);
+            }
+        });
     } catch (e) {
         console.warn("Prune error:", e);
     }
@@ -46,15 +52,16 @@ export const setCache = <T>(key: string, data: T, ttlMinutes: number = 60): void
         };
         localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(item));
     } catch (e: any) {
-        // Joy yetmasa hammasini tozalab yuboramiz
+        // Joy yetmasa (QuotaExceededError) hammasini tozalaymiz
         if (e.name === 'QuotaExceededError' || e.code === 22) {
+            console.error("LocalStorage to'lib qoldi, kesh tozalanmoqda...");
             clearAppCache();
         }
     }
 };
 
 /**
- * Keshdan ma'lumot olish
+ * Keshdan ma'lumot olish - Xavfsiz usul
  */
 export const getCache = <T>(key: string): T | null => {
     const fullKey = CACHE_PREFIX + key;
@@ -62,17 +69,23 @@ export const getCache = <T>(key: string): T | null => {
         const itemStr = localStorage.getItem(fullKey);
         if (!itemStr) return null;
 
-        const item: CacheItem<T> = JSON.parse(itemStr);
+        const item = JSON.parse(itemStr);
         
-        // Muddati o'tgan bo'lsa o'chiramiz
+        // Ob'ekt strukturasi to'g'riligini tekshirish
+        if (!item || typeof item !== 'object' || !('expiry' in item)) {
+            localStorage.removeItem(fullKey);
+            return null;
+        }
+
+        // Muddati o'tgan bo'lsa
         if (Date.now() > item.expiry) {
             localStorage.removeItem(fullKey);
             return null;
         }
 
-        return item.data;
+        return item.data as T;
     } catch (e) {
-        // Agar parsingda xato bo'lsa kesh buzilgan, uni o'chirib tashlaymiz
+        // Har qanday xato bo'lsa (masalan [object Object] yozilib qolgan bo'lsa) o'chiramiz
         localStorage.removeItem(fullKey);
         return null;
     }
@@ -86,12 +99,12 @@ export const clearAppCache = (): void => {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith(CACHE_PREFIX)) {
+            if (key && (key.startsWith(CACHE_PREFIX) || key.includes('supabase.auth.token'))) {
                 keysToRemove.push(key);
             }
         }
         keysToRemove.forEach(k => localStorage.removeItem(k));
-        console.log("Anilo kesh tozalandi.");
+        console.log("Anilo kesh tizimi butunlay tozalandi.");
     } catch (e) {
         console.error("Cache clear error:", e);
     }
