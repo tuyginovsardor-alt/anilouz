@@ -75,6 +75,24 @@ export const updateReview = async (reviewId: number, comment: string) => {
     await supabase.from('reviews').update({ comment }).eq('id', reviewId);
 };
 
+// --- SUPPORT CHAT ---
+
+export const createTicket = async (userId: string) => {
+    const { data, error } = await supabase.from('support_tickets').insert({ user_id: userId, status: 'open' }).select().single();
+    if (error) throw error;
+    return data;
+};
+
+export const sendMessage = async (ticketId: number, userId: string, message: string, isAdmin: boolean) => {
+    const { error } = await supabase.from('ticket_messages').insert({ 
+        ticket_id: ticketId, 
+        user_id: userId, 
+        message, 
+        is_admin: isAdmin 
+    });
+    if (error) throw error;
+};
+
 // --- SUBSCRIPTIONS ---
 
 export const buySubscription = async (userId: string, plan: string, price: number) => {
@@ -518,12 +536,6 @@ export const getTicketMessages = async (ticketId: number): Promise<TicketMessage
         const { data } = await supabase.from('ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true });
         return data || [];
     } catch (e) { return []; }
-};
-
-export const createTicket = async (userId: string) => {
-    const { data, error } = await supabase.from('support_tickets').insert({ user_id: userId, status: 'open' }).select().single();
-    if (error) throw error;
-    return data;
 };
 
 export const getPromocodes = async (): Promise<Promocode[]> => {

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Star, Lock, ArrowLeft, MessageSquare, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle, Eye, TrendingUp, XCircle, CornerUpLeft } from 'lucide-react';
+// Added missing Film and Zap icons to the lucide-react imports
+import { Play, Star, Lock, ArrowLeft, MessageSquare, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle, Eye, TrendingUp, XCircle, CornerUpLeft, Film, Zap } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, getMovieEpisodes, getMovieReviews, addReview, deleteReview, updateReview, getMovies, isMovieSaved, toggleSaveMovie, getUserIdByUsername, createNotification } from './services/dbService';
 import { Movie, UserProfile, Episode } from './types';
@@ -490,7 +491,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                                     <button 
                                         type="submit"
                                         disabled={isSubmittingReview || !commentText.trim()}
-                                        className="w-14 h-14 bg-orange-600 text-white rounded-[1.3rem] flex items-center justify-center hover:bg-orange-500 transition-all active:scale-90 disabled:opacity-50 shadow-2xl shadow-orange-900/30 shrink-0"
+                                        className="w-14 h-14 bg-orange-600 text-white rounded-[1.3rem] flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 disabled:opacity-50 shadow-2xl shadow-orange-900/30 shrink-0"
                                     >
                                         {isSubmittingReview ? <LoadingSpinner /> : <Send size={24} />}
                                     </button>
