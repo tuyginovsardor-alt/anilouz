@@ -38,13 +38,11 @@ export const BillingPage: React.FC = () => {
                 addNotification({ 
                     type: 'success', 
                     title: 'Tayyor', 
-                    message: "To'lov sahifasiga yo'naltirilmoqda..." 
+                    message: "To'lov sahifasi yaratildi. O'tilmoqda..." 
                 });
                 
-                // Avtomatik redirect
-                setTimeout(() => {
-                    window.location.assign(payUrl);
-                }, 1000);
+                // Darhol ochishga harakat qilish
+                window.location.assign(payUrl);
             } else {
                 throw new Error(res.message || "To'lov tizimi link taqdim etmadi.");
             }
@@ -124,21 +122,27 @@ export const BillingPage: React.FC = () => {
 
                             {redirectUrl ? (
                                 <div className="space-y-4 mt-auto">
-                                    <div className="p-4 bg-green-900/20 border border-green-500/20 rounded-2xl text-center">
-                                        <p className="text-green-400 text-xs font-bold mb-2 uppercase">Sahifa ochilmadimi?</p>
+                                    <div className="p-5 bg-green-500/10 border border-green-500/30 rounded-2xl text-center">
+                                        <div className="flex justify-center mb-3">
+                                            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="text-green-500" size={24} />
+                                            </div>
+                                        </div>
+                                        <p className="text-white font-bold text-sm mb-1 uppercase tracking-tight">TO'LOV LINKI TAYYOR</p>
+                                        <p className="text-zinc-400 text-[10px] mb-4 uppercase tracking-widest">Sahifa avtomatik ochilmadimi?</p>
                                         <a 
                                             href={redirectUrl} 
-                                            className="inline-flex items-center gap-2 text-white bg-green-600 px-6 py-2 rounded-xl font-black text-[10px] uppercase hover:bg-green-500 transition-all"
+                                            className="w-full inline-flex items-center justify-center gap-2 text-black bg-green-500 px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-green-400 transition-all shadow-lg shadow-green-500/20"
                                         >
-                                            SAYTGA O'TISH <ExternalLink size={12}/>
+                                            TO'LOV SAHIFASIGA O'TISH <ExternalLink size={16}/>
                                         </a>
                                     </div>
                                     <button 
                                         type="button"
                                         onClick={() => {setRedirectUrl(null); setTsAmount('');}}
-                                        className="w-full text-zinc-500 text-[10px] font-bold uppercase hover:text-white transition-colors"
+                                        className="w-full text-zinc-500 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors py-2"
                                     >
-                                        Qayta urinish
+                                        Boshqa summa kiritish
                                     </button>
                                 </div>
                             ) : (
@@ -147,10 +151,15 @@ export const BillingPage: React.FC = () => {
                                     disabled={isTsPayLoading}
                                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-5 rounded-2xl font-black uppercase text-sm tracking-[0.2em] transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 mt-auto"
                                 >
-                                    {isTsPayLoading ? <Loader2 className="animate-spin" /> : (
+                                    {isTsPayLoading ? (
+                                        <div className="flex items-center gap-3">
+                                            <Loader2 className="animate-spin" size={18} />
+                                            <span>YARATILMOQDA...</span>
+                                        </div>
+                                    ) : (
                                         <>
                                             <CreditCard size={18} /> 
-                                            To'lovni boshlash
+                                            TO'LOVNI BOSHLASH
                                         </>
                                     )}
                                 </button>

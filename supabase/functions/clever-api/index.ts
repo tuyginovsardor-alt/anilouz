@@ -35,6 +35,8 @@ serve(async (req) => {
       const amount = Math.floor(Number(body.amount));
       const userId = body.user_id;
 
+      console.log(`Creating TsPay transaction: User ${userId}, Amount ${amount}`);
+
       // TsPay API ga so'rov yuborish
       const tsResponse = await fetch('https://tspay.uz/api/v1/transactions/create/', {
         method: 'POST',
@@ -50,28 +52,32 @@ serve(async (req) => {
         })
       });
       
+      const resStatus = tsResponse.status;
       const data = await tsResponse.json();
-      console.log("TsPay Response Data:", data); // Supabase loglarida ko'rinadi
+      
+      console.log(`TsPay Status: ${resStatus}`, data);
 
-      // TsPay odatda status: true yoki success qaytaradi
-      if (tsResponse.ok && (data.status === true || data.status === 'success' || data.pay_url)) {
-          // Eng ko'p uchraydigan strukturalarni tekshiramiz
+      // 200 OK yoki 201 Created bo'lsa muvaffaqiyatli
+      if (resStatus === 200 || resStatus === 201) {
+          // TsPay turli xil struktura qaytarishi mumkin, hammasini tekshiramiz
           const payUrl = data.pay_url || (data.data && data.data.pay_url) || data.url;
+          const transId = data.id || (data.data && data.data.id);
           
           if (payUrl) {
               return new Response(JSON.stringify({ 
                   status: 'success', 
                   transaction: { 
                       url: payUrl, 
-                      id: data.id || (data.data && data.data.id) 
+                      id: transId
                   } 
               }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
           }
       }
       
+      // Agar pay_url topilmasa yoki status xato bo'lsa
       return new Response(JSON.stringify({ 
           status: 'error', 
-          message: data.message || data.error || `TsPay xatosi: ${tsResponse.status}` 
+          message: data.message || data.error || `TsPay xatosi: ${resStatus}` 
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -95,6 +101,7 @@ serve(async (req) => {
     });
 
   } catch (error: any) {
+    console.error("Function Error:", error);
     return new Response(JSON.stringify({ status: 'error', message: error.message }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
