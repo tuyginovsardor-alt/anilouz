@@ -21,10 +21,9 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { getAppConfig, getUserProfile, getMovies } from './services/dbService';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
-import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
 import { PWAProvider } from './components/InstallPWA';
@@ -89,17 +88,14 @@ const App: React.FC = () => {
           setInitError(null);
           setShowRetryButton(false);
           
-          // 1. Keshni tekshirish va tozalash
+          // 1. Keshni o'ta xavfsiz tozalash
           pruneCache();
           
+          // Crash Detection: Agar 10 sekund ichida yuklanmasa, retry chiqaradi
           const safetyTimeout = setTimeout(() => {
               setShowRetryButton(true);
-          }, 8000);
+          }, 10000);
 
-          const params = new URLSearchParams(window.location.search);
-          const movieIdParam = params.get('movie_id');
-
-          // 2. Supabase sessiyasini olish (Xavfsiz)
           const { data: { session }, error: sessionError } = await supabase.auth.getSession().catch(err => ({ data: { session: null }, error: err }));
           
           if (sessionError) throw sessionError;
@@ -108,18 +104,15 @@ const App: React.FC = () => {
               setIsAuthenticated(true); 
               await refreshProfile();
               
+              const params = new URLSearchParams(window.location.search);
+              const movieIdParam = params.get('movie_id');
               if (movieIdParam) {
                   const allMovies = await getMovies();
                   const found = allMovies.find(m => m.id === Number(movieIdParam));
-                  if (found) {
-                      setSelectedMovie(found);
-                  }
+                  if (found) setSelectedMovie(found);
               }
               setPage('dashboard');
           } else {
-              if (movieIdParam) {
-                  setIsAuthModalOpen(true);
-              }
               setPage('welcome');
           }
           
@@ -128,8 +121,8 @@ const App: React.FC = () => {
       } catch (e: any) { 
           console.error("FATAL INIT ERROR:", e);
           setInitError(e.message || "Tizim yuklanishida xatolik");
-          // Xatolik bo'lsa keshni o'chirib yuborishga harakat qilamiz
-          clearAppCache();
+          // Xatolik bo'lsa, keyingi safar toza kirishi uchun keshni qisman tozalaymiz
+          localStorage.removeItem('anilo_cache_all_movies_catalog');
       }
   };
 
@@ -182,42 +175,25 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCloseMovieDetail = () => {
-      setSelectedMovie(null);
-      window.history.pushState({}, '', window.location.pathname);
-  };
-
-  // --- REPAIR / FIX SYSTEM ---
   const handleRepair = () => {
       clearAppCache();
-      localStorage.clear();
-      sessionStorage.clear();
       window.location.href = '/';
   };
 
   if (initError) {
       return (
           <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mb-6 border border-red-500/30">
-                  <AlertTriangle size={48} className="text-red-500 animate-pulse" />
+              <div className="w-20 h-20 bg-red-600/20 rounded-full flex items-center justify-center mb-6">
+                  <AlertTriangle size={40} className="text-red-500" />
               </div>
-              <h2 className="text-2xl font-black text-white uppercase mb-2">Tizimda nosozlik</h2>
-              <p className="text-zinc-500 text-sm mb-10 max-w-sm">Kesh yoki sessiya ma'lumotlari buzilgan bo'lishi mumkin. Saytni qayta tiklashni maslahat beramiz.</p>
-              
-              <div className="flex flex-col gap-4 w-full max-w-xs">
-                  <button 
-                      onClick={handleRepair} 
-                      className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center justify-center gap-3 hover:bg-orange-500 transition-all active:scale-95"
-                  >
-                      <RefreshCw size={16} /> Tizimni Ta'mirlash
-                  </button>
-                  <button 
-                      onClick={() => window.location.reload()} 
-                      className="w-full py-4 bg-zinc-900 text-zinc-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:text-white transition-all"
-                  >
-                      Shunchaki yangilash
-                  </button>
-              </div>
+              <h2 className="text-xl font-black text-white uppercase mb-2">Yuklanishda xato</h2>
+              <p className="text-zinc-500 text-sm mb-8 max-w-xs">Kesh ma'lumotlari buzilgan bo'lishi mumkin. Ilovani ta'mirlashni bosing.</p>
+              <button 
+                onClick={handleRepair}
+                className="w-full max-w-xs py-4 bg-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center justify-center gap-3 hover:bg-orange-500 transition-all"
+              >
+                  <RefreshCw size={16} /> Tizimni Ta'mirlash
+              </button>
           </div>
       );
   }
@@ -225,23 +201,12 @@ const App: React.FC = () => {
   if (!isAppReady) {
       return (
           <div className="h-screen w-full bg-[#050505] flex flex-col items-center justify-center gap-4 relative">
-              <div className="w-16 h-16 relative">
-                  <div className="absolute inset-0 border-4 border-orange-500/20 rounded-full"></div>
-                  <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-              <p className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.3em] animate-pulse">
-                  {showRetryButton ? "Internet sekinlashmoqda..." : "ANILO yuklanmoqda..."}
+              <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-[10px] font-black uppercase text-zinc-600 tracking-[0.3em] animate-pulse">
+                  {showRetryButton ? "Internet sekin..." : "Yuklanmoqda..."}
               </p>
               {showRetryButton && (
-                  <div className="flex flex-col items-center gap-3 animate-fade-in mt-4">
-                      <button 
-                          onClick={() => window.location.reload()} 
-                          className="px-8 py-3 bg-zinc-900 border border-white/10 text-white rounded-full font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-zinc-800"
-                      >
-                          <RefreshCw size={12} /> Qayta urinish
-                      </button>
-                      <button onClick={handleRepair} className="text-[9px] text-zinc-700 font-bold uppercase hover:text-zinc-500">Keshni tozalab kirish</button>
-                  </div>
+                  <button onClick={handleRepair} className="mt-4 text-[10px] text-orange-500 font-bold uppercase underline">Keshni tozalab kirish</button>
               )}
           </div>
       );
@@ -253,7 +218,7 @@ const App: React.FC = () => {
         <NotificationContainer />
         
         {!isOnline && (
-            <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest text-center py-1 z-[300] animate-fade-in flex items-center justify-center gap-2">
+            <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest text-center py-1 z-[300] flex items-center justify-center gap-2">
                 <WifiOff size={12} /> Offline Rejim
             </div>
         )}
@@ -286,7 +251,7 @@ const App: React.FC = () => {
                     {selectedMovie ? (
                       <MovieDetailPage 
                         movie={selectedMovie} 
-                        onBack={handleCloseMovieDetail} 
+                        onBack={() => setSelectedMovie(null)} 
                         onPlay={() => setIsPlayerActive(true)} 
                         onEpisodePlay={(episode) => { setActiveEpisode(episode); setIsPlayerActive(true); }} 
                         onArtistClick={setSelectedArtistId}
