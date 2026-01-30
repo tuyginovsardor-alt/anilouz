@@ -1,4 +1,5 @@
 
+// ... (oldingi importlar o'zgarishsiz qoladi) ...
 import { 
     UserProfile, Movie, Episode, FandubChannel, FandubUpload, FandubStory, Ad,
     SocialLink, UserDevice, SupportTicket, TicketMessage, News, Transaction,
@@ -11,7 +12,7 @@ import { supabase } from './supabaseClient';
 import { isAiPilotEnabled, runAiServerManager } from './aiGuardService';
 import { getCache, setCache } from './cacheService';
 
-// --- CHAT & NOTIFICATIONS ---
+// --- CHAT & MENTIONS & NOTIFICATIONS ---
 
 export const getUserIdByUsername = async (username: string): Promise<string | null> => {
     try {
@@ -35,16 +36,13 @@ export const createNotification = async (userId: string, title: string, message:
 
 export const getMovieReviews = async (movieId: number) => {
     try {
+        // parent_id bo'yicha bog'langan xabarlarni olish uchun join qo'shamiz
         const { data } = await supabase
             .from('reviews')
             .select(`
                 *,
                 profiles(full_name, username, avatar_url, role),
-                parent:parent_id (
-                    id,
-                    comment,
-                    profiles(username)
-                )
+                parent:parent_id(comment, profiles(username))
             `)
             .eq('movie_id', movieId)
             .order('created_at', { ascending: true });
@@ -54,7 +52,7 @@ export const getMovieReviews = async (movieId: number) => {
 
 export const addReview = async (movieId: number, userId: string, rating: number, comment: string, parentId: number | null = null) => {
     if (isAiPilotEnabled()) {
-        const guardResult = await runAiServerManager(`User Review Submission: "${comment}"`);
+        const guardResult = await runAiServerManager(`User Review Submission on Movie ID ${movieId}: "${comment}"`);
         if (guardResult && !guardResult.allowed) throw new Error(`AI Guard: ${guardResult.analysis}`);
     }
     await supabase.from('reviews').insert({ 
@@ -62,53 +60,12 @@ export const addReview = async (movieId: number, userId: string, rating: number,
         user_id: userId, 
         rating, 
         comment, 
-        parent_id: parentId,
+        parent_id: parentId, // Javob berilayotgan xabar IDsi
         created_at: new Date().toISOString() 
     });
 };
 
-export const deleteReview = async (reviewId: number) => {
-    await supabase.from('reviews').delete().eq('id', reviewId);
-};
-
-export const updateReview = async (reviewId: number, comment: string) => {
-    await supabase.from('reviews').update({ comment }).eq('id', reviewId);
-};
-
-// --- SUPPORT CHAT ---
-
-export const createTicket = async (userId: string) => {
-    const { data, error } = await supabase.from('support_tickets').insert({ user_id: userId, status: 'open' }).select().single();
-    if (error) throw error;
-    return data;
-};
-
-export const sendMessage = async (ticketId: number, userId: string, message: string, isAdmin: boolean) => {
-    const { error } = await supabase.from('ticket_messages').insert({ 
-        ticket_id: ticketId, 
-        user_id: userId, 
-        message, 
-        is_admin: isAdmin 
-    });
-    if (error) throw error;
-};
-
-// --- SUBSCRIPTIONS ---
-
-export const buySubscription = async (userId: string, plan: string, price: number) => {
-    const { error } = await supabase.rpc('buy_subscription', { u_id: userId, p_name: plan, cost: price });
-    if (error) throw error;
-    localStorage.removeItem(`anilo_cache_profile_${userId}`);
-};
-
-export const redeemPromocode = async (userId: string, code: string) => {
-    const { data, error } = await supabase.rpc('redeem_promocode', { u_id: userId, c_str: code });
-    if (error) throw error;
-    return data;
-};
-
-// --- MOVIES & CONTENT ---
-
+// ... (qolgan barcha funksiyalar o'zgarishsiz qoladi) ...
 export const incrementView = async (movieId: number, isFandub: boolean) => {
     try {
         await supabase.rpc('increment_movie_views', { m_id: movieId, is_fandub: isFandub });
@@ -399,7 +356,7 @@ export const getFandubUploads = async (userId: string): Promise<FandubUpload[]> 
 
 export const getPendingFandubUploads = async (): Promise<FandubUpload[]> => {
     try {
-        const { data = [] } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'pending').order('created_at', { ascending: false });
+        const { data } = await supabase.from('fandub_uploads').select('*, fandub_channels(name)').eq('status', 'pending').order('created_at', { ascending: false });
         return data || [];
     } catch (e) { return []; }
 };
@@ -502,6 +459,29 @@ export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
     } catch (e) { return []; }
 };
 
+export const deleteReview = async (reviewId: number) => {
+    await supabase.from('reviews').delete().eq('id', reviewId);
+};
+
+export const updateReview = async (reviewId: number, comment: string) => {
+    if (isAiPilotEnabled()) {
+        const guardResult = await runAiServerManager(`User Review Edit: "${comment}"`);
+        if (guardResult && !guardResult.allowed) throw new Error(`AI Guard: ${guardResult.analysis}`);
+    }
+    await supabase.from('reviews').update({ comment }).eq('id', reviewId);
+};
+
+export const buySubscription = async (userId: string, plan: string, price: number) => {
+    await supabase.rpc('buy_subscription', { u_id: userId, p_name: plan, cost: price });
+    localStorage.removeItem(`anilo_cache_profile_${userId}`);
+};
+
+export const redeemPromocode = async (userId: string, code: string) => {
+    const { data, error } = await supabase.rpc('redeem_promocode', { u_id: userId, c_str: code });
+    if (error) throw error;
+    return data;
+};
+
 export const getNews = async (): Promise<News[]> => {
     try {
         const { data } = await supabase.from('news').select('*').order('created_at', { ascending: false });
@@ -536,6 +516,16 @@ export const getTicketMessages = async (ticketId: number): Promise<TicketMessage
         const { data } = await supabase.from('ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true });
         return data || [];
     } catch (e) { return []; }
+};
+
+export const createTicket = async (userId: string) => {
+    const { data, error } = await supabase.from('support_tickets').insert({ user_id: userId, status: 'open' }).select().single();
+    if (error) throw error;
+    return data;
+};
+
+export const sendMessage = async (ticketId: number, userId: string, message: string, isAdmin: boolean) => {
+    await supabase.from('ticket_messages').insert({ ticket_id: ticketId, user_id: userId, message, is_admin: isAdmin });
 };
 
 export const getPromocodes = async (): Promise<Promocode[]> => {
@@ -581,7 +571,7 @@ export const deleteUser = async (id: string) => {
 
 export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
     try {
-        const { data = [] } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+        const { data } = await supabase.from('payment_requests').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
         return data || [];
     } catch (e) { return []; }
 };
@@ -597,7 +587,7 @@ export const rejectPaymentRequest = async (requestId: number) => {
 
 export const getPremiumUsers = async (): Promise<UserProfile[]> => {
     try {
-        const { data = [] } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
+        const { data } = await supabase.from('profiles').select('*').gt('balance', 0).order('balance', { ascending: false });
         return data || [];
     } catch (e) { return []; }
 };
@@ -884,7 +874,7 @@ export const getShopProducts = async (cat?: string, sort?: string, query?: strin
 
 export const getAdminShopProducts = async (): Promise<ShopProduct[]> => {
     try {
-        const { data = [] } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
+        const { data } = await supabase.from('shop_products').select('*').order('created_at', { ascending: false });
         return data || [];
     } catch { return []; }
 };
@@ -962,7 +952,7 @@ export const recordTsPaySuccess = async (userId: string, amount: number, orderId
 
 export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
     try {
-        const { data = [] } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        const { data } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
         return data || [];
     } catch { return []; }
 };
@@ -1015,15 +1005,15 @@ export const logDeviceLogin = async (userId: string, deviceId: string) => {
 
 export const getFandubEarnings = async (channelId: string): Promise<FandubEarning[]> => {
     try {
-        const { data = [] } = await supabase.from('fandub_earnings').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
-        return data as FandubEarning[];
+        const { data } = await supabase.from('fandub_earnings').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
+        return (data || []) as FandubEarning[];
     } catch { return []; }
 };
 
 export const getFandubWithdrawals = async (channelId: string): Promise<FandubWithdrawal[]> => {
     try {
-        const { data = [] } = await supabase.from('fandub_withdrawals').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
-        return data as FandubWithdrawal[];
+        const { data } = await supabase.from('fandub_withdrawals').select('*').eq('channel_id', channelId).order('created_at', { ascending: false });
+        return (data || []) as FandubWithdrawal[];
     } catch { return []; }
 };
 

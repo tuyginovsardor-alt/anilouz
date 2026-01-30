@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-// Added missing Film and Zap icons to the lucide-react imports
-import { Play, Star, Lock, ArrowLeft, MessageSquare, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle, Eye, TrendingUp, XCircle, CornerUpLeft, Film, Zap } from 'lucide-react';
+import { Play, Star, Lock, ArrowLeft, MessageSquare, User, Bookmark, Share2, ChevronDown, Mic, Send, Trash2, Edit2, Reply, Info, Calendar, Globe, Layers, Clock, CheckCircle, Eye, TrendingUp, XCircle, CornerUpLeft } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, getMovieEpisodes, getMovieReviews, addReview, deleteReview, updateReview, getMovies, isMovieSaved, toggleSaveMovie, getUserIdByUsername, createNotification } from './services/dbService';
 import { Movie, UserProfile, Episode } from './types';
@@ -47,7 +46,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     window.addEventListener('scroll', handleScroll);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    document.title = `${movie.title} - Anilo.uz`;
+    document.title = `${movie.title} - O'zbek tilida sifatli ko'rish | Anilo.uz`;
     
     return () => {
         window.removeEventListener('scroll', handleScroll);
@@ -114,7 +113,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
       setIsSubmittingReview(true);
       try {
-          // Extract mentions and send notifications
+          // 1. Mentionlarni aniqlash va bildirishnoma yuborish
           const mentionPattern = /@(\w+)/g;
           let match;
           while ((match = mentionPattern.exec(commentText)) !== null) {
@@ -123,9 +122,9 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
               if (mentionedUserId && mentionedUserId !== userProfile.id) {
                   await createNotification(
                       mentionedUserId, 
-                      "Atmetka qilindingiz!", 
-                      `@${userProfile.username} sizni "${movie.title}" sharhlarida atmetka qildi.`,
-                      'info'
+                      "Sizni atmetka qilishdi!", 
+                      `@${userProfile.username} sizni "${movie.title}" anime sharhlarida atmetka qildi.`,
+                      'promo'
                   );
               }
           }
@@ -137,26 +136,37 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
           } else {
               await addReview(movie.id!, userProfile.id, rating, commentText, replyToComment?.id);
               
-              // Reply notification
+              // Agar javob bo'lsa egasiga bildirishnoma
               if (replyToComment && replyToComment.user_id !== userProfile.id) {
                   await createNotification(
                       replyToComment.user_id,
                       "Xabaringizga javob berishdi",
-                      `@${userProfile.username} "${movie.title}" dagi fikringizga javob berdi.`,
-                      'success'
+                      `@${userProfile.username} sizning "${movie.title}" animesidagi fikringizga javob berdi.`,
+                      'info'
                   );
               }
           }
-          
           setCommentText('');
           setReplyToComment(null);
+          setRating(5);
           const revs = await getMovieReviews(movie.id!);
           setReviews(revs);
           scrollToBottom();
       } catch (e: any) {
-          addNotification({ type: 'error', title: 'Xatolik', message: e.message });
+          addNotification({ type: 'error', title: 'Xatolik', message: e.message || 'Jarayonda xatolik yuz berdi.' });
       } finally {
           setIsSubmittingReview(false);
+      }
+  };
+
+  const handleDeleteReview = async (id: number) => {
+      if(!window.confirm("O'chirmoqchimisiz?")) return;
+      try {
+          await deleteReview(id);
+          setReviews(prev => prev.filter(r => r.id !== id));
+          addNotification({ type: 'success', title: 'O\'chirildi', message: 'Sharh o\'chirildi.' });
+      } catch (e) {
+          addNotification({ type: 'error', title: 'Xatolik', message: 'O\'chirishda xatolik.' });
       }
   };
 
@@ -170,22 +180,40 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
       commentInputRef.current?.focus();
   };
 
-  const renderCommentWithMentions = (text: string) => {
+  const renderCommentText = (text: string) => {
       const parts = text.split(/(@\w+)/g);
       return parts.map((part, i) => {
           if (part.startsWith('@')) {
-              return <span key={i} className="text-blue-400 font-black hover:underline cursor-pointer">{part}</span>;
+              return <span key={i} className="text-blue-400 font-bold hover:underline cursor-pointer">{part}</span>;
           }
           return part;
       });
   };
+
+  const handlePlayClick = () => {
+      if (!canWatch) {
+          addNotification({ type: 'warning', title: 'Premium Kerak', message: 'Tomosha qilish uchun obuna bo\'ling.' });
+          return;
+      }
+      if (episodes.length > 0 && onEpisodePlay) onEpisodePlay(episodes[0]);
+      else onPlay();
+  };
+
+  const handleEpisodeClick = (episode: Episode) => {
+      if (!canWatch) {
+          addNotification({ type: 'warning', title: 'Premium Kerak', message: 'Tomosha qilish uchun obuna bo\'ling.' });
+          return;
+      }
+      if (onEpisodePlay) onEpisodePlay(episode);
+      else onPlay();
+  }
 
   const handleToggleSave = async () => {
       if (!userProfile) return addNotification({ type: 'warning', title: 'Kirish kerak', message: 'Saqlash uchun tizimga kiring.' });
       try {
           const savedStatus = await toggleSaveMovie(userProfile.id, movie.id!);
           setIsSaved(savedStatus);
-          addNotification({ type: 'success', title: savedStatus ? 'Saqlandi' : 'O\'chirildi', message: savedStatus ? 'Saqlanganlarga qo\'shildi.' : 'Olib tashlandi.' });
+          addNotification({ type: 'success', title: savedStatus ? 'Saqlandi' : 'O\'chirildi', message: savedStatus ? 'Saqlanganlarga qo\'shildi.' : 'Saqlanganlardan olib tashlandi.' });
       } catch (e) { console.error(e); }
   };
 
@@ -197,7 +225,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     <div className="bg-[#050505] min-h-screen text-white pb-32 overflow-x-hidden font-sans">
         
         {/* HERO HEADER */}
-        <div className="relative w-full h-[80vh] lg:h-[85vh] overflow-hidden">
+        <div className="relative w-full h-[85vh] lg:h-[90vh] overflow-hidden">
             <div 
                 className="absolute inset-0 z-0"
                 style={{ 
@@ -259,7 +287,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     
                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
                         <button 
-                            onClick={() => { if(canWatch) onPlay(); else addNotification({type:'warning', title:'Premium Kerak', message:'Obuna bo\'ling.'}) }}
+                            onClick={handlePlayClick}
                             className={`h-14 px-10 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,255,255,0.2)] active:scale-95 border-2 ${canWatch ? 'bg-white text-black border-white hover:bg-zinc-200' : 'bg-black/60 backdrop-blur text-white border-white/30'}`}
                         >
                             {canWatch ? <><Play fill="currentColor" size={20}/> Tomosha Qilish</> : <><Lock size={20}/> Premium Obuna</>}
@@ -275,7 +303,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-30" ref={contentRef}>
             
-            {/* TABS SELECTOR */}
             <div className="flex justify-center mb-10">
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-1.5 rounded-full w-full max-w-lg shadow-2xl">
                     <div className="grid grid-cols-3 relative">
@@ -288,7 +315,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         ></div>
 
                         <button onClick={() => setActiveTab('episodes')} className={`relative z-10 py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${activeTab === 'episodes' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}>
-                            <Play size={14} fill={activeTab==='episodes' ? 'currentColor' : 'none'}/> <span>Kino</span>
+                            <Play size={14} fill={activeTab==='episodes' ? 'currentColor' : 'none'}/> <span>Qismlar</span>
                         </button>
                         
                         <button onClick={() => setActiveTab('info')} className={`relative z-10 py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${activeTab === 'info' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}>
@@ -296,97 +323,56 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         </button>
 
                         <button onClick={() => setActiveTab('comments')} className={`relative z-10 py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 ${activeTab === 'comments' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}>
-                            <MessageSquare size={14} fill={activeTab==='comments' ? 'currentColor' : 'none'}/> <span>Sharh</span>
+                            <MessageSquare size={14} fill={activeTab==='comments' ? 'currentColor' : 'none'}/> <span>Chat</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div className="animate-fade-in min-h-[500px]">
-                {/* --- 1. KINO (EPISODES) BO'LIMI --- */}
+            <div className="animate-fade-in min-h-[400px]">
                 {activeTab === 'episodes' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-slide-in-up">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-slide-in-up">
                         {episodes.length > 0 ? episodes.map((ep, i) => (
-                            <div key={ep.id} onClick={() => { if(canWatch) onEpisodePlay?.(ep); else addNotification({type:'warning', title:'Premium Kerak', message:'Obuna bo\'ling.'}) }} className="group flex items-center p-4 bg-[#0d0d0d] border border-white/5 hover:border-orange-500/50 transition-all cursor-pointer rounded-2xl hover:bg-zinc-900 shadow-xl">
-                                <div className="relative w-36 h-20 bg-black rounded-xl overflow-hidden flex-shrink-0 mr-4">
-                                    <img src={movie.posterUrl} className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt=""/>
+                            <div key={ep.id} onClick={() => handleEpisodeClick(ep)} className="group flex items-center p-3 bg-zinc-900/80 border border-white/5 hover:border-orange-500/50 transition-all cursor-pointer rounded-2xl hover:bg-zinc-800">
+                                <div className="relative w-28 h-16 sm:w-32 sm:h-20 bg-black rounded-xl overflow-hidden flex-shrink-0 mr-4">
+                                    <img src={movie.posterUrl} className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-500" alt=""/>
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-10 h-10 bg-white/10 backdrop-blur rounded-full flex items-center justify-center group-hover:bg-orange-600 transition-colors shadow-lg border border-white/10">
-                                            <Play size={14} fill="white" className="text-white ml-0.5"/>
+                                        <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-full flex items-center justify-center group-hover:bg-orange-600 transition-colors">
+                                            <Play size={12} fill="white" className="text-white ml-0.5"/>
                                         </div>
                                     </div>
-                                    <span className="absolute bottom-1 right-1 bg-black/80 text-[8px] font-black px-1.5 py-0.5 rounded text-white uppercase tracking-tighter">HD</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-white font-black text-sm truncate group-hover:text-orange-500 transition-colors uppercase tracking-tight">{ep.title}</h4>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest bg-zinc-800 px-2 py-0.5 rounded border border-white/5">{i + 1}-QISM</span>
-                                        <span className="text-[9px] text-green-500 font-black uppercase">{movie.status === 'ongoing' ? 'Yangilandi' : 'Tayyor'}</span>
-                                    </div>
+                                    <h4 className="text-white font-bold text-sm truncate group-hover:text-orange-500 transition-colors">{ep.title}</h4>
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1">{i + 1}-QISM</p>
                                 </div>
                             </div>
                         )) : (
-                            <div className="col-span-full py-24 text-center bg-[#0d0d0d] border border-dashed border-zinc-800 rounded-[3rem]">
-                                <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-6 text-zinc-700"> <Film size={40}/> </div>
-                                <p className="text-zinc-500 uppercase font-black text-xs tracking-[0.3em] mb-6">Qismlar hali yuklanmagan</p>
-                                <button onClick={() => onPlay()} className="px-12 py-4 bg-white text-black font-black text-[11px] uppercase tracking-[0.2em] hover:bg-orange-600 hover:text-white transition-all rounded-2xl shadow-2xl active:scale-95">Kinoni ko'rish</button>
+                            <div className="col-span-full py-20 text-center bg-zinc-900/50 border border-dashed border-zinc-800 rounded-3xl">
+                                <button onClick={handlePlayClick} className="mt-4 px-8 py-3 bg-white text-black font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-all rounded-xl shadow-lg">Kinoni ochish</button>
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* --- 2. INFO (DETAILS) BO'LIMI --- */}
                 {activeTab === 'info' && (
-                    <div className="max-w-4xl mx-auto space-y-10 animate-slide-in-up">
-                        <div className="bg-[#0d0d0d] border border-white/5 rounded-[3rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/5 rounded-full blur-[100px]"></div>
-                            <h3 className="text-2xl font-black uppercase tracking-tight text-white mb-6 pl-4 border-l-4 border-orange-600 flex items-center gap-3"> <TrendingUp size={20} className="text-orange-500"/> Syujet va Mazmuni</h3>
-                            <p className="text-zinc-300 text-base leading-relaxed whitespace-pre-wrap font-medium">{movie.plot}</p>
-                            
-                            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="p-6 bg-black/40 rounded-3xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Calendar size={10}/> Yili</p>
-                                    <p className="text-sm font-black text-white">{movie.year}</p>
-                                </div>
-                                <div className="p-6 bg-black/40 rounded-3xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Globe size={10}/> Tili</p>
-                                    <p className="text-sm font-black text-white">{movie.language}</p>
-                                </div>
-                                <div className="p-6 bg-black/40 rounded-3xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Zap size={10}/> Sifati</p>
-                                    <p className="text-sm font-black text-white">{movie.quality}</p>
-                                </div>
-                                <div className="p-6 bg-black/40 rounded-3xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Layers size={10}/> Janri</p>
-                                    <p className="text-sm font-black text-white truncate">{movie.genre.split(',')[0]}</p>
-                                </div>
-                            </div>
+                    <div className="max-w-4xl mx-auto space-y-8 animate-slide-in-up">
+                        <div className="bg-zinc-900/50 border border-white/5 rounded-[2rem] p-6 md:p-8">
+                            <h3 className="text-xl font-black uppercase tracking-tight text-white mb-4 pl-2 border-l-4 border-orange-500">Syujet</h3>
+                            <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap font-medium">{movie.plot}</p>
                         </div>
-
-                        {relatedMovies.length > 0 && (
-                            <div className="space-y-8">
-                                <h3 className="text-xl font-black uppercase tracking-widest text-white px-4">O'xshash Animelar</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                                    {relatedMovies.map(rm => (
-                                        <div key={rm.id} className="scale-90 hover:scale-100 transition-transform">
-                                            <MovieCard movie={rm} isActive={true} onClick={() => onMovieClick?.(rm)} />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 )}
 
-                {/* --- 3. SHARH (TELEGRAM STYLE CHAT) BO'LIMI --- */}
+                {/* --- TELEGRAM STYLE CHAT --- */}
                 {activeTab === 'comments' && (
-                    <div className="max-w-3xl mx-auto flex flex-col h-[75vh] bg-[#0a0a0a] rounded-[2.5rem] border border-white/5 shadow-3xl overflow-hidden relative animate-slide-in-up">
+                    <div className="max-w-3xl mx-auto flex flex-col h-[75vh] bg-[#0a0a0a] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden relative animate-slide-in-up">
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar pb-36">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar pb-32">
                             {reviews.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-zinc-800">
-                                    <MessageSquare size={56} className="mb-6 opacity-10"/>
-                                    <p className="font-black uppercase tracking-[0.4em] text-[10px]">Suhbatni boshlang...</p>
+                                <div className="h-full flex flex-col items-center justify-center text-zinc-700">
+                                    <MessageSquare size={48} className="mb-4 opacity-20"/>
+                                    <p className="font-black uppercase tracking-widest text-xs">Suhbatni boshlang...</p>
                                 </div>
                             ) : (
                                 reviews.map((rev) => {
@@ -397,51 +383,48 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                                     return (
                                         <div key={rev.id} id={`comment-${rev.id}`} className={`flex items-start gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                                             <div className="flex-shrink-0 mt-1">
-                                                <div className={`w-11 h-11 rounded-[1rem] overflow-hidden border-2 transition-all ${isAdminComment ? 'border-red-600 shadow-xl shadow-red-900/20 scale-105' : 'border-zinc-800'}`}>
-                                                    {rev.profiles?.avatar_url ? <img src={rev.profiles.avatar_url} className="w-full h-full object-cover" alt="avatar" /> : <User size={22} className="w-full h-full p-2 bg-zinc-900 text-zinc-600"/>}
+                                                <div className={`w-10 h-10 rounded-full overflow-hidden border-2 ${isAdminComment ? 'border-red-500' : 'border-zinc-800 shadow-lg'}`}>
+                                                    {rev.profiles?.avatar_url ? <img src={rev.profiles.avatar_url} className="w-full h-full object-cover" alt="avatar" /> : <User size={20} className="w-full h-full p-2 bg-zinc-900 text-zinc-600"/>}
                                                 </div>
                                             </div>
                                             <div className={`max-w-[85%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                                <div className="flex items-center gap-2 mb-1.5 px-2">
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isAdminComment ? 'text-red-600' : 'text-zinc-500'}`}>
+                                                <div className="flex items-center gap-2 mb-1 px-2">
+                                                    <span className={`text-[10px] font-black uppercase tracking-tight ${isAdminComment ? 'text-red-500' : 'text-zinc-500'}`}>
                                                         {rev.profiles?.username || 'user'}
                                                     </span>
-                                                    {isAdminComment && <VerifiedBadge type="gold" className="w-3.5 h-3.5" />}
+                                                    {isAdminComment && <VerifiedBadge type="gold" className="w-3 h-3" />}
                                                 </div>
 
-                                                <div className={`p-4 rounded-[1.8rem] shadow-2xl relative transition-all group/bubble ${isMe ? 'bg-orange-600 text-white rounded-tr-none' : 'bg-[#1a1a1a] text-zinc-200 rounded-tl-none border border-white/5'}`}>
+                                                <div className={`p-4 rounded-[1.8rem] shadow-xl relative transition-all active:scale-[0.98] ${isMe ? 'bg-orange-600 text-white rounded-tr-none' : 'bg-zinc-900 text-zinc-200 rounded-tl-none border border-white/5'}`}>
                                                     
-                                                    {/* Reply Quote UI */}
+                                                    {/* Reply UI in Bubble */}
                                                     {isReply && (
                                                         <div 
                                                             onClick={() => document.getElementById(`comment-${rev.parent_id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                                                            className={`mb-3 p-3 rounded-2xl border-l-4 cursor-pointer hover:bg-black/20 transition-all ${isMe ? 'bg-orange-700/50 border-orange-300' : 'bg-black/30 border-orange-600'}`}
+                                                            className={`mb-3 p-3 rounded-2xl border-l-4 cursor-pointer hover:bg-black/20 transition-colors ${isMe ? 'bg-orange-700/50 border-orange-400' : 'bg-black/20 border-orange-500'}`}
                                                         >
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <CornerUpLeft size={10} className="text-orange-400" />
-                                                                <p className="text-[9px] font-black uppercase tracking-widest text-orange-400">@{rev.parent?.profiles?.username}</p>
-                                                            </div>
-                                                            <p className="text-[11px] line-clamp-2 opacity-60 italic leading-snug">{rev.parent?.comment}</p>
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-400 mb-0.5">@{rev.parent?.profiles?.username}</p>
+                                                            <p className="text-[11px] line-clamp-2 opacity-70 italic leading-tight">{rev.parent?.comment}</p>
                                                         </div>
                                                     )}
 
-                                                    <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                                                        {renderCommentWithMentions(rev.comment)}
+                                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                                        {renderCommentText(rev.comment)}
                                                     </p>
                                                     
-                                                    <div className="flex items-center justify-between gap-6 mt-3 pt-2 border-t border-black/5">
+                                                    <div className="flex items-center justify-between gap-4 mt-2">
                                                         <div className="flex items-center gap-0.5">
                                                             {[...Array(5)].map((_, i) => (
-                                                                <Star key={i} size={8} className={i < rev.rating ? (isMe ? "text-orange-200 fill-orange-200" : "text-yellow-500 fill-yellow-500") : "opacity-10"} />
+                                                                <Star key={i} size={8} className={i < rev.rating ? (isMe ? "text-orange-200 fill-orange-200" : "text-yellow-500 fill-yellow-500") : "opacity-20"} />
                                                             ))}
                                                         </div>
-                                                        <span className={`text-[8px] font-mono opacity-40 font-bold`}>{new Date(rev.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                                        <span className={`text-[8px] font-mono opacity-40`}>{new Date(rev.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex gap-4 mt-2 px-4 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
-                                                    <button onClick={() => handleReply(rev)} className="flex items-center gap-1.5 text-[9px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-colors"> <Reply size={12} className="-scale-x-100"/> Javob</button>
-                                                    {(isAdminOrOwner || isMe) && <button onClick={() => { if(confirm("O'chirilsinmi?")) deleteReview(rev.id).then(init); }} className="text-[9px] font-black text-red-900/60 hover:text-red-500 uppercase tracking-widest transition-colors">O'chirish</button>}
+                                                <div className="flex gap-4 mt-1.5 px-3">
+                                                    <button onClick={() => handleReply(rev)} className="flex items-center gap-1 text-[9px] font-black text-zinc-600 hover:text-white uppercase tracking-widest transition-colors"> <CornerUpLeft size={10}/> Javob</button>
+                                                    {(isAdminOrOwner || isMe) && <button onClick={() => handleDeleteReview(rev.id)} className="text-[9px] font-black text-red-900/50 hover:text-red-500 uppercase tracking-widest transition-colors">O'chirish</button>}
                                                 </div>
                                             </div>
                                         </div>
@@ -452,48 +435,46 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         </div>
 
                         {/* Sticky Bottom Chat Input */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent">
-                            <form onSubmit={handleReviewSubmit} className="max-w-2xl mx-auto flex flex-col bg-[#121212] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden focus-within:border-orange-500/50 transition-all">
+                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent">
+                            <form onSubmit={handleReviewSubmit} className="max-w-2xl mx-auto flex flex-col bg-[#121212] rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden">
                                 
-                                {/* Reply Preview (Telegram style bar) */}
+                                {/* Reply Preview above input */}
                                 {replyToComment && (
-                                    <div className="flex items-center justify-between px-6 py-4 bg-white/5 border-b border-white/5 animate-fade-in">
-                                        <div className="flex items-center gap-4 min-w-0">
-                                            <div className="w-1 h-10 bg-orange-600 rounded-full flex-shrink-0 shadow-[0_0_15px_rgba(234,88,12,0.5)]"></div>
+                                    <div className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 animate-fade-in">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-1 h-8 bg-orange-500 rounded-full flex-shrink-0"></div>
                                             <div className="min-w-0">
-                                                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-2"> <Reply size={12} className="-scale-x-100"/> Javob berilmoqda: @{replyToComment.username}</p>
-                                                <p className="text-xs text-zinc-500 truncate italic font-medium mt-0.5">{replyToComment.text}</p>
+                                                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Javob qaytarilmoqda: @{replyToComment.username}</p>
+                                                <p className="text-xs text-zinc-500 truncate italic">{replyToComment.text}</p>
                                             </div>
                                         </div>
-                                        <button type="button" onClick={() => setReplyToComment(null)} className="p-2.5 text-zinc-600 hover:text-white transition-colors bg-white/5 rounded-full">
-                                            <XCircle size={20} />
+                                        <button type="button" onClick={() => setReplyToComment(null)} className="p-2 text-zinc-500 hover:text-white transition-colors">
+                                            <XCircle size={18} />
                                         </button>
                                     </div>
                                 )}
 
-                                <div className="flex items-end gap-3 p-4">
-                                    <div className="flex-1 relative flex items-center">
-                                        <textarea 
-                                            ref={commentInputRef}
-                                            value={commentText}
-                                            onChange={e => setCommentText(e.target.value)}
-                                            placeholder="Chatga yozing..."
-                                            className="w-full bg-transparent border-none text-sm text-white focus:ring-0 outline-none resize-none max-h-40 py-3 px-2 custom-scrollbar font-medium"
-                                            rows={1}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    handleReviewSubmit(e as any);
-                                                }
-                                            }}
-                                        />
-                                    </div>
+                                <div className="flex items-end gap-2 p-3">
+                                    <textarea 
+                                        ref={commentInputRef}
+                                        value={commentText}
+                                        onChange={e => setCommentText(e.target.value)}
+                                        placeholder="Xabar yozing..."
+                                        className="flex-1 bg-transparent border-none text-sm text-white focus:ring-0 outline-none resize-none max-h-32 py-3 px-3 custom-scrollbar"
+                                        rows={1}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleReviewSubmit(e as any);
+                                            }
+                                        }}
+                                    />
                                     <button 
                                         type="submit"
                                         disabled={isSubmittingReview || !commentText.trim()}
-                                        className="w-14 h-14 bg-orange-600 text-white rounded-[1.3rem] flex items-center justify-center hover:bg-orange-500 transition-all active:scale-95 disabled:opacity-50 shadow-2xl shadow-orange-900/30 shrink-0"
+                                        className="w-12 h-12 bg-orange-600 text-white rounded-2xl flex items-center justify-center hover:bg-orange-500 transition-all active:scale-90 disabled:opacity-50 shadow-lg shadow-orange-900/30 shrink-0"
                                     >
-                                        {isSubmittingReview ? <LoadingSpinner /> : <Send size={24} />}
+                                        {isSubmittingReview ? <LoadingSpinner /> : <Send size={20} />}
                                     </button>
                                 </div>
                             </form>
@@ -502,6 +483,5 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 )}
             </div>
         </div>
-    </div>
-  );
+    );
 };
