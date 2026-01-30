@@ -113,7 +113,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
 
       setIsSubmittingReview(true);
       try {
-          // 1. Mentionlarni aniqlash va bildirishnoma yuborish
           const mentionPattern = /@(\w+)/g;
           let match;
           while ((match = mentionPattern.exec(commentText)) !== null) {
@@ -136,7 +135,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
           } else {
               await addReview(movie.id!, userProfile.id, rating, commentText, replyToComment?.id);
               
-              // Agar javob bo'lsa egasiga bildirishnoma
               if (replyToComment && replyToComment.user_id !== userProfile.id) {
                   await createNotification(
                       replyToComment.user_id,
@@ -206,7 +204,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
       }
       if (onEpisodePlay) onEpisodePlay(episode);
       else onPlay();
-  }
+  };
 
   const handleToggleSave = async () => {
       if (!userProfile) return addNotification({ type: 'warning', title: 'Kirish kerak', message: 'Saqlash uchun tizimga kiring.' });
@@ -364,10 +362,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     </div>
                 )}
 
-                {/* --- TELEGRAM STYLE CHAT --- */}
                 {activeTab === 'comments' && (
                     <div className="max-w-3xl mx-auto flex flex-col h-[75vh] bg-[#0a0a0a] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden relative animate-slide-in-up">
-                        {/* Messages Area */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar pb-32">
                             {reviews.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-zinc-700">
@@ -396,8 +392,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                                                 </div>
 
                                                 <div className={`p-4 rounded-[1.8rem] shadow-xl relative transition-all active:scale-[0.98] ${isMe ? 'bg-orange-600 text-white rounded-tr-none' : 'bg-zinc-900 text-zinc-200 rounded-tl-none border border-white/5'}`}>
-                                                    
-                                                    {/* Reply UI in Bubble */}
                                                     {isReply && (
                                                         <div 
                                                             onClick={() => document.getElementById(`comment-${rev.parent_id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
@@ -434,11 +428,8 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                             <div ref={commentsEndRef} />
                         </div>
 
-                        {/* Sticky Bottom Chat Input */}
                         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent">
                             <form onSubmit={handleReviewSubmit} className="max-w-2xl mx-auto flex flex-col bg-[#121212] rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden">
-                                
-                                {/* Reply Preview above input */}
                                 {replyToComment && (
                                     <div className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 animate-fade-in">
                                         <div className="flex items-center gap-3 min-w-0">
@@ -483,5 +474,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                 )}
             </div>
         </div>
-    );
+    </div>
+  );
 };

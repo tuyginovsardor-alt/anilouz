@@ -1,8 +1,9 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+import React from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Props {
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface State {
@@ -13,9 +14,9 @@ interface State {
 /**
  * ErrorBoundary component to catch rendering errors in child components.
  */
-// FIX: Using Component from the named import ensures that the 'props' and 'state' members are correctly resolved by the TypeScript compiler as inherited members
-export class ErrorBoundary extends Component<Props, State> {
-  // FIX: Explicit constructor and super(props) call to ensure the component is correctly initialized with generic Props type
+// FIX: Using React.Component explicitly ensures that the 'props' and 'state' members are correctly inherited and recognized by the TypeScript compiler
+export class ErrorBoundary extends React.Component<Props, State> {
+  // FIX: Explicit constructor and super(props) call to correctly initialize the component with Props and State generics
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -29,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
@@ -40,8 +41,8 @@ export class ErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
-  public render(): ReactNode {
-    // FIX: Destructuring from this.state and this.props which are now properly recognized inherited properties from Component<Props, State>
+  public render(): React.ReactNode {
+    // FIX: Destructuring from this.state and this.props which are now properly recognized inherited properties from React.Component<Props, State>
     const { hasError, error } = this.state;
     const { children } = this.props;
 
