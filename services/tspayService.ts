@@ -8,40 +8,29 @@ export interface TsPayResponse {
         url: string;
         status: string;
     };
-    data?: {
-        id: number;
-        amount: number;
-        pay_status: 'paid' | 'pending' | 'canceled';
-    };
     message?: string;
 }
 
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayResponse> => {
     try {
+        console.log("Invoking clever-api for user:", userId, "amount:", amount);
+        
+        // Supabase invoke ba'zan URL muammosi tufayli "Failed to fetch" beradi
         const { data, error } = await supabase.functions.invoke('clever-api', {
             body: { action: 'create', amount, user_id: userId }
         });
 
         if (error) {
-            console.error("Invoke error:", error);
-            throw new Error(error.message || "Ulanishda xatolik.");
+            console.error("Invoke Error Object:", error);
+            throw new Error(error.message || "Edge Function bilan ulanib bo'lmadi.");
         }
         
         return data as TsPayResponse;
     } catch (err: any) {
-        console.error("Invoke fail:", err);
-        return { status: 'error', message: err.message || "Tizimga ulanib bo'lmadi." };
-    }
-};
-
-export const checkTsPayStatus = async (chequeId: number): Promise<TsPayResponse> => {
-    try {
-        const { data, error } = await supabase.functions.invoke('clever-api', {
-            body: { action: 'check', cheque_id: chequeId }
-        });
-        if (error) throw error;
-        return data as TsPayResponse;
-    } catch (err: any) {
-        return { status: 'error', message: "Holatni tekshirib bo'lmadi." };
+        console.error("Critical Connection Error:", err);
+        return { 
+            status: 'error', 
+            message: "Server bilan bog'lanishda xatolik. Iltimos, internetingizni tekshiring yoki birozdan so'ng qayta urining." 
+        };
     }
 };
