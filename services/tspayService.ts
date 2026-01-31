@@ -12,8 +12,9 @@ export interface TsPayResponse {
 
 export const createTsPayTransaction = async (amount: number, userId: string): Promise<TsPayResponse> => {
     try {
-        // Supabase Edge Function'ni bevosita chaqiramiz
+        // Edge Function doim POST so'rov yuboradi
         const { data, error } = await supabase.functions.invoke('clever-api', {
+            method: 'POST',
             body: { 
                 action: 'create', 
                 amount: amount, 
@@ -21,22 +22,19 @@ export const createTsPayTransaction = async (amount: number, userId: string): Pr
             }
         });
 
-        // Agar Supabase darajasida xato bo'lsa (masalan, funksiya topilmadi)
         if (error) {
-            console.error("Supabase Invoke Error:", error);
+            console.error("Invoke Error:", error);
             return { 
                 status: 'error', 
-                message: "Server funksiyasini ishga tushirib bo'lmadi." 
+                message: "Tizim bilan bog'lanishda xato." 
             };
         }
         
-        // Funksiyadan qaytgan natijani beramiz
         return data as TsPayResponse;
     } catch (err: any) {
-        console.error("Internal Service Error:", err);
         return { 
             status: 'error', 
-            message: "Kutilmagan ichki xatolik yuz berdi." 
+            message: "Kutilmagan xatolik yuz berdi." 
         };
     }
 };
