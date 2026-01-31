@@ -88,10 +88,8 @@ const App: React.FC = () => {
           setInitError(null);
           setShowRetryButton(false);
           
-          // 1. Keshni o'ta xavfsiz tozalash
           pruneCache();
           
-          // Crash Detection: Agar 10 sekund ichida yuklanmasa, retry chiqaradi
           const safetyTimeout = setTimeout(() => {
               setShowRetryButton(true);
           }, 10000);
@@ -121,7 +119,6 @@ const App: React.FC = () => {
       } catch (e: any) { 
           console.error("FATAL INIT ERROR:", e);
           setInitError(e.message || "Tizim yuklanishida xatolik");
-          // Xatolik bo'lsa, keyingi safar toza kirishi uchun keshni qisman tozalaymiz
           localStorage.removeItem('anilo_cache_all_movies_catalog');
       }
   };
@@ -212,6 +209,10 @@ const App: React.FC = () => {
       );
   }
 
+  // Mobile nav hide condition updated to include fandub-dashboard
+  const shouldHideGlobalNav = selectedMovie || isPlayerActive || activeVideoAd || 
+                             ['welcome', 'admin', 'copyright', 'fandub-dashboard'].includes(page);
+
   return (
     <PWAProvider>
     <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
@@ -287,7 +288,7 @@ const App: React.FC = () => {
               </div>
           )}
 
-          {!selectedMovie && !isPlayerActive && page !== 'admin' && page !== 'welcome' && page !== 'copyright' && (
+          {!shouldHideGlobalNav && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
                     <button onClick={() => handleNavigation('dashboard')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500' : 'text-zinc-600'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Asosiy</span></button>

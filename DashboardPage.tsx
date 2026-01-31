@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DashboardSubPage, Page } from './App';
 import { ProfilePage } from './ProfilePage';
@@ -15,7 +14,8 @@ import { getSocialLinks } from './services/dbService';
 import { 
     LogOut, Settings, CreditCard, History, ShieldCheck, 
     Instagram, Send, Youtube, Facebook, MessageCircle, 
-    Globe, ExternalLink, Mic, Star, LayoutGrid
+    /* Added ChevronRight to fix 'Cannot find name ChevronRight' error */
+    Globe, ExternalLink, Mic, Star, LayoutGrid, ChevronRight
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -43,7 +43,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
     const isAdmin = ['admin', 'owner', 'manager'].includes(currentRole);
-    // Updated isDubber logic to include admin and owner
     const canAccessCreatorStudio = ['fandub', 'admin', 'owner', 'dub'].includes(currentRole);
 
     useEffect(() => {
@@ -88,11 +87,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
                         
                         <div className="grid gap-4">
-                            {/* IJODKOR XONASI TUGMASI - OWNER VA ADMIN HAM KIROLADI */}
+                            {/* IJODKOR XONASI TUGMASI - ENDI BIRINCHI O'RINDA */}
                             {canAccessCreatorStudio && (
                                 <button 
                                     onClick={() => onMainNavigate('fandub-dashboard')} 
-                                    className="group w-full flex items-center justify-between p-6 bg-gradient-to-r from-purple-600/20 via-purple-600/10 to-transparent border border-purple-500/30 rounded-[2.5rem] text-purple-400 font-black transition-all hover:scale-[1.02] active:scale-95 shadow-2xl shadow-purple-500/10"
+                                    className="group w-full flex items-center justify-between p-6 bg-gradient-to-r from-purple-600/30 via-purple-600/10 to-transparent border border-purple-500/50 rounded-[2.5rem] text-white font-black transition-all hover:scale-[1.02] active:scale-95 shadow-2xl shadow-purple-500/20"
                                 >
                                     <div className="flex items-center gap-5">
                                         <div className="w-14 h-14 bg-purple-600 rounded-3xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(147,51,234,0.4)] group-hover:rotate-12 transition-transform">
@@ -100,17 +99,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                                         </div>
                                         <div className="text-left">
                                             <p className="text-xl tracking-tight">Ijodkor Xonasi</p>
-                                            <p className="text-[10px] uppercase tracking-widest text-purple-500/60 font-black">Shaxsiy Dashboard</p>
+                                            <p className="text-[10px] uppercase tracking-widest text-purple-400 font-black">LOYIHALARNI BOSHQARISH</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity">KIRISH</span>
-                                        <ExternalLink size={20} className="opacity-40 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
+                                        <span className="text-[10px] font-black text-purple-400 animate-pulse">OCHISH</span>
+                                        <ChevronRight size={20} className="text-purple-400 group-hover:translate-x-1 transition-all" />
                                     </div>
                                 </button>
                             )}
 
-                            {/* ANILO STUDIO TUGMASI - BARCHA UCHUN (KATALOG VA ARTISTLAR) */}
                             <button 
                                 onClick={() => onMainNavigate('studio')} 
                                 className="group w-full flex items-center justify-between p-6 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] text-orange-500 font-black transition-all hover:scale-[1.02] active:scale-95"
@@ -180,7 +178,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             </div>
                         </div>
 
-                        {/* Social Links */}
                         <div className="space-y-6 pt-10 border-t border-white/5">
                             <p className="text-xs font-black text-gray-500 uppercase tracking-[0.3em] text-center">Biz Ijtimoiy Tarmoqlarda</p>
                             <div className="flex flex-wrap justify-center gap-4">

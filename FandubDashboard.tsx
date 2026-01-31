@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabaseClient';
 import { UserProfile, FandubUpload, FandubChannel, FandubEarning, FandubWithdrawal } from './types';
@@ -44,7 +45,6 @@ export const FandubDashboard: React.FC = () => {
     const [wCard, setWCard] = useState('');
     const [wHolder, setWHolder] = useState('');
 
-    // Added currentBalance calculation to fix 'Cannot find name currentBalance' errors on lines 245 and 352
     const currentBalance = channel?.balance_usd || 0;
 
     useEffect(() => { loadData(); }, []);
@@ -186,7 +186,7 @@ export const FandubDashboard: React.FC = () => {
     if (loading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white flex flex-col lg:flex-row pb-20 lg:pb-0 font-sans">
+        <div className="min-h-screen bg-[#050505] text-white flex flex-col lg:flex-row pb-24 lg:pb-0 font-sans">
             {/* Desktop Sidebar */}
             <aside className="hidden lg:flex w-72 bg-[#0a0a0a] border-r border-white/5 p-6 flex-col sticky top-0 h-screen">
                 <div className="flex flex-col items-center mb-10">
@@ -211,12 +211,20 @@ export const FandubDashboard: React.FC = () => {
                 </div>
             </aside>
 
-            {/* Mobile Bottom Nav */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 h-20 flex justify-around items-center px-2">
+            {/* Mobile Bottom Nav - Z-INDEX OSHIRILDI (z-50 -> z-[150]) */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[150] bg-[#0a0a0a]/98 backdrop-blur-2xl border-t border-white/10 h-20 flex justify-around items-center px-2 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
                 {navItems.map(tab => (
-                    // Fix: Changed 'activeTab === id' to 'activeTab === tab.id' to fix "Cannot find name 'id'" error
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex flex-col items-center justify-center gap-1 transition-all ${activeTab === tab.id ? 'text-orange-500' : 'text-zinc-600'}`}>
-                        <div className={`p-2 rounded-xl transition-all ${activeTab === tab.id ? 'bg-orange-500/10' : ''}`}>{tab.icon}</div>
+                    <button 
+                        key={tab.id} 
+                        onClick={() => {
+                            setActiveTab(tab.id as any);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }} 
+                        className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all active:scale-90 ${activeTab === tab.id ? 'text-orange-500' : 'text-zinc-500'}`}
+                    >
+                        <div className={`p-2 rounded-xl transition-all ${activeTab === tab.id ? 'bg-orange-500/10 scale-110' : ''}`}>
+                            {tab.icon}
+                        </div>
                         <span className="text-[8px] font-black uppercase tracking-tighter">{tab.label}</span>
                     </button>
                 ))}
