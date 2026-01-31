@@ -28,7 +28,7 @@ serve(async (req) => {
     if (!token) {
         return new Response(JSON.stringify({ 
             status: 'error', 
-            message: "API Token topilmadi. Supabase Secrets-dan TSPAY_TOKEN ni sozlang." 
+            message: "Supabase Secrets-da TSPAY_TOKEN topilmadi." 
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
@@ -39,6 +39,7 @@ serve(async (req) => {
         const amount = Number(body.amount);
         const comment = body.comment || "";
         const orderId = body.id || body.cheque_id || 0;
+        // User ID ni izohdan ajratib olish (Format: Anilo ID: uuid)
         const userIdMatch = comment.match(/([a-f0-9-]{36})/i);
         const userId = userIdMatch ? userIdMatch[1] : null;
 
@@ -52,9 +53,10 @@ serve(async (req) => {
     // 2. To'lov yaratish
     if (body.action === 'create') {
       const amount = Math.floor(Number(body.amount));
-      const TSPAY_API_URL = 'https://tspay.uz/api/v1/transactions/create/';
+      // Oxirgi slashesiz URL ishlatib ko'ramiz
+      const TSPAY_API_URL = 'https://tspay.uz/api/v1/transactions/create';
 
-      console.log(`TsPay so'rov yuborilmoqda: ${amount} UZS, User: ${body.user_id}`);
+      console.log(`TsPay so'rov: ${amount} UZS, User: ${body.user_id}`);
 
       const tsResponse = await fetch(TSPAY_API_URL, {
         method: 'POST',
@@ -65,54 +67,24 @@ serve(async (req) => {
         body: JSON.stringify({
           amount: amount,
           access_token: token,
-          comment: `Anilo.uz ID: ${body.user_id}`,
-          redirect_url: 'https://anilo.uz/dashboard/account'
+          comment: `Anilo ID: ${body.user_id}`,
+          redirect_url: 'https://anilo.uz/dashboard'
         })
       });
       
       const resStatus = tsResponse.status;
       const data = await tsResponse.json();
-      console.log(`TsPay Javobi (Status ${resStatus}):`, JSON.stringify(data));
+      console.log(`TsPay API Result (${resStatus}):`, JSON.stringify(data));
 
-      // 200 OK va 201 Created statuslari muvaffaqiyatli deb hisoblanadi
-      const isOk = resStatus === 200 || resStatus === 201;
-      
-      /**
-       * Deep Search: Javob ichidan URL ni qidirib topish
-       */
-      const findUrlDeep = (obj: any): string | null => {
-          if (!obj || typeof obj !== 'object') return null;
-          
-          // 1-ustuvorlik: Mashhur kalit nomlari
-          const priorityKeys = ['pay_url', 'url', 'payment_url', 'link', 'pay_link', 'checkout_url'];
-          for (const key of priorityKeys) {
-              if (typeof obj[key] === 'string' && obj[key].startsWith('http')) return obj[key];
-          }
-
-          // 2-ustuvorlik: TsPay domeniga mos keluvchi har qanday string
-          for (const key in obj) {
-              const val = obj[key];
-              if (typeof val === 'string' && (val.startsWith('https://checkout.tspay.uz') || val.includes('/pay/'))) {
-                  return val;
-              }
-              if (typeof val === 'object' && val !== null) {
-                  const found = findUrlDeep(val);
-                  if (found) return found;
-              }
-          }
-          return null;
-      };
-
-      const payUrl = findUrlDeep(data);
-      const transactionId = data.id || (data.data && data.data.id) || data.cheque_id || 0;
-
-      if (isOk && payUrl) {
+      if ((resStatus === 200 || resStatus === 201) && (data.url || data.pay_url || data.link)) {
+          const payUrl = data.url || data.pay_url || data.link || (data.data && data.data.url);
           return new Response(JSON.stringify({ 
               status: 'success', 
-              transaction: { url: payUrl, id: transactionId } 
+              transaction: { url: payUrl, id: data.id || data.cheque_id || 0 } 
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
       } else {
-          const errorMsg = data.message || data.error || (data.data && data.data.error) || `To'lov havolasi topilmadi (Status: ${resStatus})`;
+          // Xatolik xabarini TsPay dan kelgan javob asosida aniqlaymiz
+          const errorMsg = data.message || data.error || data.detail || `TsPay rad etdi (Status: ${resStatus}). Tokenni tekshiring.`;
           return new Response(JSON.stringify({ 
               status: 'error', 
               message: errorMsg
@@ -120,13 +92,13 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ status: 'error', message: 'Noma\'lum amal' }), { 
+    return new Response(JSON.stringify({ status: 'error', message: 'Unknown action' }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
     });
 
   } catch (error: any) {
-    console.error("Edge Function Xatosi:", error);
+    console.error("Critical Edge Function Error:", error);
     return new Response(JSON.stringify({ status: 'error', message: "Tizim xatosi: " + error.message }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
