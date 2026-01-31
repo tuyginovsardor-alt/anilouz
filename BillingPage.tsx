@@ -44,10 +44,10 @@ export const BillingPage: React.FC = () => {
                 // Avtomatik redirect
                 setTimeout(() => {
                     window.location.href = payUrl;
-                }, 1000);
+                }, 1200);
             } else {
-                // Agar server xatolik qaytarsa, uni aniq ko'rsatamiz
-                const detailMsg = res.message || "TsPay serveri so'rovni rad etdi. Kalit noto'g'ri bo'lishi mumkin.";
+                // Agar serverdan xatolik xabari kelsa, uni ko'rsatamiz
+                const detailMsg = res.message || "TsPay serverida xatolik yuz berdi.";
                 throw new Error(detailMsg);
             }
         } catch (e: any) {
@@ -64,7 +64,7 @@ export const BillingPage: React.FC = () => {
         <div className="animate-fade-in pb-20 max-w-6xl mx-auto px-4 pt-6">
             <div className="text-center mb-12">
                 <h1 className="text-4xl font-black text-white uppercase tracking-tight mb-2">Hisobni To'ldirish</h1>
-                <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Xavfsiz to'lovlar tizimi TsPay terminali orqali</p>
+                <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Uzcard, Humo va VISA orqali avtomatik to'lovlar</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
@@ -75,9 +75,9 @@ export const BillingPage: React.FC = () => {
                             <div>
                                 <h2 className="text-2xl font-black text-white flex items-center gap-2">
                                     <Zap className="text-yellow-400 fill-current" />
-                                    <span>TSPAY AUTOMATIC</span>
+                                    <span>TSPAY AVTOMATIK</span>
                                 </h2>
-                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mt-1">Instant Top-up • UZCARD / HUMO</p>
+                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mt-1">Lahzada to'ldirish • UZCARD / HUMO</p>
                             </div>
                             <div className="bg-blue-900/30 p-3 rounded-2xl border border-blue-500/20">
                                 <Smartphone className="text-blue-400" size={24} />
@@ -87,7 +87,13 @@ export const BillingPage: React.FC = () => {
                         <form onSubmit={handleTsPaySubmit} className="space-y-6 flex-1 flex flex-col">
                             <div className="relative group/input">
                                 <label className="text-[9px] font-black text-blue-300 uppercase tracking-widest absolute -top-2 left-5 bg-[#0b1120] px-2 z-10">Summa (UZS)</label>
-                                <input type="number" value={tsAmount} onChange={e => setTsAmount(e.target.value)} className={`w-full bg-[#1e293b]/50 border ${lastError ? 'border-red-500/50' : 'border-blue-500/30'} rounded-2xl p-6 text-white font-mono text-3xl outline-none focus:border-blue-500 transition-all placeholder:text-zinc-700`} placeholder="10000" />
+                                <input 
+                                    type="number" 
+                                    value={tsAmount} 
+                                    onChange={e => setTsAmount(e.target.value)} 
+                                    className={`w-full bg-[#1e293b]/50 border ${lastError ? 'border-red-500/50' : 'border-blue-500/30'} rounded-2xl p-6 text-white font-mono text-3xl outline-none focus:border-blue-500 transition-all placeholder:text-zinc-700`} 
+                                    placeholder="10000" 
+                                />
                                 <div className="grid grid-cols-3 gap-3 mt-4">
                                     {[5000, 15000, 50000].map(val => (
                                         <button key={val} type="button" onClick={() => setTsAmount(val.toString())} className="py-2.5 rounded-xl bg-blue-900/20 border border-blue-500/20 text-blue-300 text-[10px] font-black hover:bg-blue-500 hover:text-white transition-all uppercase">{(val/1000)}k</button>
@@ -99,8 +105,9 @@ export const BillingPage: React.FC = () => {
                                 <div className="flex items-start gap-3 text-red-400 text-xs bg-red-900/20 p-5 rounded-2xl border border-red-500/20 animate-fade-in">
                                     <AlertCircle size={18} className="shrink-0" />
                                     <div className="flex-1">
-                                        <p className="font-black uppercase text-[10px] mb-1">Serverda Xatolik:</p>
+                                        <p className="font-black uppercase text-[10px] mb-1">Server xatosi:</p>
                                         <p className="leading-relaxed">{lastError}</p>
+                                        <p className="mt-2 text-[10px] opacity-70">Maslahat: Supabase sekrets-da TSPAY_TOKEN o'rnatilganini tekshiring.</p>
                                     </div>
                                 </div>
                             )}
@@ -109,8 +116,8 @@ export const BillingPage: React.FC = () => {
                                 <div className="space-y-4 mt-auto">
                                     <div className="p-6 bg-green-500/10 border border-green-500/30 rounded-2xl text-center">
                                         <CheckCircle className="text-green-500 mx-auto mb-3" size={40} />
-                                        <p className="text-white font-black text-sm uppercase tracking-tight mb-4">Redirect tayyor</p>
-                                        <a href={redirectUrl} className="w-full inline-flex items-center justify-center gap-3 text-black bg-white px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all shadow-xl">SAYTGA O'TISH <ExternalLink size={16}/></a>
+                                        <p className="text-white font-black text-sm uppercase tracking-tight mb-4">Tayyor! Sahifa ochilmasa pastga bosing:</p>
+                                        <a href={redirectUrl} className="w-full inline-flex items-center justify-center gap-3 text-black bg-white px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all shadow-xl">TO'LOVGA O'TISH <ExternalLink size={16}/></a>
                                     </div>
                                 </div>
                             ) : (
@@ -136,9 +143,9 @@ export const BillingPage: React.FC = () => {
                         <p className="text-[#229ED9] font-black text-[9px] uppercase tracking-widest mb-10 bg-[#229ED9]/10 px-4 py-1.5 rounded-full border border-[#229ED9]/20">Telegram @anilo_ega</p>
                         <div className="space-y-4 w-full text-left mb-10 flex-1">
                             {[
-                                { icon: <Clock size={20}/>, t: "Tezkor Yordam", d: "Adminlar 24/7 aloqada" },
+                                { icon: <Clock size={20}/>, t: "Tezkor Yordam", d: "Adminlar doim aloqada" },
                                 { icon: <ShieldCheck size={20}/>, t: "Xavfsizlik", d: "Manual tasdiqlash kafolati" },
-                                { icon: <UserCheck size={20}/>, t: "Tasdiqlash", d: "Chek orqali to'ldirish" }
+                                { icon: <UserCheck size={20}/>, t: "Ishonch", d: "Chek orqali balansga tushirish" }
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-4 bg-white/5 p-5 rounded-2xl border border-white/5 transition-all hover:bg-white/10">
                                     <div className="text-[#229ED9]">{item.icon}</div>

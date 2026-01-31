@@ -214,7 +214,8 @@ export const FandubDashboard: React.FC = () => {
             {/* Mobile Bottom Nav */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 h-20 flex justify-around items-center px-2">
                 {navItems.map(tab => (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex flex-col items-center justify-center gap-1 transition-all ${activeTab === id ? 'text-orange-500' : 'text-zinc-600'}`}>
+                    // Fix: Changed 'activeTab === id' to 'activeTab === tab.id' to fix "Cannot find name 'id'" error
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex flex-col items-center justify-center gap-1 transition-all ${activeTab === tab.id ? 'text-orange-500' : 'text-zinc-600'}`}>
                         <div className={`p-2 rounded-xl transition-all ${activeTab === tab.id ? 'bg-orange-500/10' : ''}`}>{tab.icon}</div>
                         <span className="text-[8px] font-black uppercase tracking-tighter">{tab.label}</span>
                     </button>
