@@ -4,25 +4,29 @@ import React from 'react';
 export const UzumakiLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
   return (
     <svg 
-      viewBox="0 0 100 100" 
+      viewBox="0 0 512 512" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg" 
       {...props}
     >
-      {/* Asosiy to'q sariq fon */}
-      <rect width="100" height="100" rx="22" fill="#f97316" />
-      
-      {/* Qora hoshiyali qizil aylana */}
-      <circle cx="50" cy="50" r="35" fill="#000000" />
-      <circle cx="50" cy="50" r="32" fill="#be123c" />
-      
-      {/* Uzumaki Spiral - Rasmga mos qo'lda chizilgan uslubda */}
+      <defs>
+        <linearGradient id="compGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ff7e33" />
+          <stop offset="100%" stopColor="#f97316" />
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="128" fill="#000000" />
       <path 
-        d="M50 50C50 46 47 46 47 50C47 55 53 55 53 50C53 42 43 42 43 50C43 59 58 59 58 50C58 38 38 38 38 50C38 64 64 64 64 50C64 34 34 34 34 50C34 68 68 68 68 50C68 45 66 41 63 38" 
-        stroke="#000000" 
-        strokeWidth="3.5" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
+        d="M256 120C180.89 120 120 180.89 120 256C120 331.11 180.89 392 256 392C331.11 392 392 331.11 392 256" 
+        stroke="url(#compGrad)" 
+        strokeWidth="24" 
+        strokeLinecap="round"
+      />
+      <path 
+        d="M256 256C256 210 220 210 220 256C220 310 290 310 290 256C290 180 170 180 170 256C170 350 342 350 342 256" 
+        stroke="white" 
+        strokeWidth="12" 
+        strokeLinecap="round"
       />
     </svg>
   );

@@ -1,11 +1,17 @@
 
 <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="110" fill="#f97316"/>
-  <circle cx="256" cy="256" r="180" fill="#000000"/>
-  <circle cx="256" cy="256" r="165" fill="#be123c"/>
-  <path d="M256 256C256 235 240 235 240 256C240 282 272 282 272 256C272 214 218 214 218 256C218 304 298 304 298 256C298 192 192 192 192 256C192 330 330 330 330 256C330 172 172 172 172 256C172 352 352 352 352 256C352 230 342 208 326 193" 
-        stroke="#000000" 
-        stroke-width="18" 
-        stroke-linecap="round" 
-        stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff7e33" />
+      <stop offset="100%" stop-color="#f97316" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="15" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="#050505"/>
+  <circle cx="256" cy="256" r="210" stroke="url(#logoGrad)" stroke-width="4" opacity="0.2"/>
+  <path d="M256 120C180.89 120 120 180.89 120 256C120 331.11 180.89 392 256 392C331.11 392 392 331.11 392 256C392 245 388 235 380 230" stroke="url(#logoGrad)" stroke-width="24" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M256 256C256 210 220 210 220 256C220 310 290 310 290 256C290 180 170 180 170 256C170 350 342 350 342 256C342 140 130 140 130 256C130 390 382 390 382 256C382 180 340 140 280 130" stroke="white" stroke-width="12" stroke-linecap="round" opacity="0.9"/>
 </svg>

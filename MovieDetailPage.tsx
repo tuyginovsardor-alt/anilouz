@@ -36,7 +36,6 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   const [replyToComment, setReplyToComment] = useState<any | null>(null);
 
   const { addNotification } = useNotification();
-  const contentRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
@@ -46,11 +45,44 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     window.addEventListener('scroll', handleScroll);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    document.title = `${movie.title} - O'zbek tilida sifatli ko'rish | Anilo.uz`;
+    // SEO: Dynamic Title & Meta
+    document.title = `${movie.title} (O'zbek tilida) ko'rish - Anilo.uz`;
+    
+    // SEO: Inject JSON-LD for Google Card
+    const schemaData = {
+        "@context": "https://schema.org",
+        "@type": "Movie",
+        "name": movie.title,
+        "image": movie.posterUrl,
+        "description": movie.plot,
+        "datePublished": movie.year.toString(),
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": movie.rating || "5.0",
+            "bestRating": "5",
+            "worstRating": "1",
+            "ratingCount": "100"
+        },
+        "video": {
+            "@type": "VideoObject",
+            "name": movie.title,
+            "description": movie.plot,
+            "thumbnailUrl": movie.posterUrl,
+            "uploadDate": new Date().toISOString(),
+            "contentUrl": window.location.href
+        }
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'json-ld-movie';
+    script.text = JSON.stringify(schemaData);
+    document.head.appendChild(script);
     
     return () => {
         window.removeEventListener('scroll', handleScroll);
         document.title = "Anilo.uz | Anime Olami";
+        const oldScript = document.getElementById('json-ld-movie');
+        if (oldScript) oldScript.remove();
     };
   }, [movie.id, movie.title]);
 
@@ -299,7 +331,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
             </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-30" ref={contentRef}>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-30">
             
             <div className="flex justify-center mb-10">
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-1.5 rounded-full w-full max-w-lg shadow-2xl">
