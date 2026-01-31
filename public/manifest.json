@@ -1,7 +1,8 @@
+
 {
   "short_name": "Anilo",
   "name": "Anilo.uz - Anime Olami",
-  "description": "O'zbekistondagi eng katta anime portali.",
+  "description": "O'zbekistondagi yagona professional anime portali.",
   "id": "/",
   "start_url": "./?source=pwa",
   "display": "standalone",
