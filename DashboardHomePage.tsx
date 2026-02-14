@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Movie } from './types';
 import { getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
@@ -39,9 +38,46 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
         const fetch = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if(user) setUserId(user.id);
-            // getMovies endi global saralangan (eng yangisi birinchi) ro'yxatni qaytaradi
             const movies = await getMovies();
             setAllMovies(movies);
+            
+            // SEO: Inject JSON-LD ItemList for Google Bot to discover movies
+            if (movies.length > 0) {
+                const schemaList = {
+                    "@context": "https://schema.org",
+                    "@type": "ItemList",
+                    "numberOfItems": movies.length,
+                    "itemListElement": movies.slice(0, 50).map((movie, index) => ({
+                        "@type": "ListItem",
+                        "position": index + 1,
+                        "item": {
+                            "@type": "Movie",
+                            "name": movie.title,
+                            "url": `https://anilo.uz/?movie_id=${movie.id}`,
+                            "image": movie.posterUrl,
+                            "datePublished": movie.year.toString(),
+                            "genre": movie.genre,
+                            "aggregateRating": {
+                                "@type": "AggregateRating",
+                                "ratingValue": movie.rating.toFixed(1),
+                                "bestRating": "5",
+                                "worstRating": "1"
+                            }
+                        }
+                    }))
+                };
+                
+                const scriptId = 'json-ld-catalog';
+                let script = document.getElementById(scriptId) as HTMLScriptElement;
+                if (!script) {
+                    script = document.createElement('script');
+                    script.id = scriptId;
+                    script.type = 'application/ld+json';
+                    document.head.appendChild(script);
+                }
+                script.text = JSON.stringify(schemaList);
+            }
+
             setIsLoading(false);
         };
         fetch();
@@ -51,10 +87,13 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
         };
         window.addEventListener('scroll', handleScroll, { passive: true });
 
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            const script = document.getElementById('json-ld-catalog');
+            if (script) script.remove();
+        };
     }, []);
 
-    // Birinchi 6 tasi doim eng yangilari bo'ladi (dbService logic tufayli)
     const heroMovies = allMovies.slice(0, 6);
     const currentHeroMovie = heroMovies[heroIndex];
 

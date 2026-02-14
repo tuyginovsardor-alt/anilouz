@@ -1,5 +1,5 @@
 
-export type UserRole = 'user' | 'premium' | 'manager' | 'support' | 'accountant' | 'admin' | 'owner' | 'dub' | 'fandub';
+export type UserRole = 'user' | 'premium' | 'manager' | 'support' | 'accountant' | 'admin' | 'owner' | 'dub' | 'fandub' | 'courier' | 'courier_applicant';
 
 export interface UserProfile {
   id: string;
@@ -228,24 +228,6 @@ export interface PaymentRequestDB {
     profiles?: { full_name: string; email: string; };
 }
 
-export interface CulturalAnalysis {
-  detectedLanguage: string;
-  isoCode: string;
-  englishTranslation: string;
-  pronunciation: string;
-  friendlyResponse: string;
-  culturalFacts: string[];
-}
-
-export enum AppView { Chat, Settings, About }
-export interface ChatSession {
-  id: string;
-  title: string;
-  lastMessageAt: number;
-}
-
-/* Added missing types below */
-
 export interface ATCWallet {
   user_id: string;
   balance: number;
@@ -425,4 +407,26 @@ export interface PremiumBundle {
   duration_days: number;
   anime_ids: number[];
   created_at: string;
+}
+
+/* Added CulturalAnalysis to fix ResultCard error */
+export interface CulturalAnalysis {
+  detectedLanguage: string;
+  isoCode: string;
+  englishTranslation: string;
+  pronunciation: string;
+  friendlyResponse: string;
+  culturalFacts: string[];
+}
+
+/* Added AppView and ChatSession to fix Sidebar error */
+export enum AppView {
+  Chat = 'Chat',
+  Settings = 'Settings',
+  About = 'About'
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
 }

@@ -31,7 +31,7 @@ interface AdminPageProps {
 }
 
 export const AdminPage: React.FC<AdminPageProps> = ({ currentRole, currentPage, onNavigate, onSwitchView, onLogout, onImpersonate }) => {
-  const [counts, setCounts] = useState<{ financials: number, support: number }>({ financials: 0, support: 0 });
+  const [counts, setCounts] = useState<{ financials: number, support: number, fandub: number }>({ financials: 0, support: 0, fandub: 0 });
   const [correctPin, setCorrectPin] = useState<string>('');
   const [protectedRoutes, setProtectedRoutes] = useState<string[]>([]);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
@@ -41,7 +41,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ currentRole, currentPage, 
   useEffect(() => {
       const fetchCounts = async () => {
           const data = await getAdminNotificationCounts();
-          setCounts(data);
+          setCounts(data as any);
       };
       fetchCounts();
       const fetchSecurity = async () => {
@@ -51,7 +51,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ currentRole, currentPage, 
           setProtectedRoutes(routes);
       };
       fetchSecurity();
-  }, []);
+  }, [currentPage]);
 
   const handleNavigate = (page: any) => {
       if (protectedRoutes.includes(page) && !verifiedRoutes.has(page)) {

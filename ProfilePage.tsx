@@ -2,13 +2,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from './services/supabaseClient';
 import { getUserProfile, getUserHistory, updateUserProfile, uploadAvatar, uploadBanner } from './services/dbService';
-import { UserProfile, Movie } from './types';
+import { UserProfile, Movie, UserRole } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useNotification } from './hooks/useNotification';
 import { VerifiedBadge } from './components/VerifiedBadge';
 import { 
     Phone, Info, AtSign, Calendar, Edit2, Camera, 
-    ArrowLeft, MoreVertical, Check, Clock, Wallet
+    ArrowLeft, MoreVertical, Check, Clock, Wallet, Truck, 
+    ChevronRight, Briefcase, AlertCircle
 } from 'lucide-react';
 import { Page } from './App';
 
@@ -81,6 +82,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       } finally { setLoading(false); }
   };
 
+  const handleApplyCourier = async () => {
+      if (!profile) return;
+      try {
+          await updateUserProfile(profile.id, { role: 'courier_applicant' as UserRole });
+          setProfile({ ...profile, role: 'courier_applicant' });
+          addNotification({ type: 'success', title: 'Ariza yuborildi', message: 'Kuryerlik arizangiz 24 soat ichida ko\'rib chiqiladi.' });
+      } catch (e) { console.error(e); }
+  };
+
   const hasBannerPermission = () => {
       if (!profile) return false;
       const allowedRoles = ['premium', 'admin', 'owner', 'fandub'];
@@ -148,7 +158,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
       <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
 
-      {/* --- HEADER (Pastroqqa tushirildi: pt-14 -> pt-20) --- */}
+      {/* HEADER */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pt-20 pb-4 pointer-events-none">
           <button onClick={() => onMainNavigate && onMainNavigate('dashboard')} className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all pointer-events-auto border border-white/10 shadow-lg">
               <ArrowLeft size={22} />
@@ -166,13 +176,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                       </button>
                   )
               )}
-              <button className="p-2.5 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 shadow-lg">
-                  <MoreVertical size={22} />
-              </button>
           </div>
       </div>
 
-      {/* --- BANNER SECTION --- */}
+      {/* BANNER */}
       <div className="relative h-64 w-full bg-zinc-900 group overflow-hidden">
           {profile?.banner_url ? (
               <img src={profile.banner_url} alt="Cover" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" />
@@ -181,21 +188,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                   <div className="w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
               </div>
           )}
-          
           <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-black/30"></div>
-
           {isMyProfile && (
-              <button 
-                onClick={handleBannerClick}
-                disabled={isUploadingBanner}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm border border-white/20 hover:scale-110 pointer-events-auto"
-              >
+              <button onClick={handleBannerClick} disabled={isUploadingBanner} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm border border-white/20 hover:scale-110 pointer-events-auto">
                   {isUploadingBanner ? <LoadingSpinner /> : <Camera size={24} />}
               </button>
           )}
       </div>
 
-      {/* --- AVATAR & NAME SECTION --- */}
+      {/* AVATAR & NAME */}
       <div className="px-4 -mt-16 relative z-10 flex flex-col items-center">
           <div className="relative group cursor-pointer" onClick={() => isMyProfile && avatarInputRef.current?.click()}>
               <div className="w-32 h-32 rounded-full p-1 bg-[#050505] shadow-2xl">
@@ -203,136 +204,112 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                       {profile?.avatar_url ? (
                           <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500 font-black text-4xl">
-                              {profile?.full_name?.charAt(0) || 'U'}
-                          </div>
+                          <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500 font-black text-4xl">{profile?.full_name?.charAt(0) || 'U'}</div>
                       )}
-                      
-                      {isUploadingAvatar && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                              <LoadingSpinner />
-                          </div>
-                      )}
-                      
-                      {isMyProfile && (
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                              <Camera className="text-white w-8 h-8" />
-                          </div>
-                      )}
+                      {isUploadingAvatar && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><LoadingSpinner /></div>}
+                      {isMyProfile && <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all"><Camera className="text-white w-8 h-8" /></div>}
                   </div>
               </div>
-              <div className={`absolute bottom-2 right-2 w-5 h-5 rounded-full border-4 border-[#050505] ${profile?.is_online ? 'bg-green-500' : 'bg-gray-500'}`}></div>
           </div>
 
           <div className="mt-3 text-center w-full">
               {isEditing ? (
-                  <input 
-                    type="text" 
-                    value={editForm.full_name}
-                    onChange={e => setEditForm({...editForm, full_name: e.target.value})}
-                    className="bg-transparent border-b border-orange-500 text-center text-2xl font-black text-white w-full outline-none pb-1 placeholder-zinc-600"
-                    placeholder="Ism Familiya"
-                    autoFocus
-                  />
+                  <input type="text" value={editForm.full_name} onChange={e => setEditForm({...editForm, full_name: e.target.value})} className="bg-transparent border-b border-orange-500 text-center text-2xl font-black text-white w-full outline-none pb-1 placeholder-zinc-600" placeholder="Ism Familiya" autoFocus />
               ) : (
                   <h1 className="text-2xl font-black text-white flex items-center justify-center gap-2 uppercase tracking-tight">
                       {profile?.full_name || 'Foydalanuvchi'}
-                      {(['admin', 'owner', 'dub', 'premium'].includes(profile?.role || '')) && (
-                          <VerifiedBadge type="gold" className="w-5 h-5" />
-                      )}
+                      {(['admin', 'owner', 'premium'].includes(profile?.role || '')) && <VerifiedBadge type="gold" className="w-5 h-5" />}
                   </h1>
               )}
-              
-              <p className="text-gray-400 text-sm mt-1 font-medium">
-                  {profile?.is_online ? <span className="text-green-500">online</span> : 'yaqinda kirgan'}
-              </p>
+              <p className="text-gray-400 text-sm mt-1 font-medium">{profile?.is_online ? <span className="text-green-500 font-bold uppercase text-[10px]">online</span> : 'yaqinda kirgan'}</p>
           </div>
       </div>
 
-      {/* --- INFO LIST SECTION --- */}
-      <div className="px-4 mt-8">
-          <div className="bg-[#121212] border border-white/5 rounded-2xl overflow-hidden">
-              <div className="flex items-start p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+      {/* --- KURYERLIK HUDUDI (Yangi) --- */}
+      {isMyProfile && (
+          <div className="px-4 mt-8">
+              <div className="bg-gradient-to-r from-blue-600/10 to-indigo-600/10 border border-blue-500/20 rounded-3xl p-6 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Truck size={80} /></div>
+                  <div className="relative z-10">
+                      <div className="flex items-center gap-3 mb-4">
+                          <div className="p-2 bg-blue-600 rounded-xl text-white"><Briefcase size={20}/></div>
+                          <h3 className="text-lg font-black uppercase text-white tracking-tight">Hamkorlik: Kuryerlik</h3>
+                      </div>
+                      
+                      {profile?.role === 'courier' ? (
+                          <div className="space-y-4">
+                              <p className="text-sm text-blue-200">Siz bizning rasmiy kuryerimizsiz. Buyurtmalarni boshqarish uchun dashboard-ga o'ting.</p>
+                              <button onClick={() => onMainNavigate?.('dashboard')} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                  BUYURTMALAR PANELI <ChevronRight size={16}/>
+                              </button>
+                          </div>
+                      ) : profile?.role === 'courier_applicant' ? (
+                          <div className="flex items-center gap-3 bg-yellow-500/10 p-4 rounded-2xl border border-yellow-500/20">
+                              <AlertCircle className="text-yellow-500 shrink-0" size={20}/>
+                              <p className="text-xs text-yellow-500 font-bold">ARIZANGIZ KO'RIB CHIQILMOQDA. Yaqin orada siz bilan bog'lanamiz.</p>
+                          </div>
+                      ) : (
+                          <div className="space-y-4">
+                              <p className="text-sm text-zinc-400">Anilo Store mahsulotlarini yetkazib berish orqali daromad topmoqchimisiz?</p>
+                              <button onClick={handleApplyCourier} className="w-full py-4 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-lg">
+                                  Kuryerlikka ariza berish
+                              </button>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* INFO LIST */}
+      <div className="px-4 mt-6">
+          <div className="bg-[#121212] border border-white/5 rounded-3xl overflow-hidden">
+              <div className="flex items-start p-5 border-b border-white/5 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500 mt-1"><Info size={22} /></div>
                   <div className="flex-1">
                       {isEditing ? (
-                          <textarea 
-                            value={editForm.bio}
-                            onChange={e => setEditForm({...editForm, bio: e.target.value})}
-                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-white text-base outline-none focus:border-orange-500 resize-none h-20"
-                            placeholder="O'zingiz haqingizda (Bio)..."
-                          />
+                          <textarea value={editForm.bio} onChange={e => setEditForm({...editForm, bio: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-white text-base outline-none focus:border-orange-500 resize-none h-20" placeholder="O'zingiz haqingizda (Bio)..." />
                       ) : (
-                          <p className="text-white text-base leading-relaxed whitespace-pre-wrap">
-                              {profile?.bio || "Ma'lumot kiritilmagan."}
-                          </p>
+                          <p className="text-white text-base leading-relaxed whitespace-pre-wrap font-medium">{profile?.bio || "Ma'lumot kiritilmagan."}</p>
                       )}
-                      <p className="text-zinc-500 text-xs mt-1">Haqida (Bio)</p>
+                      <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Haqida (Bio)</p>
                   </div>
               </div>
 
-              <div className="flex items-center p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+              <div className="flex items-center p-5 border-b border-white/5 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500"><Phone size={22} /></div>
                   <div className="flex-1">
                       {isEditing ? (
-                          <input 
-                            type="text" 
-                            value={editForm.phone}
-                            onChange={e => setEditForm({...editForm, phone: e.target.value})}
-                            className="bg-transparent text-white text-base w-full outline-none border-b border-orange-500"
-                            placeholder="+998 90 123 45 67"
-                          />
+                          <input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="bg-transparent text-white text-base w-full outline-none border-b border-orange-500" placeholder="+998 90 123 45 67" />
                       ) : (
                           <p className="text-blue-400 text-base font-medium font-mono">{profile?.phone || 'Kiritilmagan'}</p>
                       )}
-                      <p className="text-zinc-500 text-xs mt-1">Mobil raqam</p>
+                      <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Mobil raqam</p>
                   </div>
               </div>
 
-              <div className="flex items-center p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+              <div className="flex items-center p-5 hover:bg-white/5 transition-colors">
                   <div className="mr-5 text-zinc-500"><AtSign size={22} /></div>
                   <div className="flex-1">
                       {isEditing ? (
-                          <input 
-                            type="text" 
-                            value={editForm.username}
-                            onChange={e => setEditForm({...editForm, username: e.target.value})}
-                            className="bg-transparent text-white text-base w-full outline-none border-b border-orange-500"
-                            placeholder="username"
-                          />
+                          <input type="text" value={editForm.username} onChange={e => setEditForm({...editForm, username: e.target.value})} className="bg-transparent text-white text-base w-full outline-none border-b border-orange-500" placeholder="username" />
                       ) : (
                           <p className="text-blue-400 text-base font-medium">@{profile?.username || 'username'}</p>
                       )}
-                      <p className="text-zinc-500 text-xs mt-1">Foydalanuvchi nomi</p>
-                  </div>
-              </div>
-
-              <div className="flex items-center p-4 hover:bg-white/5 transition-colors">
-                  <div className="mr-5 text-zinc-500"><Calendar size={22} /></div>
-                  <div className="flex-1">
-                      <p className="text-white text-base font-medium">{new Date(profile?.created_at || Date.now()).toLocaleDateString()}</p>
-                      <p className="text-zinc-500 text-xs mt-1">Ro'yxatdan o'tgan sana</p>
+                      <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Foydalanuvchi nomi</p>
                   </div>
               </div>
           </div>
       </div>
 
-      {/* --- TABS --- */}
+      {/* TABS */}
       <div className="mt-8">
           <div className="flex border-b border-white/10 bg-[#050505] sticky top-16 z-20">
-              <button 
-                onClick={() => setActiveTab('history')}
-                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-center relative transition-colors ${activeTab === 'history' ? 'text-orange-500' : 'text-zinc-500 hover:text-white'}`}
-              >
-                  Ko'rilganlar
-                  {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>}
+              <button onClick={() => setActiveTab('history')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-center relative transition-colors ${activeTab === 'history' ? 'text-orange-500' : 'text-zinc-500 hover:text-white'}`}>
+                  Ko'rilganlar {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>}
               </button>
-              <button 
-                onClick={() => setActiveTab('saved')}
-                className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-center relative transition-colors ${activeTab === 'saved' ? 'text-orange-500' : 'text-zinc-500 hover:text-white'}`}
-              >
-                  Moliya
-                  {activeTab === 'saved' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>}
+              <button onClick={() => setActiveTab('saved')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-center relative transition-colors ${activeTab === 'saved' ? 'text-orange-500' : 'text-zinc-500 hover:text-white'}`}>
+                  Moliya {activeTab === 'saved' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>}
               </button>
           </div>
 
@@ -360,21 +337,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
               {activeTab === 'saved' && (
                   <div className="p-6">
                       <div className="bg-gradient-to-br from-zinc-900 to-black rounded-[2rem] p-8 text-white shadow-2xl border border-white/10 relative overflow-hidden mb-6">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                          
                           <p className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.3em] mb-2">Asosiy Balans</p>
                           <h2 className="text-4xl font-black tracking-tight">{(profile?.balance || 0).toLocaleString()} <span className="text-lg text-orange-500 font-bold">UZS</span></h2>
                       </div>
-                      
                       <button onClick={() => onMainNavigate?.('dashboard')} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-zinc-200 transition-all active:scale-95">
-                          <Wallet size={18} />
-                          Hisobni to'ldirish
+                          <Wallet size={18} /> Hisobni to'ldirish
                       </button>
                   </div>
               )}
           </div>
       </div>
-
     </div>
   );
 };
