@@ -33,20 +33,23 @@ export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'sa
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'bundle_manager';
 export type LegalDocType = 'privacy' | 'terms';
 
-// Ramazon bezaklari komponenti
+// Ramazon bezaklari komponenti - Yorqinroq variant
 const RamadanDecoration = () => (
-  <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-    <div className="absolute top-10 left-[5%] ramadan-decoration" style={{ animationDelay: '0s' }}>
-      <Moon size={40} className="text-orange-500/20 fill-orange-500/10" />
+  <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+    <div className="absolute top-20 left-[5%] ramadan-decoration" style={{ animationDelay: '0s' }}>
+      <Moon size={50} className="text-orange-500 fill-orange-500/30" />
     </div>
-    <div className="absolute top-40 right-[8%] ramadan-decoration" style={{ animationDelay: '2s' }}>
-      <Star size={20} className="text-yellow-500/20 fill-yellow-500/10" />
+    <div className="absolute top-60 right-[10%] ramadan-decoration" style={{ animationDelay: '2s' }}>
+      <Star size={25} className="text-yellow-400 fill-yellow-400/50 shadow-xl" />
     </div>
-    <div className="absolute bottom-60 left-[10%] ramadan-decoration" style={{ animationDelay: '4s' }}>
-      <Star size={15} className="text-orange-500/10 fill-orange-500/5" />
+    <div className="absolute bottom-1/3 left-[15%] ramadan-decoration" style={{ animationDelay: '4s' }}>
+      <Star size={20} className="text-orange-400 fill-orange-400/20" />
     </div>
-    <div className="absolute bottom-20 right-[5%] ramadan-decoration" style={{ animationDelay: '1s' }}>
-      <Moon size={60} className="text-orange-600/10" rotate={180} />
+    <div className="absolute bottom-40 right-[5%] ramadan-decoration" style={{ animationDelay: '1s' }}>
+      <Moon size={70} className="text-orange-600/40 rotate-180" />
+    </div>
+    <div className="absolute top-1/2 left-4 ramadan-decoration hidden md:block" style={{ animationDelay: '3s' }}>
+      <Star size={15} className="text-white/20 fill-white/10" />
     </div>
   </div>
 );
@@ -251,7 +254,7 @@ const App: React.FC = () => {
         )}
 
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505] relative">
-          {/* Ramazon Bezaklari */}
+          {/* Ramazon Bezaklari - Eng orqa fonda */}
           {!shouldHideGlobalNav && <RamadanDecoration />}
 
           {!selectedMovie && !isPlayerActive && !activeVideoAd && page !== 'welcome' && (

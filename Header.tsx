@@ -31,7 +31,7 @@ export const Header: React.FC<any> = ({
   
   const { isInstallable, installApp } = usePWA(); 
 
-  // Real-vaqt soati
+  // Real-vaqt soati - Har soniya yangilanadi
   useEffect(() => {
     const clockTimer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(clockTimer);
@@ -114,8 +114,8 @@ export const Header: React.FC<any> = ({
   return (
     <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between pointer-events-auto">
-            <div className="flex items-center gap-3 md:gap-8">
-                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
+            <div className="flex items-center gap-2 md:gap-8">
+                <div className="flex items-center gap-2 md:gap-3 cursor-pointer group" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
                     <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
                         {customLogo ? (
                             <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -123,12 +123,12 @@ export const Header: React.FC<any> = ({
                             <UzumakiLogo className="w-full h-full p-1 text-orange-500 bg-black" />
                         )}
                     </div>
-                    {/* DIGITAL CLOCK NEXT TO LOGO */}
-                    <div className="hidden sm:flex flex-col justify-center border-l border-white/10 pl-3 h-8">
-                        <span className="text-white font-black text-sm tracking-tighter leading-none">
-                            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {/* SOAT - Endi hamma yerda ko'rinadi */}
+                    <div className="flex flex-col justify-center border-l border-white/10 pl-2 md:pl-3 h-8">
+                        <span className="text-white font-black text-xs md:text-sm tracking-tighter leading-none neon-clock">
+                            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </span>
-                        <span className="text-[7px] text-orange-500 font-bold uppercase tracking-widest mt-0.5">Hozirgi Vaqt</span>
+                        <span className="text-[6px] md:text-[7px] text-orange-500 font-black uppercase tracking-widest mt-0.5 opacity-80">Tizim Vaqti</span>
                     </div>
                 </div>
 
@@ -149,21 +149,11 @@ export const Header: React.FC<any> = ({
                 {/* RAMAZON HEADER WIDGET */}
                 <button 
                     onClick={() => onNavigate('ramazon')}
-                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-600/20 to-yellow-600/10 border border-orange-500/30 rounded-xl hover:scale-105 transition-all group shadow-lg shadow-orange-900/10"
+                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-600/30 to-yellow-600/20 border border-orange-500/50 rounded-xl hover:scale-105 transition-all group shadow-lg shadow-orange-900/20 active:scale-95"
                 >
-                    <Moon size={16} className="text-orange-500 animate-pulse fill-orange-500/20" />
+                    <Moon size={18} className="text-orange-500 animate-pulse fill-orange-500" />
                     <span className="text-[10px] font-black text-white uppercase tracking-tighter hidden sm:inline">{ramazonText}</span>
-                    <span className="text-[8px] font-black text-white uppercase sm:hidden">{ramazonText}</span>
-                </button>
-
-                {isInstallable && (
-                    <button onClick={installApp} className="p-2 md:p-2.5 rounded-xl bg-orange-600/20 text-orange-500 hover:bg-orange-600 hover:text-white transition-all active:scale-95 border border-orange-600/30">
-                        <Download size={20} />
-                    </button>
-                )}
-
-                <button onClick={() => onNavigate('ai-assistant')} className={`p-2 md:p-2.5 rounded-xl transition-all active:scale-95 ${currentPage === 'ai-assistant' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-blue-400'}`}>
-                    <Sparkles size={22} />
+                    <span className="text-[9px] font-black text-white uppercase sm:hidden">{ramazonText}</span>
                 </button>
 
                 <button onClick={onSearchClick} className="p-2 text-white hover:text-orange-500 transition-colors active:scale-95">
