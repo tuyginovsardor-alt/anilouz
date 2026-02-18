@@ -2,7 +2,7 @@
   "lang": "uz-UZ",
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "description": "Anilo.uz - O'zbekistondagi eng yirik anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilova orqali yanada qulay interfeys va tezkor yuklanishdan bahramand bo'ling.",
+  "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilova orqali yanada qulay interfeys va tezkor yuklanishdan bahramand bo'ling.",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",
   "display": "standalone",
@@ -62,35 +62,42 @@
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Anilo Home Screen"
+      "label": "Anilo Asosiy Sahifa"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Anime Details View"
+      "label": "Anime Tafsilotlari"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Professional Player"
+      "label": "Pleyer Interfeysi"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Anilo Desktop Dashboard"
+      "label": "Desktop Katalog"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Catalog and Filters"
+      "label": "Dashboard Boshqaruvi"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Premium Rejalar"
     }
   ],
   "related_applications": [],
