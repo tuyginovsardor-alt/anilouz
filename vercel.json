@@ -1,3 +1,4 @@
+
 {
   "rewrites": [
     {
@@ -31,7 +32,7 @@
         },
         {
           "key": "Content-Type",
-          "value": "image/png"
+          "value": "image/jpeg"
         }
       ]
     },
