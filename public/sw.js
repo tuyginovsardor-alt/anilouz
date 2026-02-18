@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'anilo-pwa-v37';
+const CACHE_NAME = 'anilo-pwa-v38'; // Versiya oshirildi
 
 const PRE_CACHE_ASSETS = [
   '/',

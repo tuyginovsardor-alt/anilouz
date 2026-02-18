@@ -3,8 +3,8 @@
   "lang": "uz-UZ",
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilovasi orqali oflayn rejim va tezkor yuklanish imkoniyatidan foydalaning. Eng so'nggi va sara animelar faqat bizning platformada.",
-  "id": "uz.anilo.pwa.v7",
+  "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilovasi orqali oflayn rejim va tezkor yuklanish imkoniyatidan foydalaning.",
+  "id": "uz.anilo.pwa.v10_force_jpg",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": [
@@ -18,9 +18,7 @@
   "categories": [
     "entertainment",
     "video",
-    "movies",
-    "social",
-    "lifestyle"
+    "movies"
   ],
   "dir": "ltr",
   "icons": [
@@ -46,22 +44,7 @@
   "shortcuts": [
     {
       "name": "Katalog",
-      "short_name": "Katalog",
-      "description": "Barcha animelar ro'yxati",
       "url": "/?page=catalog",
-      "icons": [
-        {
-          "src": "/logo.jpg",
-          "sizes": "192x192",
-          "type": "image/jpeg"
-        }
-      ]
-    },
-    {
-      "name": "Konkurs",
-      "short_name": "Konkurs",
-      "description": "Sovrinli o'yinlarda qatnashing",
-      "url": "/?page=aniconcurs",
       "icons": [
         {
           "src": "/logo.jpg",
@@ -77,25 +60,14 @@
       "sizes": "390x844",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Anilo Mobile Interface"
+      "label": "Anilo Mobile"
     },
     {
       "src": "/logo.jpg",
       "sizes": "1920x1080",
       "type": "image/jpeg",
       "form_factor": "wide",
-      "label": "Anilo Desktop Experience"
+      "label": "Anilo Desktop"
     }
-  ],
-  "share_target": {
-    "action": "/?page=search",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  },
-  "related_applications": [],
-  "prefer_related_applications": false
+  ]
 }
