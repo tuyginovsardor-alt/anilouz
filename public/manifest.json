@@ -2,16 +2,17 @@
   "lang": "uz-UZ",
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD sifatda tomosha qiling va sovrinlar yuting.",
+  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD sifatda tomosha qiling va sovrinlar yuting. Professional dublyaj va eng so'nggi premyeralar.",
   "id": "/",
   "start_url": "/?source=pwa",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "minimal-ui"],
   "background_color": "#050505",
   "theme_color": "#f97316",
   "orientation": "portrait",
   "scope": "/",
-  "categories": ["entertainment", "video", "games", "movies"],
+  "categories": ["entertainment", "video", "movies", "games"],
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/logo.png",
@@ -37,12 +38,14 @@
       "name": "Katalog",
       "short_name": "Katalog",
       "url": "/?page=catalog",
+      "description": "Barcha animelar ro'yxati",
       "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     },
     {
       "name": "Konkurs",
       "short_name": "Konkurs",
       "url": "/?page=aniconcurs",
+      "description": "Sovrinli o'yinlarda qatnashing",
       "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     }
   ],
@@ -51,15 +54,15 @@
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Anilo Desktop"
+      "form_factor": "narrow",
+      "label": "Anilo Mobile Interface"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Anilo Mobile"
+      "form_factor": "wide",
+      "label": "Anilo Desktop Interface"
     }
   ]
 }
