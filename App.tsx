@@ -15,20 +15,21 @@ import { ShopPage } from './ShopPage';
 import { ShopAdminPage } from './ShopAdminPage';
 import { CatalogPage } from './CatalogPage'; 
 import { FandubDashboard } from './FandubDashboard';
+import { RamazonPage } from './RamazonPage'; // Yangi import
 import { VideoAdPlayer } from './components/VideoAdPlayer';
 import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon } from 'lucide-react';
 import { getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
 import { PWAProvider } from './components/InstallPWA';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard' | 'ramazon';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'bundle_manager';
 export type LegalDocType = 'privacy' | 'terms';
@@ -209,7 +210,6 @@ const App: React.FC = () => {
       );
   }
 
-  // Mobile nav hide condition updated to include fandub-dashboard
   const shouldHideGlobalNav = selectedMovie || isPlayerActive || activeVideoAd || 
                              ['welcome', 'admin', 'copyright', 'fandub-dashboard'].includes(page);
 
@@ -272,6 +272,7 @@ const App: React.FC = () => {
                         {page === 'shop' && <ShopPage />}
                         {page === 'shop-admin' && <ShopAdminPage />}
                         {page === 'fandub-dashboard' && <FandubDashboard />}
+                        {page === 'ramazon' && <RamazonPage onBack={() => setPage('dashboard')} />}
                       </>
                     )}
                   </>
@@ -292,7 +293,7 @@ const App: React.FC = () => {
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
                     <button onClick={() => handleNavigation('dashboard')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500' : 'text-zinc-600'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Asosiy</span></button>
-                    <button onClick={() => handleNavigation('catalog')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'catalog' ? 'text-orange-500' : 'text-zinc-600'}`}><Layers size={22} /><span className="text-[9px] font-black uppercase">Katalog</span></button>
+                    <button onClick={() => handleNavigation('ramazon')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'ramazon' ? 'text-orange-500' : 'text-zinc-600'}`}><Moon size={22} /><span className="text-[9px] font-black uppercase">Ramazon</span></button>
                     <button onClick={() => handleNavigation('shop')} className={`flex flex-col items-center gap-1 w-1/5 -mt-6 group`}><div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}><ShoppingBag size={20} /></div><span className={`text-[9px] font-black uppercase ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span></button>
                     <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}><LayoutGrid size={22} /><span className="text-[9px] font-black uppercase">Fandub</span></button>
                     

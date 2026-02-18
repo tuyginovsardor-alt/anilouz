@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Movie } from './types';
 import { getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { MovieCard } from './components/MovieCard';
-import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight, Bookmark, Plus } from 'lucide-react';
+import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight, Bookmark, Plus, Moon } from 'lucide-react';
 import { useNotification } from './hooks/useNotification';
 
 interface DashboardHomePageProps {
@@ -272,6 +273,29 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                             className={`transition-all duration-500 rounded-full ${i === heroIndex ? 'w-8 h-2 bg-orange-500 shadow-lg shadow-orange-500/50' : 'w-2 h-2 bg-white/40 hover:bg-white/80'}`}
                         ></button>
                     ))}
+                </div>
+            </div>
+
+            {/* RAMAZON WIDGET (NEW) */}
+            <div className="container mx-auto px-4 md:px-8 mb-16">
+                <div 
+                    onClick={() => window.location.href='/?page=ramazon'}
+                    className="relative w-full p-6 md:p-8 rounded-[2.5rem] bg-gradient-to-br from-orange-600/20 to-zinc-900 border border-orange-500/30 shadow-2xl cursor-pointer hover:border-orange-500 transition-all group overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                        <Moon size={150} className="text-orange-500" />
+                    </div>
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="text-center md:text-left">
+                            <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter mb-2">Ramazon 2025</h2>
+                            <p className="text-zinc-400 text-sm font-bold uppercase tracking-widest">Saharlik va Iftorlik vaqtlari • Duolar</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-orange-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl group-hover:bg-orange-500 transition-colors">
+                                VAQTLARNI KO'RISH
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
