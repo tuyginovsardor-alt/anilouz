@@ -46,6 +46,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     
+    <script>
+      // Service Worker registration moved to HTML for better PWA bot discovery
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            console.log('PWA: Service Worker ready.');
+          }).catch(function(err) {
+            console.log('PWA: SW Error:', err);
+          });
+        });
+      }
+    </script>
+
     <script type="importmap">
 {
   "imports": {

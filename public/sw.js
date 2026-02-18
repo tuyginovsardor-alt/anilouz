@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'anilo-pwa-v40';
+const CACHE_NAME = 'anilo-pwa-v41';
 
 const PRE_CACHE_ASSETS = [
   '/',

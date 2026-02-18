@@ -4,7 +4,7 @@
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
   "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilovasi orqali oflayn rejim va tezkor yuklanish imkoniyatidan foydalaning.",
-  "id": "uz.anilo.pwa.v12_final_png",
+  "id": "uz.anilo.pwa.v15_final_fix",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": [
