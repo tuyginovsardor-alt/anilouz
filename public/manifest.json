@@ -2,17 +2,17 @@
   "lang": "uz-UZ",
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD sifatda tomosha qiling va sovrinlar yuting. Professional dublyaj va eng so'nggi premyeralar.",
-  "id": "/",
+  "description": "Anilo.uz - O'zbekistondagi eng yirik anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilova orqali yanada qulay interfeys va tezkor yuklanishdan bahramand bo'ling.",
+  "id": "/?source=pwa",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#f97316",
   "orientation": "portrait",
   "scope": "/",
-  "categories": ["entertainment", "video", "movies", "games"],
   "dir": "ltr",
-  "prefer_related_applications": false,
+  "categories": ["entertainment", "video", "movies", "games", "social"],
+  "iarc_rating_id": "e84ca53d-8646-4076-b60b-8f35956f4b66",
   "icons": [
     {
       "src": "/logo.png",
@@ -47,6 +47,13 @@
       "url": "/?page=aniconcurs",
       "description": "Sovrinli o'yinlarda qatnashing",
       "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ramazon",
+      "short_name": "Ramazon",
+      "url": "/?page=ramazon",
+      "description": "Ramazon taqvimi",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     }
   ],
   "screenshots": [
@@ -55,14 +62,37 @@
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Anilo Mobile Interface"
+      "label": "Anilo Home Screen"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Anime Details View"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Professional Player"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Anilo Desktop Interface"
+      "label": "Anilo Desktop Dashboard"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Catalog and Filters"
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
