@@ -3,6 +3,7 @@
   "description": "Sevimli animelaringizni yuqori sifatda tomosha qiling. Anilo.uz - O'zbekistonning eng katta anime portali.",
   "requestFramePermissions": [
     "camera",
-    "microphone"
+    "microphone",
+    "geolocation"
   ]
 }
