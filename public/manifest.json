@@ -2,7 +2,7 @@
   "lang": "uz-UZ",
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD va 4K sifatda, o'zbek tilida tomosha qiling.",
+  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD sifatda, o'zbek tilida tomosha qiling, ATC tangalarini yig'ing va sovrinlar yuting.",
   "id": "/",
   "start_url": "/?source=pwa",
   "display": "standalone",
@@ -11,22 +11,22 @@
   "theme_color": "#f97316",
   "orientation": "portrait",
   "scope": "/",
-  "categories": ["entertainment", "video", "movies"],
+  "categories": ["entertainment", "video", "games", "movies"],
   "icons": [
     {
-      "src": "logo.png",
+      "src": "/logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "logo.png",
+      "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "logo.png",
+      "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -38,37 +38,30 @@
       "short_name": "Katalog",
       "description": "Barcha animelar ro'yxati",
       "url": "/?page=catalog",
-      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     },
     {
-      "name": "Qidiruv",
-      "short_name": "Qidiruv",
-      "description": "Anime qidirish",
-      "url": "/?page=search",
-      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Ramazon",
-      "short_name": "Ramazon",
-      "description": "Taqvim va duolar",
-      "url": "/?page=ramazon",
-      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+      "name": "Konkurs",
+      "short_name": "Konkurs",
+      "description": "ATC yig'ish va yutuqlar",
+      "url": "/?page=aniconcurs",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     }
   ],
   "screenshots": [
     {
-      "src": "logo.png",
+      "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Anilo Desktop versiyasi"
+      "label": "Anilo Desktop"
     },
     {
-      "src": "logo.png",
+      "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Anilo Mobile versiyasi"
+      "label": "Anilo Mobile"
     }
   ]
 }

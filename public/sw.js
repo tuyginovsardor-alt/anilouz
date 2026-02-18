@@ -1,11 +1,11 @@
-const CACHE_NAME = 'anilo-pwa-v11';
+const CACHE_NAME = 'anilo-pwa-v12';
 
 const PRE_CACHE_ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './logo.svg',
-  './logo.png'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/logo.png',
+  '/logo.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -30,13 +30,9 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// PWABuilder ballini oshirish uchun zarur bo'lgan qo'shimcha logiclar
+// PWA Builder Capability ballari uchun
 self.addEventListener('sync', (event) => {
-    console.log('SW: Background Sync faollashdi', event.tag);
-});
-
-self.addEventListener('periodicsync', (event) => {
-    console.log('SW: Periodic Sync faollashdi', event.tag);
+    console.log('SW: Background Sync faol', event.tag);
 });
 
 self.addEventListener('push', (event) => {
@@ -59,7 +55,7 @@ self.addEventListener('fetch', (event) => {
         return caches.match(event.request).then(cached => {
             if (cached) return cached;
             if (event.request.mode === 'navigate') {
-                return caches.match('./index.html');
+                return caches.match('/index.html');
             }
         });
       })
