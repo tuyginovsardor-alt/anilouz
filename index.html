@@ -29,7 +29,7 @@
     <link rel="apple-touch-icon" href="/logotip.png" />
     <link rel="shortcut icon" href="/logotip.png" />
     
-    <!-- PWA Optimized Meta - CRITICAL FOR DISCOVERY -->
+    <!-- PWA Optimized Meta -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#f97316" />
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -38,7 +38,6 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Anilo">
     <meta name="msapplication-TileColor" content="#050505">
-    <meta name="msapplication-tap-highlight" content="no">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
@@ -47,8 +46,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     
     <script>
-      // Service Worker-ni ro'yxatdan o'tkazishni HTML boshiga qo'yamiz
-      // Bu botlar uchun kashf qilishni (discovery) 100% kafolatlaydi
+      // Service Worker-ni ro'yxatdan o'tkazishni tezlashtiramiz
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js', { scope: '/' })
@@ -56,7 +54,7 @@
               console.log('PWA: Ro\'yxatdan o\'tdi:', reg.scope);
             })
             .catch(function(err) {
-              console.log('PWA: Xato:', err);
+              console.warn('PWA: Ro\'yxatdan o\'tishda xato:', err);
             });
         });
       }
