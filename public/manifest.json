@@ -1,14 +1,17 @@
 {
+  "lang": "uz-UZ",
+  "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "name": "Anilo.uz - Anime Olami",
-  "description": "O'zbekistondagi yagona professional anime portali.",
+  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD va 4K sifatda, o'zbek tilida tomosha qiling.",
   "id": "/",
   "start_url": "/?source=pwa",
   "display": "standalone",
-  "scope": "/",
-  "orientation": "portrait",
+  "display_override": ["window-controls-overlay", "minimal-ui"],
   "background_color": "#050505",
   "theme_color": "#f97316",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["entertainment", "video", "movies"],
   "icons": [
     {
       "src": "logo.png",
@@ -27,12 +30,45 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Katalog",
+      "short_name": "Katalog",
+      "description": "Barcha animelar ro'yxati",
+      "url": "/?page=catalog",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
     },
     {
-      "src": "logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "name": "Qidiruv",
+      "short_name": "Qidiruv",
+      "description": "Anime qidirish",
+      "url": "/?page=search",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ramazon",
+      "short_name": "Ramazon",
+      "description": "Taqvim va duolar",
+      "url": "/?page=ramazon",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Anilo Desktop versiyasi"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Anilo Mobile versiyasi"
     }
   ]
 }
