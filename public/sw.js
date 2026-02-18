@@ -1,10 +1,9 @@
-const CACHE_NAME = 'anilo-pwa-v31';
+const CACHE_NAME = 'anilo-pwa-v32';
 
 const PRE_CACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.png',
   '/logo.svg',
   '/robots.txt'
 ];
@@ -31,18 +30,12 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-self.addEventListener('sync', (event) => {
-    if (event.tag === 'sync-data') {
-        console.log('Syncing...');
-    }
-});
-
 self.addEventListener('push', (event) => {
     const data = event.data ? event.data.json() : { title: 'Anilo.uz', body: 'Yangi anime qo\'shildi!' };
     event.waitUntil(
         self.registration.showNotification(data.title, {
             body: data.body,
-            icon: '/logo.png'
+            icon: '/logo.svg'
         })
     );
 });

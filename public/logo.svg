@@ -1,12 +1,17 @@
-<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="#f97316"/>
-  <path d="M256 256c0-44.183-35.817-80-80-80s-80 35.817-80 80 35.817 80 80 80 80-35.817 80-80z" fill="#be123c" opacity="0.2"/>
-  <path d="M256 256c0-66.274-53.726-120-120-120S16 189.726 16 256s53.726 120 120 120 120-53.726 120-120zm-120 80c-44.183 0-80-35.817-80-80s35.817-80 80-80 80 35.817 80 80-35.817 80-80 80z" fill="#be123c" opacity="0.4"/>
-  <path d="M256 256c0 110.457-89.543 200-200 200S-144 366.457-144 256 56-144 256 16s400 329.543 400 440c0 110.457-89.543 200-200 200s-200-89.543-200-200z" fill="none" stroke="#000" stroke-width="20" stroke-linecap="round" transform="matrix(0.5, 0, 0, 0.5, 128, 128)"/>
-  <path d="M256 256c0-22.091-17.909-40-40-40s-40 17.909-40 40 17.909 40 40 40 40-17.909 40-40zm-40 100c-77.32 0-140-62.68-140-140s62.68-140 140-140 140 62.68 140 140-62.68 140-140 140z" fill="#be123c" transform="matrix(1.2, 0, 0, 1.2, -51.2, -51.2)"/>
-  <!-- Spiral path -->
-  <path d="M256 256c0-33.137-26.863-60-60-60s-60 26.863-60 60 26.863 60 60 60 60-26.863 60-60zm60 0c0-66.274-53.726-120-120-120s-120 53.726-120 120 53.726 120 120 120 120-53.726 120-120z" fill="#000" fill-rule="evenodd" clip-rule="evenodd" opacity="0.8"/>
-  <path d="M256 256c0-20 16-36 36-36s36 16 36 36-16 36-36 36-36-16-36-36zm76 0c0-42 34-76 76-76s76 34 76 76-34 76-76 76-76-34-76-76z" fill="#000" opacity="0.1"/>
-  <!-- Central spiral path drawn more accurately to user request -->
-  <path d="M256 256C256 210 220 210 220 256C220 310 290 310 290 256C290 180 170 180 170 256C170 350 342 350 342 256C342 130 110 130 110 256C110 410 402 410 402 256C402 100 280 60 210 70" stroke="#000" stroke-width="15" stroke-linecap="round" fill="none"/>
+<svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Asosiy to'q sariq fon (Kvadrat burchaklari yumaloq) -->
+  <rect width="512" height="512" rx="100" fill="#f97316"/>
+  
+  <!-- Qora tashqi halqa -->
+  <circle cx="256" cy="256" r="220" stroke="black" stroke-width="25" fill="#be123c"/>
+  
+  <!-- Spiral (Uzumaki uslubida) -->
+  <path d="M256 256C256 215 225 215 225 256C225 300 285 300 285 256C285 190 185 190 185 256C185 330 325 330 325 256C325 150 145 150 145 256C145 370 365 370 365 256C365 110 280 80 230 85" 
+        stroke="black" 
+        stroke-width="20" 
+        stroke-linecap="round" 
+        fill="none"/>
+        
+  <!-- Qo'shimcha detallar -->
+  <circle cx="256" cy="256" r="215" stroke="black" stroke-width="2" opacity="0.3" fill="none"/>
 </svg>
