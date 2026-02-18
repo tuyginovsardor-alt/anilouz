@@ -2,7 +2,7 @@
   "lang": "uz-UZ",
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD sifatda, o'zbek tilida tomosha qiling, ATC tangalarini yig'ing va sovrinlar yuting.",
+  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD sifatda tomosha qiling va sovrinlar yuting.",
   "id": "/",
   "start_url": "/?source=pwa",
   "display": "standalone",
@@ -36,14 +36,12 @@
     {
       "name": "Katalog",
       "short_name": "Katalog",
-      "description": "Barcha animelar ro'yxati",
       "url": "/?page=catalog",
       "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     },
     {
       "name": "Konkurs",
       "short_name": "Konkurs",
-      "description": "ATC yig'ish va yutuqlar",
       "url": "/?page=aniconcurs",
       "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     }

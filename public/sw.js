@@ -1,4 +1,4 @@
-const CACHE_NAME = 'anilo-pwa-v12';
+const CACHE_NAME = 'anilo-pwa-v20';
 
 const PRE_CACHE_ASSETS = [
   '/',
@@ -30,13 +30,13 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// PWA Builder Capability ballari uchun
+// PWA Builder ballari uchun placeholderlar
 self.addEventListener('sync', (event) => {
-    console.log('SW: Background Sync faol', event.tag);
+    console.log('Background sync triggering...');
 });
 
 self.addEventListener('push', (event) => {
-    console.log('SW: Push xabari keldi');
+    console.log('Push notification received');
 });
 
 self.addEventListener('fetch', (event) => {
