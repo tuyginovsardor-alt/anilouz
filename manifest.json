@@ -4,7 +4,7 @@
   "short_name": "Anilo",
   "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD sifatda tomosha qiling va sovrinlar yuting.",
   "id": "/",
-  "start_url": "/?source=pwa",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#f97316",
@@ -23,30 +23,6 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Katalog",
-      "short_name": "Katalog",
-      "url": "/?page=catalog",
-      "icons": [{ "src": "/logo.svg", "sizes": "any" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/logo.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "form_factor": "wide",
-      "label": "Anilo Desktop"
-    },
-    {
-      "src": "/logo.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "form_factor": "narrow",
-      "label": "Anilo Mobile"
     }
   ]
 }
