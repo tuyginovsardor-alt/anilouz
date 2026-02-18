@@ -5,10 +5,6 @@
       "destination": "https://tspay.uz/api/v1/$1"
     },
     {
-      "source": "/logo.svg",
-      "destination": "/logo.svg"
-    },
-    {
       "source": "/logo.png",
       "destination": "/logo.png"
     },
@@ -21,17 +17,34 @@
       "destination": "/sw.js"
     },
     {
-      "source": "/((?!assets/|.*\\.(?:svg|png|jpg|jpeg|gif|ico|js|css|json|txt|xml)$).*)",
+      "source": "/((?!assets/|.*\\.(?:png|svg|ico|jpg|jpeg|json|xml|js|css)$).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/(.*)\\.(?:svg|png|jpg|json)",
+      "source": "/logo.png",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
           "value": "*"
+        },
+        {
+          "key": "Content-Type",
+          "value": "image/png"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
         }
       ]
     }
