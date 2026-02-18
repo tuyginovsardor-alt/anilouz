@@ -5,21 +5,33 @@
       "destination": "https://tspay.uz/api/v1/$1"
     },
     {
-      "source": "/((?!assets/|logo\\.svg|logo\\.png|manifest\\.json|sw\\.js|robots\\.txt|sitemap\\.xml|.*\\.ico|.*\\.png|.*\\.jpg).*)",
+      "source": "/logo.svg",
+      "destination": "/logo.svg"
+    },
+    {
+      "source": "/logo.png",
+      "destination": "/logo.png"
+    },
+    {
+      "source": "/manifest.json",
+      "destination": "/manifest.json"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
+      "source": "/((?!assets/|.*\\.(?:svg|png|jpg|jpeg|gif|ico|js|css|json|txt|xml)$).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/logo.svg",
+      "source": "/(.*)\\.(?:svg|png|jpg|json)",
       "headers": [
         {
-          "key": "Content-Type",
-          "value": "image/svg+xml"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     }
