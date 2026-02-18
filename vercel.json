@@ -6,19 +6,19 @@
       "destination": "https://tspay.uz/api/v1/$1"
     },
     {
-      "source": "/logotip.png",
-      "destination": "/logotip.png"
+      "source": "/sw.js",
+      "destination": "/sw.js"
     },
     {
       "source": "/manifest.json",
       "destination": "/manifest.json"
     },
     {
-      "source": "/sw.js",
-      "destination": "/sw.js"
+      "source": "/logotip.png",
+      "destination": "/logotip.png"
     },
     {
-      "source": "/((?!assets/|.*\\.(?:png|svg|ico|jpg|jpeg|json|xml|js|css)$).*)",
+      "source": "/((?!assets/|logotip\\.png|manifest\\.json|sw\\.js|sitemap\\.xml|robots\\.txt|.*\\.(?:png|svg|ico|jpg|jpeg|json|xml|js|css)$).*)",
       "destination": "/index.html"
     }
   ],
@@ -26,10 +26,6 @@
     {
       "source": "/logotip.png",
       "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
         {
           "key": "Content-Type",
           "value": "image/png"
@@ -44,12 +40,25 @@
       "source": "/manifest.json",
       "headers": [
         {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
           "key": "Content-Type",
           "value": "application/manifest+json"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
         }
       ]
     }

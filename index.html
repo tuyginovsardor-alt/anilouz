@@ -29,7 +29,7 @@
     <link rel="apple-touch-icon" href="/logotip.png" />
     <link rel="shortcut icon" href="/logotip.png" />
     
-    <!-- PWA Optimized Meta -->
+    <!-- PWA Optimized Meta - CRITICAL FOR DISCOVERY -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#f97316" />
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,14 +47,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     
     <script>
-      // Service Worker registration moved to HTML for better PWA bot discovery
+      // Service Worker-ni ro'yxatdan o'tkazishni HTML boshiga qo'yamiz
+      // Bu botlar uchun kashf qilishni (discovery) 100% kafolatlaydi
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').then(function(reg) {
-            console.log('PWA: Service Worker ready.');
-          }).catch(function(err) {
-            console.log('PWA: SW Error:', err);
-          });
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(function(reg) {
+              console.log('PWA: Ro\'yxatdan o\'tdi:', reg.scope);
+            })
+            .catch(function(err) {
+              console.log('PWA: Xato:', err);
+            });
         });
       }
     </script>
