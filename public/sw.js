@@ -1,11 +1,12 @@
-const CACHE_NAME = 'anilo-pwa-v20';
+const CACHE_NAME = 'anilo-pwa-v30';
 
 const PRE_CACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/logo.png',
-  '/logo.svg'
+  '/logo.svg',
+  '/robots.txt'
 ];
 
 self.addEventListener('install', (event) => {
@@ -30,13 +31,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// PWA Builder ballari uchun placeholderlar
 self.addEventListener('sync', (event) => {
-    console.log('Background sync triggering...');
+    if (event.tag === 'sync-data') {
+        console.log('Syncing...');
+    }
 });
 
 self.addEventListener('push', (event) => {
-    console.log('Push notification received');
+    const data = event.data ? event.data.json() : { title: 'Anilo.uz', body: 'Yangi anime qo\'shildi!' };
+    event.waitUntil(
+        self.registration.showNotification(data.title, {
+            body: data.body,
+            icon: '/logo.png'
+        })
+    );
 });
 
 self.addEventListener('fetch', (event) => {
