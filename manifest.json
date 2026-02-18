@@ -7,12 +7,21 @@
   "id": "uz.anilo.app.v1",
   "start_url": "/?source=pwa",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "minimal-ui"
+  ],
   "background_color": "#050505",
   "theme_color": "#f97316",
   "orientation": "portrait",
   "scope": "/",
-  "categories": ["entertainment", "video", "movies", "social", "lifestyle"],
+  "categories": [
+    "entertainment",
+    "video",
+    "movies",
+    "social",
+    "lifestyle"
+  ],
   "dir": "ltr",
   "icons": [
     {
@@ -40,34 +49,52 @@
       "short_name": "Katalog",
       "description": "Barcha animelar ro'yxati",
       "url": "/?page=catalog",
-      "icons": [{ "src": "logo.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "logo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Konkurs",
       "short_name": "Konkurs",
       "description": "Sovrinli o'yinlarda qatnashing",
       "url": "/?page=aniconcurs",
-      "icons": [{ "src": "logo.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "logo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Ramazon",
       "short_name": "Ramazon",
       "description": "Ramazon taqvimi va vaqtlari",
       "url": "/?page=ramazon",
-      "icons": [{ "src": "logo.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "logo.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ],
   "screenshots": [
     {
       "src": "logo.png",
-      "sizes": "512x512",
+      "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Anilo Mobile Interface"
     },
     {
       "src": "logo.png",
-      "sizes": "1280x720",
+      "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Anilo Desktop Experience"
