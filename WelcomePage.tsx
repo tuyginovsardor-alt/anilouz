@@ -11,7 +11,7 @@ interface WelcomePageProps {
   onMovieClick: (movie: Movie) => void; 
   onSearch: (query: string) => void;
   onStart: () => void; 
-  onNavigate: (page: Page) => void; // Added onNavigate to props
+  onNavigate: (page: Page) => void;
 }
 
 export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart, onNavigate }) => {
@@ -51,11 +51,15 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart, onNavigate })
           
           <div className="mb-8 flex flex-row items-center gap-5">
               <div className="w-16 h-16 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center shrink-0">
-                  {customLogo ? (
-                      <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
-                  ) : (
-                      <UzumakiLogo className="w-full h-full p-2 text-orange-500 drop-shadow-md" />
-                  )}
+                  <img 
+                    src={customLogo || "/logotip.png"} 
+                    alt="Anilo Logo" 
+                    className="w-full h-full object-cover p-1"
+                    onError={(e) => {
+                        // Agar PNG ham yuklanmasa, SVG ga qaytamiz
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzAwMDAwMCIvPjxwYXRoIGQ9Ik0yNTYgMTIwQzE4MC44OSAxMjAgMTIwIDE4MC44OSAxMjAgMjU2QzEyMCAzMzEuMTEgMTgwLjg5IDM5MiAyNTYgMzkyQzMzMS4xMSAzOTIgMzkyIDMzMS4xMSAzOTIgMjU2IiBzdHJva2U9IiNmOTczMTYiIHN0cm9rZS13aWR0aD0iMjQiLz48L3N2Zz4=';
+                    }}
+                  />
               </div>
               <div className="text-left">
                   <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-xl font-mono">
@@ -94,7 +98,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart, onNavigate })
           </div>
       </div>
 
-      {/* --- FOOTER LEGAL LINKS (NEW) --- */}
+      {/* FOOTER LEGAL LINKS */}
       <div className="absolute bottom-8 left-0 right-0 z-20 flex flex-col items-center gap-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <div className="flex items-center gap-2 md:gap-6 bg-black/40 backdrop-blur-md border border-white/5 p-1 rounded-full px-4">
               <button 

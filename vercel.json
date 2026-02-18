@@ -6,14 +6,6 @@
       "destination": "https://tspay.uz/api/v1/$1"
     },
     {
-      "source": "/sw.js",
-      "destination": "/sw.js"
-    },
-    {
-      "source": "/manifest.json",
-      "destination": "/manifest.json"
-    },
-    {
       "source": "/logotip.png",
       "destination": "/logotip.png"
     },
@@ -41,20 +33,20 @@
       ]
     },
     {
-      "source": "/manifest.json",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/manifest+json"
-        }
-      ]
-    },
-    {
       "source": "/logotip.png",
       "headers": [
         {
           "key": "Content-Type",
           "value": "image/png"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
         }
       ]
     }

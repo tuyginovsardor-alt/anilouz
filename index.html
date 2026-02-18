@@ -46,15 +46,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     
     <script>
-      // Service Worker-ni ro'yxatdan o'tkazishni tezlashtiramiz
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(function(reg) {
-              console.log('PWA: Ro\'yxatdan o\'tdi:', reg.scope);
+              console.log('PWA: Ready', reg.scope);
             })
             .catch(function(err) {
-              console.warn('PWA: Ro\'yxatdan o\'tishda xato:', err);
+              console.warn('PWA: Error', err);
             });
         });
       }

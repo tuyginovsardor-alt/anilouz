@@ -4,7 +4,7 @@
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
   "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilovasi orqali oflayn rejim va tezkor yuklanish imkoniyatidan foydalaning.",
-  "id": "uz.anilo.pwa.v16_logotip_png",
+  "id": "uz.anilo.pwa.v18_final_png",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": [
@@ -15,12 +15,6 @@
   "theme_color": "#f97316",
   "orientation": "portrait",
   "scope": "/",
-  "categories": [
-    "entertainment",
-    "video",
-    "movies"
-  ],
-  "dir": "ltr",
   "icons": [
     {
       "src": "/logotip.png",
@@ -39,35 +33,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Katalog",
-      "url": "/?page=catalog",
-      "icons": [
-        {
-          "src": "/logotip.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/logotip.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Anilo Mobile"
-    },
-    {
-      "src": "/logotip.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Anilo Desktop"
     }
   ]
 }

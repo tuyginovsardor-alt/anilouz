@@ -1,9 +1,8 @@
 
-const CACHE_NAME = 'anilo-pwa-v46-stable';
+const CACHE_NAME = 'anilo-pwa-v48-png';
 
 const PRE_CACHE_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/logotip.png'
 ];
@@ -11,7 +10,11 @@ const PRE_CACHE_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRE_CACHE_ASSETS);
+      return Promise.all(
+        PRE_CACHE_ASSETS.map(url => {
+          return cache.add(url).catch(err => console.warn(`PWA: Keshga qo'shishda xato (${url}):`, err));
+        })
+      );
     })
   );
   self.skipWaiting();
@@ -45,7 +48,7 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       }).catch(() => {
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match('/');
         }
       });
 
