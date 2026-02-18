@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Moon, Sun, MapPin, Clock, Info, Share2 } from 'lucide-react';
 
@@ -6,35 +5,28 @@ interface RamazonPageProps {
     onBack: () => void;
 }
 
-// Viloyatlar va vaqt farqlari (Toshkentga nisbatan minutlar)
 const REGIONS: Record<string, number> = {
-    "Toshkent": 0,
-    "Andijon": -10,
-    "Namangan": -8,
-    "Farg'ona": -9,
-    "Jizzax": 5,
-    "Sirdaryo": 2,
-    "Samarqand": 8,
-    "Buxoro": 18,
-    "Navoiy": 12,
-    "Xorazm": 30,
-    "Nukus": 35,
-    "Qashqadaryo": 15,
-    "Surxondaryo": 12
+    "Toshkent": 0, "Andijon": -10, "Namangan": -8, "Farg'ona": -9, "Jizzax": 5,
+    "Sirdaryo": 2, "Samarqand": 8, "Buxoro": 18, "Navoiy": 12, "Xorazm": 30,
+    "Nukus": 35, "Qashqadaryo": 15, "Surxondaryo": 12
 };
 
-// Ramazon 2025 uchun taxminiy bazaviy vaqtlar (Toshkent uchun 1-kun)
-// Eslatma: Bu taxminiy vaqtlar. Haqiqiy vaqtlar O'zbekiston Musulmonlari Idorasi tomonidan e'lon qilinadi.
 const RAMADAN_START_DATE = new Date("2025-03-01T00:00:00");
 
 export const RamazonPage: React.FC<RamazonPageProps> = ({ onBack }) => {
-    const [selectedRegion, setSelectedRegion] = useState("Toshkent");
+    const [selectedRegion, setSelectedRegion] = useState(() => localStorage.getItem('anilo_ramazon_region') || "Toshkent");
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
     const [isRamadan, setIsRamadan] = useState(false);
     
-    // Hozirgi kun uchun vaqtlar (Mock data)
     const baseSahar = "05:15";
     const baseIftar = "18:20";
+
+    const handleRegionChange = (region: string) => {
+        setSelectedRegion(region);
+        localStorage.setItem('anilo_ramazon_region', region);
+        // Headerga o'zgarishni bildirish uchun event trigger qilamiz
+        window.dispatchEvent(new Event('storage'));
+    };
 
     const calculateRegionTime = (baseTime: string, offset: number) => {
         const [h, m] = baseTime.split(':').map(Number);
@@ -67,8 +59,6 @@ export const RamazonPage: React.FC<RamazonPageProps> = ({ onBack }) => {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white pb-32 animate-fade-in font-sans">
-            
-            {/* Header */}
             <div className="bg-zinc-900/50 backdrop-blur-md border-b border-white/5 px-6 py-6 flex items-center justify-between sticky top-0 z-50">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-orange-600 transition-colors">
@@ -80,7 +70,7 @@ export const RamazonPage: React.FC<RamazonPageProps> = ({ onBack }) => {
                     <MapPin size={14} className="text-orange-500" />
                     <select 
                         value={selectedRegion}
-                        onChange={(e) => setSelectedRegion(e.target.value)}
+                        onChange={(e) => handleRegionChange(e.target.value)}
                         className="bg-transparent text-xs font-black uppercase tracking-widest outline-none appearance-none cursor-pointer"
                     >
                         {Object.keys(REGIONS).map(r => <option key={r} value={r} className="bg-zinc-900">{r}</option>)}
@@ -89,8 +79,6 @@ export const RamazonPage: React.FC<RamazonPageProps> = ({ onBack }) => {
             </div>
 
             <div className="container mx-auto px-4 md:px-8 max-w-4xl mt-10 space-y-8">
-                
-                {/* Countdown Card */}
                 {!isRamadan && (
                     <div className="relative bg-gradient-to-br from-orange-600 to-red-600 rounded-[3rem] p-10 text-center shadow-2xl overflow-hidden group">
                         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
@@ -112,7 +100,6 @@ export const RamazonPage: React.FC<RamazonPageProps> = ({ onBack }) => {
                     </div>
                 )}
 
-                {/* Daily Times Card */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-zinc-900/50 border border-white/5 rounded-[2.5rem] p-8 flex flex-col items-center text-center group hover:border-orange-500/50 transition-all">
                         <div className="w-16 h-16 bg-blue-600/10 rounded-3xl flex items-center justify-center text-blue-500 mb-6 group-hover:scale-110 transition-transform">
@@ -135,7 +122,6 @@ export const RamazonPage: React.FC<RamazonPageProps> = ({ onBack }) => {
                     </div>
                 </div>
 
-                {/* Duolar */}
                 <div className="space-y-6">
                     <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8">
                         <h4 className="text-lg font-black uppercase tracking-tight text-orange-500 mb-4 flex items-center gap-3">
@@ -144,9 +130,6 @@ export const RamazonPage: React.FC<RamazonPageProps> = ({ onBack }) => {
                         <p className="text-zinc-200 text-lg leading-relaxed font-serif italic mb-6">
                             "Navaytu an asuma sovma shahri ramazona minal fajri ilal mag'ribi, xolisan lillahi ta'ala. Allohu akbar."
                         </p>
-                        <div className="bg-white/5 p-4 rounded-2xl text-xs text-zinc-500">
-                            <strong>Ma'nosi:</strong> Ramazon oyining ro'zasini subhdan to kun botguncha xolis Alloh uchun tutmoqlikni niyat qildim.
-                        </div>
                     </div>
 
                     <div className="bg-[#111] border border-white/5 rounded-[2.5rem] p-8">
@@ -156,22 +139,7 @@ export const RamazonPage: React.FC<RamazonPageProps> = ({ onBack }) => {
                         <p className="text-zinc-200 text-lg leading-relaxed font-serif italic mb-6">
                             "Allohumma laka sumtu va bika amantu va 'alayka tavakkaltu va 'ala rizqika aftartu, fag'firli ya g'offaru ma qoddamtu va ma axxortu."
                         </p>
-                        <div className="bg-white/5 p-4 rounded-2xl text-xs text-zinc-500">
-                            <strong>Ma'nosi:</strong> Ey Alloh, ushbu ro'zamni Sen uchun tutdim va Senga iymon keltirdim...
-                        </div>
                     </div>
-                </div>
-
-                <div className="p-8 bg-orange-600/5 border border-orange-500/10 rounded-[2.5rem] text-center">
-                    <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                        Taqvim vaqtlarida 1-2 daqiqa farq bo'lishi mumkin. Ramazon oyini munosib kutib oling!
-                    </p>
-                </div>
-
-                <div className="flex justify-center pt-10">
-                     <button className="flex items-center gap-2 text-zinc-600 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest">
-                         <Share2 size={16}/> Do'stlarga ulashish
-                     </button>
                 </div>
             </div>
         </div>
