@@ -26,9 +26,16 @@ export const Header: React.FC<any> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [ramazonText, setRamazonText] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
   const notificationRef = useRef<HTMLDivElement>(null);
   
   const { isInstallable, installApp } = usePWA(); 
+
+  // Real-vaqt soati
+  useEffect(() => {
+    const clockTimer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(clockTimer);
+  }, []);
 
   useEffect(() => {
       db.getAppConfig().then(config => {
@@ -55,10 +62,8 @@ export const Header: React.FC<any> = ({
               const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
               setRamazonText(`${days}k ${hours}s`);
           } else {
-              // Ramazon davrida (Saharlik 05:15, Iftorlik 18:20 taxminiy)
               const [h, m] = [now.getHours(), now.getMinutes()];
               const currentTotal = h * 60 + m;
-              
               const saharTotal = (5 * 60 + 15) + offset;
               const iftarTotal = (18 * 60 + 20) + offset;
 
@@ -69,7 +74,7 @@ export const Header: React.FC<any> = ({
                   const diff = iftarTotal - currentTotal;
                   setRamazonText(`Iftor: ${Math.floor(diff/60)}:${String(diff%60).padStart(2,'0')}`);
               } else {
-                  setRamazonText("Fayzli oqshom");
+                  setRamazonText("Iftor o'tdi");
               }
           }
       };
@@ -109,7 +114,7 @@ export const Header: React.FC<any> = ({
   return (
     <header className="fixed top-0 left-0 right-0 z-[110] bg-gradient-to-b from-black/90 to-transparent pt-4 pb-12 pointer-events-none">
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between pointer-events-auto">
-            <div className="flex items-center gap-4 md:gap-10">
+            <div className="flex items-center gap-3 md:gap-8">
                 <div className="flex items-center gap-3 cursor-pointer group" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
                     <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
                         {customLogo ? (
@@ -117,6 +122,13 @@ export const Header: React.FC<any> = ({
                         ) : (
                             <UzumakiLogo className="w-full h-full p-1 text-orange-500 bg-black" />
                         )}
+                    </div>
+                    {/* DIGITAL CLOCK NEXT TO LOGO */}
+                    <div className="hidden sm:flex flex-col justify-center border-l border-white/10 pl-3 h-8">
+                        <span className="text-white font-black text-sm tracking-tighter leading-none">
+                            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className="text-[7px] text-orange-500 font-bold uppercase tracking-widest mt-0.5">Hozirgi Vaqt</span>
                     </div>
                 </div>
 
@@ -137,7 +149,7 @@ export const Header: React.FC<any> = ({
                 {/* RAMAZON HEADER WIDGET */}
                 <button 
                     onClick={() => onNavigate('ramazon')}
-                    className="flex items-center gap-2 px-3 py-2 bg-orange-600/10 border border-orange-500/30 rounded-xl hover:bg-orange-600/20 transition-all group"
+                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-600/20 to-yellow-600/10 border border-orange-500/30 rounded-xl hover:scale-105 transition-all group shadow-lg shadow-orange-900/10"
                 >
                     <Moon size={16} className="text-orange-500 animate-pulse fill-orange-500/20" />
                     <span className="text-[10px] font-black text-white uppercase tracking-tighter hidden sm:inline">{ramazonText}</span>

@@ -27,6 +27,18 @@
     to { transform: translateX(0); }
 }
 
+/* Ramazon Fon Bezaklari Animatsiyasi */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+  50% { transform: translateY(-20px) rotate(5deg); opacity: 0.6; }
+  100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+}
+
+.ramadan-decoration {
+  animation: float 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
 /* Custom scrollbar - Minimalist */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #050505; }

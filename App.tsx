@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { WelcomePage } from './WelcomePage';
@@ -22,7 +21,7 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star } from 'lucide-react';
 import { getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
 import { HamburgerMenu } from './components/HamburgerMenu';
@@ -33,6 +32,24 @@ export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin'
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'bundle_manager';
 export type LegalDocType = 'privacy' | 'terms';
+
+// Ramazon bezaklari komponenti
+const RamadanDecoration = () => (
+  <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div className="absolute top-10 left-[5%] ramadan-decoration" style={{ animationDelay: '0s' }}>
+      <Moon size={40} className="text-orange-500/20 fill-orange-500/10" />
+    </div>
+    <div className="absolute top-40 right-[8%] ramadan-decoration" style={{ animationDelay: '2s' }}>
+      <Star size={20} className="text-yellow-500/20 fill-yellow-500/10" />
+    </div>
+    <div className="absolute bottom-60 left-[10%] ramadan-decoration" style={{ animationDelay: '4s' }}>
+      <Star size={15} className="text-orange-500/10 fill-orange-500/5" />
+    </div>
+    <div className="absolute bottom-20 right-[5%] ramadan-decoration" style={{ animationDelay: '1s' }}>
+      <Moon size={60} className="text-orange-600/10" rotate={180} />
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [page, setPage] = useState<Page>('welcome');
@@ -113,7 +130,6 @@ const App: React.FC = () => {
                   if (found) setSelectedMovie(found);
               }
               
-              // Agar URL da maxsus page bo'lsa, o'shanga o'tamiz, aks holda dashboard
               if (pageParam && ['ramazon', 'search', 'shop', 'studio', 'catalog'].includes(pageParam)) {
                   setPage(pageParam);
               } else {
@@ -166,7 +182,6 @@ const App: React.FC = () => {
     setSelectedMovie(null);
     setIsSearchOpen(false);
     
-    // URL-ni yangilash lekin refresh qilmaslik
     const newUrl = targetPage === 'welcome' ? '/' : `/?page=${targetPage}`;
     window.history.pushState({}, '', newUrl);
     window.scrollTo(0, 0);
@@ -235,8 +250,10 @@ const App: React.FC = () => {
             </div>
         )}
 
-        <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505]">
-          
+        <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505] relative">
+          {/* Ramazon Bezaklari */}
+          {!shouldHideGlobalNav && <RamadanDecoration />}
+
           {!selectedMovie && !isPlayerActive && !activeVideoAd && page !== 'welcome' && (
             <Header 
               onNavigate={handleNavigation} 
@@ -252,7 +269,7 @@ const App: React.FC = () => {
             />
           )}
           
-          <main className={`flex-1 ${selectedMovie || isPlayerActive || page === 'welcome' ? '' : (page === 'copyright' ? '' : 'pt-20 pb-32 md:pb-20')}`}>
+          <main className={`flex-1 relative z-10 ${selectedMovie || isPlayerActive || page === 'welcome' ? '' : (page === 'copyright' ? '' : 'pt-20 pb-32 md:pb-20')}`}>
                 {activeVideoAd && selectedMovie && <VideoAdPlayer ad={activeVideoAd} onFinish={() => {setActiveVideoAd(null); setIsPlayerActive(true);}} />}
                 {isPlayerActive && selectedMovie && !activeVideoAd && (
                     <VideoPlayerPage movie={selectedMovie} episode={activeEpisode} onBack={() => setIsPlayerActive(false)} />
