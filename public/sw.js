@@ -1,10 +1,11 @@
-const CACHE_NAME = 'anilo-pwa-v35';
+
+const CACHE_NAME = 'anilo-pwa-v36';
 
 const PRE_CACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.png'
+  '/logo.jpg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -43,7 +44,6 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // Tarmoq bo'lmasa va keshda bo'lmasa, index.html qaytaramiz (SPA uchun)
         if (event.request.mode === 'navigate') {
           return caches.match('/index.html');
         }

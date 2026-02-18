@@ -4,7 +4,7 @@
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
   "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilovasi orqali oflayn rejim va tezkor yuklanish imkoniyatidan foydalaning. Eng so'nggi va sara animelar faqat bizning platformada.",
-  "id": "uz.anilo.pwa.v3",
+  "id": "uz.anilo.pwa.v4",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": [
@@ -25,19 +25,19 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/logo.jpg",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/logo.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/logo.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "maskable"
@@ -51,7 +51,7 @@
       "url": "/?page=catalog",
       "icons": [
         {
-          "src": "/logo.png",
+          "src": "/logo.jpg",
           "sizes": "192x192",
           "type": "image/jpeg"
         }
@@ -64,7 +64,7 @@
       "url": "/?page=aniconcurs",
       "icons": [
         {
-          "src": "/logo.png",
+          "src": "/logo.jpg",
           "sizes": "192x192",
           "type": "image/jpeg"
         }
@@ -77,7 +77,7 @@
       "url": "/?page=ramazon",
       "icons": [
         {
-          "src": "/logo.png",
+          "src": "/logo.jpg",
           "sizes": "192x192",
           "type": "image/jpeg"
         }
@@ -86,14 +86,14 @@
   ],
   "screenshots": [
     {
-      "src": "/logo.png",
+      "src": "/logo.jpg",
       "sizes": "390x844",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Anilo Mobile Interface"
     },
     {
-      "src": "/logo.png",
+      "src": "/logo.jpg",
       "sizes": "1920x1080",
       "type": "image/jpeg",
       "form_factor": "wide",
