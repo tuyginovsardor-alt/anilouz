@@ -4,7 +4,7 @@
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
   "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilovasi orqali oflayn rejim va tezkor yuklanish imkoniyatidan foydalaning. Eng so'nggi va sara animelar faqat bizning platformada.",
-  "id": "uz.anilo.pwa.v4",
+  "id": "uz.anilo.pwa.v7",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": [
@@ -69,19 +69,6 @@
           "type": "image/jpeg"
         }
       ]
-    },
-    {
-      "name": "Ramazon",
-      "short_name": "Ramazon",
-      "description": "Ramazon taqvimi va vaqtlari",
-      "url": "/?page=ramazon",
-      "icons": [
-        {
-          "src": "/logo.jpg",
-          "sizes": "192x192",
-          "type": "image/jpeg"
-        }
-      ]
     }
   ],
   "screenshots": [
@@ -109,17 +96,6 @@
       "url": "url"
     }
   },
-  "protocol_handlers": [
-    {
-      "protocol": "web+anilo",
-      "url": "/?query=%s"
-    }
-  ],
-  "related_applications": [
-    {
-      "platform": "webapp",
-      "url": "https://anilo.uz/manifest.json"
-    }
-  ],
+  "related_applications": [],
   "prefer_related_applications": false
 }
