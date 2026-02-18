@@ -1,17 +1,25 @@
+
 {
   "lang": "uz-UZ",
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "description": "O'zbekistondagi yagona professional anime portali. Animelarni HD sifatda tomosha qiling va sovrinlar yuting. Professional dublyaj va eng so'nggi premyeralar faqat bizning portalda.",
-  "id": "/",
+  "description": "O'zbekistondagi eng yirik professional anime portali. Animelarni HD sifatda tomosha qiling, professional dublyaj va eksklyuziv premyeralardan bahramand bo'ling.",
+  "id": "uz.anilo.app",
   "start_url": "/?source=pwa",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "minimal-ui"],
   "background_color": "#050505",
   "theme_color": "#f97316",
   "orientation": "portrait",
   "scope": "/",
-  "categories": ["entertainment", "video", "movies", "games"],
+  "categories": ["entertainment", "video", "movies", "games", "social"],
   "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "logo.png",
       "sizes": "192x192",
@@ -37,14 +45,21 @@
       "short_name": "Katalog",
       "description": "Barcha animelar ro'yxati",
       "url": "/?page=catalog",
-      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "logo.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Konkurs",
       "short_name": "Konkurs",
       "description": "Sovrinli o'yinlarda qatnashing",
       "url": "/?page=aniconcurs",
-      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "logo.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Ramazon Taqvimi",
+      "short_name": "Ramazon",
+      "description": "Saharlik va Iftorlik vaqtlari",
+      "url": "/?page=ramazon",
+      "icons": [{ "src": "logo.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "screenshots": [
@@ -62,5 +77,35 @@
       "form_factor": "wide",
       "label": "Anilo Desktop Home"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/search",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/import",
+      "accept": {
+        "text/plain": [".anilo", ".txt"]
+      }
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+anilo",
+      "url": "/?query=%s"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://anilo.uz/manifest.json"
+    }
+  ],
+  "prefer_related_applications": false
 }
