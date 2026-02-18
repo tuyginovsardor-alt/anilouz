@@ -5,7 +5,7 @@
       "destination": "https://tspay.uz/api/v1/$1"
     },
     {
-      "source": "/((?!logo.png|logo.svg|manifest.json|sw.js|robots.txt|sitemap.xml|assets/).*)",
+      "source": "/((?!logo\\.png|logo\\.svg|manifest\\.json|sw\\.js|robots\\.txt|sitemap\\.xml|assets/).*)",
       "destination": "/index.html"
     }
   ]

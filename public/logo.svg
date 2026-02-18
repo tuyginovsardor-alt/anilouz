@@ -1,47 +1,12 @@
-<svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- Asosiy ranglar gradyenti -->
-    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff7e33" />
-      <stop offset="100%" stop-color="#f97316" />
-    </linearGradient>
-    <!-- Metallik effekt uchun -->
-    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2" />
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.1" />
-    </linearGradient>
-    <!-- Nur taralishi (Glow) -->
-    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="12" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-  </defs>
-
-  <!-- Orqa fon (Qora doira) -->
-  <rect width="512" height="512" rx="128" fill="#050505"/>
-  <circle cx="256" cy="256" r="230" stroke="white" stroke-opacity="0.05" stroke-width="2" />
-
-  <!-- Tashqi halqa (Anime energiyasi) -->
-  <path d="M256 90C164.32 90 90 164.32 90 256C90 347.68 164.32 422 256 422C347.68 422 422 347.68 422 256" 
-        stroke="url(#mainGrad)" 
-        stroke-width="28" 
-        stroke-linecap="round" 
-        filter="url(#neonGlow)" />
-
-  <!-- Ichki Spiral (Anilo ramzi - Uzumaki uslubi) -->
-  <path d="M256 256C256 210 220 210 220 256C220 310 290 310 290 256C290 180 170 180 170 256C170 350 342 350 342 256C342 130 110 130 110 256C110 410 402 410 402 256C402 100 280 60 210 70" 
-        stroke="white" 
-        stroke-width="14" 
-        stroke-linecap="round" 
-        stroke-linejoin="round"
-        opacity="0.95" />
-
-  <!-- Markazdagi "A" harfi simvoli (Yashirin ko'rinishda) -->
-  <path d="M240 220L256 185L272 220M230 280L256 240L282 280" 
-        stroke="url(#mainGrad)" 
-        stroke-width="8" 
-        stroke-linecap="round" />
-        
-  <!-- Yorqinlik effekti -->
-  <rect width="512" height="512" rx="128" fill="url(#metalGrad)" />
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="256" cy="256" r="256" fill="#f97316"/>
+  <path d="M256 256c0-44.183-35.817-80-80-80s-80 35.817-80 80 35.817 80 80 80 80-35.817 80-80z" fill="#be123c" opacity="0.2"/>
+  <path d="M256 256c0-66.274-53.726-120-120-120S16 189.726 16 256s53.726 120 120 120 120-53.726 120-120zm-120 80c-44.183 0-80-35.817-80-80s35.817-80 80-80 80 35.817 80 80-35.817 80-80 80z" fill="#be123c" opacity="0.4"/>
+  <path d="M256 256c0 110.457-89.543 200-200 200S-144 366.457-144 256 56-144 256 16s400 329.543 400 440c0 110.457-89.543 200-200 200s-200-89.543-200-200z" fill="none" stroke="#000" stroke-width="20" stroke-linecap="round" transform="matrix(0.5, 0, 0, 0.5, 128, 128)"/>
+  <path d="M256 256c0-22.091-17.909-40-40-40s-40 17.909-40 40 17.909 40 40 40 40-17.909 40-40zm-40 100c-77.32 0-140-62.68-140-140s62.68-140 140-140 140 62.68 140 140-62.68 140-140 140z" fill="#be123c" transform="matrix(1.2, 0, 0, 1.2, -51.2, -51.2)"/>
+  <!-- Spiral path -->
+  <path d="M256 256c0-33.137-26.863-60-60-60s-60 26.863-60 60 26.863 60 60 60 60-26.863 60-60zm60 0c0-66.274-53.726-120-120-120s-120 53.726-120 120 53.726 120 120 120 120-53.726 120-120z" fill="#000" fill-rule="evenodd" clip-rule="evenodd" opacity="0.8"/>
+  <path d="M256 256c0-20 16-36 36-36s36 16 36 36-16 36-36 36-36-16-36-36zm76 0c0-42 34-76 76-76s76 34 76 76-34 76-76 76-76-34-76-76z" fill="#000" opacity="0.1"/>
+  <!-- Central spiral path drawn more accurately to user request -->
+  <path d="M256 256C256 210 220 210 220 256C220 310 290 310 290 256C290 180 170 180 170 256C170 350 342 350 342 256C342 130 110 130 110 256C110 410 402 410 402 256C402 100 280 60 210 70" stroke="#000" stroke-width="15" stroke-linecap="round" fill="none"/>
 </svg>
