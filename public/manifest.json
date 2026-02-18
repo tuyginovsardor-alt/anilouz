@@ -4,20 +4,20 @@
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
   "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali.",
-  "id": "uz.anilo.pwa.v15_final_fix",
+  "id": "uz.anilo.pwa.v16_logotip_png",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#f97316",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/logotip.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/logotip.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

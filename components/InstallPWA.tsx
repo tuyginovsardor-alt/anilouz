@@ -78,7 +78,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         <div className="p-8 flex flex-col items-center text-center">
                             <div className="relative mb-6">
                                 <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl border-2 border-orange-500/50">
-                                    <img src="/logo.png" alt="Anilo" className="w-full h-full object-cover" />
+                                    <img src="/logotip.png" alt="Anilo" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="absolute -bottom-2 -right-2 bg-orange-600 rounded-full p-2 border-4 border-[#0f0f0f] shadow-lg">
                                     <Smartphone size={20} className="text-white" />
