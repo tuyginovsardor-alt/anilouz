@@ -1,11 +1,10 @@
-const CACHE_NAME = 'anilo-pwa-v32';
+const CACHE_NAME = 'anilo-pwa-v35';
 
 const PRE_CACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.svg',
-  '/robots.txt'
+  '/logo.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -22,7 +21,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => Promise.all(
       keys.map((key) => {
         if (key !== CACHE_NAME) {
-            return caches.delete(key);
+          return caches.delete(key);
         }
       })
     ))
@@ -30,35 +29,27 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-self.addEventListener('push', (event) => {
-    const data = event.data ? event.data.json() : { title: 'Anilo.uz', body: 'Yangi anime qo\'shildi!' };
-    event.waitUntil(
-        self.registration.showNotification(data.title, {
-            body: data.body,
-            icon: '/logo.svg'
-        })
-    );
-});
-
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok && event.request.url.startsWith(self.location.origin)) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith(self.location.origin)) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
         }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request).then(cached => {
-            if (cached) return cached;
-            if (event.request.mode === 'navigate') {
-                return caches.match('/index.html');
-            }
-        });
-      })
+        return networkResponse;
+      }).catch(() => {
+        // Tarmoq bo'lmasa va keshda bo'lmasa, index.html qaytaramiz (SPA uchun)
+        if (event.request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+      });
+
+      return cachedResponse || fetchPromise;
+    })
   );
 });
