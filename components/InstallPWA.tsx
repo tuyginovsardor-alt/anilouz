@@ -30,7 +30,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setDeferredPrompt(e);
             setIsInstallable(true);
             
-            // Avtomatik taklif (agar foydalanuvchi birinchi marta kirayotgan bo'lsa)
+            // Avtomatik taklif
             const hasSeenPrompt = localStorage.getItem('anilo_pwa_prompt_v2');
             if (!hasSeenPrompt) {
                 setTimeout(() => setShowModal(true), 5000);
@@ -39,7 +39,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-        // Agar iOS bo'lsa va standalone bo'lmasa, o'rnatish qo'llanmasini chiqarish mumkin
         if (isIOSDevice && !(window.navigator as any).standalone) {
             setIsInstallable(true);
         }
@@ -79,7 +78,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         <div className="p-8 flex flex-col items-center text-center">
                             <div className="relative mb-6">
                                 <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl border-2 border-orange-500/50">
-                                    <img src="/logo.jpg" alt="Anilo" className="w-full h-full object-cover" />
+                                    <img src="/logo.png" alt="Anilo" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="absolute -bottom-2 -right-2 bg-orange-600 rounded-full p-2 border-4 border-[#0f0f0f] shadow-lg">
                                     <Smartphone size={20} className="text-white" />

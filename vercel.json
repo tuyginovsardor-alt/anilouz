@@ -6,8 +6,8 @@
       "destination": "https://tspay.uz/api/v1/$1"
     },
     {
-      "source": "/logo.jpg",
-      "destination": "/logo.jpg"
+      "source": "/logo.png",
+      "destination": "/logo.png"
     },
     {
       "source": "/manifest.json",
@@ -24,7 +24,7 @@
   ],
   "headers": [
     {
-      "source": "/logo.jpg",
+      "source": "/logo.png",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
@@ -32,7 +32,7 @@
         },
         {
           "key": "Content-Type",
-          "value": "image/jpeg"
+          "value": "image/png"
         },
         {
           "key": "Cache-Control",

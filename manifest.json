@@ -4,7 +4,7 @@
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
   "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilovasi orqali oflayn rejim va tezkor yuklanish imkoniyatidan foydalaning.",
-  "id": "uz.anilo.pwa.v10_force_jpg",
+  "id": "uz.anilo.pwa.v12_final_png",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": [
@@ -23,21 +23,21 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "/logo.jpg",
+      "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.jpg",
+      "src": "/logo.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.jpg",
+      "src": "/logo.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
@@ -47,25 +47,25 @@
       "url": "/?page=catalog",
       "icons": [
         {
-          "src": "/logo.jpg",
+          "src": "/logo.png",
           "sizes": "192x192",
-          "type": "image/jpeg"
+          "type": "image/png"
         }
       ]
     }
   ],
   "screenshots": [
     {
-      "src": "/logo.jpg",
+      "src": "/logo.png",
       "sizes": "390x844",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "narrow",
       "label": "Anilo Mobile"
     },
     {
-      "src": "/logo.jpg",
+      "src": "/logo.png",
       "sizes": "1920x1080",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "wide",
       "label": "Anilo Desktop"
     }

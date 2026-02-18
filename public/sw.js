@@ -1,11 +1,11 @@
 
-const CACHE_NAME = 'anilo-pwa-v38'; // Versiya oshirildi
+const CACHE_NAME = 'anilo-pwa-v40';
 
 const PRE_CACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.jpg'
+  '/logo.png'
 ];
 
 self.addEventListener('install', (event) => {
