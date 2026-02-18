@@ -7,10 +7,12 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { MovieCard } from './components/MovieCard';
 import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight, Bookmark, Plus, Moon } from 'lucide-react';
 import { useNotification } from './hooks/useNotification';
+import { Page } from './App';
 
 interface DashboardHomePageProps {
   onSearch: (query: string) => void;
   onMovieClick: (movie: Movie) => void;
+  onMainNavigate?: (page: Page) => void;
 }
 
 const TITLE_STYLES = [
@@ -19,7 +21,7 @@ const TITLE_STYLES = [
     "font-mono tracking-tight", 
 ];
 
-export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieClick }) => {
+export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieClick, onMainNavigate }) => {
     const [allMovies, setAllMovies] = useState<Movie[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [heroIndex, setHeroIndex] = useState(0);
@@ -279,7 +281,7 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
             {/* RAMAZON WIDGET (NEW) */}
             <div className="container mx-auto px-4 md:px-8 mb-16">
                 <div 
-                    onClick={() => window.location.href='/?page=ramazon'}
+                    onClick={() => onMainNavigate?.('ramazon')}
                     className="relative w-full p-6 md:p-8 rounded-[2.5rem] bg-gradient-to-br from-orange-600/20 to-zinc-900 border border-orange-500/30 shadow-2xl cursor-pointer hover:border-orange-500 transition-all group overflow-hidden"
                 >
                     <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-110 transition-transform duration-700">

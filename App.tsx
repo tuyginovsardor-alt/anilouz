@@ -15,7 +15,7 @@ import { ShopPage } from './ShopPage';
 import { ShopAdminPage } from './ShopAdminPage';
 import { CatalogPage } from './CatalogPage'; 
 import { FandubDashboard } from './FandubDashboard';
-import { RamazonPage } from './RamazonPage'; // Yangi import
+import { RamazonPage } from './RamazonPage'; 
 import { VideoAdPlayer } from './components/VideoAdPlayer';
 import { NotificationContext } from './hooks/useNotification';
 import { NotificationContainer } from './components/Notification';
@@ -99,18 +99,26 @@ const App: React.FC = () => {
           
           if (sessionError) throw sessionError;
 
+          const params = new URLSearchParams(window.location.search);
+          const pageParam = params.get('page') as Page;
+          const movieIdParam = params.get('movie_id');
+
           if (session) {
               setIsAuthenticated(true); 
               await refreshProfile();
               
-              const params = new URLSearchParams(window.location.search);
-              const movieIdParam = params.get('movie_id');
               if (movieIdParam) {
                   const allMovies = await getMovies();
                   const found = allMovies.find(m => m.id === Number(movieIdParam));
                   if (found) setSelectedMovie(found);
               }
-              setPage('dashboard');
+              
+              // Agar URL da maxsus page bo'lsa, o'shanga o'tamiz, aks holda dashboard
+              if (pageParam && ['ramazon', 'search', 'shop', 'studio', 'catalog'].includes(pageParam)) {
+                  setPage(pageParam);
+              } else {
+                  setPage('dashboard');
+              }
           } else {
               setPage('welcome');
           }
@@ -157,7 +165,10 @@ const App: React.FC = () => {
     if (targetPage === 'dashboard') setDashboardPage('main');
     setSelectedMovie(null);
     setIsSearchOpen(false);
-    window.history.pushState({}, '', window.location.pathname);
+    
+    // URL-ni yangilash lekin refresh qilmaslik
+    const newUrl = targetPage === 'welcome' ? '/' : `/?page=${targetPage}`;
+    window.history.pushState({}, '', newUrl);
     window.scrollTo(0, 0);
   };
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DashboardSubPage, Page } from './App';
 import { ProfilePage } from './ProfilePage';
@@ -14,7 +15,6 @@ import { getSocialLinks } from './services/dbService';
 import { 
     LogOut, Settings, CreditCard, History, ShieldCheck, 
     Instagram, Send, Youtube, Facebook, MessageCircle, 
-    /* Added ChevronRight to fix 'Cannot find name ChevronRight' error */
     Globe, ExternalLink, Mic, Star, LayoutGrid, ChevronRight
 } from 'lucide-react';
 
@@ -87,7 +87,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
                         
                         <div className="grid gap-4">
-                            {/* IJODKOR XONASI TUGMASI - ENDI BIRINCHI O'RINDA */}
                             {canAccessCreatorStudio && (
                                 <button 
                                     onClick={() => onMainNavigate('fandub-dashboard')} 
@@ -208,7 +207,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 );
             case 'main':
             default:
-                return <DashboardHomePage onSearch={onSearch} onMovieClick={onMovieClick} />;
+                return <DashboardHomePage onSearch={onSearch} onMovieClick={onMovieClick} onMainNavigate={onMainNavigate} />;
         }
     }
 
