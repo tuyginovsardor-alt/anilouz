@@ -4,7 +4,7 @@ import { WelcomePage } from './WelcomePage';
 import { SearchPage } from './SearchPage';
 import { DashboardPage } from './DashboardPage';
 import { AuthModal } from './components/AuthModal';
-import { Movie, UserRole, Ad, Notification, Episode, UserProfile } from './types';
+import { Movie, UserRole, Ad, Notification, Episode, UserProfile, LiveStream } from './types';
 import { MovieDetailPage } from './MovieDetailPage';
 import { VideoPlayerPage } from './VideoPlayerPage';
 import { AdminPage } from './AdminPage';
@@ -22,7 +22,7 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
 import { LiveStreamPage } from './LiveStreamPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star, Maximize2 } from 'lucide-react';
 import { getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
 import { HamburgerMenu } from './components/HamburgerMenu';
@@ -78,6 +78,11 @@ const App: React.FC = () => {
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [isPlayerActive, setIsPlayerActive] = useState(false);
   const [activeVideoAd, setActiveVideoAd] = useState<Ad | null>(null);
+
+  // Global Live Stream State
+  const [activeLiveStream, setActiveLiveStream] = useState<LiveStream | null>(null);
+  const [isLiveMinimized, setIsLiveMinimized] = useState(false);
+  const [isStreamerMode, setIsStreamerMode] = useState(false);
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const addNotification = (notification: Omit<Notification, 'id'>) => {
@@ -298,7 +303,18 @@ const App: React.FC = () => {
                         {page === 'dashboard' && <DashboardPage viewUserId={selectedArtistId} currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={() => {}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
                         {page === 'ai-assistant' && <AiAssistantPage />}
-                        {page === 'live' && <LiveStreamPage userProfile={userProfile} onBack={() => setPage('dashboard')} />}
+                        {page === 'live' && (
+                          <LiveStreamPage 
+                            userProfile={userProfile} 
+                            onBack={() => setPage('dashboard')} 
+                            selectedStream={activeLiveStream}
+                            setSelectedStream={setActiveLiveStream}
+                            isStreamerMode={isLiveMinimized ? false : isStreamerMode} // Handle mode carefully
+                            setIsStreamerMode={setIsStreamerMode}
+                            isMinimized={isLiveMinimized}
+                            setIsMinimized={setIsLiveMinimized}
+                          />
+                        )}
                         {page === 'copyright' && <CopyrightPage onBack={() => setPage('welcome')} />}
                         {page === 'dub-dashboard' && <DubDashboard />}
                         {page === 'studio' && <StudioPage onArtistClick={setSelectedArtistId} onMovieClick={handleMovieClick} />}
@@ -359,6 +375,47 @@ const App: React.FC = () => {
           )}
           <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} onLogout={() => { supabase.auth.signOut(); setIsMenuOpen(false); }} onMainNavigate={handleNavigation} onDashboardNavigate={setDashboardPage} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} onOpenLegal={(type) => setLegalDocType(type)} />
           {legalDocType && <LegalDocs type={legalDocType} onClose={() => setLegalDocType(null)} />}
+          
+          {/* Global Mini Player */}
+          {activeLiveStream && page !== 'live' && (
+            <div 
+                className="fixed bottom-24 right-4 w-64 aspect-video bg-gray-900 rounded-2xl border-2 border-orange-600 shadow-2xl z-[200] overflow-hidden animate-scale-in group"
+            >
+                <div onClick={() => setPage('live')} className="absolute inset-0 cursor-pointer">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <WifiOff className="text-orange-500 w-8 h-8 animate-pulse" />
+                    </div>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Maximize2 className="text-white" />
+                    </div>
+                </div>
+                
+                <div className="absolute top-2 left-2 flex items-center gap-2 pointer-events-none">
+                    <div className="bg-red-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Live</div>
+                </div>
+
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (isStreamerMode) {
+                            if (window.confirm("Efirni tugatmoqchimisiz?")) {
+                                setActiveLiveStream(null);
+                                setIsStreamerMode(false);
+                            }
+                        } else {
+                            setActiveLiveStream(null);
+                        }
+                    }}
+                    className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all z-10"
+                >
+                    <X size={14} />
+                </button>
+
+                <div className="absolute bottom-2 left-2 right-2 truncate pointer-events-none">
+                    <p className="text-[10px] text-white font-bold">{activeLiveStream.title}</p>
+                </div>
+            </div>
+          )}
         </div>
     </NotificationContext.Provider>
     </PWAProvider>

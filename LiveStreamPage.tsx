@@ -5,7 +5,7 @@ import {
     Send, Shield, Crown, User, MoreVertical, X,
     Volume2, VolumeX, Maximize, Minimize, ExternalLink,
     Heart, Pause, Circle, UserPlus, Share2, Download,
-    Camera, Mic as MicIcon, Monitor
+    Camera, Mic as MicIcon, Monitor, Minimize2, Maximize2
 } from 'lucide-react';
 import { 
     LiveStream, LiveChatMessage, UserProfile, UserRole, FandubChannel 
@@ -22,19 +22,31 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 interface LiveStreamPageProps {
     userProfile: UserProfile | null;
     onBack?: () => void;
+    selectedStream: LiveStream | null;
+    setSelectedStream: (stream: LiveStream | null) => void;
+    isStreamerMode: boolean;
+    setIsStreamerMode: (mode: boolean) => void;
+    isMinimized: boolean;
+    setIsMinimized: (minimized: boolean) => void;
 }
 
-export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onBack }) => {
+export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ 
+    userProfile, onBack, 
+    selectedStream, setSelectedStream,
+    isStreamerMode, setIsStreamerMode,
+    isMinimized, setIsMinimized
+}) => {
     const [activeStreams, setActiveStreams] = useState<LiveStream[]>([]);
-    const [selectedStream, setSelectedStream] = useState<LiveStream | null>(null);
     const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [isStreamerMode, setIsStreamerMode] = useState(false);
     const [myChannel, setMyChannel] = useState<FandubChannel | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isInviteOpen, setIsInviteOpen] = useState(false);
     const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+    const [devices, setDevices] = useState<{video: MediaDeviceInfo[], audio: MediaDeviceInfo[]}>({video: [], audio: []});
+    const [selectedVideoId, setSelectedVideoId] = useState('');
+    const [selectedAudioId, setSelectedAudioId] = useState('');
     
     // Streamer form
     const [streamTitle, setStreamTitle] = useState('');
@@ -50,6 +62,8 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
     const [likes, setLikes] = useState(0);
     const [showHeartAnim, setShowHeartAnim] = useState(false);
     const [floatingHearts, setFloatingHearts] = useState<{ id: number; x: number }[]>([]);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotification();
@@ -61,8 +75,21 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
         if (canStream) {
             if (userProfile?.role === 'fandub') loadMyChannel();
             loadAllUsers();
+            loadDevices();
         }
     }, [userProfile]);
+
+    const loadDevices = async () => {
+        try {
+            const devs = await navigator.mediaDevices.enumerateDevices();
+            setDevices({
+                video: devs.filter(d => d.kind === 'videoinput'),
+                audio: devs.filter(d => d.kind === 'audioinput')
+            });
+        } catch (e) {
+            console.error("Device load error:", e);
+        }
+    };
 
     useEffect(() => {
         if (selectedStream) {
@@ -91,7 +118,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                 }, payload => {
                     const updated = payload.new as LiveStream;
                     setLikes(updated.likes_count || 0);
-                    setSelectedStream(prev => prev ? { ...prev, ...updated } : updated);
+                    setSelectedStream({ ...selectedStream, ...updated });
                 })
                 .on('broadcast', { event: 'reaction' }, payload => {
                     const newHearts = Array.from({ length: 3 }).map((_, i) => ({
@@ -254,11 +281,24 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
     const handleToggleRecording = () => {
         if (isRecording) {
             setIsRecording(false);
+            if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+            setRecordingTime(0);
             addNotification({ type: 'success', title: 'Yozib olish tugadi', message: 'Video galereyaga saqlandi.' });
         } else {
             setIsRecording(true);
+            setRecordingTime(0);
+            recordingIntervalRef.current = setInterval(() => {
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
             addNotification({ type: 'info', title: 'Yozib olish boshlandi', message: 'Efir yozib olinmoqda...' });
         }
+    };
+
+    const formatTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
     const handleInviteCoStreamer = async (user: UserProfile) => {
@@ -293,6 +333,26 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
     };
 
     if (selectedStream) {
+        if (isMinimized) {
+            return (
+                <div 
+                    onClick={() => setIsMinimized(false)}
+                    className="fixed bottom-24 right-4 w-64 aspect-video bg-gray-900 rounded-2xl border-2 border-orange-600 shadow-2xl z-[200] overflow-hidden cursor-pointer group animate-scale-in"
+                >
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Video className="text-orange-500 w-8 h-8 animate-pulse" />
+                    </div>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Maximize2 className="text-white" />
+                    </div>
+                    <div className="absolute top-2 left-2 bg-red-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Live</div>
+                    <div className="absolute bottom-2 left-2 right-2 truncate">
+                        <p className="text-[10px] text-white font-bold">{selectedStream.title}</p>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="fixed inset-0 bg-black z-[100] flex flex-col md:flex-row overflow-hidden">
                 {/* Video Area */}
@@ -364,8 +424,8 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                     </div>
 
                     {/* Overlay Controls */}
-                    <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start z-30">
-                        <div className="flex items-center gap-3">
+                    <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start z-50 pointer-events-none">
+                        <div className="flex items-center gap-3 pointer-events-auto">
                             <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase animate-pulse">Live</div>
                             <div>
                                 <h1 className="text-white font-bold text-lg leading-tight">{selectedStream.title}</h1>
@@ -386,7 +446,14 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 pointer-events-auto">
+                            <button 
+                                onClick={() => setIsMinimized(true)}
+                                className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                                title="Kichraytirish"
+                            >
+                                <Minimize2 size={20} />
+                            </button>
                             {isStreamerMode && (
                                 <>
                                     <button 
@@ -451,10 +518,11 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                                         </button>
                                         <button 
                                             onClick={handleToggleRecording}
-                                            className={`p-3 rounded-full transition-all ${isRecording ? 'bg-red-600 text-white animate-pulse' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                            className={`p-3 rounded-full transition-all flex items-center gap-2 ${isRecording ? 'bg-red-600 text-white animate-pulse' : 'bg-white/10 text-white hover:bg-white/20'}`}
                                             title={isRecording ? "Yozishni to'xtatish" : "Yozib olish"}
                                         >
                                             <Circle size={24} fill={isRecording ? "currentColor" : "none"} />
+                                            {isRecording && <span className="text-xs font-black">{formatTime(recordingTime)}</span>}
                                         </button>
                                     </>
                                 ) : (
@@ -547,8 +615,43 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                                 </h3>
                                 <button onClick={() => setIsSettingsOpen(false)} className="text-gray-400 hover:text-white"><X /></button>
                             </div>
-                            <div className="p-6 space-y-6">
+                            <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                                 <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-zinc-500 uppercase tracking-widest">Qurilmalar</h4>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Kamera</label>
+                                        <select 
+                                            value={selectedVideoId}
+                                            onChange={e => setSelectedVideoId(e.target.value)}
+                                            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-orange-500"
+                                        >
+                                            <option value="">Standart Kamera</option>
+                                            {devices.video.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || `Kamera ${d.deviceId.slice(0,5)}`}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Mikrofon</label>
+                                        <select 
+                                            value={selectedAudioId}
+                                            onChange={e => setSelectedAudioId(e.target.value)}
+                                            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white outline-none focus:border-orange-500"
+                                        >
+                                            <option value="">Standart Mikrofon</option>
+                                            {devices.audio.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || `Mikrofon ${d.deviceId.slice(0,5)}`}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-zinc-500 uppercase tracking-widest">Xavfsizlik & Yozib olish</h4>
+                                    <div className="p-4 bg-red-600/10 border border-red-600/20 rounded-xl">
+                                        <p className="text-xs text-red-400 font-bold mb-1">Xavfsizlik uchun dalil</p>
+                                        <p className="text-[10px] text-red-400/60 leading-tight">Efir yozib olinishi xavfsizlik va keyinchalik dalil sifatida foydalanish uchun tavsiya etiladi.</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-zinc-500 uppercase tracking-widest">Umumiy</h4>
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-white font-medium">Chatni yoqish</p>
