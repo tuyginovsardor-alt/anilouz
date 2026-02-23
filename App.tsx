@@ -21,6 +21,7 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
+import { LiveStreamPage } from './LiveStreamPage';
 import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star } from 'lucide-react';
 import { getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
@@ -28,7 +29,7 @@ import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
 import { PWAProvider } from './components/InstallPWA';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard' | 'ramazon';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard' | 'ramazon' | 'live';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'bundle_manager';
 export type LegalDocType = 'privacy' | 'terms';
@@ -133,7 +134,7 @@ const App: React.FC = () => {
                   if (found) setSelectedMovie(found);
               }
               
-              if (pageParam && ['ramazon', 'search', 'shop', 'studio', 'catalog'].includes(pageParam)) {
+              if (pageParam && ['ramazon', 'search', 'shop', 'studio', 'catalog', 'live'].includes(pageParam)) {
                   setPage(pageParam);
               } else {
                   setPage('dashboard');
@@ -297,6 +298,7 @@ const App: React.FC = () => {
                         {page === 'dashboard' && <DashboardPage viewUserId={selectedArtistId} currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={() => {}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
                         {page === 'ai-assistant' && <AiAssistantPage />}
+                        {page === 'live' && <LiveStreamPage userProfile={userProfile} onBack={() => setPage('dashboard')} />}
                         {page === 'copyright' && <CopyrightPage onBack={() => setPage('welcome')} />}
                         {page === 'dub-dashboard' && <DubDashboard />}
                         {page === 'studio' && <StudioPage onArtistClick={setSelectedArtistId} onMovieClick={handleMovieClick} />}

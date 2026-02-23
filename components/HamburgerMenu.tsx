@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, CreditCard, History, Bookmark, 
     Settings, LogOut, ChevronRight, User, 
-    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic, Download, ExternalLink, Zap
+    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic, Download, ExternalLink, Zap, Video
 } from 'lucide-react';
 import { DashboardSubPage, Page, LegalDocType } from '../App';
 import { supabase } from '../services/supabaseClient';
@@ -215,6 +215,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         )}
 
                         <MenuSection title="Mening Profilim">
+                            <MenuItem icon={<Video size={20}/>} label="Jonli Efirlar" onClick={() => handleAction('main', 'live')} />
                             <MenuItem icon={<User size={20}/>} label="Profilni tahrirlash" onClick={() => handleAction('sub', 'profile')} />
                             <MenuItem 
                                 icon={<Wallet size={20}/>} 

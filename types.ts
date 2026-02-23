@@ -209,6 +209,38 @@ export interface Broadcast {
     created_at: string;
 }
 
+export interface LiveStream {
+    id: string;
+    streamer_id: string;
+    channel_id?: string;
+    title: string;
+    description?: string;
+    cover_url?: string;
+    status: 'live' | 'ended' | 'scheduled';
+    viewer_count: number;
+    started_at: string;
+    ended_at?: string;
+    stream_key?: string;
+    playback_url?: string;
+    is_anilo_official?: boolean;
+    settings: {
+        chat_enabled: boolean;
+        slow_mode?: number;
+        subscriber_only?: boolean;
+    };
+}
+
+export interface LiveChatMessage {
+    id: string;
+    stream_id: string;
+    user_id: string;
+    username: string;
+    avatar_url?: string;
+    message: string;
+    role: UserRole;
+    created_at: string;
+}
+
 export enum Sender { User, Bot, System }
 export interface Message {
   id: string;

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Page, DashboardSubPage } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, User, Play, Mic, Sparkles, Download, ShieldCheck, FileText, Info } from 'lucide-react';
+import { Search, Bell, User, Play, Mic, Sparkles, Download, ShieldCheck, FileText, Info, Video } from 'lucide-react';
 import * as db from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
@@ -106,6 +106,10 @@ export const Header: React.FC<HeaderProps> = ({
                     <button onClick={() => onNavigate('studio')} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all ${currentPage === 'studio' ? 'bg-white/10 border-white/10' : 'hover:bg-white/5 border-transparent'}`}>
                         <Mic size={20} className={currentPage === 'studio' ? 'text-purple-600' : 'text-zinc-500'} />
                         <p className="text-sm font-black uppercase tracking-wide">Fandub</p>
+                    </button>
+                    <button onClick={() => onNavigate('live')} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all ${currentPage === 'live' ? 'bg-white/10 border-white/10' : 'hover:bg-white/5 border-transparent'}`}>
+                        <Video size={20} className={currentPage === 'live' ? 'text-red-600' : 'text-zinc-500'} />
+                        <p className="text-sm font-black uppercase tracking-wide">Jonli Efir</p>
                     </button>
                 </nav>
             </div>

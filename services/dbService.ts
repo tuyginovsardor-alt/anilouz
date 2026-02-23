@@ -6,7 +6,7 @@ import {
     ATCWallet, ATCTransaction, ContestTask, WheelPrize, QuizQuestion, ContestAd,
     ArkWallet, ArkMarketData, ArkAd, ArkQuiz, ArkAutopilotConfig, ArkSchedule,
     ArkWithdrawal, ShopProduct, ShopWallet, ShopOrder, Promocode, Broadcast, PaymentRequestDB,
-    FandubPost, PremiumBundle, FandubEarning, FandubWithdrawal
+    FandubPost, PremiumBundle, FandubEarning, FandubWithdrawal, LiveStream, LiveChatMessage
 } from '../types';
 import { supabase } from './supabaseClient';
 import { isAiPilotEnabled, runAiServerManager } from './aiGuardService';
@@ -1034,4 +1034,50 @@ export const getFandubStatsSummary = async (channelId: string) => {
         const { data } = await supabase.rpc('get_fandub_stats_summary', { ch_id: channelId });
         return data || { lastMonthEarnings: 0 };
     } catch { return { lastMonthEarnings: 0 }; }
+};
+
+// --- LIVE STREAMING ---
+
+export const getLiveStreams = async (): Promise<LiveStream[]> => {
+    try {
+        const { data } = await supabase
+            .from('live_streams')
+            .select('*, profiles(username, avatar_url), fandub_channels(name)')
+            .eq('status', 'live')
+            .order('viewer_count', { ascending: false });
+        return (data || []) as any;
+    } catch (e) { return []; }
+};
+
+export const createLiveStream = async (stream: Partial<LiveStream>) => {
+    const { data, error } = await supabase.from('live_streams').insert(stream).select().single();
+    if (error) throw error;
+    return data as LiveStream;
+};
+
+export const updateLiveStream = async (id: string, updates: Partial<LiveStream>) => {
+    const { error } = await supabase.from('live_streams').update(updates).eq('id', id);
+    if (error) throw error;
+};
+
+export const endLiveStream = async (id: string) => {
+    const { error } = await supabase.from('live_streams').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+};
+
+export const getLiveChatMessages = async (streamId: string): Promise<LiveChatMessage[]> => {
+    try {
+        const { data } = await supabase
+            .from('live_chat_messages')
+            .select('*')
+            .eq('stream_id', streamId)
+            .order('created_at', { ascending: true })
+            .limit(100);
+        return (data || []) as LiveChatMessage[];
+    } catch (e) { return []; }
+};
+
+export const sendLiveChatMessage = async (msg: Partial<LiveChatMessage>) => {
+    const { error } = await supabase.from('live_chat_messages').insert(msg);
+    if (error) throw error;
 };
