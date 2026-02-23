@@ -44,8 +44,12 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
     // Live features
     const [isPaused, setIsPaused] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
+    const [isCameraOn, setIsCameraOn] = useState(true);
+    const [isMicOn, setIsMicOn] = useState(true);
+    const [isScreenSharing, setIsScreenSharing] = useState(false);
     const [likes, setLikes] = useState(0);
     const [showHeartAnim, setShowHeartAnim] = useState(false);
+    const [floatingHearts, setFloatingHearts] = useState<{ id: number; x: number }[]>([]);
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotification();
@@ -88,6 +92,16 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                     const updated = payload.new as LiveStream;
                     setLikes(updated.likes_count || 0);
                     setSelectedStream(prev => prev ? { ...prev, ...updated } : updated);
+                })
+                .on('broadcast', { event: 'reaction' }, payload => {
+                    const newHearts = Array.from({ length: 3 }).map((_, i) => ({
+                        id: Date.now() + i + Math.random(),
+                        x: Math.random() * 100 - 50
+                    }));
+                    setFloatingHearts(prev => [...prev, ...newHearts]);
+                    setTimeout(() => {
+                        setFloatingHearts(prev => prev.filter(h => !newHearts.find(nh => nh.id === h.id)));
+                    }, 3000);
                 })
                 .subscribe();
 
@@ -177,10 +191,55 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
         try {
             setShowHeartAnim(true);
             setTimeout(() => setShowHeartAnim(false), 1000);
+            
+            // Broadcast reaction to others
+            supabase.channel(`live_stream_updates_${selectedStream.id}`).send({
+                type: 'broadcast',
+                event: 'reaction',
+                payload: { timestamp: Date.now() }
+            });
+
+            // Add floating hearts locally immediately
+            const newHearts = Array.from({ length: 5 }).map((_, i) => ({
+                id: Date.now() + i,
+                x: Math.random() * 100 - 50
+            }));
+            setFloatingHearts(prev => [...prev, ...newHearts]);
+            setTimeout(() => {
+                setFloatingHearts(prev => prev.filter(h => !newHearts.find(nh => nh.id === h.id)));
+            }, 3000);
+
             await likeLiveStream(selectedStream.id);
         } catch (e) {
             console.error(e);
         }
+    };
+
+    const handleToggleCamera = () => {
+        setIsCameraOn(!isCameraOn);
+        addNotification({ 
+            type: 'info', 
+            title: isCameraOn ? 'Kamera o\'chirildi' : 'Kamera yoqildi', 
+            message: isCameraOn ? 'Video oqimi to\'xtatildi.' : 'Video oqimi boshlandi.' 
+        });
+    };
+
+    const handleToggleMic = () => {
+        setIsMicOn(!isMicOn);
+        addNotification({ 
+            type: 'info', 
+            title: isMicOn ? 'Mikrofon o\'chirildi' : 'Mikrofon yoqildi', 
+            message: isMicOn ? 'Ovoz yozish to\'xtatildi.' : 'Ovoz yozish boshlandi.' 
+        });
+    };
+
+    const handleToggleScreenShare = () => {
+        setIsScreenSharing(!isScreenSharing);
+        addNotification({ 
+            type: 'info', 
+            title: isScreenSharing ? 'Ekran ulash to\'xtatildi' : 'Ekran ulash boshlandi', 
+            message: isScreenSharing ? 'Asosiy oqimga qaytildi.' : 'Ekraningiz tomoshabinlarga ko\'rinmoqda.' 
+        });
     };
 
     const handleTogglePause = () => {
@@ -247,6 +306,20 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                                 </div>
                                 <p className="text-white font-black uppercase tracking-widest text-sm">Efir To'xtatildi</p>
                             </div>
+                        ) : isScreenSharing ? (
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="w-24 h-24 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/20 animate-pulse">
+                                    <Monitor className="w-12 h-12 text-orange-500" />
+                                </div>
+                                <p className="text-orange-500 font-black uppercase tracking-widest text-sm">Ekran Ulash Faol</p>
+                            </div>
+                        ) : !isCameraOn ? (
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
+                                    <Camera className="w-12 h-12 text-gray-600" />
+                                </div>
+                                <p className="text-gray-500 font-black uppercase tracking-widest text-sm">Kamera O'chirilgan</p>
+                            </div>
                         ) : (
                             <>
                                 <div className="w-20 h-20 rounded-full bg-orange-500/20 flex items-center justify-center animate-pulse">
@@ -277,6 +350,19 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                         </div>
                     )}
 
+                    {/* Floating Hearts */}
+                    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 pointer-events-none z-40">
+                        {floatingHearts.map(heart => (
+                            <div 
+                                key={heart.id}
+                                className="absolute animate-float-up opacity-0"
+                                style={{ left: `${heart.x}px` }}
+                            >
+                                <Heart className="text-red-500 fill-red-500" size={24} />
+                            </div>
+                        ))}
+                    </div>
+
                     {/* Overlay Controls */}
                     <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start z-30">
                         <div className="flex items-center gap-3">
@@ -290,6 +376,13 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                                     <p className="text-red-400 text-[10px] flex items-center gap-1 font-bold uppercase">
                                         <Heart size={12} fill="currentColor" /> {likes}
                                     </p>
+                                    {isStreamerMode && (
+                                        <div className="flex items-center gap-2 ml-2 border-l border-white/10 pl-3">
+                                            {isCameraOn ? <Camera size={12} className="text-green-500" /> : <Camera size={12} className="text-red-500" />}
+                                            {isMicOn ? <MicIcon size={12} className="text-green-500" /> : <MicIcon size={12} className="text-red-500" />}
+                                            {isScreenSharing && <Monitor size={12} className="text-orange-500 animate-pulse" />}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -304,7 +397,8 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                                         <UserPlus size={20} />
                                     </button>
                                     <button 
-                                        className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                                        onClick={handleToggleScreenShare}
+                                        className={`p-2 rounded-full transition-colors ${isScreenSharing ? 'bg-orange-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'}`}
                                         title="Ekran ulash"
                                     >
                                         <Monitor size={20} />
@@ -337,12 +431,28 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                                         <button 
                                             onClick={handleTogglePause}
                                             className={`p-3 rounded-full transition-all ${isPaused ? 'bg-orange-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                            title={isPaused ? "Davom ettirish" : "Pauza"}
                                         >
                                             {isPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}
                                         </button>
                                         <button 
+                                            onClick={handleToggleCamera}
+                                            className={`p-3 rounded-full transition-all ${!isCameraOn ? 'bg-red-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                            title={isCameraOn ? "Kamerani o'chirish" : "Kamerani yoqish"}
+                                        >
+                                            {isCameraOn ? <Camera size={24} /> : <Video size={24} className="opacity-50" />}
+                                        </button>
+                                        <button 
+                                            onClick={handleToggleMic}
+                                            className={`p-3 rounded-full transition-all ${!isMicOn ? 'bg-red-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                            title={isMicOn ? "Mikrofonni o'chirish" : "Mikrofonni yoqish"}
+                                        >
+                                            {isMicOn ? <MicIcon size={24} /> : <MicIcon size={24} className="opacity-50" />}
+                                        </button>
+                                        <button 
                                             onClick={handleToggleRecording}
                                             className={`p-3 rounded-full transition-all ${isRecording ? 'bg-red-600 text-white animate-pulse' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                            title={isRecording ? "Yozishni to'xtatish" : "Yozib olish"}
                                         >
                                             <Circle size={24} fill={isRecording ? "currentColor" : "none"} />
                                         </button>
