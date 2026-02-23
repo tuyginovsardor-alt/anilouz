@@ -33,6 +33,7 @@ export const FandubDashboard: React.FC = () => {
     const [earnings, setEarnings] = useState<FandubEarning[]>([]);
     const [withdrawals, setWithdrawals] = useState<FandubWithdrawal[]>([]);
     const [stats, setStats] = useState<any>(null);
+    const [isLive, setIsLive] = useState(false);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'analytics' | 'wallet' | 'settings'>('overview');
     
@@ -54,14 +55,16 @@ export const FandubDashboard: React.FC = () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
-            const [p, c, u] = await Promise.all([
+            const [p, c, u, streams] = await Promise.all([
                 getUserProfile(user.id),
                 getFandubChannel(user.id),
-                getFandubUploads(user.id)
+                getFandubUploads(user.id),
+                getLiveStreams()
             ]);
             setProfile(p as UserProfile);
             setChannel(c);
             setMyUploads(u || []);
+            setIsLive(streams.some(s => s.streamer_id === user.id));
             if (c) { 
                 const [e, w, s] = await Promise.all([
                     getFandubEarnings(c.id),
@@ -195,6 +198,7 @@ export const FandubDashboard: React.FC = () => {
                             <img src={channel?.avatar_url || profile?.avatar_url || ''} className="w-full h-full object-cover" alt="" />
                         </div>
                         {channel?.is_verified && <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-1 border-2 border-black"><CheckCircle size={14} fill="white" className="text-blue-500"/></div>}
+                        {isLive && <div className="absolute -top-1 -left-1 bg-red-600 text-[8px] font-black px-2 py-0.5 rounded-full border-2 border-black animate-pulse">LIVE</div>}
                     </div>
                     <h3 className="text-lg font-black uppercase tracking-tight text-center truncate w-full px-2">{channel?.name}</h3>
                     <p className="text-[8px] font-black text-zinc-600 tracking-widest mt-1 uppercase">Ijodkor</p>

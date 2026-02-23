@@ -29,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
     isMenuOpen, setIsMenuOpen 
 }) => {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isAnyLive, setIsAnyLive] = useState(false);
   const [customLogo, setCustomLogo] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -52,6 +53,11 @@ export const Header: React.FC<HeaderProps> = ({
   const fetchHeaderData = async () => {
       try {
           const { data: { user } } = await supabase.auth.getUser();
+          const [streams] = await Promise.all([
+              db.getLiveStreams()
+          ]);
+          setIsAnyLive(streams.length > 0);
+          
           if (user) {
               const [count, profile, list] = await Promise.all([
                   db.getUnreadNotificationsCount(user.id),
@@ -108,7 +114,10 @@ export const Header: React.FC<HeaderProps> = ({
                         <p className="text-sm font-black uppercase tracking-wide">Fandub</p>
                     </button>
                     <button onClick={() => onNavigate('live')} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all ${currentPage === 'live' ? 'bg-white/10 border-white/10' : 'hover:bg-white/5 border-transparent'}`}>
-                        <Video size={20} className={currentPage === 'live' ? 'text-red-600' : 'text-zinc-500'} />
+                        <div className="relative">
+                            <Video size={20} className={currentPage === 'live' ? 'text-red-600' : 'text-zinc-500'} />
+                            {isAnyLive && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full animate-pulse border border-black"></span>}
+                        </div>
                         <p className="text-sm font-black uppercase tracking-wide">Jonli Efir</p>
                     </button>
                 </nav>

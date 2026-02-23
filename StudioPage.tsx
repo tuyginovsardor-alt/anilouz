@@ -6,7 +6,7 @@ import {
 import { supabase } from './services/supabaseClient';
 import { Movie, FandubChannel, FandubStory } from './types';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { getMovies, getFandubChannels, getActiveStories, toggleFollowChannel, getFandubPosts } from './services/dbService';
+import { getMovies, getFandubChannels, getActiveStories, toggleFollowChannel, getFandubPosts, getLiveStreams } from './services/dbService';
 import { MovieCard } from './components/MovieCard';
 import { useNotification } from './hooks/useNotification';
 import { StoryViewer } from './components/StoryViewer';
@@ -18,6 +18,7 @@ interface StudioPageProps {
 
 export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistClick }) => {
     const [channels, setChannels] = useState<FandubChannel[]>([]);
+    const [liveStreams, setLiveStreams] = useState<any[]>([]);
     const [stories, setStories] = useState<FandubStory[]>([]);
     const [allMovies, setAllMovies] = useState<Movie[]>([]);
     const [loading, setLoading] = useState(true);
@@ -44,14 +45,16 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            const [c, s, m] = await Promise.all([
+            const [c, s, m, ls] = await Promise.all([
                 getFandubChannels(user?.id),
                 getActiveStories(),
-                getMovies()
+                getMovies(),
+                getLiveStreams()
             ]);
             setChannels(c || []);
             setStories(s || []);
             setAllMovies((m || []).filter(movie => movie.is_fandub));
+            setLiveStreams(ls || []);
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     };
@@ -123,10 +126,13 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                                 <img src={ch.banner_url || 'https://i.imgur.com/8y9q1Xh.jpg'} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90 group-hover:opacity-80 transition-opacity"></div>
                                 <div className="absolute inset-0 p-6 flex flex-col justify-end items-center text-center z-10">
-                                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-purple-500 to-pink-500 mb-4 shadow-xl">
+                                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-purple-500 to-pink-500 mb-4 shadow-xl relative">
                                         <div className="w-full h-full rounded-full bg-black overflow-hidden border-2 border-black">
                                             {ch.avatar_url ? <img src={ch.avatar_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-black text-2xl">{ch.name.charAt(0)}</div>}
                                         </div>
+                                        {liveStreams.some(ls => ls.channel_id === ch.id) && (
+                                            <div className="absolute -top-1 -left-1 bg-red-600 text-[8px] font-black px-2 py-0.5 rounded-full border-2 border-black animate-pulse">LIVE</div>
+                                        )}
                                     </div>
                                     <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-1">{ch.name}</h3>
                                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-6">@{ch.username} • {ch.subscriber_count} Muxlis</p>
@@ -164,8 +170,11 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                         </div>
 
                         <div className="px-6 lg:px-16 flex flex-col lg:flex-row gap-6 lg:gap-10 -mt-20 lg:-mt-24 relative z-10 flex-shrink-0">
-                            <div className="w-36 h-36 lg:w-48 lg:h-48 rounded-[2.5rem] lg:rounded-[3rem] overflow-hidden p-1.5 bg-[#050505] shadow-2xl">
+                            <div className="w-36 h-36 lg:w-48 lg:h-48 rounded-[2.5rem] lg:rounded-[3rem] overflow-hidden p-1.5 bg-[#050505] shadow-2xl relative">
                                 {selectedChannel.avatar_url ? <img src={selectedChannel.avatar_url} className="w-full h-full rounded-[2.3rem] lg:rounded-[2.8rem] object-cover border-4 border-zinc-900" alt="" /> : <div className="w-full h-full rounded-[2.3rem] lg:rounded-[2.8rem] bg-purple-900 flex items-center justify-center text-white font-black text-4xl border-4 border-zinc-900">{selectedChannel.name.charAt(0)}</div>}
+                                {liveStreams.some(ls => ls.channel_id === selectedChannel.id) && (
+                                    <div className="absolute top-4 left-4 bg-red-600 text-[10px] font-black px-3 py-1 rounded-full border-2 border-black animate-pulse shadow-2xl z-20">LIVE</div>
+                                )}
                             </div>
                             <div className="flex-1 lg:pt-24">
                                 <div className="flex items-center gap-3 mb-2">

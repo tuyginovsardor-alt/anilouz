@@ -3,14 +3,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
     Video, Users, MessageSquare, Settings, Play, Square, 
     Send, Shield, Crown, User, MoreVertical, X,
-    Volume2, VolumeX, Maximize, Minimize, ExternalLink
+    Volume2, VolumeX, Maximize, Minimize, ExternalLink,
+    Heart, Pause, Circle, UserPlus, Share2, Download,
+    Camera, Mic as MicIcon, Monitor
 } from 'lucide-react';
 import { 
     LiveStream, LiveChatMessage, UserProfile, UserRole, FandubChannel 
 } from './types';
 import { 
     getLiveStreams, createLiveStream, updateLiveStream, endLiveStream,
-    getLiveChatMessages, sendLiveChatMessage, getFandubChannel
+    getLiveChatMessages, sendLiveChatMessage, getFandubChannel,
+    likeLiveStream, inviteCoStreamer, getAllUsers
 } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { useNotification } from './hooks/useNotification';
@@ -30,11 +33,19 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
     const [isStreamerMode, setIsStreamerMode] = useState(false);
     const [myChannel, setMyChannel] = useState<FandubChannel | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isInviteOpen, setIsInviteOpen] = useState(false);
+    const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
     
     // Streamer form
     const [streamTitle, setStreamTitle] = useState('');
     const [streamDesc, setStreamDesc] = useState('');
     const [isAniloOfficial, setIsAniloOfficial] = useState(false);
+
+    // Live features
+    const [isPaused, setIsPaused] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [likes, setLikes] = useState(0);
+    const [showHeartAnim, setShowHeartAnim] = useState(false);
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotification();
@@ -43,15 +54,18 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
 
     useEffect(() => {
         loadStreams();
-        if (canStream && userProfile?.role === 'fandub') {
-            loadMyChannel();
+        if (canStream) {
+            if (userProfile?.role === 'fandub') loadMyChannel();
+            loadAllUsers();
         }
     }, [userProfile]);
 
     useEffect(() => {
         if (selectedStream) {
+            setLikes(selectedStream.likes_count || 0);
             loadChat(selectedStream.id);
-            const subscription = supabase
+            
+            const chatSub = supabase
                 .channel(`live_chat_${selectedStream.id}`)
                 .on('postgres_changes', { 
                     event: 'INSERT', 
@@ -63,11 +77,26 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                 })
                 .subscribe();
 
+            const streamSub = supabase
+                .channel(`live_stream_updates_${selectedStream.id}`)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'live_streams',
+                    filter: `id=eq.${selectedStream.id}`
+                }, payload => {
+                    const updated = payload.new as LiveStream;
+                    setLikes(updated.likes_count || 0);
+                    setSelectedStream(prev => prev ? { ...prev, ...updated } : updated);
+                })
+                .subscribe();
+
             return () => {
-                supabase.removeChannel(subscription);
+                supabase.removeChannel(chatSub);
+                supabase.removeChannel(streamSub);
             };
         }
-    }, [selectedStream]);
+    }, [selectedStream?.id]);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,6 +121,11 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
         }
     };
 
+    const loadAllUsers = async () => {
+        const users = await getAllUsers();
+        setAllUsers(users.filter(u => u.id !== userProfile?.id));
+    };
+
     const loadChat = async (streamId: string) => {
         const messages = await getLiveChatMessages(streamId);
         setChatMessages(messages);
@@ -107,6 +141,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                 description: streamDesc,
                 status: 'live',
                 viewer_count: 0,
+                likes_count: 0,
                 started_at: new Date().toISOString(),
                 is_anilo_official: userProfile.role === 'admin' || userProfile.role === 'owner' ? isAniloOfficial : false,
                 settings: {
@@ -137,6 +172,47 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
         }
     };
 
+    const handleLike = async () => {
+        if (!selectedStream) return;
+        try {
+            setShowHeartAnim(true);
+            setTimeout(() => setShowHeartAnim(false), 1000);
+            await likeLiveStream(selectedStream.id);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleTogglePause = () => {
+        setIsPaused(!isPaused);
+        addNotification({ 
+            type: 'info', 
+            title: isPaused ? 'Efir davom etmoqda' : 'Efir to\'xtatildi', 
+            message: isPaused ? 'Efir qayta boshlandi.' : 'Efir vaqtincha to\'xtatildi.' 
+        });
+    };
+
+    const handleToggleRecording = () => {
+        if (isRecording) {
+            setIsRecording(false);
+            addNotification({ type: 'success', title: 'Yozib olish tugadi', message: 'Video galereyaga saqlandi.' });
+        } else {
+            setIsRecording(true);
+            addNotification({ type: 'info', title: 'Yozib olish boshlandi', message: 'Efir yozib olinmoqda...' });
+        }
+    };
+
+    const handleInviteCoStreamer = async (user: UserProfile) => {
+        if (!selectedStream) return;
+        try {
+            await inviteCoStreamer(selectedStream.id, user.id, user.username || user.full_name || 'User');
+            addNotification({ type: 'success', title: 'Taklif yuborildi', message: `${user.username} ga taklif yuborildi.` });
+            setIsInviteOpen(false);
+        } catch (e) {
+            addNotification({ type: 'error', title: 'Xatolik', message: 'Taklif yuborishda xatolik.' });
+        }
+    };
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !selectedStream || !userProfile) return;
@@ -164,31 +240,82 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                 <div className="flex-1 relative bg-gray-900 flex items-center justify-center group">
                     {/* Placeholder for real video stream */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
-                        <div className="w-20 h-20 rounded-full bg-orange-500/20 flex items-center justify-center animate-pulse">
-                            <Video className="w-10 h-10 text-orange-500" />
-                        </div>
-                        <p className="text-gray-400 font-medium">Video oqimi yuklanmoqda...</p>
+                        {isPaused ? (
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                                    <Pause className="w-12 h-12 text-white" />
+                                </div>
+                                <p className="text-white font-black uppercase tracking-widest text-sm">Efir To'xtatildi</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="w-20 h-20 rounded-full bg-orange-500/20 flex items-center justify-center animate-pulse">
+                                    <Video className="w-10 h-10 text-orange-500" />
+                                </div>
+                                <p className="text-gray-400 font-medium">Video oqimi yuklanmoqda...</p>
+                            </>
+                        )}
                     </div>
 
+                    {/* Co-streamer placeholder */}
+                    {selectedStream.co_streamer_id && (
+                        <div className="absolute bottom-20 right-4 w-48 aspect-video bg-black/80 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-20">
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                    <User className="text-blue-500" size={20} />
+                                </div>
+                                <p className="text-[10px] text-white font-bold uppercase">{selectedStream.co_streamer_username}</p>
+                            </div>
+                            <div className="absolute top-2 left-2 bg-blue-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Guest</div>
+                        </div>
+                    )}
+
+                    {/* Heart Animation */}
+                    {showHeartAnim && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+                            <Heart className="text-red-500 w-32 h-32 animate-ping fill-red-500" />
+                        </div>
+                    )}
+
                     {/* Overlay Controls */}
-                    <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start">
+                    <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start z-30">
                         <div className="flex items-center gap-3">
                             <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase animate-pulse">Live</div>
                             <div>
                                 <h1 className="text-white font-bold text-lg leading-tight">{selectedStream.title}</h1>
-                                <p className="text-gray-300 text-xs flex items-center gap-1">
-                                    <Users size={12} /> {selectedStream.viewer_count} tomoshabin
-                                </p>
+                                <div className="flex items-center gap-3 mt-1">
+                                    <p className="text-gray-300 text-[10px] flex items-center gap-1 font-bold uppercase">
+                                        <Users size={12} /> {selectedStream.viewer_count}
+                                    </p>
+                                    <p className="text-red-400 text-[10px] flex items-center gap-1 font-bold uppercase">
+                                        <Heart size={12} fill="currentColor" /> {likes}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
                             {isStreamerMode && (
-                                <button 
-                                    onClick={() => setIsSettingsOpen(true)}
-                                    className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
-                                >
-                                    <Settings size={20} />
-                                </button>
+                                <>
+                                    <button 
+                                        onClick={() => setIsInviteOpen(true)}
+                                        className="p-2 bg-white/10 hover:bg-blue-600 rounded-full text-white transition-colors"
+                                        title="Mehmon chaqirish"
+                                    >
+                                        <UserPlus size={20} />
+                                    </button>
+                                    <button 
+                                        className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                                        title="Ekran ulash"
+                                    >
+                                        <Monitor size={20} />
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsSettingsOpen(true)}
+                                        className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                                    >
+                                        <Settings size={20} />
+                                    </button>
+                                </>
                             )}
                             <button 
                                 onClick={() => {
@@ -202,12 +329,37 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                         </div>
                     </div>
 
-                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-30">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <button className="text-white hover:text-orange-500 transition-colors"><Volume2 size={24} /></button>
-                                <div className="h-1 w-24 bg-white/20 rounded-full overflow-hidden">
-                                    <div className="h-full w-2/3 bg-orange-500"></div>
+                            <div className="flex items-center gap-6">
+                                {isStreamerMode ? (
+                                    <>
+                                        <button 
+                                            onClick={handleTogglePause}
+                                            className={`p-3 rounded-full transition-all ${isPaused ? 'bg-orange-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                        >
+                                            {isPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}
+                                        </button>
+                                        <button 
+                                            onClick={handleToggleRecording}
+                                            className={`p-3 rounded-full transition-all ${isRecording ? 'bg-red-600 text-white animate-pulse' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                        >
+                                            <Circle size={24} fill={isRecording ? "currentColor" : "none"} />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button 
+                                        onClick={handleLike}
+                                        className="p-3 bg-red-600/20 hover:bg-red-600 rounded-full text-red-500 hover:text-white transition-all active:scale-90"
+                                    >
+                                        <Heart size={24} fill="currentColor" />
+                                    </button>
+                                )}
+                                <div className="flex items-center gap-4">
+                                    <button className="text-white hover:text-orange-500 transition-colors"><Volume2 size={24} /></button>
+                                    <div className="h-1 w-24 bg-white/20 rounded-full overflow-hidden">
+                                        <div className="h-full w-2/3 bg-orange-500"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -317,6 +469,42 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                         </div>
                     </div>
                 )}
+
+                {/* Invite Modal */}
+                {isInviteOpen && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md overflow-hidden animate-scale-in flex flex-col max-h-[80vh]">
+                            <div className="p-6 border-b border-gray-800 flex justify-between items-center">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <UserPlus className="text-blue-500" />
+                                    Mehmon Chaqirish
+                                </h3>
+                                <button onClick={() => setIsInviteOpen(false)} className="text-gray-400 hover:text-white"><X /></button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                                {allUsers.map(user => (
+                                    <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-transparent hover:border-white/10 transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gray-800 overflow-hidden">
+                                                {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover" /> : <User className="w-full h-full p-2 text-gray-500" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-bold text-sm">{user.username || user.full_name}</p>
+                                                <p className="text-[10px] text-zinc-500 uppercase font-black">{user.role}</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleInviteCoStreamer(user)}
+                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase rounded-lg transition-all"
+                                        >
+                                            Taklif
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -381,6 +569,10 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({ userProfile, onB
                                         <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
                                             <Users size={10} />
                                             {stream.viewer_count}
+                                        </div>
+                                        <div className="absolute bottom-3 right-3 bg-red-600/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                                            <Heart size={10} fill="currentColor" />
+                                            {stream.likes_count || 0}
                                         </div>
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center shadow-xl transform scale-90 group-hover:scale-100 transition-transform">

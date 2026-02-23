@@ -218,11 +218,14 @@ export interface LiveStream {
     cover_url?: string;
     status: 'live' | 'ended' | 'scheduled';
     viewer_count: number;
+    likes_count: number;
     started_at: string;
     ended_at?: string;
     stream_key?: string;
     playback_url?: string;
     is_anilo_official?: boolean;
+    co_streamer_id?: string;
+    co_streamer_username?: string;
     settings: {
         chat_enabled: boolean;
         slow_mode?: number;

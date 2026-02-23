@@ -1081,3 +1081,16 @@ export const sendLiveChatMessage = async (msg: Partial<LiveChatMessage>) => {
     const { error } = await supabase.from('live_chat_messages').insert(msg);
     if (error) throw error;
 };
+
+export const likeLiveStream = async (streamId: string) => {
+    const { error } = await supabase.rpc('increment_live_likes', { s_id: streamId });
+    if (error) throw error;
+};
+
+export const inviteCoStreamer = async (streamId: string, userId: string, username: string) => {
+    const { error } = await supabase.from('live_streams').update({ 
+        co_streamer_id: userId,
+        co_streamer_username: username
+    }).eq('id', streamId);
+    if (error) throw error;
+};
