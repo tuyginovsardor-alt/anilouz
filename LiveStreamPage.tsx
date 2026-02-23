@@ -5,7 +5,7 @@ import {
     Send, Shield, Crown, User, MoreVertical, X,
     Volume2, VolumeX, Maximize, Minimize, ExternalLink,
     Heart, Pause, Circle, UserPlus, Share2, Download,
-    Camera, Mic as MicIcon, Monitor, Minimize2, Maximize2
+    Camera, Mic as MicIcon, Monitor, Minimize2, Maximize2, ChevronLeft
 } from 'lucide-react';
 import { 
     LiveStream, LiveChatMessage, UserProfile, UserRole, FandubChannel 
@@ -354,7 +354,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         }
 
         return (
-            <div className="fixed inset-0 bg-black z-[100] flex flex-col md:flex-row overflow-hidden">
+            <div className="fixed inset-0 bg-black z-[150] flex flex-col md:flex-row overflow-hidden">
                 {/* Video Area */}
                 <div className="flex-1 relative bg-gray-900 flex items-center justify-center group">
                     {/* Placeholder for real video stream */}
@@ -448,11 +448,23 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                         </div>
                         <div className="flex items-center gap-2 pointer-events-auto">
                             <button 
-                                onClick={() => setIsMinimized(true)}
+                                onClick={() => {
+                                    const url = window.location.href;
+                                    navigator.clipboard.writeText(url);
+                                    addNotification({ type: 'success', title: 'Havola nusxalandi', message: 'Efir havolasi buferga saqlandi.' });
+                                }}
                                 className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
-                                title="Kichraytirish"
+                                title="Ulashish"
                             >
-                                <Minimize2 size={20} />
+                                <Share2 size={20} />
+                            </button>
+                            <button 
+                                onClick={() => setIsMinimized(true)}
+                                className="flex items-center gap-2 px-3 py-2 bg-orange-600 hover:bg-orange-700 rounded-full text-white text-[10px] font-black uppercase transition-all shadow-lg"
+                                title="Kichraytirish (Mini-player)"
+                            >
+                                <Minimize2 size={16} />
+                                <span className="hidden sm:inline">Kichraytirish</span>
                             </button>
                             {isStreamerMode && (
                                 <>
@@ -725,6 +737,16 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
     return (
         <div className="min-h-screen bg-[#050505] pb-20">
             <div className="max-w-7xl mx-auto px-4 py-8">
+                <div className="mb-8">
+                    <button 
+                        onClick={onBack}
+                        className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors group"
+                    >
+                        <ChevronLeft className="group-hover:-translate-x-1 transition-transform" />
+                        <span className="text-xs font-black uppercase tracking-widest">Orqaga</span>
+                    </button>
+                </div>
+
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                     <div>
                         <h1 className="text-4xl font-black text-white mb-2 flex items-center gap-3">

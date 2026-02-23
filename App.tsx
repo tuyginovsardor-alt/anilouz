@@ -22,7 +22,7 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
 import { LiveStreamPage } from './LiveStreamPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star, Maximize2 } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star, Maximize2, Video, Users } from 'lucide-react';
 import { getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
 import { HamburgerMenu } from './components/HamburgerMenu';
@@ -246,7 +246,7 @@ const App: React.FC = () => {
   }
 
   const shouldHideGlobalNav = selectedMovie || isPlayerActive || activeVideoAd || 
-                             ['welcome', 'admin', 'copyright', 'fandub-dashboard'].includes(page);
+                             ['welcome', 'admin', 'copyright', 'fandub-dashboard', 'live'].includes(page);
 
   return (
     <PWAProvider>
@@ -263,7 +263,7 @@ const App: React.FC = () => {
           {/* Ramazon Bezaklari - Eng orqa fonda */}
           {!shouldHideGlobalNav && <RamadanDecoration />}
 
-          {!selectedMovie && !isPlayerActive && !activeVideoAd && page !== 'welcome' && (
+          {!shouldHideGlobalNav && (
             <Header 
               onNavigate={handleNavigation} 
               onDashboardNavigate={setDashboardPage}
@@ -383,7 +383,9 @@ const App: React.FC = () => {
             >
                 <div onClick={() => setPage('live')} className="absolute inset-0 cursor-pointer">
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <WifiOff className="text-orange-500 w-8 h-8 animate-pulse" />
+                        <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center animate-pulse">
+                            <Video className="text-orange-500 w-6 h-6" />
+                        </div>
                     </div>
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Maximize2 className="text-white" />
@@ -392,6 +394,10 @@ const App: React.FC = () => {
                 
                 <div className="absolute top-2 left-2 flex items-center gap-2 pointer-events-none">
                     <div className="bg-red-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Live</div>
+                    <div className="bg-black/60 backdrop-blur-md text-white text-[8px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <Users size={8} />
+                        {activeLiveStream.viewer_count}
+                    </div>
                 </div>
 
                 <button 
@@ -412,7 +418,7 @@ const App: React.FC = () => {
                 </button>
 
                 <div className="absolute bottom-2 left-2 right-2 truncate pointer-events-none">
-                    <p className="text-[10px] text-white font-bold">{activeLiveStream.title}</p>
+                    <p className="text-[10px] text-white font-bold drop-shadow-lg">{activeLiveStream.title}</p>
                 </div>
             </div>
           )}
