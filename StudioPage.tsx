@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-    Mic, Star, ChevronRight, Film, TrendingUp, User, Play, Heart, Users, Eye, Plus, X, Search, CheckCircle, Bell, ChevronLeft, MessageSquare, Info, HeartIcon
+    Mic, Star, ChevronRight, Film, TrendingUp, User, Play, Heart, Users, Eye, Plus, X, Search, CheckCircle, Bell, ChevronLeft, MessageSquare, Info, HeartIcon, Video
 } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { Movie, FandubChannel, FandubStory } from './types';
@@ -14,9 +14,10 @@ import { StoryViewer } from './components/StoryViewer';
 interface StudioPageProps {
     onMovieClick: (movie: Movie) => void;
     onArtistClick?: (userId: string) => void;
+    onStreamClick?: (stream: any) => void;
 }
 
-export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistClick }) => {
+export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistClick, onStreamClick }) => {
     const [channels, setChannels] = useState<FandubChannel[]>([]);
     const [liveStreams, setLiveStreams] = useState<any[]>([]);
     const [stories, setStories] = useState<FandubStory[]>([]);
@@ -123,7 +124,66 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
             </div>
 
             <div className="container mx-auto px-4 mt-16 space-y-24">
-                {/* ... existing sections ... */}
+                {/* Live Streams Section */}
+                {liveStreams.length > 0 && (
+                    <section className="animate-fade-in">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="w-1.5 h-8 bg-red-600 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.5)]"></div>
+                                <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3">
+                                    Jonli Efirlar
+                                    <span className="flex h-3 w-3 relative">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                                    </span>
+                                </h2>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {liveStreams.map(stream => (
+                                <div 
+                                    key={stream.id} 
+                                    onClick={() => onStreamClick?.(stream)}
+                                    className="group cursor-pointer relative aspect-video rounded-3xl overflow-hidden bg-zinc-900 border border-white/5 hover:border-red-500/50 transition-all duration-500 shadow-2xl"
+                                >
+                                    {stream.cover_url ? (
+                                        <img src={stream.cover_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-black flex items-center justify-center">
+                                            <Video className="w-12 h-12 text-zinc-700 group-hover:text-red-500/50 transition-colors" />
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60"></div>
+                                    <div className="absolute top-4 left-4 flex items-center gap-2">
+                                        <div className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                                            LIVE
+                                        </div>
+                                        <div className="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+                                            <Users size={12} />
+                                            {stream.viewer_count}
+                                        </div>
+                                    </div>
+                                    <div className="absolute bottom-4 left-4 right-4">
+                                        <h3 className="text-white font-black text-lg truncate mb-1">{stream.title}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full overflow-hidden bg-zinc-800">
+                                                {stream.profiles?.avatar_url ? <img src={stream.profiles.avatar_url} className="w-full h-full object-cover" /> : <User size={12} className="w-full h-full p-1 text-zinc-500" />}
+                                            </div>
+                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{stream.profiles?.username || 'Anonim'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                                            <Play size={28} fill="white" className="ml-1" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 <section>
                     <div className="flex items-center gap-4 mb-10">
                         <div className="w-1.5 h-8 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(147,51,234,0.5)]"></div>

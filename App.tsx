@@ -329,7 +329,16 @@ const App: React.FC = () => {
                         )}
                         {page === 'copyright' && <CopyrightPage onBack={() => setPage('welcome')} />}
                         {page === 'dub-dashboard' && <DubDashboard />}
-                        {page === 'studio' && <StudioPage onArtistClick={setSelectedArtistId} onMovieClick={handleMovieClick} />}
+                        {page === 'studio' && (
+                          <StudioPage 
+                            onArtistClick={setSelectedArtistId} 
+                            onMovieClick={handleMovieClick} 
+                            onStreamClick={(stream) => {
+                              setActiveLiveStream(stream);
+                              setPage('live');
+                            }}
+                          />
+                        )}
                         {page === 'shop' && <ShopPage />}
                         {page === 'shop-admin' && <ShopAdminPage />}
                         {page === 'fandub-dashboard' && <FandubDashboard />}
