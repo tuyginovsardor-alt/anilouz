@@ -48,6 +48,8 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
     const [selectedVideoId, setSelectedVideoId] = useState('');
     const [selectedAudioId, setSelectedAudioId] = useState('');
     
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const screenStreamRef = useRef<MediaStream | null>(null);
@@ -255,6 +257,13 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         return () => stopMedia();
     }, [isStreamerMode, selectedVideoId, selectedAudioId, isCameraOn, isMicOn]);
 
+    useEffect(() => {
+        if (videoRef.current && localStream) {
+            videoRef.current.srcObject = localStream;
+            videoRef.current.play().catch(console.error);
+        }
+    }, [localStream, isStreamerMode]);
+
     const startMedia = async () => {
         try {
             stopMedia();
@@ -263,12 +272,13 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                 audio: isMicOn ? (selectedAudioId ? { deviceId: selectedAudioId } : true) : false
             });
             streamRef.current = stream;
+            setLocalStream(stream);
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
             }
         } catch (e) {
             console.error("Media start error:", e);
-            addNotification({ type: 'error', title: 'Media xatoligi', message: 'Kamera yoki mikrofonni yoqib bo\'lmadi.' });
+            addNotification({ type: 'error', title: 'Media xatoligi', message: 'Kamera yoki mikrofonni yoqib bo\'lmadi. Iltimos, ruxsat berilganini tekshiring.' });
         }
     };
 
@@ -277,6 +287,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
+        setLocalStream(null);
         if (videoRef.current) {
             videoRef.current.srcObject = null;
         }
@@ -480,25 +491,30 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                     </div>
 
                     {/* Overlay Controls */}
-                    <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start z-50 pointer-events-none">
+                    <div className="absolute top-0 left-0 right-0 p-6 pt-12 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start z-50 pointer-events-none">
                         <div className="flex items-center gap-3 pointer-events-auto">
-                            <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase animate-pulse">Live</div>
-                            <div>
-                                <h1 className="text-white font-bold text-lg leading-tight">{selectedStream.title}</h1>
-                                <div className="flex items-center gap-3 mt-1">
-                                    <p className="text-gray-300 text-[10px] flex items-center gap-1 font-bold uppercase">
-                                        <Users size={12} /> {selectedStream.viewer_count}
-                                    </p>
-                                    <p className="text-red-400 text-[10px] flex items-center gap-1 font-bold uppercase">
-                                        <Heart size={12} fill="currentColor" /> {likes}
-                                    </p>
-                                    {isStreamerMode && (
-                                        <div className="flex items-center gap-2 ml-2 border-l border-white/10 pl-3">
-                                            {isCameraOn ? <Camera size={12} className="text-green-500" /> : <Camera size={12} className="text-red-500" />}
-                                            {isMicOn ? <MicIcon size={12} className="text-green-500" /> : <MicIcon size={12} className="text-red-500" />}
-                                            {isScreenSharing && <Monitor size={12} className="text-orange-500 animate-pulse" />}
-                                        </div>
-                                    )}
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase animate-pulse">Live</div>
+                                    {isStreamerMode && <AudioVisualizer stream={localStream} />}
+                                </div>
+                                <div>
+                                    <h1 className="text-white font-bold text-lg leading-tight">{selectedStream.title}</h1>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <p className="text-gray-300 text-[10px] flex items-center gap-1 font-bold uppercase">
+                                            <Users size={12} /> {selectedStream.viewer_count}
+                                        </p>
+                                        <p className="text-red-400 text-[10px] flex items-center gap-1 font-bold uppercase">
+                                            <Heart size={12} fill="currentColor" /> {likes}
+                                        </p>
+                                        {isStreamerMode && (
+                                            <div className="flex items-center gap-2 ml-2 border-l border-white/10 pl-3">
+                                                {isCameraOn ? <Camera size={12} className="text-green-500" /> : <Camera size={12} className="text-red-500" />}
+                                                {isMicOn ? <MicIcon size={12} className="text-green-500" /> : <MicIcon size={12} className="text-red-500" />}
+                                                {isScreenSharing && <Monitor size={12} className="text-orange-500 animate-pulse" />}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1002,6 +1018,58 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                     </div>
                 </div>
             )}
+        </div>
+    );
+};
+
+const AudioVisualizer: React.FC<{ stream: MediaStream | null }> = ({ stream }) => {
+    const [level, setLevel] = useState(0);
+    const requestRef = useRef<number>();
+    const analyserRef = useRef<AnalyserNode>();
+
+    useEffect(() => {
+        if (!stream || stream.getAudioTracks().length === 0) {
+            setLevel(0);
+            return;
+        }
+
+        let audioContext: AudioContext | null = null;
+        try {
+            audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+            analyserRef.current = analyser;
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const update = () => {
+                if (!analyserRef.current) return;
+                analyserRef.current.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+                setLevel(average);
+                requestRef.current = requestAnimationFrame(update);
+            };
+            update();
+        } catch (e) {
+            console.error("Audio visualizer error:", e);
+        }
+
+        return () => {
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+            if (audioContext) audioContext.close();
+        };
+    }, [stream]);
+
+    return (
+        <div className="flex items-end gap-0.5 h-3 w-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+                <div 
+                    key={i} 
+                    className="w-1 bg-orange-500 transition-all duration-75 rounded-full"
+                    style={{ height: `${Math.max(20, Math.min(100, (level / 128) * 100 * (0.6 + Math.random() * 0.4)))}%` }}
+                />
+            ))}
         </div>
     );
 };
