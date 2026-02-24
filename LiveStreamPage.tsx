@@ -5,7 +5,7 @@ import {
     Send, Shield, Crown, User, MoreVertical, X,
     Volume2, VolumeX, Maximize, Minimize, ExternalLink,
     Heart, Pause, Circle, UserPlus, Share2, Download,
-    Camera, Mic as MicIcon, Monitor, Minimize2, Maximize2, ChevronLeft
+    Camera, Mic as MicIcon, Monitor, Minimize2, Maximize2, ChevronLeft, RefreshCw
 } from 'lucide-react';
 import { 
     LiveStream, LiveChatMessage, UserProfile, UserRole, FandubChannel 
@@ -47,6 +47,10 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
     const [devices, setDevices] = useState<{video: MediaDeviceInfo[], audio: MediaDeviceInfo[]}>({video: [], audio: []});
     const [selectedVideoId, setSelectedVideoId] = useState('');
     const [selectedAudioId, setSelectedAudioId] = useState('');
+    
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+    const screenStreamRef = useRef<MediaStream | null>(null);
     
     // Streamer form
     const [streamTitle, setStreamTitle] = useState('');
@@ -242,21 +246,61 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         }
     };
 
-    const handleToggleCamera = () => {
-        setIsCameraOn(!isCameraOn);
+    useEffect(() => {
+        if (isStreamerMode && selectedStream) {
+            startMedia();
+        } else {
+            stopMedia();
+        }
+        return () => stopMedia();
+    }, [isStreamerMode, selectedVideoId, selectedAudioId, isCameraOn, isMicOn]);
+
+    const startMedia = async () => {
+        try {
+            stopMedia();
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: isCameraOn ? (selectedVideoId ? { deviceId: selectedVideoId } : true) : false,
+                audio: isMicOn ? (selectedAudioId ? { deviceId: selectedAudioId } : true) : false
+            });
+            streamRef.current = stream;
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch (e) {
+            console.error("Media start error:", e);
+            addNotification({ type: 'error', title: 'Media xatoligi', message: 'Kamera yoki mikrofonni yoqib bo\'lmadi.' });
+        }
+    };
+
+    const stopMedia = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+    };
+
+    const handleToggleCamera = async () => {
+        const newState = !isCameraOn;
+        setIsCameraOn(newState);
+        
         addNotification({ 
             type: 'info', 
-            title: isCameraOn ? 'Kamera o\'chirildi' : 'Kamera yoqildi', 
-            message: isCameraOn ? 'Video oqimi to\'xtatildi.' : 'Video oqimi boshlandi.' 
+            title: newState ? 'Kamera yoqildi' : 'Kamera o\'chirildi', 
+            message: newState ? 'Video oqimi boshlandi.' : 'Video oqimi to\'xtatildi.' 
         });
     };
 
     const handleToggleMic = () => {
-        setIsMicOn(!isMicOn);
+        const newState = !isMicOn;
+        setIsMicOn(newState);
+        
         addNotification({ 
             type: 'info', 
-            title: isMicOn ? 'Mikrofon o\'chirildi' : 'Mikrofon yoqildi', 
-            message: isMicOn ? 'Ovoz yozish to\'xtatildi.' : 'Ovoz yozish boshlandi.' 
+            title: newState ? 'Mikrofon yoqildi' : 'Mikrofon o\'chirildi', 
+            message: newState ? 'Ovoz uzatish boshlandi.' : 'Ovoz uzatish to\'xtatildi.' 
         });
     };
 
@@ -356,37 +400,49 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         return (
             <div className="fixed inset-0 bg-black z-[150] flex flex-col md:flex-row overflow-hidden">
                 {/* Video Area */}
-                <div className="flex-1 relative bg-gray-900 flex items-center justify-center group">
-                    {/* Placeholder for real video stream */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
-                        {isPaused ? (
-                            <div className="flex flex-col items-center gap-4">
+                <div className="flex-1 relative bg-gray-900 flex items-center justify-center group overflow-hidden">
+                    {isStreamerMode ? (
+                        <video 
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-full object-cover scale-x-[-1]"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                            <div className="w-24 h-24 rounded-full bg-orange-500/10 flex items-center justify-center animate-pulse">
+                                <Video className="text-orange-500 w-12 h-12" />
+                            </div>
+                            <p className="text-zinc-500 font-bold uppercase tracking-widest animate-pulse">Jonli efir yuklanmoqda...</p>
+                        </div>
+                    )}
+
+                    {/* Overlay for status messages */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 pointer-events-none z-10">
+                        {isPaused && (
+                            <div className="flex flex-col items-center gap-4 bg-black/40 backdrop-blur-sm p-8 rounded-3xl">
                                 <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
                                     <Pause className="w-12 h-12 text-white" />
                                 </div>
                                 <p className="text-white font-black uppercase tracking-widest text-sm">Efir To'xtatildi</p>
                             </div>
-                        ) : isScreenSharing ? (
-                            <div className="flex flex-col items-center gap-4">
+                        )}
+                        {!isPaused && isScreenSharing && (
+                            <div className="flex flex-col items-center gap-4 bg-black/40 backdrop-blur-sm p-8 rounded-3xl">
                                 <div className="w-24 h-24 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/20 animate-pulse">
                                     <Monitor className="w-12 h-12 text-orange-500" />
                                 </div>
                                 <p className="text-orange-500 font-black uppercase tracking-widest text-sm">Ekran Ulash Faol</p>
                             </div>
-                        ) : !isCameraOn ? (
-                            <div className="flex flex-col items-center gap-4">
+                        )}
+                        {!isPaused && !isScreenSharing && !isCameraOn && isStreamerMode && (
+                            <div className="flex flex-col items-center gap-4 bg-black/40 backdrop-blur-sm p-8 rounded-3xl">
                                 <div className="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
                                     <Camera className="w-12 h-12 text-gray-600" />
                                 </div>
                                 <p className="text-gray-500 font-black uppercase tracking-widest text-sm">Kamera O'chirilgan</p>
                             </div>
-                        ) : (
-                            <>
-                                <div className="w-20 h-20 rounded-full bg-orange-500/20 flex items-center justify-center animate-pulse">
-                                    <Video className="w-10 h-10 text-orange-500" />
-                                </div>
-                                <p className="text-gray-400 font-medium">Video oqimi yuklanmoqda...</p>
-                            </>
                         )}
                     </div>
 
@@ -458,51 +514,10 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                             >
                                 <Share2 size={20} />
                             </button>
-                            <button 
-                                onClick={() => setIsMinimized(true)}
-                                className="flex items-center gap-2 px-3 py-2 bg-orange-600 hover:bg-orange-700 rounded-full text-white text-[10px] font-black uppercase transition-all shadow-lg"
-                                title="Kichraytirish (Mini-player)"
-                            >
-                                <Minimize2 size={16} />
-                                <span className="hidden sm:inline">Kichraytirish</span>
-                            </button>
-                            {isStreamerMode && (
-                                <>
-                                    <button 
-                                        onClick={() => setIsInviteOpen(true)}
-                                        className="p-2 bg-white/10 hover:bg-blue-600 rounded-full text-white transition-colors"
-                                        title="Mehmon chaqirish"
-                                    >
-                                        <UserPlus size={20} />
-                                    </button>
-                                    <button 
-                                        onClick={handleToggleScreenShare}
-                                        className={`p-2 rounded-full transition-colors ${isScreenSharing ? 'bg-orange-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'}`}
-                                        title="Ekran ulash"
-                                    >
-                                        <Monitor size={20} />
-                                    </button>
-                                    <button 
-                                        onClick={() => setIsSettingsOpen(true)}
-                                        className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
-                                    >
-                                        <Settings size={20} />
-                                    </button>
-                                </>
-                            )}
-                            <button 
-                                onClick={() => {
-                                    if (isStreamerMode) handleEndStream();
-                                    else setSelectedStream(null);
-                                }}
-                                className="p-2 bg-white/10 hover:bg-red-600 rounded-full text-white transition-colors"
-                            >
-                                <X size={20} />
-                            </button>
                         </div>
                     </div>
 
-                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-30">
+                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 to-transparent z-30">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-6">
                                 {isStreamerMode ? (
@@ -536,14 +551,75 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                                             <Circle size={24} fill={isRecording ? "currentColor" : "none"} />
                                             {isRecording && <span className="text-xs font-black">{formatTime(recordingTime)}</span>}
                                         </button>
+                                        <button 
+                                            onClick={() => setIsInviteOpen(true)}
+                                            className="p-3 bg-white/10 hover:bg-blue-600 rounded-full text-white transition-colors"
+                                            title="Mehmon chaqirish"
+                                        >
+                                            <UserPlus size={24} />
+                                        </button>
+                                        <button 
+                                            onClick={handleToggleScreenShare}
+                                            className={`p-3 rounded-full transition-colors ${isScreenSharing ? 'bg-orange-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+                                            title="Ekran ulash"
+                                        >
+                                            <Monitor size={24} />
+                                        </button>
+                                        <button 
+                                            onClick={() => startMedia()}
+                                            className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
+                                            title="Media qayta yuklash"
+                                        >
+                                            <RefreshCw size={24} />
+                                        </button>
+                                        <button 
+                                            onClick={() => setIsSettingsOpen(true)}
+                                            className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
+                                            title="Sozlamalar"
+                                        >
+                                            <Settings size={24} />
+                                        </button>
+                                        <button 
+                                            onClick={() => setIsMinimized(true)}
+                                            className="p-3 bg-orange-600 hover:bg-orange-700 rounded-full text-white transition-all shadow-lg"
+                                            title="Kichraytirish"
+                                        >
+                                            <Minimize2 size={24} />
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                if (isStreamerMode) handleEndStream();
+                                                else setSelectedStream(null);
+                                            }}
+                                            className="p-3 bg-red-600 hover:bg-red-700 rounded-full text-white transition-all shadow-lg"
+                                            title="Yopish"
+                                        >
+                                            <X size={24} />
+                                        </button>
                                     </>
                                 ) : (
-                                    <button 
-                                        onClick={handleLike}
-                                        className="p-3 bg-red-600/20 hover:bg-red-600 rounded-full text-red-500 hover:text-white transition-all active:scale-90"
-                                    >
-                                        <Heart size={24} fill="currentColor" />
-                                    </button>
+                                    <>
+                                        <button 
+                                            onClick={handleLike}
+                                            className="p-3 bg-red-600/20 hover:bg-red-600 rounded-full text-red-500 hover:text-white transition-all active:scale-90"
+                                        >
+                                            <Heart size={24} fill="currentColor" />
+                                        </button>
+                                        <button 
+                                            onClick={() => setIsMinimized(true)}
+                                            className="p-3 bg-orange-600 hover:bg-orange-700 rounded-full text-white transition-all shadow-lg"
+                                            title="Kichraytirish"
+                                        >
+                                            <Minimize2 size={24} />
+                                        </button>
+                                        <button 
+                                            onClick={() => setSelectedStream(null)}
+                                            className="p-3 bg-red-600 hover:bg-red-700 rounded-full text-white transition-all shadow-lg"
+                                            title="Yopish"
+                                        >
+                                            <X size={24} />
+                                        </button>
+                                    </>
                                 )}
                                 <div className="flex items-center gap-4">
                                     <button className="text-white hover:text-orange-500 transition-colors"><Volume2 size={24} /></button>
@@ -553,7 +629,18 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <button className="text-white hover:text-orange-500 transition-colors"><Maximize size={24} /></button>
+                                <button 
+                                    onClick={() => {
+                                        const el = videoRef.current;
+                                        if (el) {
+                                            if (el.requestFullscreen) el.requestFullscreen();
+                                        }
+                                    }}
+                                    className="text-white hover:text-orange-500 transition-colors"
+                                    title="To'liq ekran"
+                                >
+                                    <Maximize size={24} />
+                                </button>
                             </div>
                         </div>
                     </div>
