@@ -65,6 +65,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
     const [isCameraOn, setIsCameraOn] = useState(true);
     const [isMicOn, setIsMicOn] = useState(true);
     const [isScreenSharing, setIsScreenSharing] = useState(false);
+    const [videoFilter, setVideoFilter] = useState('none');
     const [likes, setLikes] = useState(0);
     const [showHeartAnim, setShowHeartAnim] = useState(false);
     const [floatingHearts, setFloatingHearts] = useState<{ id: number; x: number }[]>([]);
@@ -83,6 +84,18 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
             loadAllUsers();
             loadDevices();
         }
+
+        // Real-time subscription for streams list
+        const streamsSub = supabase
+            .channel('live_streams_list')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'live_streams' }, () => {
+                loadStreams();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(streamsSub);
+        };
     }, [userProfile]);
 
     const loadDevices = async () => {
@@ -264,6 +277,19 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         }
     }, [localStream, isStreamerMode]);
 
+    const VIDEO_FILTERS = [
+        { id: 'none', name: 'Original', filter: 'none' },
+        { id: 'beauty', name: 'Beauty', filter: 'brightness(1.1) contrast(1.05) saturate(1.1) blur(0.4px)' },
+        { id: 'vibrant', name: 'Vibrant', filter: 'saturate(1.5) contrast(1.1)' },
+        { id: 'clarity', name: 'Clarity', filter: 'contrast(1.2) brightness(1.1) saturate(1.1) drop-shadow(0 0 2px rgba(255,255,255,0.1))' },
+        { id: 'warm', name: 'Warm', filter: 'sepia(0.2) saturate(1.2) hue-rotate(-10deg)' },
+        { id: 'cool', name: 'Cool', filter: 'hue-rotate(180deg) saturate(1.2)' },
+        { id: 'grayscale', name: 'B&W', filter: 'grayscale(1)' },
+        { id: 'sepia', name: 'Vintage', filter: 'sepia(0.8)' },
+        { id: 'sharp', name: 'Sharp', filter: 'contrast(1.3) brightness(1.1)' },
+        { id: 'snap', name: 'Snap', filter: 'brightness(1.2) saturate(1.4) contrast(1.1) hue-rotate(5deg)' }
+    ];
+
     const startMedia = async () => {
         try {
             stopMedia();
@@ -418,7 +444,8 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                             autoPlay
                             playsInline
                             muted
-                            className="w-full h-full object-cover scale-x-[-1]"
+                            className="w-full h-full object-cover scale-x-[-1] transition-all duration-500"
+                            style={{ filter: VIDEO_FILTERS.find(f => f.id === videoFilter)?.filter || 'none' }}
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-4">
@@ -595,6 +622,19 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                                         >
                                             <Settings size={24} />
                                         </button>
+                                        
+                                        {/* Filter Selector */}
+                                        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/10 overflow-x-auto max-w-[200px] no-scrollbar">
+                                            {VIDEO_FILTERS.map(f => (
+                                                <button
+                                                    key={f.id}
+                                                    onClick={() => setVideoFilter(f.id)}
+                                                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase transition-all whitespace-nowrap ${videoFilter === f.id ? 'bg-orange-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                                                >
+                                                    {f.name}
+                                                </button>
+                                            ))}
+                                        </div>
                                         <button 
                                             onClick={() => setIsMinimized(true)}
                                             className="p-3 bg-orange-600 hover:bg-orange-700 rounded-full text-white transition-all shadow-lg"
@@ -920,7 +960,11 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                                     </div>
                                     <div className="flex gap-3">
                                         <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex-shrink-0 overflow-hidden">
-                                            <User className="w-full h-full p-2 text-gray-500" />
+                                            {stream.profiles?.avatar_url ? (
+                                                <img src={stream.profiles.avatar_url} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <User className="w-full h-full p-2 text-gray-500" />
+                                            )}
                                         </div>
                                         <div className="min-w-0">
                                             <h3 className="text-white font-bold truncate group-hover:text-orange-500 transition-colors">{stream.title}</h3>

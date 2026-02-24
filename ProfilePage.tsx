@@ -20,6 +20,7 @@ interface ProfilePageProps {
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavigate }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLive, setIsLive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<Movie[]>([]);
   const { addNotification } = useNotification();
@@ -53,6 +54,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       if (targetUserId) {
         const profileData = await getUserProfile(targetUserId);
         setProfile(profileData as UserProfile);
+        
+        // Check if user is live
+        const { data: liveData } = await supabase
+            .from('live_streams')
+            .select('id')
+            .eq('streamer_id', targetUserId)
+            .eq('status', 'live')
+            .maybeSingle();
+        setIsLive(!!liveData);
+
         setEditForm({
             full_name: profileData?.full_name || '',
             username: profileData?.username || '',
@@ -199,7 +210,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
       {/* AVATAR & NAME */}
       <div className="px-4 -mt-16 relative z-10 flex flex-col items-center">
           <div className="relative group cursor-pointer" onClick={() => isMyProfile && avatarInputRef.current?.click()}>
-              <div className="w-32 h-32 rounded-full p-1 bg-[#050505] shadow-2xl">
+              <div className={`w-32 h-32 rounded-full p-1 bg-[#050505] shadow-2xl transition-all duration-500 ${isLive ? 'ring-4 ring-red-600 ring-offset-4 ring-offset-[#050505]' : ''}`}>
                   <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 border-2 border-zinc-800 relative">
                       {profile?.avatar_url ? (
                           <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
@@ -210,6 +221,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                       {isMyProfile && <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all"><Camera className="text-white w-8 h-8" /></div>}
                   </div>
               </div>
+              
+              {isLive && (
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg animate-pulse border-2 border-[#050505] whitespace-nowrap">
+                      JONLI EFIR
+                  </div>
+              )}
           </div>
 
           <div className="mt-3 text-center w-full">

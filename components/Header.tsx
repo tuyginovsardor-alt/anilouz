@@ -94,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between pointer-events-auto">
             <div className="flex items-center gap-4 md:gap-10">
-                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
+                <div className="flex items-center gap-3 cursor-pointer group relative" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
                     <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
                         {customLogo ? (
                             <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -102,6 +102,12 @@ export const Header: React.FC<HeaderProps> = ({
                             <UzumakiLogo className="w-full h-full p-1 text-orange-500 bg-black" />
                         )}
                     </div>
+                    {isAnyLive && (
+                        <div className="absolute -top-1 -right-1 flex items-center justify-center">
+                            <div className="w-3 h-3 bg-red-600 rounded-full animate-ping absolute"></div>
+                            <div className="w-3 h-3 bg-red-600 rounded-full border-2 border-black relative"></div>
+                        </div>
+                    )}
                 </div>
 
                 <nav className="hidden xl:flex items-center gap-4">

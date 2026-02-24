@@ -33,6 +33,16 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
     useEffect(() => { 
         supabase.auth.getUser().then(({data}) => setCurrentUser(data.user));
         loadData(); 
+
+        const liveSub = supabase.channel('studio_live_check')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'live_streams' }, () => {
+                getLiveStreams().then(setLiveStreams);
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(liveSub);
+        };
     }, []);
 
     useEffect(() => {

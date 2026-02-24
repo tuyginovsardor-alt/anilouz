@@ -83,6 +83,7 @@ const App: React.FC = () => {
   const [activeLiveStream, setActiveLiveStream] = useState<LiveStream | null>(null);
   const [isLiveMinimized, setIsLiveMinimized] = useState(false);
   const [isStreamerMode, setIsStreamerMode] = useState(false);
+  const [isAnyLive, setIsAnyLive] = useState(false);
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const addNotification = (notification: Omit<Notification, 'id'>) => {
@@ -172,6 +173,16 @@ const App: React.FC = () => {
         }
     });
 
+    // Global Live Status check
+    const checkLive = async () => {
+        const { data } = await supabase.from('live_streams').select('id').eq('status', 'live').limit(1);
+        setIsAnyLive(!!data && data.length > 0);
+    };
+    checkLive();
+    const liveSub = supabase.channel('global_live_check')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'live_streams' }, () => checkLive())
+        .subscribe();
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -180,6 +191,7 @@ const App: React.FC = () => {
 
     return () => {
         subscription.unsubscribe();
+        supabase.removeChannel(liveSub);
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
     };
@@ -344,7 +356,11 @@ const App: React.FC = () => {
                     <button onClick={() => handleNavigation('dashboard')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500' : 'text-zinc-600'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Asosiy</span></button>
                     <button onClick={() => handleNavigation('ramazon')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'ramazon' ? 'text-orange-500' : 'text-zinc-600'}`}><Moon size={22} /><span className="text-[9px] font-black uppercase">Ramazon</span></button>
                     <button onClick={() => handleNavigation('shop')} className={`flex flex-col items-center gap-1 w-1/5 -mt-6 group`}><div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}><ShoppingBag size={20} /></div><span className={`text-[9px] font-black uppercase ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span></button>
-                    <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}><LayoutGrid size={22} /><span className="text-[9px] font-black uppercase">Fandub</span></button>
+                    <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/5 relative ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}>
+                        <LayoutGrid size={22} />
+                        {isAnyLive && <div className="absolute top-0 right-1/4 w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>}
+                        <span className="text-[9px] font-black uppercase">Fandub</span>
+                    </button>
                     
                     <button onClick={() => {if(isAuthenticated) setIsMenuOpen(true); else setIsAuthModalOpen(true);}} className={`flex flex-col items-center gap-1 w-1/5 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600'}`}>
                         {isAuthenticated ? (

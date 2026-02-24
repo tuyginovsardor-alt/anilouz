@@ -226,6 +226,8 @@ export interface LiveStream {
     is_anilo_official?: boolean;
     co_streamer_id?: string;
     co_streamer_username?: string;
+    profiles?: { username: string | null; avatar_url: string | null; };
+    fandub_channels?: { name: string | null; };
     settings: {
         chat_enabled: boolean;
         slow_mode?: number;
