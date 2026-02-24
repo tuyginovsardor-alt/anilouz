@@ -129,6 +129,7 @@ const App: React.FC = () => {
           const params = new URLSearchParams(window.location.search);
           const pageParam = params.get('page') as Page;
           const movieIdParam = params.get('movie_id');
+          const liveIdParam = params.get('live_id');
 
           if (session) {
               setIsAuthenticated(true); 
@@ -139,10 +140,27 @@ const App: React.FC = () => {
                   const found = allMovies.find(m => m.id === Number(movieIdParam));
                   if (found) setSelectedMovie(found);
               }
+
+              if (liveIdParam) {
+                  try {
+                      const { data: stream } = await supabase
+                          .from('live_streams')
+                          .select('*, profiles(username, avatar_url), fandub_channels(name)')
+                          .eq('id', liveIdParam)
+                          .maybeSingle();
+                      
+                      if (stream && stream.status === 'live') {
+                          setActiveLiveStream(stream);
+                          setPage('live');
+                      }
+                  } catch (e) {
+                      console.error("URL Live Stream Error:", e);
+                  }
+              }
               
               if (pageParam && ['ramazon', 'search', 'shop', 'studio', 'catalog', 'live'].includes(pageParam)) {
                   setPage(pageParam);
-              } else {
+              } else if (!liveIdParam) {
                   setPage('dashboard');
               }
           } else {
