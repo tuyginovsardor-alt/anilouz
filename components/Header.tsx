@@ -21,12 +21,13 @@ interface HeaderProps {
   onLogout: () => void;
   isMenuOpen: boolean; 
   setIsMenuOpen: (isOpen: boolean) => void; 
+  onNotificationClick?: (type: string, data: any) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
     onNavigate, onDashboardNavigate, currentPage, isAuthenticated, 
     onLoginClick, onSearchClick, onSwitchRole, onLogout,
-    isMenuOpen, setIsMenuOpen 
+    isMenuOpen, setIsMenuOpen, onNotificationClick
 }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isAnyLive, setIsAnyLive] = useState(false);
@@ -178,7 +179,18 @@ export const Header: React.FC<HeaderProps> = ({
                             </span>
                         )}
                     </button>
-                    {showNotifications && <NotificationList notifications={notifications} onClose={() => setShowNotifications(false)} />}
+                    {showNotifications && (
+                        <NotificationList 
+                            notifications={notifications} 
+                            onClose={() => setShowNotifications(false)} 
+                            onNotificationClick={(n) => {
+                                setShowNotifications(false);
+                                if (onNotificationClick) {
+                                    onNotificationClick(n.type, n.data);
+                                }
+                            }}
+                        />
+                    )}
                 </div>
 
                 <div className="hidden md:block">

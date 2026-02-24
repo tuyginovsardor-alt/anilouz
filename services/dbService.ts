@@ -21,13 +21,14 @@ export const getUserIdByUsername = async (username: string): Promise<string | nu
     } catch { return null; }
 };
 
-export const createNotification = async (userId: string, title: string, message: string, type: string = 'info') => {
+export const createNotification = async (userId: string, title: string, message: string, type: string = 'info', data: any = null) => {
     try {
         await supabase.from('notifications').insert({
             user_id: userId,
             title,
             message,
             type,
+            data,
             is_read: false,
             created_at: new Date().toISOString()
         });

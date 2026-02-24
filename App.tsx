@@ -287,6 +287,23 @@ const App: React.FC = () => {
               onLogout={() => supabase.auth.signOut()}
               isMenuOpen={isMenuOpen}
               setIsMenuOpen={setIsMenuOpen}
+              onNotificationClick={async (type, data) => {
+                  if (['live', 'invite', 'mention'].includes(type) && data?.stream_id) {
+                      try {
+                          const { data: stream } = await supabase.from('live_streams').select('*, profiles(username, avatar_url), fandub_channels(name)').eq('id', data.stream_id).maybeSingle();
+                          if (stream) {
+                              setActiveLiveStream(stream);
+                              setPage('live');
+                          } else {
+                              addNotification({ type: 'error', title: 'Xatolik', message: 'Efir topilmadi yoki yakunlangan.' });
+                          }
+                      } catch (e) {
+                          console.error("Notification navigation error:", e);
+                      }
+                  } else if (type === 'promo') {
+                      setPage('shop');
+                  }
+              }}
             />
           )}
           

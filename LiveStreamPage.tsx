@@ -219,7 +219,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
             if (myChannel) {
                 const followers = await getChannelFollowers(myChannel.id);
                 followers.forEach(fId => {
-                    createNotification(fId, 'Jonli Efir Boshlandi', `${myChannel.name} kanali jonli efirni boshladi!`, 'live');
+                    createNotification(fId, 'Jonli Efir Boshlandi', `${myChannel.name} kanali jonli efirni boshladi!`, 'live', { stream_id: newStream.id });
                 });
             }
         } catch (e) {
@@ -395,7 +395,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         if (!selectedStream) return;
         try {
             await inviteCoStreamer(selectedStream.id, user.id, user.username || user.full_name || 'User');
-            await createNotification(user.id, 'Efirga Taklif', `${userProfile?.username || 'Kimdir'} sizni jonli efirga mehmon sifatida taklif qildi!`, 'invite');
+            await createNotification(user.id, 'Efirga Taklif', `${userProfile?.username || 'Kimdir'} sizni jonli efirga mehmon sifatida taklif qildi!`, 'invite', { stream_id: selectedStream.id });
             addNotification({ type: 'success', title: 'Taklif yuborildi', message: `${user.username} ga taklif yuborildi.` });
             setIsInviteOpen(false);
         } catch (e) {
@@ -425,7 +425,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                     const username = mention.substring(1);
                     const { data: mentionedUser } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
                     if (mentionedUser && mentionedUser.id !== userProfile.id) {
-                        createNotification(mentionedUser.id, 'Sizni eslashdi', `${userProfile.username} sizni jonli efir chatida eslab o'tdi!`, 'mention');
+                        createNotification(mentionedUser.id, 'Sizni eslashdi', `${userProfile.username} sizni jonli efir chatida eslab o'tdi!`, 'mention', { stream_id: selectedStream.id });
                     }
                 });
             }
