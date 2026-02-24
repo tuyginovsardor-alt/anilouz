@@ -410,6 +410,13 @@ export const toggleFollowChannel = async (userId: string, channelId: string) => 
     } catch (e) { return false; }
 };
 
+export const getChannelFollowers = async (channelId: string): Promise<string[]> => {
+    try {
+        const { data } = await supabase.from('fandub_follows').select('user_id').eq('channel_id', channelId);
+        return (data || []).map(f => f.user_id);
+    } catch (e) { return []; }
+};
+
 export const getActiveStories = async (): Promise<FandubStory[]> => {
     try {
         const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();

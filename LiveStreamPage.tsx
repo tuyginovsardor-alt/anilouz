@@ -13,7 +13,8 @@ import {
 import { 
     getLiveStreams, createLiveStream, updateLiveStream, endLiveStream,
     getLiveChatMessages, sendLiveChatMessage, getFandubChannel,
-    likeLiveStream, inviteCoStreamer, getAllUsers
+    likeLiveStream, inviteCoStreamer, getAllUsers, createNotification,
+    getChannelFollowers
 } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { useNotification } from './hooks/useNotification';
@@ -213,6 +214,14 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
             setSelectedStream(newStream);
             setIsStreamerMode(true);
             addNotification({ type: 'success', title: 'Jonli efir boshlandi', message: 'Efir muvaffaqiyatli boshlandi!' });
+            
+            // Notify followers
+            if (myChannel) {
+                const followers = await getChannelFollowers(myChannel.id);
+                followers.forEach(fId => {
+                    createNotification(fId, 'Jonli Efir Boshlandi', `${myChannel.name} kanali jonli efirni boshladi!`, 'live');
+                });
+            }
         } catch (e) {
             addNotification({ type: 'error', title: 'Xatolik', message: 'Efirni boshlab bo\'lmadi.' });
         }
@@ -386,6 +395,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         if (!selectedStream) return;
         try {
             await inviteCoStreamer(selectedStream.id, user.id, user.username || user.full_name || 'User');
+            await createNotification(user.id, 'Efirga Taklif', `${userProfile?.username || 'Kimdir'} sizni jonli efirga mehmon sifatida taklif qildi!`, 'invite');
             addNotification({ type: 'success', title: 'Taklif yuborildi', message: `${user.username} ga taklif yuborildi.` });
             setIsInviteOpen(false);
         } catch (e) {
@@ -407,6 +417,19 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                 role: userProfile.role
             };
             await sendLiveChatMessage(msg);
+
+            // Handle mentions
+            const mentions = newMessage.match(/@(\w+)/g);
+            if (mentions) {
+                mentions.forEach(async (mention) => {
+                    const username = mention.substring(1);
+                    const { data: mentionedUser } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
+                    if (mentionedUser && mentionedUser.id !== userProfile.id) {
+                        createNotification(mentionedUser.id, 'Sizni eslashdi', `${userProfile.username} sizni jonli efir chatida eslab o'tdi!`, 'mention');
+                    }
+                });
+            }
+
             setNewMessage('');
         } catch (e) {
             addNotification({ type: 'error', title: 'Xatolik', message: 'Xabar yuborib bo\'lmadi.' });

@@ -45,8 +45,29 @@ export const Header: React.FC<HeaderProps> = ({
 
       if (isAuthenticated) {
           fetchHeaderData();
+          
+          // Real-time notifications
+          let sub: any;
+          supabase.auth.getUser().then(({data: {user}}) => {
+              if (user) {
+                  sub = supabase.channel(`user_notifications_${user.id}`)
+                      .on('postgres_changes', { 
+                          event: 'INSERT', 
+                          schema: 'public', 
+                          table: 'notifications',
+                          filter: `user_id=eq.${user.id}`
+                      }, () => {
+                          fetchHeaderData();
+                      })
+                      .subscribe();
+              }
+          });
+
           const interval = setInterval(fetchHeaderData, 15000);
-          return () => clearInterval(interval);
+          return () => {
+              clearInterval(interval);
+              if (sub) supabase.removeChannel(sub);
+          };
       }
   }, [isAuthenticated]);
 
