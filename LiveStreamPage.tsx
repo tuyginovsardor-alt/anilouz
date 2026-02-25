@@ -192,6 +192,18 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         setChatMessages(messages);
     };
 
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const currentPage = params.get('page');
+
+        if (selectedStream) {
+            const newUrl = `?page=live&live_id=${selectedStream.id}`;
+            window.history.pushState({ live_id: selectedStream.id }, '', newUrl);
+        } else if (currentPage === 'live' && !selectedStream) {
+            window.history.pushState({}, '', '?page=live');
+        }
+    }, [selectedStream]);
+
     const handleStartStream = async () => {
         if (!userProfile) return;
         try {
@@ -549,13 +561,19 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                                     {isStreamerMode && <AudioVisualizer stream={localStream} />}
                                 </div>
                                 <div>
-                                    <h1 className="text-white font-bold text-lg leading-tight">{selectedStream.title}</h1>
+                                    <h1 className="text-white font-bold text-lg leading-tight flex items-center gap-2">
+                                        {selectedStream.title}
+                                        <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-zinc-400 font-mono">ID: {selectedStream.id.split('-')[0]}</span>
+                                    </h1>
                                     <div className="flex items-center gap-3 mt-1">
                                         <p className="text-gray-300 text-[10px] flex items-center gap-1 font-bold uppercase">
                                             <Users size={12} /> {selectedStream.viewer_count}
                                         </p>
                                         <p className="text-red-400 text-[10px] flex items-center gap-1 font-bold uppercase">
                                             <Heart size={12} fill="currentColor" /> {likes}
+                                        </p>
+                                        <p className="text-zinc-500 text-[10px] font-bold uppercase border-l border-white/10 pl-3">
+                                            Host: {selectedStream.profiles?.username || 'Anonymous'}
                                         </p>
                                         {isStreamerMode && (
                                             <div className="flex items-center gap-2 ml-2 border-l border-white/10 pl-3">
@@ -571,7 +589,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                         <div className="flex items-center gap-2 pointer-events-auto">
                             <button 
                                 onClick={() => {
-                                    const url = window.location.href;
+                                    const url = `${window.location.origin}/?page=live&live_id=${selectedStream.id}`;
                                     navigator.clipboard.writeText(url);
                                     addNotification({ type: 'success', title: 'Havola nusxalandi', message: 'Efir havolasi buferga saqlandi.' });
                                 }}
