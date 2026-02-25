@@ -88,7 +88,8 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const addNotification = (notification: Omit<Notification, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
-    setNotifications(prev => [...prev, { id, ...notification }]);
+    // Replace existing notifications to avoid stacking ("rain" effect)
+    setNotifications([{ id, ...notification }]);
   };
   const removeNotification = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));

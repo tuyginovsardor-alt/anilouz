@@ -40,6 +40,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
     const [activeStreams, setActiveStreams] = useState<LiveStream[]>([]);
     const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [myChannel, setMyChannel] = useState<FandubChannel | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -421,8 +422,9 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !selectedStream || !userProfile) return;
+        if (!newMessage.trim() || !selectedStream || !userProfile || isSending) return;
 
+        setIsSending(true);
         try {
             const msg: Partial<LiveChatMessage> = {
                 stream_id: selectedStream.id,
@@ -449,6 +451,8 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
             setNewMessage('');
         } catch (e) {
             addNotification({ type: 'error', title: 'Xatolik', message: 'Xabar yuborib bo\'lmadi.' });
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -805,15 +809,20 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                                 type="text" 
                                 value={newMessage}
                                 onChange={e => setNewMessage(e.target.value)}
-                                placeholder="Xabar yozing..."
-                                className="w-full bg-gray-800 border border-gray-700 rounded-full px-4 py-2.5 text-sm text-white focus:border-orange-500 outline-none pr-12 transition-all"
+                                disabled={isSending}
+                                placeholder={isSending ? "Yuborilmoqda..." : "Xabar yozing..."}
+                                className="w-full bg-gray-800 border border-gray-700 rounded-full px-4 py-2.5 text-sm text-white focus:border-orange-500 outline-none pr-12 transition-all disabled:opacity-50"
                             />
                             <button 
                                 type="submit"
-                                disabled={!newMessage.trim()}
+                                disabled={!newMessage.trim() || isSending}
                                 className="absolute right-1.5 top-1.5 p-1.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-700 text-white rounded-full transition-all"
                             >
-                                <Send size={16} />
+                                {isSending ? (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <Send size={16} />
+                                )}
                             </button>
                         </div>
                     </form>
