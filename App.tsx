@@ -149,9 +149,12 @@ const App: React.FC = () => {
                           .eq('id', liveIdParam)
                           .maybeSingle();
                       
-                      if (stream && stream.status === 'live') {
+                      if (stream) {
                           setActiveLiveStream(stream);
                           setPage('live');
+                          if (stream.status === 'ended') {
+                              addNotification({ type: 'info', title: 'Efir yakunlangan', message: 'Bu jonli efir allaqachon tugagan.' });
+                          }
                       }
                   } catch (e) {
                       console.error("URL Live Stream Error:", e);

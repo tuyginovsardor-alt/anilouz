@@ -197,10 +197,11 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         const currentPage = params.get('page');
 
         if (selectedStream) {
-            const newUrl = `?page=live&live_id=${selectedStream.id}`;
-            window.history.pushState({ live_id: selectedStream.id }, '', newUrl);
+            // Use full URL with origin to ensure it's a valid sharing link
+            const newUrl = `${window.location.origin}/?page=live&live_id=${selectedStream.id}`;
+            window.history.replaceState({ live_id: selectedStream.id }, '', newUrl);
         } else if (currentPage === 'live' && !selectedStream) {
-            window.history.pushState({}, '', '?page=live');
+            window.history.replaceState({}, '', `${window.location.origin}/?page=live`);
         }
     }, [selectedStream]);
 
@@ -227,6 +228,9 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
             setIsStreamerMode(true);
             addNotification({ type: 'success', title: 'Jonli efir boshlandi', message: 'Efir muvaffaqiyatli boshlandi!' });
             
+            // Refresh list
+            loadStreams();
+
             // Notify followers
             if (myChannel) {
                 const followers = await getChannelFollowers(myChannel.id);
@@ -493,7 +497,22 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
 
                     {/* Overlay for status messages */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 pointer-events-none z-10">
-                        {isPaused && (
+                        {selectedStream.status === 'ended' && (
+                            <div className="flex flex-col items-center gap-4 bg-black/80 backdrop-blur-xl p-10 rounded-3xl border border-white/10 shadow-2xl animate-scale-in">
+                                <div className="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                                    <X className="w-12 h-12 text-red-500" />
+                                </div>
+                                <h2 className="text-white text-2xl font-black uppercase tracking-tighter">Efir Yakunlandi</h2>
+                                <p className="text-zinc-400 text-sm">Bu jonli efir streamer tomonidan tugatilgan.</p>
+                                <button 
+                                    onClick={() => setSelectedStream(null)}
+                                    className="mt-4 px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all pointer-events-auto"
+                                >
+                                    Boshqa efirlarni ko'rish
+                                </button>
+                            </div>
+                        )}
+                        {isPaused && selectedStream.status !== 'ended' && (
                             <div className="flex flex-col items-center gap-4 bg-black/40 backdrop-blur-sm p-8 rounded-3xl">
                                 <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
                                     <Pause className="w-12 h-12 text-white" />
@@ -587,17 +606,17 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                             </div>
                         </div>
                         <div className="flex items-center gap-2 pointer-events-auto">
-                            <button 
-                                onClick={() => {
-                                    const url = `${window.location.origin}/?page=live&live_id=${selectedStream.id}`;
-                                    navigator.clipboard.writeText(url);
-                                    addNotification({ type: 'success', title: 'Havola nusxalandi', message: 'Efir havolasi buferga saqlandi.' });
-                                }}
-                                className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
-                                title="Ulashish"
-                            >
-                                <Share2 size={20} />
-                            </button>
+                                <button 
+                                    onClick={() => {
+                                        const url = `${window.location.origin}/?page=live&live_id=${selectedStream.id}`;
+                                        navigator.clipboard.writeText(url);
+                                        addNotification({ type: 'success', title: 'Havola nusxalandi', message: 'Efir havolasi buferga saqlandi.' });
+                                    }}
+                                    className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors pointer-events-auto"
+                                    title="Ulashish"
+                                >
+                                    <Share2 size={20} />
+                                </button>
                         </div>
                     </div>
 
