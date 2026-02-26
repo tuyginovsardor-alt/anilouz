@@ -164,6 +164,22 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [chatMessages]);
 
+    useEffect(() => {
+        const checkStreamerProfile = async () => {
+            if (selectedStream && !selectedStream.profiles?.username) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('username, avatar_url')
+                    .eq('id', selectedStream.streamer_id)
+                    .maybeSingle();
+                if (profile) {
+                    setSelectedStream(prev => prev ? { ...prev, profiles: profile } : null);
+                }
+            }
+        };
+        checkStreamerProfile();
+    }, [selectedStream]);
+
     const loadStreams = async () => {
         setIsLoading(true);
         try {
@@ -601,7 +617,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                                             <Heart size={12} fill="currentColor" /> {likes}
                                         </p>
                                         <p className="text-zinc-500 text-[10px] font-bold uppercase border-l border-white/10 pl-3">
-                                            Host: {selectedStream.profiles?.username || 'Anonymous'}
+                                            Host: {selectedStream.profiles?.username || userProfile?.username || 'Anonymous'}
                                         </p>
                                         {isStreamerMode && (
                                             <div className="flex items-center gap-2 ml-2 border-l border-white/10 pl-3">
