@@ -617,7 +617,7 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                                             <Heart size={12} fill="currentColor" /> {likes}
                                         </p>
                                         <p className="text-zinc-500 text-[10px] font-bold uppercase border-l border-white/10 pl-3">
-                                            Host: {selectedStream.profiles?.username || userProfile?.username || 'Anonymous'}
+                                            Host: {selectedStream.profiles?.username || selectedStream.co_streamer_username || 'Yuklanmoqda...'}
                                         </p>
                                         {isStreamerMode && (
                                             <div className="flex items-center gap-2 ml-2 border-l border-white/10 pl-3">

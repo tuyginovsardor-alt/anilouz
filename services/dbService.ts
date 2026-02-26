@@ -1048,13 +1048,21 @@ export const getFandubStatsSummary = async (channelId: string) => {
 
 export const getLiveStreams = async (): Promise<LiveStream[]> => {
     try {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('live_streams')
             .select('*, profiles(username, avatar_url), fandub_channels(name)')
             .eq('status', 'live')
             .order('viewer_count', { ascending: false });
+        
+        if (error) {
+            console.error("getLiveStreams Error:", error);
+            return [];
+        }
         return (data || []) as any;
-    } catch (e) { return []; }
+    } catch (e) { 
+        console.error("getLiveStreams Exception:", e);
+        return []; 
+    }
 };
 
 export const createLiveStream = async (stream: Partial<LiveStream>) => {
