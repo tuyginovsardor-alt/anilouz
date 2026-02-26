@@ -449,8 +449,13 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
             }
 
             setNewMessage('');
-        } catch (e) {
-            addNotification({ type: 'error', title: 'Xatolik', message: 'Xabar yuborib bo\'lmadi.' });
+        } catch (e: any) {
+            console.error("Chat yuborishda xatolik:", e);
+            addNotification({ 
+                type: 'error', 
+                title: 'Xatolik', 
+                message: e.message || 'Xabar yuborib bo\'lmadi.' 
+            });
         } finally {
             setIsSending(false);
         }
