@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, CreditCard, History, Bookmark, 
     Settings, LogOut, ChevronRight, User, 
-    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic, Download, ExternalLink, Zap, Video
+    ShieldCheck, Edit3, Lock, HelpCircle, FileText, Wallet, Crown, Mic, Download, ExternalLink, Zap, Video, Activity
 } from 'lucide-react';
 import { DashboardSubPage, Page, LegalDocType } from '../App';
 import { supabase } from '../services/supabaseClient';
@@ -241,6 +241,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                                 onClick={() => handleAction('main', 'ai-assistant')} 
                             />
                             <MenuItem icon={<Settings size={20}/>} label="Ilova Sozlamalari" onClick={() => handleAction('sub', 'settings')} />
+                            <MenuItem icon={<Activity size={20}/>} label="PWA Report Card" onClick={() => handleAction('main', 'pwa-report')} />
                         </MenuSection>
 
                         <MenuSection title="Hujjatlar">

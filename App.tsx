@@ -22,6 +22,7 @@ import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
 import { LiveStreamPage } from './LiveStreamPage';
+import { PWAReportPage } from './PWAReportPage';
 import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star, Maximize2, Video, Users } from 'lucide-react';
 import { getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
@@ -29,7 +30,7 @@ import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
 import { PWAProvider } from './components/InstallPWA';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard' | 'ramazon' | 'live';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard' | 'ramazon' | 'live' | 'pwa-report';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'bundle_manager';
 export type LegalDocType = 'privacy' | 'terms';
@@ -382,6 +383,17 @@ const App: React.FC = () => {
                         {page === 'shop-admin' && <ShopAdminPage />}
                         {page === 'fandub-dashboard' && <FandubDashboard />}
                         {page === 'ramazon' && <RamazonPage onBack={() => setPage('dashboard')} />}
+                        {page === 'pwa-report' && (
+                          <div className="pt-20">
+                            <PWAReportPage />
+                            <button 
+                              onClick={() => setPage('welcome')}
+                              className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-white text-black rounded-full font-bold shadow-2xl z-50 flex items-center gap-2"
+                            >
+                              <Home size={18} /> Asosiyga qaytish
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
                   </>

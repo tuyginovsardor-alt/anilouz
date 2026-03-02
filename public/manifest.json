@@ -3,7 +3,7 @@
   "lang": "uz-UZ",
   "name": "Anilo.uz - Professional Anime Portali",
   "short_name": "Anilo",
-  "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling.",
+  "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling. PWA ilovasi orqali oflayn rejim va tezkor yuklanish imkoniyatidan foydalaning.",
   "id": "uz.anilo.app",
   "start_url": "/",
   "display": "standalone",
@@ -11,6 +11,11 @@
   "theme_color": "#f97316",
   "orientation": "portrait",
   "scope": "/",
+  "categories": [
+    "entertainment",
+    "video",
+    "movies"
+  ],
   "icons": [
     {
       "src": "/logo.svg",
@@ -23,6 +28,46 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Sevimli",
+      "url": "/?tab=favorites",
+      "description": "Sevimli animelaringiz ro'yxati",
+      "icons": [
+        {
+          "src": "/logo.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Jonli Efir",
+      "url": "/?tab=live",
+      "description": "Jonli efirlarni tomosha qiling",
+      "icons": [
+        {
+          "src": "/logo.svg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://picsum.photos/seed/anilo1/1080/1920",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Anilo Mobile View"
+    },
+    {
+      "src": "https://picsum.photos/seed/anilo2/1920/1080",
+      "sizes": "1920x1080",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Anilo Desktop View"
     }
   ]
 }
