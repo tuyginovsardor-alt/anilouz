@@ -33,6 +33,18 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Periodic Sync
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'content-update') {
+    event.waitUntil(updateContent());
+  }
+});
+
+async function updateContent() {
+  const cache = await caches.open(CACHE_NAME);
+  return cache.add('/');
+}
+
 // Background Sync
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-messages') {

@@ -72,21 +72,64 @@ export const PWAReportPage: React.FC = () => {
             status: 'SyncManager' in window, 
             desc: 'Internet ulanganda ma\'lumotlarni sinxronlash',
             icon: RefreshCw
+        },
+        { 
+            name: 'Share Target', 
+            status: !!manifest?.share_target, 
+            desc: 'Boshqa ilovalardan ma\'lumot qabul qilish',
+            icon: Share2
+        },
+        { 
+            name: 'Protocol Handlers', 
+            status: !!manifest?.protocol_handlers, 
+            desc: 'Maxsus havolalar (web+anilo) bilan ishlash',
+            icon: Globe
+        },
+        { 
+            name: 'Launch Handler', 
+            status: !!manifest?.launch_handler, 
+            desc: 'Ilovani ochilish mantiqini boshqarish',
+            icon: Layers
+        },
+        { 
+            name: 'App Shortcuts', 
+            status: !!manifest?.shortcuts && manifest.shortcuts.length > 0, 
+            desc: 'Ilova belgisini bosib turganda chiqadigan tezkor tugmalar',
+            icon: Zap
         }
     ];
+
+    const activeFeatures = features.filter(f => f.status).length;
+    const totalScore = Math.round((activeFeatures / features.length) * 100);
 
     return (
         <div className="min-h-screen bg-[#050505] text-white p-6 pb-20">
             <div className="max-w-4xl mx-auto">
-                <header className="mb-10">
-                    <motion.h1 
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-4xl font-black mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent"
+                <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <motion.h1 
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-4xl font-black mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent"
+                        >
+                            Anilo PWA Report Card
+                        </motion.h1>
+                        <p className="text-gray-400">Ilovaning Progressiv Web App (PWA) imkoniyatlari va holati tahlili.</p>
+                    </div>
+                    
+                    <motion.div 
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-[#111] border border-orange-500/20 p-4 rounded-2xl flex items-center gap-4"
                     >
-                        Anilo PWA Report Card
-                    </motion.h1>
-                    <p className="text-gray-400">Ilovaning Progressiv Web App (PWA) imkoniyatlari va holati tahlili.</p>
+                        <div className="text-right">
+                            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">PWA Score</p>
+                            <p className="text-3xl font-black text-orange-500">{totalScore}%</p>
+                        </div>
+                        <div className="w-12 h-12 rounded-full border-4 border-orange-500/20 border-t-orange-500 flex items-center justify-center">
+                            <span className="text-xs font-bold">{activeFeatures}/{features.length}</span>
+                        </div>
+                    </motion.div>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
@@ -162,6 +205,27 @@ export const PWAReportPage: React.FC = () => {
                         </div>
                     </section>
                 )}
+
+                <section className="bg-orange-500/5 border border-orange-500/10 p-8 rounded-3xl mb-12">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-orange-500" />
+                        Keyingi Qadamlar
+                    </h2>
+                    <ul className="space-y-3 text-gray-400">
+                        <li className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 shrink-0"></div>
+                            <span><strong>Maskable Icons:</strong> Ilova ikonkasini barcha qurilmalarda chiroyli ko'rinishi uchun "maskable" formatda tayyorlash.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 shrink-0"></div>
+                            <span><strong>Real Screenshots:</strong> Picsum o'rniga ilovaning haqiqiy interfeysidan olingan rasmlarni manifestga qo'shish.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 shrink-0"></div>
+                            <span><strong>Offline Content:</strong> Oflayn rejimda ko'rish uchun keshda saqlanadigan sahifalar sonini ko'paytirish.</span>
+                        </li>
+                    </ul>
+                </section>
 
                 <footer className="text-center text-gray-600 text-sm">
                     <p>© 2026 Anilo.uz - Barcha huquqlar himoyalangan.</p>
