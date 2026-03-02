@@ -3,7 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { 
     CheckCircle2, XCircle, Smartphone, Globe, Zap, 
     ShieldCheck, RefreshCw, Bell, Download, Share2,
-    Layout, Layers, Activity, Info
+    Layout, Layers, Activity, Info, MapPin, FileCode,
+    Camera, Mic, Bluetooth, Contact, Lock, Eye, Hash,
+    Usb, Cpu, MousePointer2, Music, Fingerprint, CreditCard,
+    Keyboard, Pipette, Share, HardDrive, Wifi, CpuIcon, Battery,
+    Gamepad, Type, Monitor, Shield, Cookie, Mic2, Volume2,
+    Maximize, SmartphoneIcon, ZapOff
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -96,6 +101,210 @@ export const PWAReportPage: React.FC = () => {
             status: !!manifest?.shortcuts && manifest.shortcuts.length > 0, 
             desc: 'Ilova belgisini bosib turganda chiqadigan tezkor tugmalar',
             icon: Zap
+        },
+        { 
+            name: 'Geolocation', 
+            status: 'geolocation' in navigator, 
+            desc: 'Foydalanuvchi joylashuvini aniqlash',
+            icon: MapPin
+        },
+        { 
+            name: 'File System Access', 
+            status: 'showOpenFilePicker' in window, 
+            desc: 'Qurilmadagi fayllar bilan to\'g\'ridan-to\'g\'ri ishlash',
+            icon: FileCode
+        },
+        { 
+            name: 'Camera Access', 
+            status: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 
+            desc: 'Rasm va video olish imkoniyati',
+            icon: Camera
+        },
+        { 
+            name: 'Microphone Access', 
+            status: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 
+            desc: 'Ovoz yozish imkoniyati',
+            icon: Mic
+        },
+        { 
+            name: 'Web Bluetooth', 
+            status: 'bluetooth' in navigator, 
+            desc: 'Yaqin atrofdagi Bluetooth qurilmalarga ulanish',
+            icon: Bluetooth
+        },
+        { 
+            name: 'Contact Picker', 
+            status: 'contacts' in navigator && 'ContactsManager' in window, 
+            desc: 'Kontaktlar ro\'yxatidan tanlash imkoniyati',
+            icon: Contact
+        },
+        { 
+            name: 'Screen Wake Lock', 
+            status: 'wakeLock' in navigator, 
+            desc: 'Ekran o\'chib qolishini oldini olish',
+            icon: Lock
+        },
+        { 
+            name: 'Idle Detection', 
+            status: 'IdleDetector' in window, 
+            desc: 'Foydalanuvchi faolligini aniqlash',
+            icon: Eye
+        },
+        { 
+            name: 'App Badging', 
+            status: 'setAppBadge' in navigator, 
+            desc: 'Ilova belgisida bildirishnoma raqamini ko\'rsatish',
+            icon: Hash
+        },
+        { 
+            name: 'Web USB', 
+            status: 'usb' in navigator, 
+            desc: 'USB qurilmalarga to\'g\'ridan-to\'g\'ri ulanish',
+            icon: Usb
+        },
+        { 
+            name: 'Web Serial', 
+            status: 'serial' in navigator, 
+            desc: 'Serial (COM) portlar bilan ishlash',
+            icon: Cpu
+        },
+        { 
+            name: 'Web HID', 
+            status: 'hid' in navigator, 
+            desc: 'Inson interfeysi qurilmalari (joystik va h.k.)',
+            icon: MousePointer2
+        },
+        { 
+            name: 'Web MIDI', 
+            status: 'requestMIDIAccess' in navigator, 
+            desc: 'Musiqiy asboblarni ulash va boshqarish',
+            icon: Music
+        },
+        { 
+            name: 'Web Authentication', 
+            status: 'credentials' in navigator && !!window.PublicKeyCredential, 
+            desc: 'Biometrik (FaceID/TouchID) orqali kirish',
+            icon: Fingerprint
+        },
+        { 
+            name: 'Payment Request', 
+            status: 'PaymentRequest' in window, 
+            desc: 'Tezkor va xavfsiz to\'lovlarni amalga oshirish',
+            icon: CreditCard
+        },
+        { 
+            name: 'Virtual Keyboard', 
+            status: 'virtualKeyboard' in navigator, 
+            desc: 'Ekran klaviaturasi o\'lchamlarini boshqarish',
+            icon: Keyboard
+        },
+        { 
+            name: 'Eye Dropper', 
+            status: 'EyeDropper' in window, 
+            desc: 'Ekranning istalgan nuqtasidan rang tanlash',
+            icon: Pipette
+        },
+        { 
+            name: 'File Handlers', 
+            status: !!manifest?.file_handlers, 
+            desc: 'Ilovani ma\'lum fayl turlari uchun ochuvchi sifatida ro\'yxatdan o\'tkazish',
+            icon: FileCode
+        },
+        { 
+            name: 'Web Share API', 
+            status: 'share' in navigator, 
+            desc: 'Tizim ulashish oynasidan foydalanish',
+            icon: Share
+        },
+        { 
+            name: 'Storage Manager', 
+            status: 'storage' in navigator && 'estimate' in navigator.storage, 
+            desc: 'Xotira hajmini aniqlash va boshqarish',
+            icon: HardDrive
+        },
+        { 
+            name: 'Network Information', 
+            status: 'connection' in navigator, 
+            desc: 'Internet turi va tezligini aniqlash',
+            icon: Wifi
+        },
+        { 
+            name: 'Device Memory', 
+            status: 'deviceMemory' in navigator, 
+            desc: 'Qurilma operativ xotirasi (RAM) haqida ma\'lumot',
+            icon: CpuIcon
+        },
+        { 
+            name: 'Hardware Concurrency', 
+            status: 'hardwareConcurrency' in navigator, 
+            desc: 'Protsessor yadrolari sonini aniqlash',
+            icon: Cpu
+        },
+        { 
+            name: 'Battery Status', 
+            status: 'getBattery' in navigator, 
+            desc: 'Batareya quvvati va holatini kuzatish',
+            icon: Battery
+        },
+        { 
+            name: 'Gamepad API', 
+            status: 'getGamepads' in navigator, 
+            desc: 'O\'yin pultlarini ulash va boshqarish',
+            icon: Gamepad
+        },
+        { 
+            name: 'Local Font Access', 
+            status: 'queryLocalFonts' in window, 
+            desc: 'Tizimdagi shriftlardan foydalanish',
+            icon: Type
+        },
+        { 
+            name: 'Window Controls Overlay', 
+            status: 'windowControlsOverlay' in navigator, 
+            desc: 'Sarlavha satrini (Title Bar) boshqarish',
+            icon: Monitor
+        },
+        { 
+            name: 'Permissions API', 
+            status: 'permissions' in navigator, 
+            desc: 'Ruxsatlar holatini tekshirish',
+            icon: Shield
+        },
+        { 
+            name: 'Cookie Store API', 
+            status: 'cookieStore' in window, 
+            desc: 'Cookie-larni zamonaviy usulda boshqarish',
+            icon: Cookie
+        },
+        { 
+            name: 'Speech Recognition', 
+            status: 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window, 
+            desc: 'Ovozni matnga aylantirish',
+            icon: Mic2
+        },
+        { 
+            name: 'Speech Synthesis', 
+            status: 'speechSynthesis' in window, 
+            desc: 'Matnni ovozli o\'qish',
+            icon: Volume2
+        },
+        { 
+            name: 'Fullscreen API', 
+            status: 'requestFullscreen' in document.documentElement, 
+            desc: 'Ilovani butun ekranda ko\'rsatish',
+            icon: Maximize
+        },
+        { 
+            name: 'Screen Orientation', 
+            status: 'orientation' in screen, 
+            desc: 'Ekran holatini (portrait/landscape) aniqlash',
+            icon: SmartphoneIcon
+        },
+        { 
+            name: 'Vibration API', 
+            status: 'vibrate' in navigator, 
+            desc: 'Qurilmani tebratish (vibratsiya)',
+            icon: ZapOff
         }
     ];
 
@@ -205,6 +414,50 @@ export const PWAReportPage: React.FC = () => {
                         </div>
                     </section>
                 )}
+
+                <section className="bg-orange-500/5 border border-orange-500/10 p-8 rounded-3xl mb-12">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-orange-500" />
+                        Ruxsatlarni Sinab Ko'rish
+                    </h2>
+                    <p className="text-sm text-gray-500 mb-6">Quyidagi tugmalar orqali brauzerdan ruxsat so'rash jarayonini tekshirishingiz mumkin.</p>
+                    <div className="flex flex-wrap gap-4">
+                        <button 
+                            onClick={() => navigator.geolocation.getCurrentPosition(() => {}, () => {})}
+                            className="bg-[#111] hover:bg-orange-500/10 border border-white/5 hover:border-orange-500/30 px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+                        >
+                            <MapPin className="w-4 h-4" /> Joylashuv
+                        </button>
+                        <button 
+                            onClick={() => navigator.mediaDevices.getUserMedia({ video: true }).then(s => s.getTracks().forEach(t => t.stop()))}
+                            className="bg-[#111] hover:bg-orange-500/10 border border-white/5 hover:border-orange-500/30 px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+                        >
+                            <Camera className="w-4 h-4" /> Kamera
+                        </button>
+                        <button 
+                            onClick={() => navigator.mediaDevices.getUserMedia({ audio: true }).then(s => s.getTracks().forEach(t => t.stop()))}
+                            className="bg-[#111] hover:bg-orange-500/10 border border-white/5 hover:border-orange-500/30 px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+                        >
+                            <Mic className="w-4 h-4" /> Mikrofon
+                        </button>
+                        <button 
+                            onClick={() => 'Notification' in window && Notification.requestPermission()}
+                            className="bg-[#111] hover:bg-orange-500/10 border border-white/5 hover:border-orange-500/30 px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+                        >
+                            <Bell className="w-4 h-4" /> Bildirishnoma
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                if ('showOpenFilePicker' in window) {
+                                    try { await (window as any).showOpenFilePicker(); } catch(e) {}
+                                }
+                            }}
+                            className="bg-[#111] hover:bg-orange-500/10 border border-white/5 hover:border-orange-500/30 px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+                        >
+                            <FileCode className="w-4 h-4" /> Fayl Tizimi
+                        </button>
+                    </div>
+                </section>
 
                 <section className="bg-orange-500/5 border border-orange-500/10 p-8 rounded-3xl mb-12">
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
