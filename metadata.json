@@ -1,6 +1,6 @@
 {
-  "name": "Anilo.uz Portal",
-  "description": "Sevimli animelaringizni yuqori sifatda tomosha qiling. Anilo.uz - O'zbekistonning eng katta anime portali.",
+  "name": "Anilo.uz - Professional Anime Portali",
+  "description": "Anilo.uz - O'zbekistondagi eng yirik professional anime portali. Sevimli animelaringizni yuqori sifatda (HD, 4K) va professional dublyajda tomosha qiling.",
   "requestFramePermissions": [
     "camera",
     "microphone",

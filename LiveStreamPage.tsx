@@ -172,8 +172,8 @@ export const LiveStreamPage: React.FC<LiveStreamPageProps> = ({
                     .select('username, avatar_url')
                     .eq('id', selectedStream.streamer_id)
                     .maybeSingle();
-                if (profile) {
-                    setSelectedStream(prev => prev ? { ...prev, profiles: profile } : null);
+                if (profile && selectedStream) {
+                    setSelectedStream({ ...selectedStream, profiles: profile });
                 }
             }
         };
