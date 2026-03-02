@@ -477,6 +477,10 @@ export const PWAReportPage: React.FC = () => {
                             <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 shrink-0"></div>
                             <span><strong>Offline Content:</strong> Oflayn rejimda ko'rish uchun keshda saqlanadigan sahifalar sonini ko'paytirish.</span>
                         </li>
+                        <li className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 shrink-0"></div>
+                            <span><strong>PNG Icons:</strong> PNG formatidagi ikonkalarni qo'shish (Bajarildi ✅).</span>
+                        </li>
                     </ul>
                 </section>
 

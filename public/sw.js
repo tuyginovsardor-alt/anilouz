@@ -1,10 +1,12 @@
 
-const CACHE_NAME = 'anilo-pwa-v48-png';
+const CACHE_NAME = 'anilo-pwa-v49-png';
 
 const PRE_CACHE_ASSETS = [
   '/',
   '/manifest.json',
-  '/logo.svg'
+  '/logo.svg',
+  '/icon-192.png',
+  '/512.png'
 ];
 
 self.addEventListener('install', (event) => {
