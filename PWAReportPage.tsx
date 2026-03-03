@@ -17,6 +17,26 @@ export const PWAReportPage: React.FC = () => {
     const [manifest, setManifest] = useState<any>(null);
     const [isStandalone, setIsStandalone] = useState(false);
 
+    const downloadAssetLinks = () => {
+        const content = `[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "uz.anilo.app",
+    "sha256_cert_fingerprints": ["B0:A2:40:2B:CE:2F:BA:F5:A4:12:69:09:C1:50:30:25:19:0A:11:48:A1:31:37:67:FB:DB:51:1B:C6:36:FE:3D"]
+  }
+}]`;
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'assetlinks.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     useEffect(() => {
         // Check Service Worker
         if ('serviceWorker' in navigator) {
@@ -435,38 +455,64 @@ export const PWAReportPage: React.FC = () => {
                         <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
                             <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
                                 <Globe className="w-5 h-5 text-blue-400" />
-                                1. Asset Links Sozlash
+                                1. PWA (Bepul va Oson)
                             </h3>
                             <p className="text-sm text-gray-500 mb-4">
-                                Ilovada brauzer manzil satrini olib tashlash uchun <code>assetlinks.json</code> faylini saytingizga yuklang:
+                                Google Play'ga 25$ to'lash shart emas! Saytingizga kirib, brauzer menyusidan <strong>"Ilovani o'rnatish" (Add to Home Screen)</strong> tugmasini bossangiz kifoya.
                             </p>
-                            <div className="bg-[#050505] p-3 rounded-lg font-mono text-[11px] text-orange-400 mb-4">
-                                https://anilo.uz/.well-known/assetlinks.json
-                            </div>
-                            <p className="text-xs text-gray-600 italic">
-                                * Ushbu faylni yuklab olingan ZIP arxiv ichidan topishingiz mumkin.
-                            </p>
-                            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                                <p className="text-[10px] text-red-400 leading-tight">
-                                    <strong>DIQQAT:</strong> Agar ushbu faylni yuklamasangiz, ilovada Chrome'ning "X" tugmasi va manzil satri ko'rinib qoladi. To'liq "Native" ko'rinish uchun bu shart!
-                                </p>
-                            </div>
+                            <ul className="text-xs text-gray-600 space-y-1">
+                                <li>• Mutlaqo bepul</li>
+                                <li>• Xuddi oddiy ilovadek ishlaydi</li>
+                                <li>• Yangilanishlar avtomatik bo'ladi</li>
+                            </ul>
                         </div>
 
                         <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
                             <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
                                 <ShieldCheck className="w-5 h-5 text-green-400" />
-                                2. Google Play Console
+                                2. APK (Play Store'siz)
                             </h3>
                             <p className="text-sm text-gray-500 mb-4">
-                                <a href="https://play.google.com/console" target="_blank" rel="noreferrer" className="text-orange-500 underline">Google Play Console</a>'ga kiring va yangi ilova yarating. 
-                                Yuklab olingan <code>.aab</code> faylini "Production" bo'limiga yuklang.
+                                Agar baribir APK kerak bo'lsa, yuklab olingan <code>.apk</code> faylini Telegram yoki saytingiz orqali tarqatishingiz mumkin.
                             </p>
-                            <ul className="text-xs text-gray-600 space-y-1">
-                                <li>• Ilova tavsifi va skrinshotlarni kiriting</li>
-                                <li>• Maxfiylik siyosati (Privacy Policy) havolasini qo'shing</li>
-                                <li>• Ilovani tekshiruvga yuboring</li>
-                            </ul>
+                            <div className="bg-[#050505] p-4 rounded-xl font-mono text-[11px] text-orange-400 mb-4 overflow-x-auto">
+                                <pre>{`[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "uz.anilo.app",
+    "sha256_cert_fingerprints": ["B0:A2:40:2B:CE:2F:BA:F5:A4:12:69:09:C1:50:30:25:19:0A:11:48:A1:31:37:67:FB:DB:51:1B:C6:36:FE:3D"]
+  }
+}]`}</pre>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-4">
+                                Yuqoridagi kodni <code>assetlinks.json</code> deb nomlangan faylga saqlang va uni saytingizning <code>.well-known/</code> papkasiga yuklang.
+                            </p>
+                            
+                            <button 
+                                onClick={downloadAssetLinks}
+                                className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors mb-4"
+                            >
+                                <Download className="w-5 h-5" />
+                                assetlinks.json faylini yuklab olish
+                            </button>
+
+                            <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                <p className="text-sm text-green-400 font-bold mb-2 flex items-center gap-2">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                    Fayl loyihaga qo'shildi!
+                                </p>
+                                <p className="text-xs text-gray-400 leading-relaxed">
+                                    Men <code>public/.well-known/assetlinks.json</code> faylini loyihangizga avtomatik tarzda yaratib qo'shdim. 
+                                    Endi siz saytingizni yangilaganingizda (deploy qilganingizda), bu fayl o'z-o'zidan <code>anilo.uz/.well-known/assetlinks.json</code> manzilida paydo bo'ladi.
+                                </p>
+                            </div>
+
+                            <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                                <p className="text-[10px] text-orange-400 leading-tight">
+                                    <strong>ESLATMA:</strong> Tepadagi "X" va manzil satrini yo'qotish uchun baribir <code>assetlinks.json</code> faylini saytga yuklash kerak bo'ladi.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </section>
