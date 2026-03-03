@@ -23,7 +23,7 @@ export const PWAReportPage: React.FC = () => {
   "target": {
     "namespace": "android_app",
     "package_name": "uz.anilo.mobile",
-    "sha256_cert_fingerprints": ["16:75:EA:21:AE:E5:E5:91:7B:F3:75:45:AD:5C:63:F4:13:54:51:C4:72:2B:8A:0F:F9:22:E7:9A:3A:CA:23:D5"]
+    "sha256_cert_fingerprints": ["C3:CF:98:62:ED:83:25:7E:98:B2:15:DF:22:5A:81:93:0D:54:99:A6:0E:86:E5:12:45:6B:D3:2D:37:63:80:29"]
   }
 }]`;
         const blob = new Blob([content], { type: 'application/json' });
@@ -481,7 +481,7 @@ export const PWAReportPage: React.FC = () => {
   "target": {
     "namespace": "android_app",
     "package_name": "uz.anilo.mobile",
-    "sha256_cert_fingerprints": ["16:75:EA:21:AE:E5:E5:91:7B:F3:75:45:AD:5C:63:F4:13:54:51:C4:72:2B:8A:0F:F9:22:E7:9A:3A:CA:23:D5"]
+    "sha256_cert_fingerprints": ["C3:CF:98:62:ED:83:25:7E:98:B2:15:DF:22:5A:81:93:0D:54:99:A6:0E:86:E5:12:45:6B:D3:2D:37:63:80:29"]
   }
 }]`}</pre>
                             </div>
