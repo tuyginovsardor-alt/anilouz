@@ -7,7 +7,7 @@
   "id": "uz.anilo.mobile",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#050505",
+  "background_color": "#f97316",
   "theme_color": "#f97316",
   "orientation": "portrait",
   "scope": "/",
@@ -54,7 +54,8 @@
         {
           "src": "/512.png",
           "sizes": "512x512",
-          "type": "image/png"
+          "type": "image/png",
+          "purpose": "any maskable"
         }
       ],
       "launch_type": "single-client"
@@ -62,22 +63,16 @@
   ],
   "icons": [
     {
-      "src": "/512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/logo.svg",

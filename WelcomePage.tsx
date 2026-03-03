@@ -50,11 +50,11 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart, onNavigate })
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center animate-slide-in-up">
           
           <div className="mb-8 flex flex-row items-center gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center shrink-0">
+              <div className="w-20 h-20 rounded-[2.5rem] bg-black/50 backdrop-blur-md border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center shrink-0">
                   <img 
                     src={customLogo || "/logotip.png"} 
                     alt="Anilo Logo" 
-                    className="w-full h-full object-cover p-1"
+                    className="w-full h-full object-cover p-2"
                     onError={(e) => {
                         // Agar PNG ham yuklanmasa, SVG ga qaytamiz
                         (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzAwMDAwMCIvPjxwYXRoIGQ9Ik0yNTYgMTIwQzE4MC44OSAxMjAgMTIwIDE4MC44OSAxMjAgMjU2QzEyMCAzMzEuMTEgMTgwLjg5IDM5MiAyNTYgMzkyQzMzMS4xMSAzOTIgMzkyIDMzMS4xMSAzOTIgMjU2IiBzdHJva2U9IiNmOTczMTYiIHN0cm9rZS13aWR0aD0iMjQiLz48L3N2Zz4=';
