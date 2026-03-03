@@ -305,6 +305,12 @@ export const PWAReportPage: React.FC = () => {
             status: 'vibrate' in navigator, 
             desc: 'Qurilmani tebratish (vibratsiya)',
             icon: ZapOff
+        },
+        { 
+            name: 'Android App (AAB)', 
+            status: true, 
+            desc: 'Google Play uchun tayyorlangan ilova paketi',
+            icon: SmartphoneIcon
         }
     ];
 
@@ -415,6 +421,56 @@ export const PWAReportPage: React.FC = () => {
                     </section>
                 )}
 
+                <section className="bg-green-500/5 border border-green-500/10 p-8 rounded-3xl mb-12">
+                    <div className="flex items-center gap-3 mb-6">
+                        <SmartphoneIcon className="w-8 h-8 text-green-500" />
+                        <h2 className="text-2xl font-bold">Android Ilovasi Tayyor! ✅</h2>
+                    </div>
+                    <p className="text-gray-400 mb-6 leading-relaxed">
+                        Tabriklaymiz! Google Play uchun <strong>Android App Bundle (.aab)</strong> va <strong>APK</strong> fayllari muvaffaqiyatli yaratildi. 
+                        Endi ilovani rasman nashr etish uchun quyidagi qadamlarni bajarishingiz kerak:
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
+                            <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                                <Globe className="w-5 h-5 text-blue-400" />
+                                1. Asset Links Sozlash
+                            </h3>
+                            <p className="text-sm text-gray-500 mb-4">
+                                Ilovada brauzer manzil satrini olib tashlash uchun <code>assetlinks.json</code> faylini saytingizga yuklang:
+                            </p>
+                            <div className="bg-[#050505] p-3 rounded-lg font-mono text-[11px] text-orange-400 mb-4">
+                                https://anilo.uz/.well-known/assetlinks.json
+                            </div>
+                            <p className="text-xs text-gray-600 italic">
+                                * Ushbu faylni yuklab olingan ZIP arxiv ichidan topishingiz mumkin.
+                            </p>
+                            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                <p className="text-[10px] text-red-400 leading-tight">
+                                    <strong>DIQQAT:</strong> Agar ushbu faylni yuklamasangiz, ilovada Chrome'ning "X" tugmasi va manzil satri ko'rinib qoladi. To'liq "Native" ko'rinish uchun bu shart!
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
+                            <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                                <ShieldCheck className="w-5 h-5 text-green-400" />
+                                2. Google Play Console
+                            </h3>
+                            <p className="text-sm text-gray-500 mb-4">
+                                <a href="https://play.google.com/console" target="_blank" rel="noreferrer" className="text-orange-500 underline">Google Play Console</a>'ga kiring va yangi ilova yarating. 
+                                Yuklab olingan <code>.aab</code> faylini "Production" bo'limiga yuklang.
+                            </p>
+                            <ul className="text-xs text-gray-600 space-y-1">
+                                <li>• Ilova tavsifi va skrinshotlarni kiriting</li>
+                                <li>• Maxfiylik siyosati (Privacy Policy) havolasini qo'shing</li>
+                                <li>• Ilovani tekshiruvga yuboring</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
                 <section className="bg-orange-500/5 border border-orange-500/10 p-8 rounded-3xl mb-12">
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                         <ShieldCheck className="w-5 h-5 text-orange-500" />
@@ -480,6 +536,10 @@ export const PWAReportPage: React.FC = () => {
                         <li className="flex items-start gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 shrink-0"></div>
                             <span><strong>PNG Icons:</strong> PNG formatidagi ikonkalarni qo'shish (Bajarildi ✅).</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 shrink-0"></div>
+                            <span><strong>Google Play:</strong> Ilovani Google Play Console orqali dunyoga taqdim etish (Navbatdagi qadam 🚀).</span>
                         </li>
                     </ul>
                 </section>

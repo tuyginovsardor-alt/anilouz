@@ -18,9 +18,8 @@
     "social"
   ],
   "display_override": [
-    "window-controls-overlay",
-    "minimal-ui",
-    "standalone"
+    "standalone",
+    "minimal-ui"
   ],
   "launch_handler": {
     "client_mode": "navigate-existing"
@@ -63,9 +62,9 @@
   ],
   "icons": [
     {
-      "src": "/logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     },
     {
@@ -78,13 +77,13 @@
       "src": "/512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable"
     },
     {
-      "src": "/512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
