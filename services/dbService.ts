@@ -320,13 +320,20 @@ export const uploadToCodeUsta = async (file: File): Promise<{ url: string; id: s
     const apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://gymnogynous-balneal-monet.ngrok-free.dev';
     const projectName = import.meta.env.VITE_CODEUSTA_PROJECT_NAME || 'anilo';
     const bucketId = import.meta.env.VITE_CODEUSTA_BUCKET_ID || '1';
+    const apiKey = import.meta.env.VITE_CODEUSTA_API_KEY || import.meta.env.VITE_CODEUSTA_API;
 
     const formData = new FormData();
     formData.append('file', file);
 
+    const headers: Record<string, string> = {};
+    if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+    }
+
     const response = await fetch(`${apiUrl}/${projectName}/${bucketId}/`, {
         method: 'POST',
         body: formData,
+        headers: headers
     });
 
     if (!response.ok) {
