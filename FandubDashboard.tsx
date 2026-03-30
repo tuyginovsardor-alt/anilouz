@@ -116,6 +116,7 @@ export const FandubDashboard: React.FC = () => {
             desc: project.description,
             access: project.access_type,
             tags: project.tags,
+            is_series: project.is_series,
             posterUrl: project.poster_url,
             posterType: 'url',
             episodes: project.episodes
@@ -155,6 +156,7 @@ export const FandubDashboard: React.FC = () => {
                 access_type: data.access,
                 episodes: processedEpisodes,
                 tags: data.tags,
+                is_series: data.is_series,
                 video_url: processedEpisodes[0]?.source || '',
                 video_id: processedEpisodes[0]?.video_id || '',
                 status: 'pending'

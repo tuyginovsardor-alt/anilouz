@@ -300,8 +300,10 @@ export const FinancialsPage: React.FC = () => {
                         <thead className="bg-gray-800">
                             <tr>
                                 <th className="p-4 font-semibold">Foydalanuvchi</th>
+                                <th className="p-4 font-semibold">Email</th>
                                 <th className="p-4 font-semibold">Balans</th>
                                 <th className="p-4 font-semibold">Rol</th>
+                                <th className="p-4 font-semibold">Sana</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-700">
@@ -310,6 +312,9 @@ export const FinancialsPage: React.FC = () => {
                                 <tr key={user.id} className="hover:bg-gray-800 transition-colors">
                                     <td className="p-4">
                                         <p className="font-semibold text-white">{user.full_name || 'Ismsiz'}</p>
+                                        <p className="text-xs text-zinc-500">@{user.username || 'user'}</p>
+                                    </td>
+                                    <td className="p-4">
                                         <p className="text-sm text-gray-400">{user.email}</p>
                                     </td>
                                     <td className="p-4">
@@ -317,6 +322,9 @@ export const FinancialsPage: React.FC = () => {
                                     </td>
                                     <td className="p-4">
                                         <span className="bg-gray-700 px-2 py-1 rounded text-xs uppercase">{user.role}</span>
+                                    </td>
+                                    <td className="p-4 text-xs text-zinc-500">
+                                        {new Date(user.created_at).toLocaleDateString()}
                                     </td>
                                 </tr>
                             ))}

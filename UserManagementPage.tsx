@@ -79,8 +79,10 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ onImpers
                         <thead className="bg-[#111] text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
                             <tr>
                                 <th className="p-6">Foydalanuvchi</th>
+                                <th className="p-6">Email</th>
                                 <th className="p-6">Rol</th>
                                 <th className="p-6">Balans</th>
+                                <th className="p-6">Sana</th>
                                 <th className="p-6 text-right">Harakatlar</th>
                             </tr>
                         </thead>
@@ -97,8 +99,12 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ onImpers
                                             <p className="text-[10px] font-bold text-zinc-500 uppercase">@{user.username || 'user'}</p>
                                         </div>
                                     </td>
+                                    <td className="p-6">
+                                        <p className="text-xs font-bold text-zinc-400 lowercase truncate max-w-[150px]">{user.email}</p>
+                                    </td>
                                     <td className="p-6"><StatusBadge role={user.role} /></td>
                                     <td className="p-6 font-black text-white text-sm">{(user.balance || 0).toLocaleString()} <span className="text-orange-500 text-[10px]">UZS</span></td>
+                                    <td className="p-6 text-[10px] font-bold text-zinc-500 uppercase">{new Date(user.created_at).toLocaleDateString()}</td>
                                     <td className="p-6 text-right">
                                         <div className="flex justify-end gap-2">
                                             {onImpersonate && (

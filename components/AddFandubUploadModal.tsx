@@ -21,6 +21,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
     const [desc, setDesc] = useState('');
     const [access, setAccess] = useState<'free' | 'premium'>('free');
     const [tags, setTags] = useState('');
+    const [is_series, setIsSeries] = useState(true);
     
     const [posterType, setPosterType] = useState<'url' | 'file'>('file');
     const [posterFile, setPosterFile] = useState<File | null>(null);
@@ -35,6 +36,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
             setDesc(initialData.desc);
             setAccess(initialData.access);
             setTags(initialData.tags || '');
+            setIsSeries(initialData.is_series !== undefined ? initialData.is_series : true);
             setPosterUrl(initialData.posterUrl || '');
             setPosterType('url');
             setEpisodes(initialData.episodes || []);
@@ -60,7 +62,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
         if (genre.length === 0) return alert("Kamida bitta janr tanlang");
         onSave({
             id: initialData?.id,
-            title, year, genre: genre.join(', '), desc, access, tags,
+            title, year, genre: genre.join(', '), desc, access, tags, is_series,
             posterType, posterFile, posterUrl,
             episodes
         });
@@ -126,6 +128,11 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Qisqacha Tavsif</label>
                             <textarea value={desc} onChange={e=>setDesc(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-2xl p-5 text-white text-sm h-32 resize-none outline-none focus:border-purple-600" />
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 ml-4">
+                            <input id="is_series" type="checkbox" checked={is_series} onChange={e => setIsSeries(e.target.checked)} className="h-4 w-4 rounded border-zinc-800 bg-zinc-900 text-purple-600 focus:ring-purple-500" />
+                            <label htmlFor="is_series" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Bu serialmi?</label>
                         </div>
                     </div>
 

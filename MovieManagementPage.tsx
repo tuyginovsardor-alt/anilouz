@@ -172,6 +172,7 @@ export const MovieManagementPage: React.FC = () => {
                             <tr>
                                 <th className="p-6">Anime / Sarlavha</th>
                                 <th className="p-6">Ko'rishlar</th>
+                                <th className="p-6">Janr</th>
                                 <th className="p-6">Turi</th>
                                 <th className="p-6">Holat</th>
                                 <th className="p-6 text-right">Amallar</th>
@@ -192,6 +193,9 @@ export const MovieManagementPage: React.FC = () => {
                                             <Eye size={14} className="text-blue-500"/>
                                             {item.view_count?.toLocaleString() || 0}
                                         </div>
+                                    </td>
+                                    <td className="p-6">
+                                        <p className="text-[10px] font-bold text-zinc-500 uppercase truncate max-w-[100px]">{item.genre || 'Noma\'lum'}</p>
                                     </td>
                                     <td className="p-6">
                                         <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${item.type === 'official' ? 'bg-blue-600/10 text-blue-400 border-blue-500/20' : 'bg-purple-600/10 text-purple-400 border-purple-500/20'}`}>

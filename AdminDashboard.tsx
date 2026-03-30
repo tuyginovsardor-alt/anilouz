@@ -6,9 +6,9 @@ import {
     Check, X as XIcon, Eye, RefreshCw, Lock, Unlock, Layers, Sparkles, Terminal, Activity, ArrowUpRight
 } from 'lucide-react';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { getDashboardStats, getPendingFandubUploads, approveFandubUpload, rejectFandubUpload, toggleBlockFandub } from './services/dbService';
+import { getDashboardStats, getPendingFandubUploads, approveFandubUpload, rejectFandubUpload, toggleBlockFandub, getAllUsers, getPaymentRequests } from './services/dbService';
 import { runAiServerManager, isAiPilotEnabled, setAiPilotEnabled } from './services/aiGuardService';
-import { FandubUpload } from './types';
+import { FandubUpload, UserProfile, PaymentRequestDB } from './types';
 import { useNotification } from './hooks/useNotification';
 
 const StatCard: React.FC<{ label: string, value: number, icon: React.ReactNode, color: string }> = ({ label, value, icon, color }) => (
@@ -30,6 +30,8 @@ const StatCard: React.FC<{ label: string, value: number, icon: React.ReactNode, 
 export const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState<any>(null);
     const [pendingUploads, setPendingUploads] = useState<FandubUpload[]>([]);
+    const [recentUsers, setRecentUsers] = useState<UserProfile[]>([]);
+    const [recentPayments, setRecentPayments] = useState<PaymentRequestDB[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     
@@ -44,12 +46,16 @@ export const AdminDashboard: React.FC = () => {
     const loadData = async () => {
         setRefreshing(true);
         try {
-            const [d, u] = await Promise.all([
+            const [d, u, users, payments] = await Promise.all([
                 getDashboardStats(),
-                getPendingFandubUploads()
+                getPendingFandubUploads(),
+                getAllUsers(),
+                getPaymentRequests()
             ]);
             setStats(d);
             setPendingUploads(u);
+            setRecentUsers(users.slice(0, 5));
+            setRecentPayments(payments.slice(0, 5));
         } catch (e) { console.error(e); }
         finally { 
             setLoading(false); 
@@ -196,6 +202,85 @@ export const AdminDashboard: React.FC = () => {
                         {isAiThinking ? <RefreshCw className="animate-spin" size={14}/> : <Sparkles size={14}/>}
                         {isAiThinking ? 'AI TAHLIL QILMOQDA' : 'MANUAL AI CHECK'}
                     </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* RECENT USERS */}
+                <div className="bg-[#0a0a0a] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-[#0d0d0d]">
+                        <div className="flex items-center gap-3">
+                            <Users className="text-blue-500" size={20}/>
+                            <h2 className="text-xl font-black uppercase tracking-tight text-white">Yangi Foydalanuvchilar</h2>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-[#111] text-zinc-600 text-[9px] font-black uppercase tracking-[0.2em]">
+                                <tr>
+                                    <th className="p-6">Foydalanuvchi</th>
+                                    <th className="p-6">Sana</th>
+                                    <th className="p-6">Rol</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {recentUsers.map(user => (
+                                    <tr key={user.id} className="hover:bg-white/5 transition-all">
+                                        <td className="p-6 flex items-center gap-4">
+                                            <img src={user.avatar_url || ''} className="w-10 h-10 rounded-xl object-cover bg-zinc-800" alt="" />
+                                            <div>
+                                                <p className="text-sm font-black text-white uppercase truncate max-w-[120px]">{user.full_name || 'Anonymous'}</p>
+                                                <p className="text-[9px] font-bold text-zinc-600 uppercase">@{user.username || 'user'}</p>
+                                            </div>
+                                        </td>
+                                        <td className="p-6 text-[10px] font-bold text-zinc-500 uppercase">{new Date(user.created_at).toLocaleDateString()}</td>
+                                        <td className="p-6">
+                                            <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${user.role === 'owner' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                {user.role}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* RECENT PAYMENTS */}
+                <div className="bg-[#0a0a0a] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-[#0d0d0d]">
+                        <div className="flex items-center gap-3">
+                            <CreditCard className="text-green-500" size={20}/>
+                            <h2 className="text-xl font-black uppercase tracking-tight text-white">So'nggi To'lovlar</h2>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-[#111] text-zinc-600 text-[9px] font-black uppercase tracking-[0.2em]">
+                                <tr>
+                                    <th className="p-6">Foydalanuvchi</th>
+                                    <th className="p-6">Summa</th>
+                                    <th className="p-6">Holat</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {recentPayments.map(pay => (
+                                    <tr key={pay.id} className="hover:bg-white/5 transition-all">
+                                        <td className="p-6">
+                                            <p className="text-sm font-black text-white uppercase truncate max-w-[120px]">{pay.profiles?.full_name || 'Foydalanuvchi'}</p>
+                                            <p className="text-[9px] font-bold text-zinc-600 uppercase">{new Date(pay.created_at).toLocaleDateString()}</p>
+                                        </td>
+                                        <td className="p-6 font-black text-green-500 text-sm">{pay.amount.toLocaleString()} <span className="text-[9px]">UZS</span></td>
+                                        <td className="p-6">
+                                            <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${pay.status === 'approved' ? 'bg-green-500/20 text-green-400' : pay.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                                                {pay.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

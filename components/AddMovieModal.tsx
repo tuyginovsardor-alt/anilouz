@@ -56,7 +56,7 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
     const [translator, setTranslator] = useState('');
     const [poster, setPoster] = useState<string | File>('');
     const [posterType, setPosterType] = useState<'url' | 'file'>('url');
-    const [isSeries, setIsSeries] = useState(false);
+    const [is_series, setIsSeries] = useState(false);
     const [episodes, setEpisodes] = useState<Partial<Episode>[]>([{ title: '1-qism', sourceType: 'url', source: '' }]);
     const [videoSourceType, setVideoSourceType] = useState<'url' | 'file'>('url');
     const [videoSource, setVideoSource] = useState<string | File>('');
@@ -85,6 +85,7 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             
             if (initialData.status) setStatus(initialData.status);
             if (initialData.access_type) setAccessType(initialData.access_type);
+            if (initialData.is_series !== undefined) setIsSeries(initialData.is_series);
         }
     }, [initialData]);
 
@@ -128,13 +129,13 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             poster,
             poster_id: initialData?.poster_id,
             posterType,
-            isSeries,
+            is_series,
             status,
             access_type: accessType, // Include in payload
-            videoSource: !isSeries ? videoSource : undefined,
-            video_id: !isSeries ? initialData?.video_id : undefined,
-            videoSourceType: !isSeries ? videoSourceType : undefined,
-            episodes: isSeries ? episodes : []
+            videoSource: !is_series ? videoSource : undefined,
+            video_id: !is_series ? initialData?.video_id : undefined,
+            videoSourceType: !is_series ? videoSourceType : undefined,
+            episodes: is_series ? episodes : []
         };
         onSave(movieData);
     };
@@ -249,11 +250,11 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                     </div>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
-                        <input id="isSeries" type="checkbox" checked={isSeries} onChange={e => setIsSeries(e.target.checked)} disabled={isSaving} className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-orange-600 focus:ring-orange-500 disabled:opacity-50" />
-                        <label htmlFor="isSeries" className="text-sm text-gray-300">Bu serialmi?</label>
+                        <input id="is_series" type="checkbox" checked={is_series} onChange={e => setIsSeries(e.target.checked)} disabled={isSaving} className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-orange-600 focus:ring-orange-500 disabled:opacity-50" />
+                        <label htmlFor="is_series" className="text-sm text-gray-300">Bu serialmi?</label>
                     </div>
 
-                    {!isSeries && (
+                    {!is_series && (
                         <div className="pt-4">
                             <h3 className="text-lg font-semibold text-white mb-2">Anime Video Manbasi</h3>
                              <div>
@@ -270,7 +271,7 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                         </div>
                     )}
                     
-                    {isSeries && (
+                    {is_series && (
                         <div className="pt-4">
                             <h3 className="text-lg font-semibold text-white mb-2">Qismlar</h3>
                             <div className="space-y-3 max-h-48 overflow-y-auto pr-2">

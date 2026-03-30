@@ -320,7 +320,15 @@ export const uploadToCodeUsta = async (file: File): Promise<{ url: string; id: s
     const apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://gymnogynous-balneal-monet.ngrok-free.dev';
     const projectName = import.meta.env.VITE_CODEUSTA_PROJECT_NAME || 'anilo';
     const bucketId = import.meta.env.VITE_CODEUSTA_BUCKET_ID || '1';
-    const apiKey = import.meta.env.VITE_CODEUSTA_API_KEY || import.meta.env.VITE_CODEUSTA_API;
+    
+    // Har xil nomlanishlar bo'lishi mumkinligini hisobga olamiz
+    const apiKey = import.meta.env.VITE_CODEUSTA_API_KEY || 
+                   import.meta.env.VITE_CODEUSTA_API || 
+                   import.meta.env.VITE_CODEUSTA_API_KEY_STORAGE;
+
+    if (!apiKey) {
+        console.error('CodeUsta API Key topilmadi! Iltimos Settings-dan VITE_CODEUSTA_API_KEY ni tekshiring.');
+    }
 
     const formData = new FormData();
     formData.append('file', file);
@@ -330,24 +338,38 @@ export const uploadToCodeUsta = async (file: File): Promise<{ url: string; id: s
         headers['X-API-Key'] = apiKey;
     }
 
-    const response = await fetch(`${apiUrl}/${projectName}/${bucketId}/`, {
-        method: 'POST',
-        body: formData,
-        headers: headers
+    const uploadUrl = `${apiUrl}/${projectName}/${bucketId}/`;
+    
+    console.log('CodeUsta Yuklashga urinish:', {
+        url: uploadUrl,
+        project: projectName,
+        bucket: bucketId,
+        hasKey: !!apiKey,
+        keyStart: apiKey ? apiKey.substring(0, 5) + '...' : 'yo\'q'
     });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`CodeUsta Upload Failed: ${errorText}`);
-    }
+    try {
+        const response = await fetch(uploadUrl, {
+            method: 'POST',
+            body: formData,
+            headers: headers
+        });
 
-    const data = await response.json();
-    // Assuming the response structure is { url: "...", id: "..." }
-    // Based on user's description: "u menga fayl turgan url va id beradi harfda!"
-    return {
-        url: data.url || `${apiUrl}/f/${data.id}`,
-        id: data.id
-    };
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('CodeUsta Server Xatosi:', errorText);
+            throw new Error(`CodeUsta Upload Failed: ${errorText} (Loyiha: ${projectName}, Bucket: ${bucketId})`);
+        }
+
+        const data = await response.json();
+        return {
+            url: data.url || `${apiUrl}/f/${data.id}`,
+            id: data.id
+        };
+    } catch (error) {
+        console.error('CodeUsta Fetch Xatosi:', error);
+        throw error;
+    }
 };
 
 export const uploadFile = async (file: File, bucket: string): Promise<string> => {

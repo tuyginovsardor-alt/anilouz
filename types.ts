@@ -45,6 +45,8 @@ export interface Movie {
   access_type?: 'free' | 'premium';
   status?: 'ongoing' | 'completed';
   is_fandub?: boolean;
+  is_series?: boolean;
+  view_count?: number;
   channel_id?: string;
 }
 
@@ -109,6 +111,8 @@ export interface FandubUpload {
     access_type: 'free' | 'premium';
     episodes: Episode[];
     tags?: string;
+    is_series?: boolean;
+    view_count?: number;
     status: 'pending' | 'approved' | 'rejected';
     is_blocked?: boolean;
     admin_comment?: string;
