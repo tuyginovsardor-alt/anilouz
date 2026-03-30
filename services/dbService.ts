@@ -316,16 +316,55 @@ export const markNotificationsRead = async (userId: string) => {
     } catch (e) {}
 };
 
+export const uploadToCodeUsta = async (file: File): Promise<{ url: string; id: string }> => {
+    const apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://gymnogynous-balneal-monet.ngrok-free.dev';
+    const projectName = import.meta.env.VITE_CODEUSTA_PROJECT_NAME || 'anilo';
+    const bucketId = import.meta.env.VITE_CODEUSTA_BUCKET_ID || '1';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${apiUrl}/${projectName}/${bucketId}/`, {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`CodeUsta Upload Failed: ${errorText}`);
+    }
+
+    const data = await response.json();
+    // Assuming the response structure is { url: "...", id: "..." }
+    // Based on user's description: "u menga fayl turgan url va id beradi harfda!"
+    return {
+        url: data.url || `${apiUrl}/f/${data.id}`,
+        id: data.id
+    };
+};
+
 export const uploadFile = async (file: File, bucket: string): Promise<string> => {
+    const { url } = await uploadFileWithId(file, bucket);
+    return url;
+};
+
+export const uploadFileWithId = async (file: File, bucket: string): Promise<{ url: string; id: string }> => {
+    // For videos and posters, use CodeUsta
+    if (bucket === 'videos' || bucket === 'posters') {
+        return await uploadToCodeUsta(file);
+    }
+
+    // Fallback to Supabase for other buckets (avatars, etc.)
     const ext = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substr(2,9)}.${ext}`;
     const { error } = await supabase.storage.from(bucket).upload(fileName, file);
     if (error) throw error;
-    return supabase.storage.from(bucket).getPublicUrl(fileName).data.publicUrl;
+    const url = supabase.storage.from(bucket).getPublicUrl(fileName).data.publicUrl;
+    return { url, id: fileName }; // For Supabase, we use the filename as ID
 };
 
-export const uploadPoster = (file: File) => uploadFile(file, 'posters');
-export const uploadVideo = (file: File) => uploadFile(file, 'videos');
+export const uploadPoster = (file: File) => uploadFileWithId(file, 'posters');
+export const uploadVideo = (file: File) => uploadFileWithId(file, 'videos');
 export const uploadAvatar = (file: File) => uploadFile(file, 'avatars');
 export const uploadBanner = (file: File) => uploadFile(file, 'posters');
 

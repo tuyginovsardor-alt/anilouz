@@ -130,28 +130,33 @@ export const FandubDashboard: React.FC = () => {
             if (!user || !channel) return;
 
             let posterUrl = data.posterUrl;
+            let posterId = data.posterId;
             if (data.posterType === 'file' && data.posterFile) {
-                posterUrl = await uploadPoster(data.posterFile);
+                const res = await uploadPoster(data.posterFile);
+                posterUrl = res.url;
+                posterId = res.id;
             }
 
             const processedEpisodes = await Promise.all(data.episodes.map(async (ep: any) => {
                 if (ep.type === 'file' && ep.source instanceof File) {
-                    const url = await uploadVideo(ep.source);
-                    return { title: ep.title, source: url };
+                    const res = await uploadVideo(ep.source);
+                    return { title: ep.title, source: res.url, video_id: res.id };
                 }
-                return { title: ep.title, source: ep.source };
+                return { title: ep.title, source: ep.source, video_id: ep.video_id };
             }));
 
             const payload = {
                 title: data.title,
                 description: data.desc,
                 poster_url: posterUrl,
+                poster_id: posterId,
                 genre: data.genre,
                 year: data.year,
                 access_type: data.access,
                 episodes: processedEpisodes,
                 tags: data.tags,
                 video_url: processedEpisodes[0]?.source || '',
+                video_id: processedEpisodes[0]?.video_id || '',
                 status: 'pending'
             };
 

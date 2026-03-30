@@ -44,21 +44,59 @@ export const MovieManagementPage: React.FC = () => {
     const handleSaveMovie = async (data: any) => {
         setIsSaving(true);
         try {
+            let posterUrl = data.poster;
+            let posterId = data.poster_id;
+            if (data.posterType === 'file' && data.poster instanceof File) {
+                const res = await uploadPoster(data.poster);
+                posterUrl = res.url;
+                posterId = res.id;
+            }
+
+            let videoUrl = data.videoSource;
+            let videoId = data.video_id;
+            if (data.videoSourceType === 'file' && data.videoSource instanceof File) {
+                const res = await uploadVideo(data.videoSource);
+                videoUrl = res.url;
+                videoId = res.id;
+            }
+
+            const processedEpisodes = await Promise.all((data.episodes || []).map(async (ep: any) => {
+                if (ep.sourceType === 'file' && ep.source instanceof File) {
+                    const res = await uploadVideo(ep.source);
+                    return { ...ep, source: res.url, video_id: res.id };
+                }
+                return ep;
+            }));
+
+            const finalData = {
+                ...data,
+                posterUrl,
+                poster_id: posterId,
+                videoUrl,
+                video_id: videoId,
+                episodes: processedEpisodes
+            };
+
             if (editingItem?.type === 'fandub') {
                 await updateFandubUpload(editingItem.id, {
                     title: data.title,
                     year: data.year,
                     description: data.plot,
                     genre: data.genre,
+                    poster_url: posterUrl,
+                    poster_id: posterId,
+                    video_url: videoUrl,
+                    video_id: videoId,
+                    episodes: processedEpisodes,
                     status: 'approved' 
                 });
                 addNotification({ type: 'success', title: 'Yangilandi', message: 'Fandub loyihasi yangilandi.' });
             } else {
                 if (data.id) {
-                    await updateMovieInDB(data.id, data);
+                    await updateMovieInDB(data.id, finalData);
                     addNotification({ type: 'success', title: 'Yangilandi', message: 'Anime yangilandi.' });
                 } else {
-                    await addMovieToDB(data);
+                    await addMovieToDB(finalData);
                     addNotification({ type: 'success', title: 'Qo\'shildi', message: 'Yangi anime qo\'shildi.' });
                 }
             }

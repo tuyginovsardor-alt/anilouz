@@ -31,7 +31,9 @@ export interface Movie {
   year: number;
   plot: string;
   posterUrl: string;
+  poster_id?: string;
   videoUrl: string;
+  video_id?: string;
   genre: string;
   language: string;
   quality: string;
@@ -101,6 +103,7 @@ export interface FandubUpload {
     title: string;
     description: string;
     poster_url: string;
+    poster_id?: string;
     genre: string;
     year: number;
     access_type: 'free' | 'premium';
@@ -112,6 +115,7 @@ export interface FandubUpload {
     revenue_share_percent: number;
     view_count: number;
     video_url: string;
+    video_id?: string;
     created_at: string;
 }
 

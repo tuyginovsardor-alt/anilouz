@@ -126,11 +126,13 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             tags,
             translator,
             poster,
+            poster_id: initialData?.poster_id,
             posterType,
             isSeries,
             status,
             access_type: accessType, // Include in payload
             videoSource: !isSeries ? videoSource : undefined,
+            video_id: !isSeries ? initialData?.video_id : undefined,
             videoSourceType: !isSeries ? videoSourceType : undefined,
             episodes: isSeries ? episodes : []
         };
