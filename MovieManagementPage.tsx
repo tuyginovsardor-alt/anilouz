@@ -70,9 +70,9 @@ export const MovieManagementPage: React.FC = () => {
 
             const finalData = {
                 ...data,
-                posterUrl,
+                poster_url: posterUrl,
                 poster_id: posterId,
-                videoUrl,
+                video_url: videoUrl,
                 video_id: videoId,
                 episodes: processedEpisodes
             };

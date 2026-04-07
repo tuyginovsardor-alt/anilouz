@@ -174,8 +174,8 @@ export const getMovies = async (): Promise<Movie[]> => {
             if (error) return [];
             return (data || []).map(m => ({ 
                 ...m, 
-                posterUrl: m.poster_url || m.posterUrl,
-                videoUrl: m.videoUrl || m.video_url,
+                poster_url: m.poster_url || m.posterUrl,
+                video_url: m.video_url || m.videoUrl,
                 is_fandub: false,
                 view_count: m.view_count || 0
             }));
@@ -189,8 +189,8 @@ export const getMovies = async (): Promise<Movie[]> => {
                     title: m.title,
                     year: m.year,
                     plot: m.description,
-                    posterUrl: m.poster_url,
-                    videoUrl: m.video_url,
+                    poster_url: m.poster_url,
+                    video_url: m.video_url,
                     genre: m.genre,
                     language: 'JP/UZ',
                     quality: 'HD',
@@ -517,21 +517,21 @@ export const toggleSaveMovie = async (userId: string, movieId: number): Promise<
 export const getUserHistory = async (userId: string): Promise<Movie[]> => {
     try {
         const { data } = await supabase.from('user_history').select('*, movies(*)').eq('user_id', userId).order('viewed_at', { ascending: false });
-        return (data || []).map((h: any) => ({ ...h.movies, posterUrl: h.movies.posterUrl || h.movies.poster_url })).filter(Boolean) as Movie[];
+        return (data || []).map((h: any) => ({ ...h.movies, poster_url: h.movies.poster_url || h.movies.posterUrl })).filter(Boolean) as Movie[];
     } catch (e) { return []; }
 };
 
 export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
     try {
         const { data = [] } = await supabase.from('saved_movies').select('*, movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
-        return (data || []).map((s: any) => ({ ...s.movies, posterUrl: s.movies.posterUrl || s.movies.poster_url })).filter(Boolean) as Movie[];
+        return (data || []).map((s: any) => ({ ...s.movies, poster_url: s.movies.poster_url || s.movies.posterUrl })).filter(Boolean) as Movie[];
     } catch (e) { return []; }
 };
 
 export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
     try {
         const { data } = await supabase.from('movies').select('*').or(`title.ilike.%${query}%,genre.ilike.%${query}%,tags.ilike.%${query}%`).eq('is_archived', false);
-        return (data || []).map(m => ({ ...m, posterUrl: m.posterUrl || m.poster_url })) as Movie[];
+        return (data || []).map(m => ({ ...m, poster_url: m.poster_url || m.posterUrl })) as Movie[];
     } catch (e) { return []; }
 };
 

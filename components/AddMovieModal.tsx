@@ -76,10 +76,10 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                 setSelectedGenres(genres);
             }
 
-            setPoster(initialData.posterUrl);
+            setPoster(initialData.poster_url || initialData.posterUrl);
             setPosterType('url');
-            if (initialData.videoUrl) {
-                setVideoSource(initialData.videoUrl);
+            if (initialData.video_url || initialData.videoUrl) {
+                setVideoSource(initialData.video_url || initialData.videoUrl);
                 setVideoSourceType('url');
             }
             
