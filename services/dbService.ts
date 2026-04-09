@@ -320,26 +320,12 @@ export const uploadToCodeUsta = async (
     file: File, 
     onProgress?: (percent: number) => void
 ): Promise<{ url: string; id: string }> => {
-    let apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://api.techmentor.uz';
-    const projectName = (import.meta.env.VITE_CODEUSTA_PROJECT_NAME || 'anilo').toLowerCase().trim();
-    const bucketId = (import.meta.env.VITE_CODEUSTA_BUCKET_ID || '1').toString().trim();
-    
-    apiUrl = apiUrl.replace(/\/$/, '');
-
-    const apiKey = import.meta.env.VITE_CODEUSTA_API_KEY || 
-                   import.meta.env.VITE_CODEUSTA_API || 
-                   import.meta.env.VITE_CODEUSTA_API_KEY_STORAGE;
-
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        // Hujjatlaringizga asoslanib, eng ehtimolli manzilni sinab ko'ramiz
-        const uploadUrl = `${apiUrl}/api/v1/files/upload/${projectName}/${bucketId}`;
+        // O'zimizning proxy serverimizga murojaat qilamiz
+        const uploadUrl = '/api/upload';
         
         xhr.open('POST', uploadUrl);
-
-        if (apiKey) {
-            xhr.setRequestHeader('X-API-Key', apiKey);
-        }
 
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable && onProgress) {
@@ -352,24 +338,29 @@ export const uploadToCodeUsta = async (
             if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                     const data = JSON.parse(xhr.responseText);
+                    // TechMentor /f/{id} formatida qaytaradi
+                    const apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://api.techmentor.uz';
                     resolve({
-                        url: data.url || `${apiUrl}/f/${data.id}`,
+                        url: data.url || `${apiUrl.replace(/\/$/, '')}/f/${data.id}`,
                         id: data.id
                     });
                 } catch (e) {
                     reject(new Error('Javobni o\'qib bo\'lmadi'));
                 }
             } else {
-                reject(new Error(`CodeUsta xatosi (${xhr.status}): ${xhr.responseText}`));
+                try {
+                    const errorData = JSON.parse(xhr.responseText);
+                    reject(new Error(errorData.error || `Server xatosi (${xhr.status})`));
+                } catch (e) {
+                    reject(new Error(`Server xatosi (${xhr.status})`));
+                }
             }
         };
 
-        xhr.onerror = () => reject(new Error('Tarmoq xatosi'));
+        xhr.onerror = () => reject(new Error('Tarmoq xatosi (Proxy bilan bog\'lanib bo\'lmadi)'));
 
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('project', projectName);
-        formData.append('bucket', bucketId);
         
         xhr.send(formData);
     });

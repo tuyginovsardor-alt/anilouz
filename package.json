@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "tsx server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
@@ -12,13 +12,19 @@
   "dependencies": {
     "@google/genai": "^1.29.0",
     "@supabase/supabase-js": "^2.39.3",
+    "axios": "^1.15.0",
     "clsx": "^2.1.0",
+    "express": "^5.2.1",
+    "form-data": "^4.0.5",
     "lucide-react": "^0.460.0",
     "motion": "^12.34.3",
+    "multer": "^2.1.1",
+    "path": "^0.12.7",
     "pdf-lib": "^1.17.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.2.1"
+    "tailwind-merge": "^2.2.1",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
