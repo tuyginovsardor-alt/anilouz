@@ -44,37 +44,11 @@ export const MovieManagementPage: React.FC = () => {
     const handleSaveMovie = async (data: any) => {
         setIsSaving(true);
         try {
-            let posterUrl = data.poster;
-            let posterId = data.poster_id;
-            if (data.posterType === 'file' && data.poster instanceof File) {
-                const res = await uploadPoster(data.poster);
-                posterUrl = res.url;
-                posterId = res.id;
-            }
-
-            let videoUrl = data.videoSource;
-            let videoId = data.video_id;
-            if (data.videoSourceType === 'file' && data.videoSource instanceof File) {
-                const res = await uploadVideo(data.videoSource);
-                videoUrl = res.url;
-                videoId = res.id;
-            }
-
-            const processedEpisodes = await Promise.all((data.episodes || []).map(async (ep: any) => {
-                if (ep.sourceType === 'file' && ep.source instanceof File) {
-                    const res = await uploadVideo(ep.source);
-                    return { ...ep, source: res.url, video_id: res.id };
-                }
-                return ep;
-            }));
-
+            // AddMovieModal allaqachon fayllarni yuklab, URL-larni beradi
             const finalData = {
                 ...data,
-                poster_url: posterUrl,
-                poster_id: posterId,
-                video_url: videoUrl,
-                video_id: videoId,
-                episodes: processedEpisodes
+                poster_url: data.poster, // AddMovieModal-dan kelgan URL
+                video_url: data.videoSource, // AddMovieModal-dan kelgan URL
             };
 
             if (editingItem?.type === 'fandub') {
@@ -83,12 +57,12 @@ export const MovieManagementPage: React.FC = () => {
                     year: data.year,
                     description: data.plot,
                     genre: data.genre,
-                    poster_url: posterUrl,
-                    poster_id: posterId,
-                    video_url: videoUrl,
-                    video_id: videoId,
-                    episodes: processedEpisodes,
-                    status: 'approved' 
+                    poster_url: data.poster,
+                    video_url: data.videoSource,
+                    episodes: data.episodes,
+                    status: 'approved',
+                    is_series: data.is_series,
+                    tags: data.tags
                 });
                 addNotification({ type: 'success', title: 'Yangilandi', message: 'Fandub loyihasi yangilandi.' });
             } else {
@@ -182,7 +156,7 @@ export const MovieManagementPage: React.FC = () => {
                             {currentItems.map(item => (
                                 <tr key={`${item.type}-${item.id}`} className="group hover:bg-white/5 transition-all">
                                     <td className="p-6 flex items-center gap-5">
-                                        <img src={item.posterUrl} className="w-14 h-20 rounded-xl object-cover shadow-2xl border border-white/10" alt="" />
+                                        <img src={item.poster_url || item.posterUrl} className="w-14 h-20 rounded-xl object-cover shadow-2xl border border-white/10" alt="" />
                                         <div className="min-w-0">
                                             <p className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[200px]">{item.title}</p>
                                             <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{item.year} • {item.translator || 'Anilo'}</p>
