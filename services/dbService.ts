@@ -340,9 +340,7 @@ export const uploadToCodeUsta = async (file: File): Promise<{ url: string; id: s
         headers['X-API-Key'] = apiKey;
     }
 
-    // API Docs bo'yicha manzil: /{project_name}/{bucket_id_str}/
-    // Lekin 405 xatosi slash tufayli bo'lishi mumkin, shuning uchun slashsiz sinab ko'ramiz
-    const uploadUrl = `${apiUrl}/${projectName}/${bucketId}`;
+    const uploadUrl = `${apiUrl}/api/v1/files/upload/${projectName}/${bucketId}`;
     
     console.log('CodeUsta Yuklashga urinish:', {
         url: uploadUrl,
