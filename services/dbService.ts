@@ -317,17 +317,19 @@ export const markNotificationsRead = async (userId: string) => {
 };
 
 export const uploadToCodeUsta = async (file: File): Promise<{ url: string; id: string }> => {
-    const apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://gymnogynous-balneal-monet.ngrok-free.dev';
-    const projectName = import.meta.env.VITE_CODEUSTA_PROJECT_NAME || 'anilo';
-    const bucketId = import.meta.env.VITE_CODEUSTA_BUCKET_ID || '1';
+    let apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://api.techmentor.uz';
+    const projectName = (import.meta.env.VITE_CODEUSTA_PROJECT_NAME || 'anilo').toLowerCase().trim();
+    const bucketId = (import.meta.env.VITE_CODEUSTA_BUCKET_ID || '1').toString().trim();
     
-    // Har xil nomlanishlar bo'lishi mumkinligini hisobga olamiz
+    // API URL oxiridagi slashni olib tashlaymiz
+    apiUrl = apiUrl.replace(/\/$/, '');
+
     const apiKey = import.meta.env.VITE_CODEUSTA_API_KEY || 
                    import.meta.env.VITE_CODEUSTA_API || 
                    import.meta.env.VITE_CODEUSTA_API_KEY_STORAGE;
 
     if (!apiKey) {
-        console.error('CodeUsta API Key topilmadi! Iltimos Settings-dan VITE_CODEUSTA_API_KEY ni tekshiring.');
+        console.error('CodeUsta API Key topilmadi!');
     }
 
     const formData = new FormData();
@@ -338,14 +340,15 @@ export const uploadToCodeUsta = async (file: File): Promise<{ url: string; id: s
         headers['X-API-Key'] = apiKey;
     }
 
-    const uploadUrl = `${apiUrl}/${projectName}/${bucketId}/`;
+    // API Docs bo'yicha manzil: /{project_name}/{bucket_id_str}/
+    // Lekin 405 xatosi slash tufayli bo'lishi mumkin, shuning uchun slashsiz sinab ko'ramiz
+    const uploadUrl = `${apiUrl}/${projectName}/${bucketId}`;
     
     console.log('CodeUsta Yuklashga urinish:', {
         url: uploadUrl,
         project: projectName,
         bucket: bucketId,
-        hasKey: !!apiKey,
-        keyStart: apiKey ? apiKey.substring(0, 5) + '...' : 'yo\'q'
+        hasKey: !!apiKey
     });
 
     try {
