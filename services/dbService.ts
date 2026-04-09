@@ -316,61 +316,63 @@ export const markNotificationsRead = async (userId: string) => {
     } catch (e) {}
 };
 
-export const uploadToCodeUsta = async (file: File): Promise<{ url: string; id: string }> => {
+export const uploadToCodeUsta = async (
+    file: File, 
+    onProgress?: (percent: number) => void
+): Promise<{ url: string; id: string }> => {
     let apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://api.techmentor.uz';
     const projectName = (import.meta.env.VITE_CODEUSTA_PROJECT_NAME || 'anilo').toLowerCase().trim();
     const bucketId = (import.meta.env.VITE_CODEUSTA_BUCKET_ID || '1').toString().trim();
     
-    // API URL oxiridagi slashni olib tashlaymiz
     apiUrl = apiUrl.replace(/\/$/, '');
 
     const apiKey = import.meta.env.VITE_CODEUSTA_API_KEY || 
                    import.meta.env.VITE_CODEUSTA_API || 
                    import.meta.env.VITE_CODEUSTA_API_KEY_STORAGE;
 
-    if (!apiKey) {
-        console.error('CodeUsta API Key topilmadi!');
-    }
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        // Hujjatlaringizga asoslanib, eng ehtimolli manzilni sinab ko'ramiz
+        const uploadUrl = `${apiUrl}/api/v1/files/upload/${projectName}/${bucketId}`;
+        
+        xhr.open('POST', uploadUrl);
 
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const headers: Record<string, string> = {};
-    if (apiKey) {
-        headers['X-API-Key'] = apiKey;
-    }
-
-    const uploadUrl = `${apiUrl}/api/v1/files/upload/${projectName}/${bucketId}`;
-    
-    console.log('CodeUsta Yuklashga urinish:', {
-        url: uploadUrl,
-        project: projectName,
-        bucket: bucketId,
-        hasKey: !!apiKey
-    });
-
-    try {
-        const response = await fetch(uploadUrl, {
-            method: 'POST',
-            body: formData,
-            headers: headers
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('CodeUsta Server Xatosi:', errorText);
-            throw new Error(`CodeUsta Upload Failed: ${errorText} (Loyiha: ${projectName}, Bucket: ${bucketId})`);
+        if (apiKey) {
+            xhr.setRequestHeader('X-API-Key', apiKey);
         }
 
-        const data = await response.json();
-        return {
-            url: data.url || `${apiUrl}/f/${data.id}`,
-            id: data.id
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable && onProgress) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                onProgress(percent);
+            }
         };
-    } catch (error) {
-        console.error('CodeUsta Fetch Xatosi:', error);
-        throw error;
-    }
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    resolve({
+                        url: data.url || `${apiUrl}/f/${data.id}`,
+                        id: data.id
+                    });
+                } catch (e) {
+                    reject(new Error('Javobni o\'qib bo\'lmadi'));
+                }
+            } else {
+                reject(new Error(`CodeUsta xatosi (${xhr.status}): ${xhr.responseText}`));
+            }
+        };
+
+        xhr.onerror = () => reject(new Error('Tarmoq xatosi'));
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('project', projectName);
+        formData.append('bucket', bucketId);
+        
+        xhr.send(formData);
+    });
 };
 
 export const uploadFile = async (file: File, bucket: string): Promise<string> => {

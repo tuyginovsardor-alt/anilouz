@@ -5,6 +5,7 @@ import { CloseIcon } from './icons/CloseIcon';
 import { PlusIcon } from './icons/PlusIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 import { CheckIcon } from './icons/CheckIcon';
+import { uploadToCodeUsta } from '../services/dbService';
 
 interface AddMovieModalProps {
   onClose: () => void;
@@ -47,7 +48,7 @@ const GENRE_OPTIONS = [
     { id: 'Thriller', label: 'Triller' }
 ];
 
-export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, initialData, isSaving = false }) => {
+export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, initialData, isSaving: isSavingProp = false }) => {
     const [title, setTitle] = useState('');
     const [year, setYear] = useState(new Date().getFullYear());
     const [plot, setPlot] = useState('');
@@ -61,7 +62,17 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
     const [videoSourceType, setVideoSourceType] = useState<'url' | 'file'>('url');
     const [videoSource, setVideoSource] = useState<string | File>('');
     const [status, setStatus] = useState<'ongoing' | 'completed'>('completed');
-    const [accessType, setAccessType] = useState<'free' | 'premium'>('free'); // New state
+    const [accessType, setAccessType] = useState<'free' | 'premium'>('free');
+    
+    const [isSaving, setIsSaving] = useState(isSavingProp);
+    const [posterProgress, setPosterProgress] = useState<number | null>(null);
+    const [videoProgress, setVideoProgress] = useState<number | null>(null);
+    const [posterUrl, setPosterUrl] = useState('');
+    const [videoUrl, setVideoUrl] = useState('');
+
+    useEffect(() => {
+        setIsSaving(isSavingProp);
+    }, [isSavingProp]);
 
     useEffect(() => {
         if (initialData) {
@@ -76,10 +87,15 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                 setSelectedGenres(genres);
             }
 
-            setPoster(initialData.poster_url || initialData.posterUrl);
+            const pUrl = initialData.poster_url || initialData.posterUrl || '';
+            setPoster(pUrl);
+            setPosterUrl(pUrl);
             setPosterType('url');
-            if (initialData.video_url || initialData.videoUrl) {
-                setVideoSource(initialData.video_url || initialData.videoUrl);
+            
+            const vUrl = initialData.video_url || initialData.videoUrl || '';
+            if (vUrl) {
+                setVideoSource(vUrl);
+                setVideoUrl(vUrl);
                 setVideoSourceType('url');
             }
             
@@ -88,6 +104,38 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             if (initialData.is_series !== undefined) setIsSeries(initialData.is_series);
         }
     }, [initialData]);
+
+    const handlePosterFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        setPosterProgress(0);
+        try {
+            const { url } = await uploadToCodeUsta(file, (p) => setPosterProgress(p));
+            setPosterUrl(url);
+            setPoster(url);
+            setPosterProgress(null);
+        } catch (error) {
+            alert("Poster yuklashda xatolik: " + (error as Error).message);
+            setPosterProgress(null);
+        }
+    };
+
+    const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        setVideoProgress(0);
+        try {
+            const { url } = await uploadToCodeUsta(file, (p) => setVideoProgress(p));
+            setVideoUrl(url);
+            setVideoSource(url);
+            setVideoProgress(null);
+        } catch (error) {
+            alert("Video yuklashda xatolik: " + (error as Error).message);
+            setVideoProgress(null);
+        }
+    };
 
     const toggleGenre = (genreId: string) => {
         if (isSaving) return;
@@ -116,6 +164,11 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (posterProgress !== null || videoProgress !== null) {
+            alert("Iltimos, fayllar yuklanib bo'lishini kuting!");
+            return;
+        }
+
         const finalGenreString = selectedGenres.join(', ');
 
         const movieData = {
@@ -126,13 +179,13 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             genre: finalGenreString,
             tags,
             translator,
-            poster,
+            poster: posterType === 'file' ? posterUrl : poster,
             poster_id: initialData?.poster_id,
             posterType,
             is_series,
             status,
-            access_type: accessType, // Include in payload
-            videoSource: !is_series ? videoSource : undefined,
+            access_type: accessType,
+            videoSource: !is_series ? (videoSourceType === 'file' ? videoUrl : videoSource) : undefined,
             video_id: !is_series ? initialData?.video_id : undefined,
             videoSourceType: !is_series ? videoSourceType : undefined,
             episodes: is_series ? episodes : []
@@ -208,9 +261,6 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                                 );
                             })}
                         </div>
-                        {selectedGenres.length === 0 && (
-                            <p className="text-xs text-red-400 mt-1">Kamida bitta janr tanlanishi shart.</p>
-                        )}
                     </div>
                     
                     <InputField 
@@ -245,7 +295,16 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                         {posterType === 'url' ? (
                             <input type="text" placeholder="https://..." value={poster as string} onChange={e => setPoster(e.target.value)} disabled={isSaving} className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white disabled:opacity-50" />
                         ) : (
-                            <input type="file" accept="image/*" onChange={e => e.target.files && setPoster(e.target.files[0])} disabled={isSaving} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-600/20 file:text-orange-400 hover:file:bg-orange-600/30 disabled:opacity-50" />
+                            <div className="space-y-2">
+                                <input type="file" accept="image/*" onChange={handlePosterFileChange} disabled={isSaving || posterProgress !== null} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-600/20 file:text-orange-400 hover:file:bg-orange-600/30 disabled:opacity-50" />
+                                {posterProgress !== null && (
+                                    <div className="w-full bg-gray-700 rounded-full h-2">
+                                        <div className="bg-orange-600 h-2 rounded-full transition-all duration-300" style={{ width: `${posterProgress}%` }}></div>
+                                        <p className="text-[10px] text-orange-400 mt-1">Yuklanmoqda: {posterProgress}%</p>
+                                    </div>
+                                )}
+                                {posterUrl && <p className="text-[10px] text-green-400">Yuklandi: {posterUrl}</p>}
+                            </div>
                         )}
                     </div>
 
@@ -265,7 +324,16 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                                 {videoSourceType === 'url' ? (
                                     <input type="text" placeholder="https://...mp4" value={videoSource as string} onChange={e => setVideoSource(e.target.value)} disabled={isSaving} className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white disabled:opacity-50" />
                                 ) : (
-                                    <input type="file" accept="video/mp4" onChange={e => e.target.files && setVideoSource(e.target.files[0])} disabled={isSaving} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-600/20 file:text-orange-400 hover:file:bg-orange-600/30 disabled:opacity-50" />
+                                    <div className="space-y-2">
+                                        <input type="file" accept="video/*" onChange={handleVideoFileChange} disabled={isSaving || videoProgress !== null} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-600/20 file:text-orange-400 hover:file:bg-orange-600/30 disabled:opacity-50" />
+                                        {videoProgress !== null && (
+                                            <div className="w-full bg-gray-700 rounded-full h-2">
+                                                <div className="bg-orange-600 h-2 rounded-full transition-all duration-300" style={{ width: `${videoProgress}%` }}></div>
+                                                <p className="text-[10px] text-orange-400 mt-1">Yuklanmoqda: {videoProgress}%</p>
+                                            </div>
+                                        )}
+                                        {videoUrl && <p className="text-[10px] text-green-400">Yuklandi: {videoUrl}</p>}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -308,11 +376,11 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                     <button 
                         type="submit" 
                         onClick={handleSubmit} 
-                        disabled={isSaving}
+                        disabled={isSaving || posterProgress !== null || videoProgress !== null}
                         className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-md font-semibold transition-colors text-white flex items-center gap-2 disabled:opacity-80"
                     >
                         {isSaving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                        {isSaving ? 'Yuklanmoqda...' : 'Saqlash'}
+                        {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
                     </button>
                 </div>
             </div>
