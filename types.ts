@@ -31,8 +31,10 @@ export interface Movie {
   year: number;
   plot: string;
   posterUrl: string;
+  poster_url?: string;
   poster_id?: string;
   videoUrl: string;
+  video_url?: string;
   video_id?: string;
   genre: string;
   language: string;
@@ -117,7 +119,6 @@ export interface FandubUpload {
     is_blocked?: boolean;
     admin_comment?: string;
     revenue_share_percent: number;
-    view_count: number;
     video_url: string;
     video_id?: string;
     created_at: string;

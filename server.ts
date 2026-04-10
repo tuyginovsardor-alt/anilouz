@@ -7,6 +7,7 @@ import multer from 'multer';
 import axios from 'axios';
 import FormData from 'form-data';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 dotenv.config();
 
@@ -16,6 +17,8 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  app.use(cors());
 
   // Multer setup for memory storage
   const upload = multer({ storage: multer.memoryStorage() });
@@ -29,7 +32,7 @@ async function startServer() {
 
       const apiUrl = process.env.VITE_CODEUSTA_API_URL || 'https://api.techmentor.uz';
       const projectName = (process.env.VITE_CODEUSTA_PROJECT_NAME || 'anilo').toLowerCase().trim();
-      const bucketId = (process.env.VITE_CODEUSTA_BUCKET_ID || '1').toString().trim();
+      const bucketId = (process.env.VITE_CODEUSTA_BUCKET_ID || 'anilo').toString().trim();
       const apiKey = process.env.VITE_CODEUSTA_API_KEY || 
                      process.env.VITE_CODEUSTA_API || 
                      process.env.VITE_CODEUSTA_API_KEY_STORAGE;
@@ -38,10 +41,12 @@ async function startServer() {
         return res.status(500).json({ error: 'API Key sozlanmagan' });
       }
 
-      // Siz aytgan format: https://api.techmentor.uz/{project_name}/{bucket_name}/
+      // TechMentor API talabi: https://api.techmentor.uz/{project_name}/{bucket_name}/
+      // Oxiridagi slash (/) juda muhim, aks holda 405 xatosi chiqishi mumkin.
       const targetUrl = `${apiUrl.replace(/\/$/, '')}/${projectName}/${bucketId}/`;
       
       console.log(`Proxying upload to: ${targetUrl}`);
+      console.log(`Project: ${projectName}, Bucket: ${bucketId}`);
 
       const formData = new FormData();
       formData.append('file', req.file.buffer, {

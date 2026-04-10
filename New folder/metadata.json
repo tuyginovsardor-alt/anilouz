@@ -1,0 +1,5 @@
+{
+  "name": "TechMentor File Manager",
+  "description": "A technical dashboard to manage and test file uploads via the TechMentor API.",
+  "requestFramePermissions": []
+}
