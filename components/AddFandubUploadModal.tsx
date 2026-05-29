@@ -4,7 +4,7 @@ import { CloseIcon } from './icons/CloseIcon';
 import { Plus, Trash2, Film, Image as ImageIcon, Save, CheckCircle, Info, Link, Upload } from 'lucide-react';
 import { Episode } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
-import { uploadToCodeUsta } from '../services/dbService';
+import { uploadToCodeUsta, uploadPoster } from '../services/dbService';
 
 interface AddFandubUploadModalProps {
   onClose: () => void;
@@ -57,7 +57,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
         
         setPosterProgress(0);
         try {
-            const { url } = await uploadToCodeUsta(file, (p) => setPosterProgress(p));
+            const { url } = await uploadPoster(file, (p) => setPosterProgress(p));
             setPosterUrl(url);
             setPosterProgress(null);
         } catch (error) {

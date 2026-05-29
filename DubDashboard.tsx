@@ -130,7 +130,7 @@ export const DubDashboard: React.FC = () => {
                 <div className="grid grid-cols-3 gap-1 md:gap-8 animate-fade-in">
                     {myMovies.map(movie => (
                         <div key={movie.id} className="relative group aspect-[2/3] overflow-hidden bg-zinc-900 rounded-sm cursor-pointer">
-                            <img src={movie.posterUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
+                            <img src={movie.poster_url || movie.posterUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-4 p-4 text-center">
                                 <div className="flex items-center gap-1 font-black text-white">
                                     <Star size={16} fill="white" className="text-orange-500" />

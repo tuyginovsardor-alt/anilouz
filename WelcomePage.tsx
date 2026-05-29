@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { getAppConfig } from './services/dbService';
 import { Movie } from './types';
-import { Crown, X, ArrowLeft, ShieldCheck, FileText, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Crown, X, ShieldCheck, FileText, Info, Zap, Tv, Sparkles, Play, ArrowRight } from 'lucide-react';
 import { SubscriptionPlans } from './components/SubscriptionPlans';
-import { UzumakiLogo } from './components/icons/UzumakiLogo';
 import { Page } from './App';
 
 interface WelcomePageProps {
@@ -37,126 +36,260 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart, onNavigate })
 
   const heroBg = customBg || 'https://i.imgur.com/sC56bsu.jpg';
 
+  // Animation variants
+  const containerVariants: any = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants: any = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: 'spring', stiffness: 100, damping: 18 },
+    },
+  };
+
+  const logoVariants: any = {
+    hidden: { scale: 0.82, opacity: 0 },
+    visible: {
+      scale: 1,
+      opacity: 1,
+      transition: { type: 'spring', stiffness: 90, damping: 15 },
+    },
+  };
+
+  const features = [
+    { 
+      icon: <Zap className="text-orange-500 w-5 h-5" />, 
+      title: "Tezkor Tarjima", 
+      desc: "Kutishlarsiz eng so'nggi qismlar uzb dublyajda" 
+    },
+    { 
+      icon: <Tv className="text-orange-500 w-5 h-5" />, 
+      title: "Full HD Sifat", 
+      desc: "Yuqori tiniqlikdagi video va musaffo ovoz" 
+    },
+    { 
+      icon: <Sparkles className="text-orange-500 w-5 h-5" />, 
+      title: "No Ads Premium", 
+      desc: "Reklamalarsiz qulay va uzluksiz tomosha" 
+    }
+  ];
+
   return (
-    <div className="relative h-screen w-full bg-[#000000] overflow-hidden font-sans">
+    <div className="relative min-h-screen w-full bg-[#050505] flex flex-col justify-between overflow-x-hidden font-sans text-white">
       
-      {/* Background */}
-      <div className="absolute inset-0 z-0">
-          <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-70" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black"></div>
+      {/* Background with Ken Burns zoom animation */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+          <motion.img 
+            initial={{ scale: 1.08 }}
+            animate={{ scale: 1.01 }}
+            transition={{
+              duration: 25,
+              ease: "easeOut"
+            }}
+            src={heroBg} 
+            alt="Background" 
+            className="w-full h-full object-cover opacity-35 filter blur-[1px]" 
+          />
+          {/* Enhanced cinematic gradient for deep dark contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/80 to-[#050505]/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-transparent to-[#050505]" />
+          {/* Center ambient radial warm glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.12)_0%,transparent_65%)] pointer-events-none" />
       </div>
 
-      {/* Main Content */}
-      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center animate-slide-in-up">
+      {/* Header Info Banner / Active Count Tag */}
+      <div className="relative z-10 w-full flex justify-center pt-5 px-4 pointer-events-none">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="bg-black/40 backdrop-blur-md border border-white/5 py-1.5 px-4 rounded-full text-[9px] font-black uppercase tracking-[0.25em] text-orange-500 flex items-center gap-2"
+        >
+          <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-ping"></span>
+          Eng katta sharq madaniyati portali
+        </motion.div>
+      </div>
+
+      {/* Main Container */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto w-full my-auto">
           
-          <div className="mb-8 flex flex-row items-center gap-5">
-              <div className="w-20 h-20 rounded-[2.5rem] bg-black/50 backdrop-blur-md border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center shrink-0">
-                  <img 
-                    src={customLogo || "/logotip.png"} 
-                    alt="Anilo Logo" 
-                    className="w-full h-full object-cover p-2"
-                    onError={(e) => {
-                        // Agar PNG ham yuklanmasa, SVG ga qaytamiz
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzAwMDAwMCIvPjxwYXRoIGQ9Ik0yNTYgMTIwQzE4MC44OSAxMjAgMTIwIDE4MC44OSAxMjAgMjU2QzEyMCAzMzEuMTEgMTgwLjg5IDM5MiAyNTYgMzkyQzMzMS4xMSAzOTIgMzkyIDMzMS4xMSAzOTIgMjU2IiBzdHJva2U9IiNmOTczMTYiIHN0cm9rZS13aWR0aD0iMjQiLz48L3N2Zz4=';
-                    }}
-                  />
-              </div>
-              <div className="text-left">
-                  <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-xl font-mono">
-                      ANILO<span className="text-orange-600">.UZ</span>
-                  </h1>
-                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.4em] mt-1 pl-1">
-                      Professional Dublyaj
-                  </p>
-              </div>
-          </div>
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col items-center justify-center w-full"
+          >
+              
+              {/* Brand Logo & Name Area */}
+              <motion.div variants={logoVariants} className="mb-6 flex flex-col md:flex-row items-center gap-4 md:gap-5">
+                  <div className="relative group cursor-pointer">
+                      <div className="absolute -inset-1.5 bg-orange-600 rounded-[2.3rem] opacity-30 blur-md group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                      <div className="relative w-20 h-20 rounded-[2.2rem] bg-black/60 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center shrink-0 transition-transform duration-500 group-hover:scale-105">
+                          <img 
+                            src={customLogo || "/logotip.png"} 
+                            alt="Anilo Logo" 
+                            className="w-full h-full object-cover p-3.5"
+                            onError={(e) => {
+                                // Fallback safe SVG if logo image is broken
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzAwMDAwMCIvPjxwYXRoIGQ9Ik0yNTYgMTIwQzE4MC44OSAxMjAgMTIwIDE4MC44OSAxMjAgMjU2QzEyMCAzMzEuMTEgMTgwLjg5IDM5MiAyNTYgMzkyQzMzMS4xMSAzOTIgMzkyIDMzMS4xMSAzOTIgMjU2IiBzdHJva2U9IiNmOTczMTYiIHN0cm9rZS13aWR0aD0iMjQiLz48L3N2Zz4=';
+                            }}
+                          />
+                      </div>
+                  </div>
+                  <div className="text-center md:text-left">
+                      <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] font-mono">
+                          ANILO<span className="text-orange-500">.UZ</span>
+                      </h1>
+                      <div className="flex items-center justify-center md:justify-start gap-2 mt-1.5 pl-1">
+                          <div className="h-px w-6 bg-orange-500/50 hidden md:block" />
+                          <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.35em]">
+                              Professional Dublyaj
+                          </p>
+                      </div>
+                  </div>
+              </motion.div>
 
-          <p className="text-gray-300 text-xs md:text-sm font-medium leading-relaxed drop-shadow-md max-w-sm mb-10 opacity-90">
-              O'zbekistonning eng katta anime portali. Yuqori sifat va tezkor tarjimalar faqat bizda.
-          </p>
-
-          <div className="w-full max-w-xs space-y-3">
-              <button 
-                onClick={() => setShowPremiumModal(true)}
-                className="w-full py-4 bg-white text-black hover:bg-gray-200 font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3 rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+              {/* Title Descriptive Text */}
+              <motion.p 
+                variants={itemVariants}
+                className="text-zinc-300 text-sm md:text-base font-medium leading-relaxed max-w-lg mb-8 drop-shadow-md px-4"
               >
-                <Crown size={16} fill="black" /> Premium Sotib Olish
-              </button>
+                O'zbekistondagi eng zamonaviy anime portali. Yuqori aniqlikdagi premyerlar, professional dublyaj va sevimli qahramonlaringiz olami bir qadamda.
+              </motion.p>
 
-              <button 
-                onClick={onStart} 
-                className="w-full py-4 bg-black/60 border border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-black/80 transition-all active:scale-95 backdrop-blur-md rounded-2xl"
+              {/* Action Buttons with high quality animation triggers */}
+              <motion.div variants={itemVariants} className="w-full max-w-sm space-y-3.5 px-4 mb-10">
+                  <motion.button 
+                    whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(249,115,22,0.4)" }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowPremiumModal(true)}
+                    className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2.5 rounded-2xl shadow-xl shadow-orange-600/25"
+                  >
+                    <Crown size={15} fill="white" className="animate-pulse" /> Premium Rejalar
+                  </motion.button>
+
+                  <motion.button 
+                    whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.08)" }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={onStart} 
+                    className="w-full py-4 bg-black/40 border border-white/10 hover:border-white/20 text-white font-black text-xs uppercase tracking-[0.2em] transition-all backdrop-blur-md rounded-2xl flex items-center justify-center gap-2"
+                  >
+                    <Play size={13} fill="white" /> Portaldan foydalanish
+                  </motion.button>
+              </motion.div>
+
+              {/* Brand Highlights Bento Grid */}
+              <motion.div 
+                variants={itemVariants}
+                className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-3xl px-4 mt-2"
               >
-                Kirish
-              </button>
-          </div>
+                {features.map((feat, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex flex-col items-center md:items-start p-4 bg-white/[0.02] border border-white/5 rounded-2xl text-center md:text-left transition-all duration-300 hover:bg-white/[0.04] hover:border-white/10"
+                  >
+                    <div className="p-2 bg-orange-500/10 rounded-xl mb-3 border border-orange-500/10">
+                      {feat.icon}
+                    </div>
+                    <h3 className="text-xs font-black text-white mb-1 uppercase tracking-wider">{feat.title}</h3>
+                    <p className="text-[11px] text-zinc-400 font-medium leading-relaxed">{feat.desc}</p>
+                  </div>
+                ))}
+              </motion.div>
 
-          <div className="mt-8">
-              <button onClick={onStart} className="text-zinc-500 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-[0.2em]">
-                Hisob yaratish
-              </button>
-          </div>
+          </motion.div>
       </div>
 
       {/* FOOTER LEGAL LINKS */}
-      <div className="absolute bottom-8 left-0 right-0 z-20 flex flex-col items-center gap-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <div className="flex items-center gap-2 md:gap-6 bg-black/40 backdrop-blur-md border border-white/5 p-1 rounded-full px-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.9, duration: 0.6 }}
+        className="w-full flex flex-col items-center gap-4 py-8 px-4"
+      >
+          <div className="flex items-center gap-2 md:gap-5 bg-black/40 backdrop-blur-md border border-white/5 p-1 rounded-full px-4 max-w-md w-full justify-between sm:w-auto">
               <button 
                 onClick={() => onNavigate('copyright')}
-                className="flex items-center gap-1.5 py-2 px-3 text-[10px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
+                className="flex items-center gap-1.5 py-2 px-3 text-[9px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
               >
-                  <ShieldCheck size={12} /> Maxfiylik
+                  <ShieldCheck size={12} className="text-orange-500/70" /> Maxfiylik
               </button>
               <div className="w-px h-3 bg-zinc-800"></div>
               <button 
                 onClick={() => onNavigate('copyright')}
-                className="flex items-center gap-1.5 py-2 px-3 text-[10px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
+                className="flex items-center gap-1.5 py-2 px-3 text-[9px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
               >
-                  <FileText size={12} /> Oferta
+                  <FileText size={12} className="text-orange-500/70" /> Oferta
               </button>
               <div className="w-px h-3 bg-zinc-800"></div>
               <button 
                 onClick={() => onNavigate('copyright')}
-                className="flex items-center gap-1.5 py-2 px-3 text-[10px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
+                className="flex items-center gap-1.5 py-2 px-3 text-[9px] font-black text-zinc-400 hover:text-orange-500 transition-all uppercase tracking-widest"
               >
-                  <Info size={12} /> Biz haqimizda
+                  <Info size={12} className="text-orange-500/70" /> Biz haqimizda
               </button>
           </div>
-          <p className="text-[8px] text-zinc-700 font-black uppercase tracking-[0.4em]">© 2025 ANILO MEDIA GROUP</p>
-      </div>
+          <p className="text-[8px] text-zinc-600 font-bold uppercase tracking-[0.4em]">© {new Date().getFullYear()} ANILO MEDIA GROUP</p>
+      </motion.div>
 
-      {/* PREMIUM MODAL */}
-      {showPremiumModal && (
-          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in" onClick={() => setShowPremiumModal(false)}>
-              <div 
-                className="bg-[#0a0a0a] border-t sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-6xl h-[90vh] sm:h-auto sm:max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col transition-transform duration-300" 
-                onClick={e => e.stopPropagation()}
-              >
-                  <div className="w-full flex justify-center pt-3 pb-1 sm:hidden" onClick={() => setShowPremiumModal(false)}>
-                      <div className="w-12 h-1.5 bg-zinc-800 rounded-full"></div>
-                  </div>
+      {/* PREMIUM MODAL with beautiful spring animation */}
+      <AnimatePresence>
+        {showPremiumModal && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-sm"
+              onClick={() => setShowPremiumModal(false)}
+            >
+                <motion.div 
+                  initial={{ y: "100%", opacity: 0.5 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: "100%", opacity: 0.5 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                  className="bg-[#0a0a0a] border-t sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-6xl h-[90vh] sm:h-auto sm:max-h-[92vh] overflow-hidden shadow-2xl relative flex flex-col" 
+                  onClick={e => e.stopPropagation()}
+                >
+                    {/* Pull-to-dismiss bar on mobile */}
+                    <div className="w-full flex justify-center pt-3 pb-1 sm:hidden cursor-pointer" onClick={() => setShowPremiumModal(false)}>
+                        <div className="w-12 h-1.5 bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors"></div>
+                    </div>
 
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 sticky top-0 z-20 bg-[#0a0a0a]/95 backdrop-blur-md">
-                      <div className="flex items-center gap-3">
-                          <div className="p-2 bg-orange-600/20 rounded-lg text-orange-500"><Crown size={20} /></div>
-                          <div>
-                              <h2 className="text-lg font-black text-white uppercase tracking-tight">Premium Rejalar</h2>
-                              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Cheklovsiz kirish</p>
-                          </div>
-                      </div>
-                      <button onClick={() => setShowPremiumModal(false)} className="text-zinc-500 hover:text-white transition-colors p-2 bg-white/5 rounded-full">
-                          <X size={20} />
-                      </button>
-                  </div>
+                    <div className="flex items-center justify-between px-6 py-4.5 border-b border-white/5 bg-[#0a0a0a]/95 backdrop-blur-md">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-orange-600/10 border border-orange-500/20 rounded-xl text-orange-500"><Crown size={18} fill="currentColor" /></div>
+                            <div>
+                                <h2 className="text-base font-black text-white uppercase tracking-tight">Premium Tarif Rejalari</h2>
+                                <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Cheklovsiz, yuqori tezlik va ultra sifat</p>
+                            </div>
+                        </div>
+                        <button 
+                          onClick={() => setShowPremiumModal(false)} 
+                          className="text-zinc-500 hover:text-white transition-colors p-2 bg-white/5 rounded-full hover:scale-105 active:scale-95"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
 
-                  <div className="p-0 overflow-y-auto custom-scrollbar flex-1 bg-[#0a0a0a]">
-                      <div className="py-6 px-4">
-                          <SubscriptionPlans onPlanSelect={handlePlanSelection} />
-                      </div>
-                  </div>
-              </div>
-          </div>
-      )}
+                    <div className="p-0 overflow-y-auto scrollbar-hide flex-1 bg-[#0a0a0a]">
+                        <div className="py-6 px-4">
+                            <SubscriptionPlans onPlanSelect={handlePlanSelection} />
+                        </div>
+                    </div>
+                </motion.div>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

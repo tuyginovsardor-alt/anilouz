@@ -5,7 +5,7 @@ import { CloseIcon } from './icons/CloseIcon';
 import { PlusIcon } from './icons/PlusIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 import { CheckIcon } from './icons/CheckIcon';
-import { uploadToCodeUsta } from '../services/dbService';
+import { uploadToCodeUsta, uploadPoster } from '../services/dbService';
 
 interface AddMovieModalProps {
   onClose: () => void;
@@ -111,7 +111,7 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
         
         setPosterProgress(0);
         try {
-            const { url } = await uploadToCodeUsta(file, (p) => setPosterProgress(p));
+            const { url } = await uploadPoster(file, (p) => setPosterProgress(p));
             setPosterUrl(url);
             setPoster(url);
             setPosterProgress(null);

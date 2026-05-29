@@ -15,6 +15,7 @@ interface VideoPlayerPageProps {
 }
 
 export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode: initialEpisode, onBack }) => {
+    const moviePoster = movie.poster_url || movie.posterUrl || '';
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     
@@ -256,7 +257,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                     return (
                                         <div key={ep.id} onClick={() => handleEpisodeChange(ep)} className={`flex gap-3 p-2 rounded-xl cursor-pointer transition-all group ${isActive ? 'bg-[#262626] border border-white/10' : 'hover:bg-[#1f1f1f] border border-transparent'}`}>
                                             <div className="relative w-32 sm:w-40 aspect-video rounded-lg overflow-hidden shrink-0 bg-black">
-                                                <img src={movie.posterUrl} className={`w-full h-full object-cover transition-transform duration-500 ${isActive ? 'opacity-60 scale-105' : 'opacity-80 group-hover:opacity-100'}`} alt={ep.title}/>
+                                                <img src={moviePoster} className={`w-full h-full object-cover transition-transform duration-500 ${isActive ? 'opacity-60 scale-105' : 'opacity-80 group-hover:opacity-100'}`} alt={ep.title}/>
                                                 <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-bold px-1 rounded">HD</span>
                                                 {isActive && (
                                                     <div className="absolute inset-0 flex items-center justify-center">

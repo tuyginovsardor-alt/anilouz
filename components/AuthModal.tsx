@@ -127,14 +127,45 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess, on
         setLoading(true);
         try {
             await checkAndTrackRegistration(deviceId);
-            const { error } = await supabase.auth.signUp({ email, password });
+            const { data, error } = await supabase.auth.signUp({ email, password });
             if (error) throw error;
             
-            setOtpType('signup');
-            setOtpStep(true);
-            addNotification({ type: 'success', title: 'Tasdiqlash kodi', message: 'Emailingizga faollashtirish kodi yuborildi!' });
+            if (data?.session) {
+                // If auto-logged in directly without needing confirmation
+                await logDeviceLogin(data.user!.id, deviceId);
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user!.id).single();
+                const role = (profile as any)?.role || 'user';
+                onAuthSuccess(role);
+                addNotification({ type: 'success', title: 'Xush kelibsiz', message: 'Tizimga muvaffaqiyatli kirdingiz!' });
+                onClose();
+            } else {
+                setOtpType('signup');
+                setOtpStep(true);
+                addNotification({ type: 'success', title: 'Tasdiqlash kodi', message: 'Emailingizga faollashtirish kodi yoki havolasi yuborildi!' });
+            }
         } catch (error: any) {
-            addNotification({ type: 'error', title: 'Xatolik', message: error.message });
+            addNotification({ type: 'error', title: 'Xatolik', message: error.message || "Ro'yxatdan o'tishda xatolik." });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCheckEmailConfirmed = async () => {
+        setLoading(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                await logDeviceLogin(session.user.id, deviceId);
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                const role = (profile as any)?.role || 'user';
+                onAuthSuccess(role);
+                addNotification({ type: 'success', title: 'Xush kelibsiz', message: 'Tizimga kirdingiz!' });
+                onClose();
+            } else {
+                addNotification({ type: 'info', title: 'Kutilmoqda', message: 'Hali pochtadagi faollashtirish havolasi bosilmadi.' });
+            }
+        } catch (error: any) {
+            addNotification({ type: 'error', title: 'Xatolik', message: 'Tekshirishda xatolik yuz berdi.' });
         } finally {
             setLoading(false);
         }
@@ -189,9 +220,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess, on
                     {otpStep ? (
                         <form onSubmit={handleVerifyOtp} className="space-y-4 animate-fade-in">
                             <div className="space-y-2 text-center">
-                                <p className="text-xs text-zinc-400 font-medium">
-                                    Biz quyidagi elektron pochtaga kod yubordik:<br />
-                                    <strong className="text-orange-500 text-sm font-bold">{email}</strong>
+                                <p className="text-xs text-zinc-400 font-medium leading-relaxed mb-4">
+                                    Biz quyidagi elektron pochtaga tasdiqlash kodi yoki havola yubordik:<br />
+                                    <strong className="text-orange-500 text-sm font-bold block mt-1">{email}</strong>
+                                    <span className="text-[10px] text-zinc-500 block mt-2">Iltimos, pochtangizni tekshiring (Spam papkasini ham). 6 xonali kodni kiriting yoki xat ichidagi faollashtirish havolasini bosing.</span>
                                 </p>
                                 <div className="space-y-1 text-left mt-4">
                                     <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Tasdiqlash Kodi</label>
@@ -220,8 +252,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess, on
 
                             <button 
                                 type="button" 
+                                onClick={handleCheckEmailConfirmed}
+                                disabled={loading}
+                                className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/5 rounded-2xl font-bold uppercase tracking-wider text-[10px] text-center"
+                            >
+                                {loading ? "Tekshirilmoqda..." : "Havolani tasdiqladim"}
+                            </button>
+
+                            <button 
+                                type="button" 
                                 onClick={() => setOtpStep(false)}
-                                className="w-full py-2.5 bg-transparent text-zinc-500 hover:text-white rounded-xl font-bold uppercase tracking-wide text-[10px] text-center"
+                                className="w-full py-2 bg-transparent text-zinc-500 hover:text-white rounded-xl font-bold uppercase tracking-wide text-[10px] text-center"
                             >
                                 Orqaga Qaytish
                             </button>

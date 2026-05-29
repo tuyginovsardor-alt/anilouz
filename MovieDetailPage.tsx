@@ -19,6 +19,7 @@ interface MovieDetailPageProps {
 }
 
 export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack, onPlay, onEpisodePlay, onArtistClick, onMovieClick }) => {
+  const moviePoster = movie.poster_url || movie.posterUrl || '';
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -53,7 +54,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
         "@context": "https://schema.org",
         "@type": "Movie",
         "name": movie.title,
-        "image": movie.posterUrl,
+        "image": moviePoster,
         "description": movie.plot,
         "datePublished": movie.year.toString(),
         "aggregateRating": {
@@ -67,7 +68,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
             "@type": "VideoObject",
             "name": movie.title,
             "description": movie.plot,
-            "thumbnailUrl": movie.posterUrl,
+            "thumbnailUrl": moviePoster,
             "uploadDate": new Date().toISOString(),
             "contentUrl": window.location.href
         }
@@ -263,7 +264,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                     transition: 'transform 0.1s linear'
                 }}
             >
-                <img src={movie.posterUrl} alt="" className="w-full h-full object-cover" />
+                <img src={moviePoster} alt="" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
             </div>
@@ -365,7 +366,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         {episodes.length > 0 ? episodes.map((ep, i) => (
                             <div key={ep.id} onClick={() => handleEpisodeClick(ep)} className="group flex items-center p-3 bg-zinc-900/80 border border-white/5 hover:border-orange-500/50 transition-all cursor-pointer rounded-2xl hover:bg-zinc-800">
                                 <div className="relative w-28 h-16 sm:w-32 sm:h-20 bg-black rounded-xl overflow-hidden flex-shrink-0 mr-4">
-                                    <img src={movie.posterUrl} className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-500" alt=""/>
+                                    <img src={moviePoster} className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-500" alt=""/>
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-full flex items-center justify-center group-hover:bg-orange-600 transition-colors">
                                             <Play size={12} fill="white" className="text-white ml-0.5"/>

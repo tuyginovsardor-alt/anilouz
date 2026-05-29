@@ -335,7 +335,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
                   <div className="grid grid-cols-3 gap-0.5">
                       {history.map(movie => (
                           <div key={movie.id} className="aspect-[2/3] relative bg-zinc-900 cursor-pointer group overflow-hidden">
-                              <img src={movie.posterUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100" alt="" />
+                              <img src={movie.poster_url || movie.posterUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100" alt="" />
                               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
                               <div className="absolute bottom-0 left-0 right-0 p-2">
                                   <span className="text-[9px] text-white font-black uppercase tracking-wider line-clamp-1 drop-shadow-md">{movie.title}</span>

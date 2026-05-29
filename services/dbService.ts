@@ -12,6 +12,32 @@ import { supabase } from './supabaseClient';
 import { isAiPilotEnabled, runAiServerManager } from './aiGuardService';
 import { getCache, setCache } from './cacheService';
 
+export const normalizeUrl = (url: string): string => {
+    if (!url) return '';
+    let normalized = url.trim();
+    // Support Dropbox share links
+    if (normalized.includes('dropbox.com')) {
+        if (normalized.includes('dl=0')) {
+            normalized = normalized.replace('dl=0', 'raw=1');
+        } else if (!normalized.includes('raw=1') && !normalized.includes('dl=1')) {
+            if (normalized.includes('?')) {
+                normalized += '&raw=1';
+            } else {
+                normalized += '?raw=1';
+            }
+        }
+    }
+    // Support Google Drive share links
+    if (normalized.includes('drive.google.com') && normalized.includes('/file/d/')) {
+        const parts = normalized.split('/file/d/');
+        if (parts.length > 1) {
+            const fileId = parts[1].split('/')[0];
+            normalized = `https://lh3.googleusercontent.com/d/${fileId}`;
+        }
+    }
+    return normalized;
+};
+
 // --- CHAT & MENTIONS & NOTIFICATIONS ---
 
 export const getUserIdByUsername = async (username: string): Promise<string | null> => {
@@ -81,14 +107,20 @@ export const getAdminAllContent = async (): Promise<any[]> => {
         const official = (movies || []).map(m => ({ 
             ...m, 
             type: 'official', 
-            posterUrl: m.poster_url || m.posterUrl,
+            posterUrl: normalizeUrl(m.poster_url || m.posterUrl || ''),
+            poster_url: normalizeUrl(m.poster_url || m.posterUrl || ''),
+            videoUrl: normalizeUrl(m.video_url || m.videoUrl || ''),
+            video_url: normalizeUrl(m.video_url || m.videoUrl || ''),
             view_count: m.view_count || 0 
         }));
         
         const community = (fandubs || []).map(f => ({ 
             ...f, 
             type: 'fandub', 
-            posterUrl: f.poster_url, 
+            posterUrl: normalizeUrl(f.poster_url || ''),
+            poster_url: normalizeUrl(f.poster_url || ''),
+            videoUrl: normalizeUrl(f.video_url || ''),
+            video_url: normalizeUrl(f.video_url || ''),
             translator: f.fandub_channels?.name || 'Studio',
             view_count: f.view_count || 0,
             status: f.status 
@@ -110,7 +142,16 @@ export const deleteFandubProject = async (id: number) => {
 };
 
 export const updateFandubUpload = async (id: number, updates: any) => {
-    const { error } = await supabase.from('fandub_uploads').update(updates).eq('id', id);
+    const cleanUpdates = { ...updates };
+    if (cleanUpdates.poster_url) cleanUpdates.poster_url = normalizeUrl(cleanUpdates.poster_url);
+    if (cleanUpdates.video_url) cleanUpdates.video_url = normalizeUrl(cleanUpdates.video_url);
+    if (cleanUpdates.episodes && Array.isArray(cleanUpdates.episodes)) {
+        cleanUpdates.episodes = cleanUpdates.episodes.map((ep: any) => ({
+            ...ep,
+            source: normalizeUrl(ep.source || ep.videoSource || '')
+        }));
+    }
+    const { error } = await supabase.from('fandub_uploads').update(cleanUpdates).eq('id', id);
     if (error) throw error;
     localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
@@ -134,8 +175,50 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         if (cachedProfile) return cachedProfile;
         const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
         if (error) return null;
-        if (data) setCache(`profile_${userId}`, data, 5); 
-        return data as UserProfile;
+        
+        if (data) {
+            setCache(`profile_${userId}`, data, 5); 
+            return data as UserProfile;
+        } else {
+            // Auto-create missing profile dynamically
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user && user.id === userId) {
+                    const localPart = user.email ? user.email.split('@')[0] : 'user';
+                    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+                    const defaultProfile = {
+                        id: userId,
+                        email: user.email || '',
+                        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Foydalanuvchi',
+                        username: `${localPart}_${randomSuffix}`,
+                        avatar_url: user.user_metadata?.avatar_url || null,
+                        role: 'user',
+                        balance: 0,
+                        phone: null,
+                        short_id: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                        email_notifications: true,
+                        push_notifications: true,
+                        language: 'uz',
+                        created_at: new Date().toISOString()
+                    };
+                    const { data: inserted, error: insertError } = await supabase
+                        .from('profiles')
+                        .insert(defaultProfile)
+                        .select()
+                        .single();
+                        
+                    if (!insertError && inserted) {
+                        setCache(`profile_${userId}`, inserted, 5);
+                        return inserted as UserProfile;
+                    } else {
+                        console.error("Auto Profile Creation DB Error:", insertError);
+                    }
+                }
+            } catch (e) {
+                console.error("Auto Profile Creation Exception:", e);
+            }
+        }
+        return null;
     } catch (e) { return null; }
 };
 
@@ -174,8 +257,10 @@ export const getMovies = async (): Promise<Movie[]> => {
             if (error) return [];
             return (data || []).map(m => ({ 
                 ...m, 
-                poster_url: m.poster_url || m.posterUrl,
-                video_url: m.video_url || m.videoUrl,
+                poster_url: normalizeUrl(m.poster_url || m.posterUrl || ''),
+                posterUrl: normalizeUrl(m.poster_url || m.posterUrl || ''),
+                video_url: normalizeUrl(m.video_url || m.videoUrl || ''),
+                videoUrl: normalizeUrl(m.video_url || m.videoUrl || ''),
                 is_fandub: false,
                 view_count: m.view_count || 0
             }));
@@ -189,8 +274,10 @@ export const getMovies = async (): Promise<Movie[]> => {
                     title: m.title,
                     year: m.year,
                     plot: m.description,
-                    poster_url: m.poster_url,
-                    video_url: m.video_url,
+                    poster_url: normalizeUrl(m.poster_url || ''),
+                    posterUrl: normalizeUrl(m.poster_url || ''),
+                    video_url: normalizeUrl(m.video_url || ''),
+                    videoUrl: normalizeUrl(m.video_url || ''),
                     genre: m.genre,
                     language: 'JP/UZ',
                     quality: 'HD',
@@ -241,8 +328,8 @@ export const addMovieToDB = async (movieData: any) => {
         title: rest.title,
         year: Number(rest.year),
         plot: rest.plot || '',
-        poster_url: rest.poster_url || rest.poster || rest.posterUrl || '',
-        video_url: rest.video_url || rest.videoSource || rest.videoUrl || '',
+        poster_url: normalizeUrl(rest.poster_url || rest.poster || rest.posterUrl || ''),
+        video_url: normalizeUrl(rest.video_url || rest.videoSource || rest.videoUrl || ''),
         genre: rest.genre || '',
         tags: rest.tags || '',
         translator: rest.translator || '',
@@ -253,8 +340,7 @@ export const addMovieToDB = async (movieData: any) => {
         quality: rest.quality || 'HD',
         rating: rest.rating ? Number(rest.rating) : 5.0,
         is_archived: rest.is_archived ?? false,
-        view_count: rest.view_count || 0,
-        channel_id: rest.channel_id || null
+        view_count: rest.view_count || 0
     };
 
     const { data, error } = await supabase.from('movies').insert(cleanMovie).select().single();
@@ -267,7 +353,7 @@ export const addMovieToDB = async (movieData: any) => {
         const episodesToInsert = episodes.map((ep: any, idx: number) => ({
             movie_id: data.id,
             title: ep.title || `${idx + 1}-qism`,
-            source: ep.source || ep.videoSource || '',
+            source: normalizeUrl(ep.source || ep.videoSource || ''),
         }));
         const { error: epError } = await supabase.from('episodes').insert(episodesToInsert);
         if (epError) console.error("Error inserting episodes:", epError);
@@ -285,8 +371,8 @@ export const updateMovieInDB = async (id: number, movieData: any) => {
         title: rest.title,
         year: Number(rest.year),
         plot: rest.plot || '',
-        poster_url: rest.poster_url || rest.poster || rest.posterUrl || '',
-        video_url: rest.video_url || rest.videoSource || rest.videoUrl || '',
+        poster_url: normalizeUrl(rest.poster_url || rest.poster || rest.posterUrl || ''),
+        video_url: normalizeUrl(rest.video_url || rest.videoSource || rest.videoUrl || ''),
         genre: rest.genre || '',
         tags: rest.tags || '',
         translator: rest.translator || '',
@@ -296,8 +382,7 @@ export const updateMovieInDB = async (id: number, movieData: any) => {
         language: rest.language || 'UZ',
         quality: rest.quality || 'HD',
         rating: rest.rating ? Number(rest.rating) : 5.0,
-        is_archived: rest.is_archived ?? false,
-        channel_id: rest.channel_id || null
+        is_archived: rest.is_archived ?? false
     };
 
     const { error } = await supabase.from('movies').update(cleanMovie).eq('id', id);
@@ -312,7 +397,7 @@ export const updateMovieInDB = async (id: number, movieData: any) => {
             const episodesToInsert = episodes.map((ep: any, idx: number) => ({
                 movie_id: id,
                 title: ep.title || `${idx + 1}-qism`,
-                source: ep.source || ep.videoSource || '',
+                source: normalizeUrl(ep.source || ep.videoSource || ''),
             }));
             const { error: epError } = await supabase.from('episodes').insert(episodesToInsert);
             if (epError) console.error("Error inserting episodes on update:", epError);
@@ -459,24 +544,50 @@ export const uploadFile = async (file: File, bucket: string): Promise<string> =>
 };
 
 export const uploadFileWithId = async (file: File, bucket: string): Promise<{ url: string; id: string }> => {
-    // For videos and posters, use CodeUsta
-    if (bucket === 'videos' || bucket === 'posters') {
+    // For videos, use CodeUsta
+    if (bucket === 'videos') {
         return await uploadToCodeUsta(file);
     }
 
-    // Fallback to Supabase for other buckets (avatars, etc.)
-    const ext = file.name.split('.').pop();
+    // Fallback to Supabase for other buckets (avatars, anilos3, etc.)
+    const ext = file.name.split('.').pop() || 'jpg';
     const fileName = `${Date.now()}_${Math.random().toString(36).substr(2,9)}.${ext}`;
-    const { error } = await supabase.storage.from(bucket).upload(fileName, file);
+    const { error } = await supabase.storage.from(bucket).upload(fileName, file, {
+        contentType: file.type || 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false
+    });
     if (error) throw error;
     const url = supabase.storage.from(bucket).getPublicUrl(fileName).data.publicUrl;
     return { url, id: fileName }; // For Supabase, we use the filename as ID
 };
 
-export const uploadPoster = (file: File) => uploadFileWithId(file, 'posters');
+export const uploadPoster = async (
+    file: File, 
+    onProgress?: (percent: number) => void
+): Promise<{ url: string; id: string }> => {
+    if (onProgress) onProgress(10);
+    const ext = file.name.split('.').pop() || 'jpg';
+    const fileName = `poster_${Date.now()}_${Math.random().toString(36).substr(2,9)}.${ext}`;
+    if (onProgress) onProgress(30);
+    const { error } = await supabase.storage.from('anilos3').upload(fileName, file, {
+        contentType: file.type || 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false
+    });
+    if (error) {
+        console.error("Poster upload to anilos3 error:", error);
+        throw error;
+    }
+    if (onProgress) onProgress(90);
+    const url = supabase.storage.from('anilos3').getPublicUrl(fileName).data.publicUrl;
+    if (onProgress) onProgress(100);
+    return { url, id: fileName };
+};
+
 export const uploadVideo = (file: File) => uploadFileWithId(file, 'videos');
 export const uploadAvatar = (file: File) => uploadFile(file, 'avatars');
-export const uploadBanner = (file: File) => uploadFile(file, 'posters');
+export const uploadBanner = (file: File) => uploadFile(file, 'anilos3');
 
 export const getFandubChannels = async (userId?: string): Promise<FandubChannel[]> => {
     try {
@@ -598,21 +709,53 @@ export const toggleSaveMovie = async (userId: string, movieId: number): Promise<
 export const getUserHistory = async (userId: string): Promise<Movie[]> => {
     try {
         const { data } = await supabase.from('user_history').select('*, movies(*)').eq('user_id', userId).order('viewed_at', { ascending: false });
-        return (data || []).map((h: any) => ({ ...h.movies, poster_url: h.movies.poster_url || h.movies.posterUrl })).filter(Boolean) as Movie[];
+        return (data || []).filter(h => h && h.movies).map((h: any) => {
+            const m = h.movies;
+            const pUrl = normalizeUrl(m.poster_url || m.posterUrl || '');
+            const vUrl = normalizeUrl(m.video_url || m.videoUrl || '');
+            return {
+                ...m,
+                poster_url: pUrl,
+                posterUrl: pUrl,
+                video_url: vUrl,
+                videoUrl: vUrl
+            };
+        }) as Movie[];
     } catch (e) { return []; }
 };
 
 export const getSavedMovies = async (userId: string): Promise<Movie[]> => {
     try {
         const { data = [] } = await supabase.from('saved_movies').select('*, movies(*)').eq('user_id', userId).order('created_at', { ascending: false });
-        return (data || []).map((s: any) => ({ ...s.movies, poster_url: s.movies.poster_url || s.movies.posterUrl })).filter(Boolean) as Movie[];
+        return (data || []).filter(s => s && s.movies).map((s: any) => {
+            const m = s.movies;
+            const pUrl = normalizeUrl(m.poster_url || m.posterUrl || '');
+            const vUrl = normalizeUrl(m.video_url || m.videoUrl || '');
+            return {
+                ...m,
+                poster_url: pUrl,
+                posterUrl: pUrl,
+                video_url: vUrl,
+                videoUrl: vUrl
+            };
+        }) as Movie[];
     } catch (e) { return []; }
 };
 
 export const searchMoviesDB = async (query: string): Promise<Movie[]> => {
     try {
         const { data } = await supabase.from('movies').select('*').or(`title.ilike.%${query}%,genre.ilike.%${query}%,tags.ilike.%${query}%`).eq('is_archived', false);
-        return (data || []).map(m => ({ ...m, poster_url: m.poster_url || m.posterUrl })) as Movie[];
+        return (data || []).map(m => {
+            const pUrl = normalizeUrl(m.poster_url || m.posterUrl || '');
+            const vUrl = normalizeUrl(m.video_url || m.videoUrl || '');
+            return {
+                ...m,
+                poster_url: pUrl,
+                posterUrl: pUrl,
+                video_url: vUrl,
+                videoUrl: vUrl
+            };
+        }) as Movie[];
     } catch (e) { return []; }
 };
 
@@ -1259,3 +1402,122 @@ export const inviteCoStreamer = async (streamId: string, userId: string, usernam
     }).eq('id', streamId);
     if (error) throw error;
 };
+
+// --- NEW LINKING TABLES API (ADMIN & FANDUB CONNECTIVITY) ---
+
+export interface MovieFandubLink {
+    id: number;
+    movie_id: number;
+    fandub_upload_id: number;
+    created_at: string;
+    movie?: any;
+    fandub_upload?: any;
+}
+
+export interface MovieChannelLink {
+    id: number;
+    movie_id: number;
+    channel_id: string;
+    created_at: string;
+    movie?: any;
+    fandub_channel?: any;
+}
+
+/**
+ * Fetches all fandub projects connected to an official movie
+ */
+export const getMovieFandubLinks = async (movieId: number): Promise<MovieFandubLink[]> => {
+    try {
+        const { data, error } = await supabase
+            .from('movie_fandub_links')
+            .select('*, fandub_uploads(*, fandub_channels(name))')
+            .eq('movie_id', movieId);
+        if (error) {
+            console.warn("movie_fandub_links fetch failed, retrying raw:", error);
+            return [];
+        }
+        return (data || []) as MovieFandubLink[];
+    } catch {
+        return [];
+    }
+};
+
+/**
+ * Fetches all channels connected to an official movie
+ */
+export const getMovieChannelLinks = async (movieId: number): Promise<MovieChannelLink[]> => {
+    try {
+        const { data, error } = await supabase
+            .from('movie_channel_links')
+            .select('*, fandub_channels(*)')
+            .eq('movie_id', movieId);
+        if (error) {
+            console.warn("movie_channel_links fetch failed:", error);
+            return [];
+        }
+        return (data || []) as MovieChannelLink[];
+    } catch {
+        return [];
+    }
+};
+
+/**
+ * Links an official movie to a fandub project
+ */
+export const linkMovieToFandub = async (movieId: number, fandubUploadId: number): Promise<void> => {
+    await checkIsAdmin();
+    const { error } = await supabase
+        .from('movie_fandub_links')
+        .insert({ movie_id: movieId, fandub_upload_id: fandubUploadId });
+    if (error) {
+        console.error("linkMovieToFandub error:", error);
+        throw error;
+    }
+};
+
+/**
+ * Links an official movie to a fandub channel
+ */
+export const linkMovieToChannel = async (movieId: number, channelId: string): Promise<void> => {
+    await checkIsAdmin();
+    const { error } = await supabase
+        .from('movie_channel_links')
+        .insert({ movie_id: movieId, channel_id: channelId });
+    if (error) {
+        console.error("linkMovieToChannel error:", error);
+        throw error;
+    }
+};
+
+/**
+ * Removes link between an official movie and a fandub project
+ */
+export const unlinkMovieFandub = async (movieId: number, fandubUploadId: number): Promise<void> => {
+    await checkIsAdmin();
+    const { error } = await supabase
+        .from('movie_fandub_links')
+        .delete()
+        .eq('movie_id', movieId)
+        .eq('fandub_upload_id', fandubUploadId);
+    if (error) {
+        console.error("unlinkMovieFandub error:", error);
+        throw error;
+    }
+};
+
+/**
+ * Removes link between an official movie and a fandub channel
+ */
+export const unlinkMovieChannel = async (movieId: number, channelId: string): Promise<void> => {
+    await checkIsAdmin();
+    const { error } = await supabase
+        .from('movie_channel_links')
+        .delete()
+        .eq('movie_id', movieId)
+        .eq('channel_id', channelId);
+    if (error) {
+        console.error("unlinkMovieChannel error:", error);
+        throw error;
+    }
+};
+

@@ -7,7 +7,7 @@ import {
     getFandubUploads, uploadPoster, uploadVideo, 
     deleteFandubUpload, getFandubEarnings, getFandubWithdrawals, 
     requestFandubWithdrawal, updateFandubUpload, getFandubStatsSummary,
-    getLiveStreams
+    getLiveStreams, normalizeUrl
 } from './services/dbService';
 import { 
     Mic, Film, Settings, LayoutGrid, Eye, Edit3, 
@@ -141,15 +141,15 @@ export const FandubDashboard: React.FC = () => {
             const processedEpisodes = await Promise.all(data.episodes.map(async (ep: any) => {
                 if (ep.type === 'file' && ep.source instanceof File) {
                     const res = await uploadVideo(ep.source);
-                    return { title: ep.title, source: res.url, video_id: res.id };
+                    return { title: ep.title, source: normalizeUrl(res.url), video_id: res.id };
                 }
-                return { title: ep.title, source: ep.source, video_id: ep.video_id };
+                return { title: ep.title, source: normalizeUrl(ep.source), video_id: ep.video_id };
             }));
 
             const payload = {
                 title: data.title,
                 description: data.desc,
-                poster_url: posterUrl,
+                poster_url: normalizeUrl(posterUrl),
                 poster_id: posterId,
                 genre: data.genre,
                 year: data.year,
@@ -157,7 +157,7 @@ export const FandubDashboard: React.FC = () => {
                 episodes: processedEpisodes,
                 tags: data.tags,
                 is_series: data.is_series,
-                video_url: processedEpisodes[0]?.source || '',
+                video_url: normalizeUrl(processedEpisodes[0]?.source || ''),
                 video_id: processedEpisodes[0]?.video_id || '',
                 status: 'pending'
             };

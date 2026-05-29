@@ -10,7 +10,7 @@ interface MovieCardProps {
 }
 
 export const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
-  const posterSrc = movie.posterUrl || 'https://via.placeholder.com/400x600?text=No+Poster';
+  const posterSrc = movie.poster_url || movie.posterUrl || 'https://via.placeholder.com/400x600?text=No+Poster';
   
   // Mock view count logic if not present (for visual consistency based on user request)
   // In real app, movie.view_count would come from DB

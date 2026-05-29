@@ -200,7 +200,7 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                                 }}
                             >
                                 <img 
-                                    src={movie.posterUrl} 
+                                    src={movie.poster_url || movie.posterUrl} 
                                     className={`w-full h-full object-cover transition-transform duration-[10000ms] ${heroIndex === idx ? 'scale-110' : 'scale-100'}`} 
                                     alt="" 
                                 />
