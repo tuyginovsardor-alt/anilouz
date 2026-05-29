@@ -224,26 +224,113 @@ export const getMovieEpisodes = async (movieId: number): Promise<Episode[]> => {
     } catch (e) { return []; }
 };
 
-export const addMovieToDB = async (movie: Partial<Movie>) => {
-    const { data, error } = await supabase.from('movies').insert(movie).select().single();
-    if (error) throw error;
+const checkIsAdmin = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Siz tizimga kirmagansiz.");
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!profile || !['admin', 'owner'].includes(profile.role)) {
+        throw new Error("Sizda ushbu adminlik huquqi yo'q.");
+    }
+};
+
+export const addMovieToDB = async (movieData: any) => {
+    await checkIsAdmin();
+    const { episodes, ...rest } = movieData;
+    
+    const cleanMovie = {
+        title: rest.title,
+        year: Number(rest.year),
+        plot: rest.plot || '',
+        poster_url: rest.poster_url || rest.poster || rest.posterUrl || '',
+        video_url: rest.video_url || rest.videoSource || rest.videoUrl || '',
+        genre: rest.genre || '',
+        tags: rest.tags || '',
+        translator: rest.translator || '',
+        is_series: rest.is_series ?? false,
+        status: rest.status || 'completed',
+        access_type: rest.access_type || 'free',
+        language: rest.language || 'UZ',
+        quality: rest.quality || 'HD',
+        rating: rest.rating ? Number(rest.rating) : 5.0,
+        is_archived: rest.is_archived ?? false,
+        view_count: rest.view_count || 0,
+        channel_id: rest.channel_id || null
+    };
+
+    const { data, error } = await supabase.from('movies').insert(cleanMovie).select().single();
+    if (error) {
+        console.error("Error inserting movie:", error);
+        throw error;
+    }
+
+    if (cleanMovie.is_series && episodes && Array.isArray(episodes) && episodes.length > 0) {
+        const episodesToInsert = episodes.map((ep: any, idx: number) => ({
+            movie_id: data.id,
+            title: ep.title || `${idx + 1}-qism`,
+            source: ep.source || ep.videoSource || '',
+        }));
+        const { error: epError } = await supabase.from('episodes').insert(episodesToInsert);
+        if (epError) console.error("Error inserting episodes:", epError);
+    }
+
     localStorage.removeItem('anilo_cache_all_movies_catalog');
     return data as Movie;
 };
 
-export const updateMovieInDB = async (id: number, movie: Partial<Movie>) => {
-    const { error } = await supabase.from('movies').update(movie).eq('id', id);
-    if (error) throw error;
+export const updateMovieInDB = async (id: number, movieData: any) => {
+    await checkIsAdmin();
+    const { episodes, ...rest } = movieData;
+
+    const cleanMovie = {
+        title: rest.title,
+        year: Number(rest.year),
+        plot: rest.plot || '',
+        poster_url: rest.poster_url || rest.poster || rest.posterUrl || '',
+        video_url: rest.video_url || rest.videoSource || rest.videoUrl || '',
+        genre: rest.genre || '',
+        tags: rest.tags || '',
+        translator: rest.translator || '',
+        is_series: rest.is_series ?? false,
+        status: rest.status || 'completed',
+        access_type: rest.access_type || 'free',
+        language: rest.language || 'UZ',
+        quality: rest.quality || 'HD',
+        rating: rest.rating ? Number(rest.rating) : 5.0,
+        is_archived: rest.is_archived ?? false,
+        channel_id: rest.channel_id || null
+    };
+
+    const { error } = await supabase.from('movies').update(cleanMovie).eq('id', id);
+    if (error) {
+        console.error("Error updating movie:", error);
+        throw error;
+    }
+
+    if (cleanMovie.is_series && episodes && Array.isArray(episodes)) {
+        await supabase.from('episodes').delete().eq('movie_id', id);
+        if (episodes.length > 0) {
+            const episodesToInsert = episodes.map((ep: any, idx: number) => ({
+                movie_id: id,
+                title: ep.title || `${idx + 1}-qism`,
+                source: ep.source || ep.videoSource || '',
+            }));
+            const { error: epError } = await supabase.from('episodes').insert(episodesToInsert);
+            if (epError) console.error("Error inserting episodes on update:", epError);
+        }
+    }
+
     localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const deleteMovieFromDB = async (id: number) => {
+    await checkIsAdmin();
     const { error } = await supabase.from('movies').delete().eq('id', id);
     if (error) throw error;
     localStorage.removeItem('anilo_cache_all_movies_catalog');
 };
 
 export const toggleMovieArchive = async (id: number, isArchived: boolean) => {
+    await checkIsAdmin();
     const { error } = await supabase.from('movies').update({ is_archived: isArchived }).eq('id', id);
     if (error) throw error;
     localStorage.removeItem('anilo_cache_all_movies_catalog');
