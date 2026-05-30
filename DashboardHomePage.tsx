@@ -278,46 +278,192 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                 </div>
             </div>
 
-            {/* RAMAZON WIDGET (NEW) */}
-            <div className="container mx-auto px-4 md:px-8 mb-16">
-                <div 
-                    onClick={() => onMainNavigate?.('ramazon')}
-                    className="relative w-full p-6 md:p-8 rounded-[2.5rem] bg-gradient-to-br from-orange-600/20 to-zinc-900 border border-orange-500/30 shadow-2xl cursor-pointer hover:border-orange-500 transition-all group overflow-hidden"
-                >
-                    <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                        <Moon size={150} className="text-orange-500" />
-                    </div>
-                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="text-center md:text-left">
-                            <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter mb-2">Ramazon 2025</h2>
-                            <p className="text-zinc-400 text-sm font-bold uppercase tracking-widest">Saharlik va Iftorlik vaqtlari • Duolar</p>
+            {/* CATEGORIES SECTION */}
+            <div className="container mx-auto px-4 md:px-8 space-y-16 pb-20">
+                {/* 1. YANGI QO'SHILGANLAR */}
+                <div>
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                                <span className="w-1.5 h-8 bg-orange-600 rounded-full"></span>
+                                Yangi Qo'shilganlar
+                            </h2>
+                            <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5">Katalogdagi eng so'nggi yangiliklar</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <div className="bg-orange-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl group-hover:bg-orange-500 transition-colors">
-                                VAQTLARNI KO'RISH
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
+                        {allMovies.slice(0, 12).map(movie => (
+                            <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                        ))}
+                    </div>
+                </div>
+
+                {/* 2. ANIMELAR */}
+                {(() => {
+                    const isAnime = (m: Movie) => {
+                        const combined = `${m.genre} ${m.tags || ''}`.toLowerCase();
+                        return combined.includes('anime') || 
+                               (!combined.includes('film') && !combined.includes('kino') && !combined.includes('dorama') && !combined.includes('kdrama') && !combined.includes('k-drama') && !combined.includes('multfilm') && !combined.includes('cartoon') && !combined.includes('mulfm') && !combined.includes('kdramma') && !combined.includes('kdorram'));
+                    };
+                    const animeList = allMovies.filter(isAnime);
+                    return (
+                        <div>
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                                        <span className="w-1.5 h-8 bg-purple-600 rounded-full"></span>
+                                        Animelar
+                                    </h2>
+                                    <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5 font-mono">Barcha sevimli anime serial va filmlar</p>
+                                </div>
                             </div>
+                            {animeList.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
+                                    {animeList.map(movie => (
+                                        <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-12 text-center bg-zinc-900/20 border border-dashed border-zinc-800/80 rounded-3xl text-zinc-600 font-bold uppercase tracking-widest text-[9px]">
+                                    Hali animelar yuklanmagan
+                                </div>
+                            )}
                         </div>
-                    </div>
-                </div>
-            </div>
+                    );
+                })()}
 
-            {/* CATALOG */}
-            <div className="container mx-auto px-4 md:px-8">
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
-                            <span className="w-1.5 h-8 bg-orange-600 rounded-full"></span>
-                            Yangi Qo'shilganlar
-                        </h2>
-                        <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5">Katalogdagi eng so'nggi yangiliklar</p>
-                    </div>
-                </div>
+                {/* 3. FILMLAR */}
+                {(() => {
+                    const isFilm = (m: Movie) => {
+                        const combined = `${m.genre} ${m.tags || ''}`.toLowerCase();
+                        return combined.includes('film') || combined.includes('kino') || combined.includes('movie');
+                    };
+                    const filmList = allMovies.filter(isFilm);
+                    return (
+                        <div>
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                                        <span className="w-1.5 h-8 bg-blue-600 rounded-full"></span>
+                                        Tarjima Filmlar (Movies)
+                                    </h2>
+                                    <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5">Saralangan jahon va o'zbek kinolari</p>
+                                </div>
+                            </div>
+                            {filmList.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
+                                    {filmList.map(movie => (
+                                        <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-12 text-center bg-zinc-900/20 border border-dashed border-zinc-800/80 rounded-3xl text-zinc-600 font-bold uppercase tracking-widest text-[9px]">
+                                    Hali doramalar yoki filmlar yo'q, tez orada yuklanadi!
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
-                    {allMovies.map(movie => (
-                        <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
-                    ))}
-                </div>
+                {/* 4. DORAMALAR */}
+                {(() => {
+                    const isDorama = (m: Movie) => {
+                        const combined = `${m.genre} ${m.tags || ''}`.toLowerCase();
+                        return combined.includes('dorama') || combined.includes('serial') || combined.includes('doramma');
+                    };
+                    const doramaList = allMovies.filter(isDorama);
+                    return (
+                        <div>
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                                        <span className="w-1.5 h-8 bg-emerald-600 rounded-full"></span>
+                                        Doramalar
+                                    </h2>
+                                    <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5">Mashhur osiyo serial va doramalari</p>
+                                </div>
+                            </div>
+                            {doramaList.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
+                                    {doramaList.map(movie => (
+                                        <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-12 text-center bg-zinc-900/20 border border-dashed border-zinc-800/80 rounded-3xl text-zinc-600 font-bold uppercase tracking-widest text-[9px]">
+                                    Doramalar bo'limi hozircha bo'sh. Tez orada qo'shiladi!
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* 5. MULTFILMLAR */}
+                {(() => {
+                    const isMultfilm = (m: Movie) => {
+                        const combined = `${m.genre} ${m.tags || ''}`.toLowerCase();
+                        return combined.includes('multfilm') || combined.includes('cartoon') || combined.includes('mulfm') || combined.includes('multflm');
+                    };
+                    const multfilmList = allMovies.filter(isMultfilm);
+                    return (
+                        <div>
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                                        <span className="w-1.5 h-8 bg-pink-600 rounded-full"></span>
+                                        Multfilmlar
+                                    </h2>
+                                    <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5">Eng sara multfilm va animatsion asarlar</p>
+                                </div>
+                            </div>
+                            {multfilmList.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
+                                    {multfilmList.map(movie => (
+                                        <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-12 text-center bg-zinc-900/20 border border-dashed border-zinc-800/80 rounded-3xl text-zinc-600 font-bold uppercase tracking-widest text-[9px]">
+                                    Multfilmlar yaqin kunlarda qo'shiladi!
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* 6. K-DRAMALAR */}
+                {(() => {
+                    const isKdrama = (m: Movie) => {
+                        const combined = `${m.genre} ${m.tags || ''}`.toLowerCase();
+                        return combined.includes('kdrama') || combined.includes('k-drama') || combined.includes('kdramma') || combined.includes('kdorram');
+                    };
+                    const kdramaList = allMovies.filter(isKdrama);
+                    return (
+                        <div>
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                                        <span className="w-1.5 h-8 bg-red-600 rounded-full"></span>
+                                        K-Doramalar (Korean Kdrama)
+                                    </h2>
+                                    <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-1 ml-5">Koreya k-dramalari o'zbek tilida</p>
+                                </div>
+                            </div>
+                            {kdramaList.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
+                                    {kdramaList.map(movie => (
+                                        <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-12 text-center bg-zinc-900/20 border border-dashed border-zinc-800/80 rounded-3xl text-zinc-600 font-bold uppercase tracking-widest text-[9px]">
+                                    Kdramalar yaqin kunlarda efirga uzatiladi!
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
         </div>
     );

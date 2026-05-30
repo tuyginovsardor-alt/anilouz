@@ -876,6 +876,10 @@ export const getPaymentRequests = async (): Promise<PaymentRequestDB[]> => {
     } catch (e) { return []; }
 };
 
+export const createPaymentRequest = async (userId: string, amount: number, screenshotUrl: string) => {
+    await supabase.from('payment_requests').insert({ user_id: userId, amount, screenshot_url: screenshotUrl, status: 'pending' });
+};
+
 export const approvePaymentRequest = async (requestId: number, userId: string, amount: number) => {
     await supabase.rpc('approve_payment', { req_id: requestId, u_id: userId, amt: amount });
     localStorage.removeItem(`anilo_cache_profile_${userId}`);

@@ -32,11 +32,13 @@ serve(async (req) => {
 
     const rawToken = Deno.env.get('TSPAY_TOKEN');
     const token = rawToken ? rawToken.trim() : null;
+    const merchantId = Deno.env.get('TSPAY_MERCHANT_ID')?.trim() || Deno.env.get('TSPAY_MERCHANT')?.trim() || '';
+    const secretKey = Deno.env.get('TSPAY_SECRET_KEY')?.trim() || Deno.env.get('TSPAY_SECRET')?.trim() || '';
 
-    if (!token) {
+    if (!token && (!merchantId || !secretKey)) {
         return new Response(JSON.stringify({ 
             status: 'error', 
-            message: "API Token topilmadi (TSPAY_TOKEN set qilinmagan)." 
+            message: "API Token (TSPAY_TOKEN) yoki Merchant ID (TSPAY_MERCHANT_ID) va Secret Key (TSPAY_SECRET_KEY) topilmadi." 
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
@@ -79,7 +81,9 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           amount: amount,
-          access_token: token,
+          access_token: token || secretKey,
+          merchant_id: merchantId,
+          secret_key: secretKey,
           comment: `Anilo.uz: ${body.user_id}`,
           redirect_url: 'https://anilo.uz/dashboard'
         })
@@ -128,7 +132,7 @@ serve(async (req) => {
 
     // --- 3. TO'LOVNI TEKSHIRISH ---
     if (body.action === 'check' && body.cheque_id) {
-      const response = await fetch(`https://tspay.uz/api/v1/transactions/${body.cheque_id}/?access_token=${token}`)
+      const response = await fetch(`https://tspay.uz/api/v1/transactions/${body.cheque_id}/?access_token=${token || secretKey}`)
       const data = await response.json();
       return new Response(JSON.stringify({ status: 'success', data }), { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

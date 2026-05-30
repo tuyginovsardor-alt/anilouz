@@ -295,9 +295,6 @@ const App: React.FC = () => {
         )}
 
         <div className="min-h-screen text-gray-100 flex flex-col bg-[#050505] relative">
-          {/* Ramazon Bezaklari - Eng orqa fonda */}
-          {!shouldHideGlobalNav && <RamadanDecoration />}
-
           {!shouldHideGlobalNav && (
             <Header 
               onNavigate={handleNavigation} 
@@ -413,16 +410,15 @@ const App: React.FC = () => {
           {!shouldHideGlobalNav && (
             <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
                 <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
-                    <button onClick={() => handleNavigation('dashboard')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500' : 'text-zinc-600'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Asosiy</span></button>
-                    <button onClick={() => handleNavigation('ramazon')} className={`flex flex-col items-center gap-1 w-1/5 ${page === 'ramazon' ? 'text-orange-500' : 'text-zinc-600'}`}><Moon size={22} /><span className="text-[9px] font-black uppercase">Ramazon</span></button>
-                    <button onClick={() => handleNavigation('shop')} className={`flex flex-col items-center gap-1 w-1/5 -mt-6 group`}><div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}><ShoppingBag size={20} /></div><span className={`text-[9px] font-black uppercase ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span></button>
-                    <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/5 relative ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}>
+                    <button onClick={() => handleNavigation('dashboard')} className={`flex flex-col items-center gap-1 w-1/4 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500' : 'text-zinc-600'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Asosiy</span></button>
+                    <button onClick={() => handleNavigation('shop')} className={`flex flex-col items-center gap-1 w-1/4 -mt-6 group`}><div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}><ShoppingBag size={20} /></div><span className={`text-[9px] font-black uppercase ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span></button>
+                    <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/4 relative ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}>
                         <LayoutGrid size={22} />
                         {isAnyLive && <div className="absolute top-0 right-1/4 w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>}
                         <span className="text-[9px] font-black uppercase">Fandub</span>
                     </button>
                     
-                    <button onClick={() => {if(isAuthenticated) setIsMenuOpen(true); else setIsAuthModalOpen(true);}} className={`flex flex-col items-center gap-1 w-1/5 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600'}`}>
+                    <button onClick={() => {if(isAuthenticated) setIsMenuOpen(true); else setIsAuthModalOpen(true);}} className={`flex flex-col items-center gap-1 w-1/4 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600'}`}>
                         {isAuthenticated ? (
                             <div className={`w-7 h-7 rounded-full border-2 overflow-hidden transition-all duration-300 ${isMenuOpen ? 'border-orange-500 scale-110 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'border-zinc-700'}`}>
                                 {userProfile?.avatar_url ? (

@@ -1,21 +1,40 @@
-
 import React, { useState } from 'react';
 import { createTsPayTransaction } from './services/tspayService';
 import { supabase } from './services/supabaseClient';
 import { useNotification } from './hooks/useNotification';
+import { uploadFile, createPaymentRequest } from './services/dbService';
 import { 
     CreditCard, Zap, Loader2, AlertCircle, CheckCircle, 
     ShieldCheck, Smartphone, Send, MessageCircle, Clock, 
-    UserCheck, ExternalLink, ArrowRight 
+    UserCheck, ExternalLink, ArrowRight, Copy, Upload, Image as ImageIcon
 } from 'lucide-react';
 
 export const BillingPage: React.FC = () => {
+    // TSPAY State
     const [tsAmount, setTsAmount] = useState('');
     const [isTsPayLoading, setIsTsPayLoading] = useState(false);
     const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
     const [lastError, setLastError] = useState<string | null>(null);
 
+    // Manual Card State
+    const [manualAmount, setManualAmount] = useState('');
+    const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [isManualLoading, setIsManualLoading] = useState(false);
+    const [manualSuccess, setManualSuccess] = useState(false);
+
     const { addNotification } = useNotification();
+
+    const cardHolder = "ANILO TV (T. Sardor)";
+    const cardNumber = "8600 1204 5940 3122"; // HUMO / UZCARD
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text.replace(/\s+/g, ''));
+        addNotification({
+            type: 'success',
+            title: 'Nusxalandi',
+            message: "Karta raqami buferga nusxalandi!"
+        });
+    };
 
     const handleTsPaySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,6 +88,57 @@ export const BillingPage: React.FC = () => {
             addNotification({ type: 'error', title: 'Xatolik', message: 'Internet ulanishini tekshiring.' });
         } finally {
             setIsTsPayLoading(false);
+        }
+    };
+
+    const handleManualSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const amt = Number(manualAmount);
+        if (!manualAmount || amt < 1000) {
+            addNotification({ type: 'warning', title: 'Xatolik', message: "Minimal to'lov summasi 1,000 so'm." });
+            return;
+        }
+        if (!receiptFile) {
+            addNotification({ type: 'warning', title: 'Chek yuklanmagan', message: "Iltimos, to'lov cheki rasmini (screenshot) yuklang." });
+            return;
+        }
+
+        setIsManualLoading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                addNotification({ type: 'error', title: 'Xatolik', message: 'Iltimos, avval tizimga kiring.' });
+                return;
+            }
+
+            // 1. Upload the receipt file
+            addNotification({ type: 'info', title: 'Yuklanmoqda', message: 'Chek serverga yuklanmoqda...' });
+            const fileUrl = await uploadFile(receiptFile, 'posters');
+            if (!fileUrl) {
+                throw new Error("Chek rasmini yuklab bo'lmadi.");
+            }
+
+            // 2. Submit payment request
+            await createPaymentRequest(user.id, amt, fileUrl);
+
+            setManualSuccess(true);
+            setManualAmount('');
+            setReceiptFile(null);
+            
+            addNotification({
+                type: 'success',
+                title: 'So\'rovingiz qabul qilindi',
+                message: "Chek tekshirish uchun adminlarga yuborildi. Balansingiz tez orada to'ldiriladi!"
+            });
+        } catch (err: any) {
+            console.error(err);
+            addNotification({
+                type: 'error',
+                title: 'Xatolik',
+                message: err.message || "To'lov so'rovini yuborishda xatolik yuz berdi."
+            });
+        } finally {
+            setIsManualLoading(false);
         }
     };
 
@@ -166,36 +236,121 @@ export const BillingPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 2. MANUAL TELEGRAM */}
-                <div className="bg-[#229ED9]/10 border border-[#229ED9]/30 rounded-[3rem] p-1 shadow-2xl relative overflow-hidden group h-full">
-                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#229ED9]/20 rounded-full blur-[100px]"></div>
-                    <div className="bg-[#0b1120]/90 backdrop-blur-xl rounded-[2.8rem] p-8 h-full flex flex-col items-center text-center relative z-10">
-                        <div className="w-24 h-24 bg-gradient-to-tr from-[#229ED9] to-[#0088cc] rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
-                            <Send size={44} className="text-white ml-1" fill="white" />
+                {/* 2. MANUAL KARTA ORQALI TO'LOV & CHEK YUBORISH */}
+                <div className="bg-[#229ED9]/10 border border-emerald-500/30 rounded-[3rem] p-1 shadow-2xl relative overflow-hidden group h-full">
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-600/20 rounded-full blur-[100px]"></div>
+                    <div className="bg-[#0b1120]/90 backdrop-blur-xl rounded-[2.8rem] p-8 h-full flex flex-col relative z-10">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 className="text-2xl font-black text-white flex items-center gap-2 uppercase">
+                                    <CreditCard className="text-emerald-400" size={24} />
+                                    <span>KARTAGA TO'LOV</span>
+                                </h2>
+                                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mt-1">Manual tekshirish • Chek orqali</p>
+                            </div>
+                            <div className="bg-emerald-950/30 p-3 rounded-2xl border border-emerald-500/20 shadow-inner">
+                                <Send className="text-emerald-400" size={24} />
+                            </div>
                         </div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">QO'LDA TO'LDIRISH</h2>
-                        <p className="text-[#229ED9] font-black text-[9px] uppercase tracking-widest mb-10 bg-[#229ED9]/10 px-4 py-2 rounded-full border border-[#229ED9]/20">Tezkor Yordam @anilo_ega</p>
-                        
-                        <div className="space-y-4 w-full text-left mb-10 flex-1">
-                            {[
-                                { icon: <Clock size={20}/>, t: "Tezkor Yordam", d: "Operatorlar 10-15 daqiqada javob beradi" },
-                                { icon: <ShieldCheck size={20}/>, t: "Kafolatli", d: "Manual tekshirish va tasdiqlash" },
-                                { icon: <UserCheck size={20}/>, t: "Ishonchli", d: "Chek orqali balansga o'tkazish" }
-                            ].map((item, i) => (
-                                <div key={i} className="flex items-center gap-4 bg-white/5 p-5 rounded-2xl border border-white/5 transition-all hover:bg-white/10 hover:translate-x-1 duration-300">
-                                    <div className="text-[#229ED9]">{item.icon}</div>
-                                    <div>
-                                        <p className="text-white font-black text-[10px] uppercase tracking-wider">{item.t}</p>
-                                        <p className="text-zinc-500 text-[10px] mt-0.5 font-medium">{item.d}</p>
+
+                        {manualSuccess ? (
+                            <div className="flex-1 flex flex-col justify-center items-center text-center p-6 animate-fade-in bg-zinc-950/40 border border-emerald-500/30 rounded-[2rem] my-auto">
+                                <CheckCircle size={56} className="text-emerald-500 mb-4" />
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Chek Qabul Qilindi!</h3>
+                                <p className="text-zinc-400 text-xs leading-relaxed mb-6">
+                                    Sizning to'lovingiz navbatga qo'shildi. Administratorlar chekni tez orada tekshirib, balansingizni avtomatik to'ldirishadi.
+                                </p>
+                                <button 
+                                    onClick={() => setManualSuccess(false)}
+                                    className="px-6 py-3 bg-emerald-600 border border-emerald-500/40 text-white hover:bg-emerald-500 rounded-xl text-xs font-black uppercase tracking-wider"
+                                >
+                                    Yana chek yuborish
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-6 flex-1 flex flex-col">
+                                {/* CARD DATA */}
+                                <div className="bg-zinc-950/60 border border-zinc-800/80 p-5 rounded-2xl relative">
+                                    <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">To'lov qilish uchun karta raqami:</p>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-white font-mono text-xl tracking-wider select-all">{cardNumber}</p>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => copyToClipboard(cardNumber)}
+                                            className="p-2 bg-[#1e293b] text-blue-400 hover:text-blue-300 rounded-lg border border-zinc-700/50 hover:bg-[#1e293b]/80 transition-all active:scale-95"
+                                            title="Nusxalash"
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-3 text-[10px]">
+                                        <span className="text-zinc-500 font-bold uppercase tracking-wider">Ega: <span className="text-zinc-300">{cardHolder}</span></span>
+                                        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-black text-[8px] uppercase">Humo / Uzcard</span>
                                     </div>
                                 </div>
-                            ))}
+
+                                {/* FORM */}
+                                <form onSubmit={handleManualSubmit} className="space-y-4 flex-1 flex flex-col">
+                                    {/* AMOUNT */}
+                                    <div className="relative group/input">
+                                        <label className="text-[9px] font-black text-emerald-400 uppercase tracking-widest absolute -top-2 left-5 bg-[#0b1120] px-2 z-10">To'langan Summa (UZS)</label>
+                                        <input 
+                                            type="number" 
+                                            value={manualAmount} 
+                                            onChange={e => setManualAmount(e.target.value)} 
+                                            className="w-full bg-[#1e293b]/30 border border-emerald-500/20 rounded-2xl p-4 text-white font-mono text-lg outline-none focus:border-emerald-500 transition-all placeholder:text-zinc-700" 
+                                            placeholder="Summani kiriting (masalan: 10000)" 
+                                        />
+                                    </div>
+
+                                    {/* CHEK UPLOADER */}
+                                    <div className="border-2 border-dashed border-zinc-800 hover:border-emerald-500/50 rounded-2xl p-5 text-center cursor-pointer transition-all relative block">
+                                        <input 
+                                            type="file" 
+                                            accept="image/*,application/pdf"
+                                            onChange={e => {
+                                                const files = e.target.files;
+                                                if (files && files.length > 0) {
+                                                    setReceiptFile(files[0]);
+                                                }
+                                            }}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        />
+                                        {receiptFile ? (
+                                            <div className="flex items-center gap-3 justify-center text-emerald-400 font-bold text-xs uppercase">
+                                                <ImageIcon size={20} />
+                                                <span className="truncate max-w-[200px]">{receiptFile.name} (Tanlandi)</span>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <Upload className="mx-auto text-zinc-600 group-hover:text-emerald-500 transition-colors" size={28} />
+                                                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-wider">To'lov chekini (rasm/screenshot) yuklang</p>
+                                                <p className="text-zinc-600 text-[9px]">Suring yoki shu yerga bosing</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* ACTIONS */}
+                                    <button 
+                                        type="submit" 
+                                        disabled={isManualLoading} 
+                                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all shadow-xl shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 mt-auto"
+                                    >
+                                        {isManualLoading ? (
+                                            <><Loader2 className="animate-spin" size={20} /> <span>YUBORILMOQDA...</span></>
+                                        ) : (
+                                            <><Send size={18} /> CHEKNI TASDIQLASHGA YUBORISH</>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* SUPPORT */}
+                        <div className="mt-6 flex items-center justify-between border-t border-zinc-800 pt-5 text-[10px] text-zinc-500">
+                            <span className="font-bold flex items-center gap-1.5"><Clock size={12} className="text-amber-500" /> Tasklar 10-15 daqiqada tasdiqlanadi.</span>
+                            <a href="https://t.me/anilo_ega" target="_blank" className="text-blue-400 hover:underline font-bold flex items-center gap-1">@anilo_ega <ExternalLink size={10} /></a>
                         </div>
-                        
-                        <a href="https://t.me/anilo_ega" target="_blank" className="w-full bg-[#229ED9] hover:bg-[#1e8abc] text-white py-6 rounded-2xl font-black uppercase text-xs tracking-[0.3em] transition-all shadow-xl shadow-[#229ED9]/20 flex items-center justify-center gap-3 active:scale-95 group">
-                            <MessageCircle size={20} className="group-hover:scale-110 transition-transform" /> 
-                            ADMIN BILAN BOG'LANISH
-                        </a>
                     </div>
                 </div>
             </div>
