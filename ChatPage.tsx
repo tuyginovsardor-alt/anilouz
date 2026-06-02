@@ -176,6 +176,39 @@ export const ChatPage: React.FC = () => {
     const [editingPermissions, setEditingPermissions] = useState<AdminPermissions>(DEFAULT_PERMISSIONS);
     const [allProfiles, setAllProfiles] = useState<UserProfile[]>([]);
 
+    const getActiveParticipants = (): UserProfile[] => {
+        const uniqueParticipants = new Map<string, UserProfile>();
+        if (user && userProfile) {
+            uniqueParticipants.set(user.id, userProfile);
+        }
+        allProfiles.forEach(p => {
+            if (p && p.id) uniqueParticipants.set(p.id, p);
+        });
+        messages.forEach(msg => {
+            if (msg && msg.user_id && !uniqueParticipants.has(msg.user_id)) {
+                uniqueParticipants.set(msg.user_id, {
+                    id: msg.user_id,
+                    username: msg.username || 'Animechi',
+                    avatar_url: msg.avatar_url || null,
+                    role: (msg.role as any) || 'user',
+                    full_name: msg.username || 'Foydalanuvchi',
+                    email: '',
+                    balance: 0,
+                    phone: null,
+                    short_id: '',
+                    email_notifications: true,
+                    push_notifications: true,
+                    language: 'uz',
+                    created_at: msg.created_at || new Date().toISOString(),
+                    subscription_plan: null,
+                    subscription_end_at: null,
+                    free_trial_started_at: null
+                });
+            }
+        });
+        return Array.from(uniqueParticipants.values());
+    };
+
     // Muted members
     const [mutedUsers, setMutedUsers] = useState<Record<string, string[]>>({}); // roomId -> userIds
 
@@ -1480,7 +1513,7 @@ export const ChatPage: React.FC = () => {
                                 <p className="text-[11px] text-zinc-650 italic leading-snug">Guruhda hali administrator tayinlanmagan.</p>
                             ) : (
                                 <div className="space-y-1.5">
-                                    {allProfiles.filter(p => activeAdminList.includes(p.id)).map(adm => (
+                                    {getActiveParticipants().filter(p => activeAdminList.includes(p.id)).map(adm => (
                                         <div key={adm.id} className="flex items-center justify-between bg-zinc-950 p-2.5 rounded-xl border border-zinc-900">
                                             <div className="min-w-0">
                                                 <p className="text-xs font-black text-white truncate leading-tight">@{adm.username}</p>
@@ -1517,7 +1550,7 @@ export const ChatPage: React.FC = () => {
                             <div className="space-y-2.5 border-t border-zinc-900/80 pt-4">
                                 <h4 className="text-[10px] font-black text-white uppercase tracking-wider">A'zoni administrator qilish</h4>
                                 <div className="space-y-1.5 max-h-40 overflow-y-auto scrollbar-none">
-                                    {allProfiles.filter(p => p.id !== user.id && !activeAdminList.includes(p.id)).map(pRef => (
+                                    {getActiveParticipants().filter(p => p.id !== user.id && !activeAdminList.includes(p.id)).map(pRef => (
                                         <div 
                                             key={pRef.id}
                                             onClick={() => handleOpenAssignAdmin(pRef)}
@@ -1564,7 +1597,7 @@ export const ChatPage: React.FC = () => {
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-none">
                         <p className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wide">Guruhdagi Ishtirokchilar</p>
                         <div className="space-y-2">
-                            {allProfiles.map(prof => {
+                            {getActiveParticipants().map(prof => {
                                 const isMuted = mutedUsers[activeRoom.id]?.includes(prof.id);
                                 const isAdmin = activeAdminList.includes(prof.id) || activeRoom.creator_id === prof.id;
                                 return (

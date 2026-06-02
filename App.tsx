@@ -249,7 +249,7 @@ const App: React.FC = () => {
   }
 
   const shouldHideGlobalNav = selectedMovie || isPlayerActive || activeVideoAd || 
-                             ['welcome', 'admin', 'copyright', 'fandub-dashboard', 'chat'].includes(page);
+                             ['welcome', 'admin', 'copyright', 'fandub-dashboard'].includes(page);
 
   return (
     <PWAProvider>
