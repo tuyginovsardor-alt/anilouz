@@ -173,53 +173,78 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         if (!userId) return null;
         const cachedProfile = getCache<UserProfile>(`profile_${userId}`);
         if (cachedProfile) return cachedProfile;
-        const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-        if (error) return null;
-        
-        if (data) {
-            setCache(`profile_${userId}`, data, 5); 
-            return data as UserProfile;
-        } else {
-            // Auto-create missing profile dynamically
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user && user.id === userId) {
-                    const localPart = user.email ? user.email.split('@')[0] : 'user';
-                    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-                    const defaultProfile = {
-                        id: userId,
-                        email: user.email || '',
-                        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Foydalanuvchi',
-                        username: `${localPart}_${randomSuffix}`,
-                        avatar_url: user.user_metadata?.avatar_url || null,
-                        role: 'user',
-                        balance: 0,
-                        phone: null,
-                        short_id: Math.random().toString(36).substring(2, 8).toUpperCase(),
-                        email_notifications: true,
-                        push_notifications: true,
-                        language: 'uz',
-                        created_at: new Date().toISOString()
-                    };
-                    const { data: inserted, error: insertError } = await supabase
-                        .from('profiles')
-                        .insert(defaultProfile)
-                        .select()
-                        .single();
-                        
-                    if (!insertError && inserted) {
-                        setCache(`profile_${userId}`, inserted, 5);
-                        return inserted as UserProfile;
-                    } else {
-                        console.error("Auto Profile Creation DB Error:", insertError);
+
+        let dbData: any = null;
+        let fetchError: any = null;
+
+        try {
+            const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+            dbData = data;
+            fetchError = error;
+        } catch (dbErr) {
+            fetchError = dbErr;
+        }
+
+        if (dbData) {
+            setCache(`profile_${userId}`, dbData, 5); 
+            return dbData as UserProfile;
+        }
+
+        // If no database data exists or a DB query error occurred, we fall back to meta-data from authentication.
+        // This ensures the profile picture and details never disappear due to security or database policy restrictions.
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && user.id === userId) {
+                const localPart = user.email ? user.email.split('@')[0] : 'user';
+                const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+                const fallbackProfile: UserProfile = {
+                    id: userId,
+                    email: user.email || '',
+                    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Foydalanuvchi',
+                    username: user.user_metadata?.username || `${localPart}_${randomSuffix}`,
+                    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+                    role: user.email === 'tuyginovsardor@gmail.com' ? 'owner' : 'user', // Ensure the main admin is mapped to owner
+                    balance: 0,
+                    phone: null,
+                    short_id: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                    email_notifications: true,
+                    push_notifications: true,
+                    language: 'uz',
+                    created_at: new Date().toISOString(),
+                    subscription_plan: null,
+                    subscription_end_at: null,
+                    free_trial_started_at: null
+                };
+
+                // Try to persist it in the database if there was no structural database error,
+                // but if insert fails, we still return the fallback profile gracefully.
+                if (!dbData && !fetchError) {
+                    try {
+                        const { data: inserted, error: insertError } = await supabase
+                            .from('profiles')
+                            .insert(fallbackProfile)
+                            .select()
+                            .single();
+                        if (!insertError && inserted) {
+                            setCache(`profile_${userId}`, inserted, 5);
+                            return inserted as UserProfile;
+                        }
+                    } catch (err) {
+                        console.error("Auto Profile Creation Exception:", err);
                     }
                 }
-            } catch (e) {
-                console.error("Auto Profile Creation Exception:", e);
+
+                setCache(`profile_${userId}`, fallbackProfile, 5);
+                return fallbackProfile;
             }
+        } catch (metaErr) {
+            console.error("Auth User Metadata Failure:", metaErr);
         }
+
         return null;
-    } catch (e) { return null; }
+    } catch (e) {
+        return null;
+    }
 };
 
 export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
