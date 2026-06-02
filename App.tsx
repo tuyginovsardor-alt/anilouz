@@ -21,7 +21,7 @@ import { NotificationContainer } from './components/Notification';
 import { AiAssistantPage } from './AiAssistantPage';
 import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
-import { LiveStreamPage } from './LiveStreamPage';
+import { ChatPage } from './ChatPage';
 import { PWAReportPage } from './PWAReportPage';
 import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star, Maximize2, Video, Users } from 'lucide-react';
 import { getUserProfile, getMovies } from './services/dbService';
@@ -30,7 +30,7 @@ import { HamburgerMenu } from './components/HamburgerMenu';
 import { LegalDocs } from './components/LegalDocs';
 import { PWAProvider } from './components/InstallPWA';
 
-export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard' | 'ramazon' | 'live' | 'pwa-report';
+export type Page = 'welcome' | 'search' | 'dashboard' | 'ai-assistant' | 'admin' | 'copyright' | 'dub-dashboard' | 'studio' | 'shop' | 'shop-admin' | 'catalog' | 'fandub-dashboard' | 'ramazon' | 'chat' | 'pwa-report';
 export type DashboardSubPage = 'main' | 'profile' | 'settings' | 'history' | 'saved' | 'account' | 'billing' | 'plans' | 'more' | 'support';
 export type AdminSubPage = 'dashboard' | 'sessions' | 'broadcasts' | 'users' | 'movies' | 'settings' | 'financials' | 'support' | 'advertisements' | 'promocodes' | 'customization' | 'sitemap' | 'security' | 'stamp_tool' | 'bundle_manager';
 export type LegalDocType = 'privacy' | 'terms';
@@ -131,7 +131,6 @@ const App: React.FC = () => {
           const params = new URLSearchParams(window.location.search);
           const pageParam = params.get('page') as Page;
           const movieIdParam = params.get('movie_id');
-          const liveIdParam = params.get('live_id');
 
           if (session) {
               setIsAuthenticated(true); 
@@ -143,29 +142,9 @@ const App: React.FC = () => {
                   if (found) setSelectedMovie(found);
               }
 
-              if (liveIdParam) {
-                  try {
-                      const { data: stream } = await supabase
-                          .from('live_streams')
-                          .select('*, profiles(username, avatar_url), fandub_channels(name)')
-                          .eq('id', liveIdParam)
-                          .maybeSingle();
-                      
-                      if (stream) {
-                          setActiveLiveStream(stream);
-                          setPage('live');
-                          if (stream.status === 'ended') {
-                              addNotification({ type: 'info', title: 'Efir yakunlangan', message: 'Bu jonli efir allaqachon tugagan.' });
-                          }
-                      }
-                  } catch (e) {
-                      console.error("URL Live Stream Error:", e);
-                  }
-              }
-              
-              if (pageParam && ['ramazon', 'search', 'shop', 'studio', 'catalog', 'live'].includes(pageParam)) {
+              if (pageParam && ['ramazon', 'search', 'shop', 'studio', 'catalog', 'chat'].includes(pageParam)) {
                   setPage(pageParam);
-              } else if (!liveIdParam) {
+              } else {
                   setPage('dashboard');
               }
           } else {
@@ -196,16 +175,6 @@ const App: React.FC = () => {
         }
     });
 
-    // Global Live Status check
-    const checkLive = async () => {
-        const { data } = await supabase.from('live_streams').select('id').eq('status', 'live').limit(1);
-        setIsAnyLive(!!data && data.length > 0);
-    };
-    checkLive();
-    const liveSub = supabase.channel('global_live_check')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'live_streams' }, () => checkLive())
-        .subscribe();
-
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -214,7 +183,6 @@ const App: React.FC = () => {
 
     return () => {
         subscription.unsubscribe();
-        supabase.removeChannel(liveSub);
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
     };
@@ -281,7 +249,7 @@ const App: React.FC = () => {
   }
 
   const shouldHideGlobalNav = selectedMovie || isPlayerActive || activeVideoAd || 
-                             ['welcome', 'admin', 'copyright', 'fandub-dashboard', 'live'].includes(page);
+                             ['welcome', 'admin', 'copyright', 'fandub-dashboard', 'chat'].includes(page);
 
   return (
     <PWAProvider>
@@ -307,23 +275,6 @@ const App: React.FC = () => {
               onLogout={() => supabase.auth.signOut()}
               isMenuOpen={isMenuOpen}
               setIsMenuOpen={setIsMenuOpen}
-              onNotificationClick={async (type, data) => {
-                  if (['live', 'invite', 'mention'].includes(type) && data?.stream_id) {
-                      try {
-                          const { data: stream } = await supabase.from('live_streams').select('*, profiles(username, avatar_url), fandub_channels(name)').eq('id', data.stream_id).maybeSingle();
-                          if (stream) {
-                              setActiveLiveStream(stream);
-                              setPage('live');
-                          } else {
-                              addNotification({ type: 'error', title: 'Xatolik', message: 'Efir topilmadi yoki yakunlangan.' });
-                          }
-                      } catch (e) {
-                          console.error("Notification navigation error:", e);
-                      }
-                  } else if (type === 'promo') {
-                      setPage('shop');
-                  }
-              }}
             />
           )}
           
@@ -352,17 +303,8 @@ const App: React.FC = () => {
                         {page === 'dashboard' && <DashboardPage viewUserId={selectedArtistId} currentPage={dashboardPage} onNavigate={setDashboardPage} onMainNavigate={handleNavigation} onSearch={() => {}} onLogout={() => supabase.auth.signOut()} onMovieClick={handleMovieClick} currentRole={currentUserRole} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} />}
                         {page === 'admin' && <AdminPage currentRole={currentUserRole} currentPage={adminPage} onNavigate={setAdminPage} onSwitchView={() => setPage('dashboard')} onLogout={() => supabase.auth.signOut()} />}
                         {page === 'ai-assistant' && <AiAssistantPage />}
-                        {page === 'live' && (
-                          <LiveStreamPage 
-                            userProfile={userProfile} 
-                            onBack={() => setPage('dashboard')} 
-                            selectedStream={activeLiveStream}
-                            setSelectedStream={setActiveLiveStream}
-                            isStreamerMode={isLiveMinimized ? false : isStreamerMode} // Handle mode carefully
-                            setIsStreamerMode={setIsStreamerMode}
-                            isMinimized={isLiveMinimized}
-                            setIsMinimized={setIsLiveMinimized}
-                          />
+                        {page === 'chat' && (
+                          <ChatPage />
                         )}
                         {page === 'copyright' && <CopyrightPage onBack={() => setPage('welcome')} />}
                         {page === 'dub-dashboard' && <DubDashboard />}
@@ -370,10 +312,6 @@ const App: React.FC = () => {
                           <StudioPage 
                             onArtistClick={setSelectedArtistId} 
                             onMovieClick={handleMovieClick} 
-                            onStreamClick={(stream) => {
-                              setActiveLiveStream(stream);
-                              setPage('live');
-                            }}
                           />
                         )}
                         {page === 'shop' && <ShopPage />}
@@ -447,53 +385,6 @@ const App: React.FC = () => {
           )}
           <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} onLogout={() => { supabase.auth.signOut(); setIsMenuOpen(false); }} onMainNavigate={handleNavigation} onDashboardNavigate={setDashboardPage} onSwitchRole={(r) => {if(['admin','owner'].includes(r)) setPage('admin')}} onOpenLegal={(type) => setLegalDocType(type)} />
           {legalDocType && <LegalDocs type={legalDocType} onClose={() => setLegalDocType(null)} />}
-          
-          {/* Global Mini Player */}
-          {activeLiveStream && page !== 'live' && (
-            <div 
-                className="fixed bottom-24 right-4 w-64 aspect-video bg-gray-900 rounded-2xl border-2 border-orange-600 shadow-2xl z-[200] overflow-hidden animate-scale-in group"
-            >
-                <div onClick={() => setPage('live')} className="absolute inset-0 cursor-pointer">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center animate-pulse">
-                            <Video className="text-orange-500 w-6 h-6" />
-                        </div>
-                    </div>
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Maximize2 className="text-white" />
-                    </div>
-                </div>
-                
-                <div className="absolute top-2 left-2 flex items-center gap-2 pointer-events-none">
-                    <div className="bg-red-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Live</div>
-                    <div className="bg-black/60 backdrop-blur-md text-white text-[8px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
-                        <Users size={8} />
-                        {activeLiveStream.viewer_count}
-                    </div>
-                </div>
-
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (isStreamerMode) {
-                            if (window.confirm("Efirni tugatmoqchimisiz?")) {
-                                setActiveLiveStream(null);
-                                setIsStreamerMode(false);
-                            }
-                        } else {
-                            setActiveLiveStream(null);
-                        }
-                    }}
-                    className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all z-10"
-                >
-                    <X size={14} />
-                </button>
-
-                <div className="absolute bottom-2 left-2 right-2 truncate pointer-events-none">
-                    <p className="text-[10px] text-white font-bold drop-shadow-lg">{activeLiveStream.title}</p>
-                </div>
-            </div>
-          )}
         </div>
     </NotificationContext.Provider>
     </PWAProvider>

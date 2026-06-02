@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Page, DashboardSubPage } from '../App';
 import { UzumakiLogo } from './icons/UzumakiLogo';
-import { Search, Bell, User, Play, Mic, Sparkles, Download, ShieldCheck, FileText, Info, Video } from 'lucide-react';
+import { Search, Bell, User, Play, Mic, Sparkles, Download, ShieldCheck, FileText, Info, Video, MessageSquare } from 'lucide-react';
 import * as db from '../services/dbService';
 import { supabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
@@ -75,10 +75,6 @@ export const Header: React.FC<HeaderProps> = ({
   const fetchHeaderData = async () => {
       try {
           const { data: { user } } = await supabase.auth.getUser();
-          const [streams] = await Promise.all([
-              db.getLiveStreams()
-          ]);
-          setIsAnyLive(streams.length > 0);
           
           if (user) {
               const [count, profile, list] = await Promise.all([
@@ -141,12 +137,9 @@ export const Header: React.FC<HeaderProps> = ({
                         <Mic size={20} className={currentPage === 'studio' ? 'text-purple-600' : 'text-zinc-500'} />
                         <p className="text-sm font-black uppercase tracking-wide">Fandub</p>
                     </button>
-                    <button onClick={() => onNavigate('live')} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all ${currentPage === 'live' ? 'bg-white/10 border-white/10' : 'hover:bg-white/5 border-transparent'}`}>
-                        <div className="relative">
-                            <Video size={20} className={currentPage === 'live' ? 'text-red-600' : 'text-zinc-500'} />
-                            {isAnyLive && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full animate-pulse border border-black"></span>}
-                        </div>
-                        <p className="text-sm font-black uppercase tracking-wide">Jonli Efir</p>
+                    <button onClick={() => onNavigate('chat')} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all ${currentPage === 'chat' ? 'bg-white/10 border-white/10' : 'hover:bg-white/5 border-transparent'}`}>
+                        <MessageSquare size={20} className={currentPage === 'chat' ? 'text-orange-600' : 'text-zinc-500'} />
+                        <p className="text-sm font-black uppercase tracking-wide">Suhbat</p>
                     </button>
                 </nav>
             </div>
