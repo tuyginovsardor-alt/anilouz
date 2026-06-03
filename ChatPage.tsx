@@ -77,6 +77,9 @@ interface ChatRoom {
     expiry_days: number;
     admins_list?: string[];
     admin_rights?: Record<string, AdminPermissions>;
+    group_username?: string;
+    is_channel?: boolean;
+    bg_image?: string;
 }
 
 interface AdminPermissions {
@@ -177,6 +180,21 @@ export const ChatPage: React.FC = () => {
     const [editingPermissions, setEditingPermissions] = useState<AdminPermissions>(DEFAULT_PERMISSIONS);
     const [allProfiles, setAllProfiles] = useState<UserProfile[]>([]);
 
+    // Unique username, limit checks, public channels and background presets configuration
+    const [newRoomUsername, setNewRoomUsername] = useState('');
+    const [newRoomIsChannel, setNewRoomIsChannel] = useState(false);
+    const [newRoomBgImage, setNewRoomBgImage] = useState('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200');
+
+    // Add user modal properties
+    const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+    const [memberSearchQuery, setMemberSearchQuery] = useState('');
+
+    // Admin Group controls local editors
+    const [editRoomTitle, setEditRoomTitle] = useState('');
+    const [editRoomDesc, setEditRoomDesc] = useState('');
+    const [editRoomIsChannel, setEditRoomIsChannel] = useState(false);
+    const [editRoomBgImage, setEditRoomBgImage] = useState('');
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Play helper respecting user audio preference
@@ -199,7 +217,16 @@ export const ChatPage: React.FC = () => {
 
             if (data && data.length > 0) {
                 return data.map(item => {
-                    let descriptorExtra = { desc: item.description || '', emoji: '🔥', expiry_days: 5, admins: [] as string[], admin_rights: {} as Record<string, AdminPermissions> };
+                    let descriptorExtra = { 
+                        desc: item.description || '', 
+                        emoji: '🔥', 
+                        expiry_days: 5, 
+                        admins: [] as string[], 
+                        admin_rights: {} as Record<string, AdminPermissions>,
+                        group_username: '',
+                        is_channel: false,
+                        bg_image: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200'
+                    };
                     try {
                         if (item.description && item.description.startsWith('{')) {
                             descriptorExtra = { ...descriptorExtra, ...JSON.parse(item.description) };
@@ -214,7 +241,10 @@ export const ChatPage: React.FC = () => {
                         emoji: descriptorExtra.emoji || '🔥',
                         expiry_days: descriptorExtra.expiry_days || 5,
                         admins_list: descriptorExtra.admins || [],
-                        admin_rights: descriptorExtra.admin_rights || {}
+                        admin_rights: descriptorExtra.admin_rights || {},
+                        group_username: descriptorExtra.group_username || '',
+                        is_channel: !!descriptorExtra.is_channel,
+                        bg_image: descriptorExtra.bg_image || 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200'
                     };
                 });
             }
@@ -337,6 +367,16 @@ export const ChatPage: React.FC = () => {
         return () => {
             supabase.removeChannel(roomsChannel);
         };
+    }, [activeRoom]);
+
+    // Update edit values when activeRoom changes
+    useEffect(() => {
+        if (activeRoom) {
+            setEditRoomTitle(activeRoom.name || '');
+            setEditRoomDesc(activeRoom.description || '');
+            setEditRoomIsChannel(!!activeRoom.is_channel);
+            setEditRoomBgImage(activeRoom.bg_image || '');
+        }
     }, [activeRoom]);
 
     // Timer check for scheduled queues
@@ -472,12 +512,48 @@ export const ChatPage: React.FC = () => {
     const handleCreateRoom = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newRoomName || !user) {
-            addNotification({ type: 'warning', title: 'Yozish', message: 'Iltimos tizimga kiring.' });
+            addNotification({ type: 'warning', title: 'Kirish', message: 'Iltimos tizimga kiring.' });
             return;
         }
 
         const cleanName = newRoomName.trim().toLowerCase().replace(/\s+/g, '-');
+        const cleanUserHandle = newRoomUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+
+        if (!cleanUserHandle) {
+            addNotification({ type: 'warning', title: 'Username kiritilmadi', message: 'Iltimos, guruh uchun yagona username kiriting.' });
+            return;
+        }
+
+        // 1. Check for unique handle across existing rooms
+        const isTaken = rooms.some(r => r.group_username === cleanUserHandle);
+        if (isTaken) {
+            addNotification({ 
+                type: 'error', 
+                title: 'Username band', 
+                message: `@${cleanUserHandle} allaqachon band! Boshqa nom tanlang.` 
+            });
+            return;
+        }
+
+        // 2. Check room limits (Standard: 3, Premium/Admins: 10, Global Admins: unlimited)
+        const myRooms = rooms.filter(r => r.creator_id === user.id);
+        const isPremiumUser = userProfile?.subscription_plan === 'premium' || userProfile?.subscription_plan === 'vip';
+        const isGlobalAdminOrOwner = userProfile?.role === 'admin' || userProfile?.role === 'owner';
         
+        let maxAllowedLimit = 3;
+        if (isPremiumUser) {
+            maxAllowedLimit = 10;
+        }
+
+        if (!isGlobalAdminOrOwner && myRooms.length >= maxAllowedLimit) {
+            addNotification({
+                type: 'error',
+                title: 'Limitga yetildi',
+                message: `Standart foydalanuvchilar max 3 ta, Premium esa 10 ta guruh ocha oladi. Sizda allaqachon ${myRooms.length} ta guruh bor!`
+            });
+            return;
+        }
+
         // Generate valid general RFC4122 v4 UUID
         const generateUUID = () => {
             if (typeof window !== 'undefined' && window.crypto && typeof window.crypto.randomUUID === 'function') {
@@ -496,7 +572,10 @@ export const ChatPage: React.FC = () => {
             emoji: newRoomEmoji,
             expiry_days: Math.min(Math.max(newRoomExpiry, 1), 5),
             admins: [] as string[],
-            admin_rights: {} as Record<string, AdminPermissions>
+            admin_rights: {} as Record<string, AdminPermissions>,
+            group_username: cleanUserHandle,
+            is_channel: newRoomIsChannel,
+            bg_image: newRoomBgImage || 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200'
         };
 
         const payload = {
@@ -519,7 +598,7 @@ export const ChatPage: React.FC = () => {
             addNotification({
                 type: 'success',
                 title: 'Guruh yaratildi!',
-                message: `#${cleanName} xonasi muvaffaqiyatli ochildi.`
+                message: `@${cleanUserHandle} xonasi muvaffaqiyatli ochildi.`
             });
 
             const refreshed = await fetchRoomsFromSupabase();
@@ -530,6 +609,9 @@ export const ChatPage: React.FC = () => {
             setShowNewRoomModal(false);
             setNewRoomName('');
             setNewRoomDesc('');
+            setNewRoomUsername('');
+            setNewRoomIsChannel(false);
+            setNewRoomBgImage('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200');
             setNewRoomEmoji('🔥');
             setNewRoomExpiry(5);
 
@@ -539,23 +621,53 @@ export const ChatPage: React.FC = () => {
         }
     };
 
+    // Save edited room parameters to Supabase
+    const handleSaveRoomEdits = async () => {
+        if (!activeRoom) return;
+        const cleanTitle = editRoomTitle.trim().toLowerCase().replace(/\s+/g, '-');
+        if (!cleanTitle) {
+            addNotification({ type: 'warning', title: 'Xatolik', message: 'Guruh nomi bo\'sh bo\'lishi mumkin emas!' });
+            return;
+        }
+
+        const ok = await updateRoomDetailsInDatabase(activeRoom, {
+            name: cleanTitle,
+            desc: editRoomDesc.trim(),
+            is_channel: editRoomIsChannel,
+            bg_image: editRoomBgImage
+        });
+
+        if (ok) {
+            addNotification({ type: 'success', title: 'Muvaffaqiyat', message: 'Guruh ma\'lumotlari Supabasega saqlandi!' });
+        } else {
+            addNotification({ type: 'error', title: 'Xatolik', message: 'Saqlashda xatolik yuz berdi.' });
+        }
+    };
+
     // Save update inside Database room info
-    const updateRoomDetailsInDatabase = async (targetRoom: ChatRoom, updatedProps: Partial<{ desc: string, emoji: string, expiry_days: number, admins: string[], admin_rights: Record<string, AdminPermissions> }>) => {
+    const updateRoomDetailsInDatabase = async (targetRoom: ChatRoom, updatedProps: Partial<{ name: string, desc: string, emoji: string, expiry_days: number, admins: string[], admin_rights: Record<string, AdminPermissions>, group_username: string, is_channel: boolean, bg_image: string }>) => {
         const descriptor = {
-            desc: targetRoom.description,
-            emoji: targetRoom.emoji,
-            expiry_days: targetRoom.expiry_days,
-            admins: targetRoom.admins_list || [],
-            admin_rights: targetRoom.admin_rights || {},
-            ...updatedProps
+            desc: updatedProps.desc !== undefined ? updatedProps.desc : targetRoom.description,
+            emoji: updatedProps.emoji !== undefined ? updatedProps.emoji : targetRoom.emoji,
+            expiry_days: updatedProps.expiry_days !== undefined ? updatedProps.expiry_days : targetRoom.expiry_days,
+            admins: updatedProps.admins !== undefined ? updatedProps.admins : (targetRoom.admins_list || []),
+            admin_rights: updatedProps.admin_rights !== undefined ? updatedProps.admin_rights : (targetRoom.admin_rights || {}),
+            group_username: updatedProps.group_username !== undefined ? updatedProps.group_username : (targetRoom.group_username || ''),
+            is_channel: updatedProps.is_channel !== undefined ? updatedProps.is_channel : !!targetRoom.is_channel,
+            bg_image: updatedProps.bg_image !== undefined ? updatedProps.bg_image : (targetRoom.bg_image || 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200')
         };
 
         try {
+            const updatePayload: any = {
+                description: JSON.stringify(descriptor)
+            };
+            if (updatedProps.name !== undefined) {
+                updatePayload.title = updatedProps.name;
+            }
+
             const { error } = await supabase
                 .from('live_streams')
-                .update({
-                    description: JSON.stringify(descriptor)
-                })
+                .update(updatePayload)
                 .eq('id', targetRoom.id);
 
             if (error) throw error;
@@ -563,11 +675,15 @@ export const ChatPage: React.FC = () => {
             // Instantly local-sync to avoid waiting for repl lag
             const freshRoomModel = {
                 ...targetRoom,
+                name: updatedProps.name !== undefined ? updatedProps.name : targetRoom.name,
                 description: descriptor.desc,
                 emoji: descriptor.emoji,
                 expiry_days: descriptor.expiry_days,
                 admins_list: descriptor.admins,
-                admin_rights: descriptor.admin_rights
+                admin_rights: descriptor.admin_rights,
+                group_username: descriptor.group_username,
+                is_channel: !!descriptor.is_channel,
+                bg_image: descriptor.bg_image
             };
 
             setRooms(prev => prev.map(r => r.id === targetRoom.id ? freshRoomModel : r));
@@ -1051,7 +1167,8 @@ export const ChatPage: React.FC = () => {
     const activeAdminList = activeRoom ? (activeRoom.admins_list || []) : [];
 
     return (
-        <div className="flex h-[calc(100vh-8.5rem)] md:h-[calc(100vh-6rem)] w-full overflow-hidden rounded-[1.8rem] border border-zinc-900 bg-[#07070a] shadow-2xl relative select-none animate-fade-in text-gray-200">
+        <div className="max-w-7xl mx-auto w-full px-2 sm:px-4 md:px-6 pt-10 pb-8 animate-fade-in">
+            <div className="flex h-[calc(100vh-16rem)] min-h-[520px] w-full overflow-hidden rounded-[1.8rem] border border-zinc-900 bg-[#07070a] shadow-2xl relative select-none text-gray-200 md:mb-10">
             
             {/* SIDEBAR: Group channels feed */}
             <div className={`w-80 border-r border-[#15151a] flex flex-col bg-[#0a0a0d] shrink-0 transition-transform md:translate-x-0 absolute md:relative z-40 h-full ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:block'}`}>
@@ -1169,7 +1286,15 @@ export const ChatPage: React.FC = () => {
             </div>
 
             {/* CENTRAL WORKSPACE: Viewport streams chat */}
-            <div className="flex-1 flex flex-col bg-[#050508] h-full relative overflow-hidden">
+            <div 
+                className="flex-1 flex flex-col h-full relative overflow-hidden transition-all duration-500"
+                style={{
+                    backgroundImage: `linear-gradient(rgba(10, 10, 13, 0.82), rgba(8, 8, 10, 0.88)), url(${activeRoom?.bg_image || 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200'})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                }}
+            >
                 
                 {/* Active Room Title header bar */}
                 <div className="h-16 px-6 border-b border-[#141419] flex items-center justify-between bg-[#0a0a0d] shrink-0 z-30">
@@ -1487,66 +1612,73 @@ export const ChatPage: React.FC = () => {
                                         >
                                             Muhofaza ok
                                         </button>
-                                    </div>
-                                </div>
-                            )}
+                                     </div>
+                                 </div>
+                             )}
 
-                            <form onSubmit={handleSendMessage} className="flex gap-2.5 items-center">
-                                <button 
-                                    type="button"
-                                    onClick={() => handleButtonClickWithSound(() => setShowEmojiPicker(!showEmojiPicker))}
-                                    className={`p-3 rounded-xl border transition-all ${showEmojiPicker ? 'border-orange-500 bg-orange-500/5 text-orange-500' : 'border-zinc-850 bg-zinc-900/60 text-zinc-450 hover:text-white'}`}
-                                >
-                                    <Smile size={16} />
-                                </button>
-
-                                <button 
-                                    type="button"
-                                    onClick={() => handleButtonClickWithSound(() => setShowSchedulePicker(!showSchedulePicker))}
-                                    className={`p-3 rounded-xl border transition-all ${showSchedulePicker ? 'border-orange-500 bg-orange-500/5 text-orange-500' : 'border-zinc-850 bg-zinc-900/60 text-zinc-450 hover:text-white'}`}
-                                    title="Xabarni keyinga qoldirish"
-                                >
-                                    <Calendar size={16} />
-                                </button>
-
-                                <div className="flex-1 relative min-w-0">
-                                    {isRecording ? (
-                                        <div className="w-full bg-red-950/20 border border-red-500/20 rounded-xl px-4 h-11 flex items-center justify-between text-red-500 animate-pulse text-[10px]">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
-                                                <span className="font-extrabold uppercase tracking-widest">OVOZ YOZILYAPTI...</span>
-                                            </div>
-                                            <span className="font-mono font-black text-xs">00:{recordingTime < 10 ? '0' + recordingTime : recordingTime}</span>
-                                        </div>
-                                    ) : (
-                                        <input 
-                                            type="text"
-                                            value={inputText}
-                                            onChange={e => setInputText(e.target.value)}
-                                            placeholder="Guruhga xabar yuborish..."
-                                            className="w-full bg-zinc-900 border border-zinc-850 focus:border-orange-500 rounded-xl px-4 h-11 text-xs md:text-sm text-white outline-none placeholder:text-zinc-600 focus:ring-1 focus:ring-orange-500/20 transition-all leading-none"
-                                        />
-                                    )}
-                                </div>
-
-                                {inputText.trim() === '' ? (
+                             {(!activeRoom?.is_channel || (user && (activeRoom.creator_id === user.id || activeAdminList.includes(user.id) || ['admin', 'owner'].includes(userProfile?.role || '')))) ? (
+                                <form onSubmit={handleSendMessage} className="flex gap-2.5 items-center">
                                     <button 
                                         type="button"
-                                        onClick={isRecording ? stopRecording : startRecording}
-                                        disabled={uploadingVoice}
-                                        className={`p-3 rounded-xl border transition-all shrink-0 ${isRecording ? 'bg-red-600 border-red-500 text-white animate-bounce' : 'bg-orange-500/5 border-orange-500/20 text-orange-400 hover:bg-orange-650 hover:text-white'}`}
+                                        onClick={() => handleButtonClickWithSound(() => setShowEmojiPicker(!showEmojiPicker))}
+                                        className={`p-3 rounded-xl border transition-all ${showEmojiPicker ? 'border-orange-500 bg-orange-500/5 text-orange-500' : 'border-zinc-850 bg-zinc-900/60 text-zinc-450 hover:text-white'}`}
                                     >
-                                        {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
+                                        <Smile size={16} />
                                     </button>
-                                ) : (
+
                                     <button 
-                                        type="submit"
-                                        className="bg-orange-600 hover:bg-orange-500 text-white p-3 rounded-xl transition-all shadow-md shrink-0 border border-orange-500"
+                                        type="button"
+                                        onClick={() => handleButtonClickWithSound(() => setShowSchedulePicker(!showSchedulePicker))}
+                                        className={`p-3 rounded-xl border transition-all ${showSchedulePicker ? 'border-orange-500 bg-orange-500/5 text-orange-500' : 'border-zinc-850 bg-zinc-900/60 text-zinc-450 hover:text-white'}`}
+                                        title="Xabarni keyinga qoldirish"
                                     >
-                                        <Send size={15} />
+                                        <Calendar size={16} />
                                     </button>
-                                )}
-                            </form>
+
+                                    <div className="flex-1 relative min-w-0">
+                                        {isRecording ? (
+                                            <div className="w-full bg-red-950/20 border border-red-500/20 rounded-xl px-4 h-11 flex items-center justify-between text-red-500 animate-pulse text-[10px]">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
+                                                    <span className="font-extrabold uppercase tracking-widest">OVOZ YOZILYAPTI...</span>
+                                                </div>
+                                                <span className="font-mono font-black text-xs">00:{recordingTime < 10 ? '0' + recordingTime : recordingTime}</span>
+                                            </div>
+                                        ) : (
+                                            <input 
+                                                type="text"
+                                                value={inputText}
+                                                onChange={e => setInputText(e.target.value)}
+                                                placeholder="Guruhga xabar yuborish..."
+                                                className="w-full bg-zinc-900 border border-zinc-850 focus:border-orange-500 rounded-xl px-4 h-11 text-xs md:text-sm text-white outline-none placeholder:text-zinc-600 focus:ring-1 focus:ring-orange-500/20 transition-all leading-none"
+                                            />
+                                        )}
+                                    </div>
+
+                                    {inputText.trim() === '' ? (
+                                        <button 
+                                            type="button"
+                                            onClick={isRecording ? stopRecording : startRecording}
+                                            disabled={uploadingVoice}
+                                            className={`p-3 rounded-xl border transition-all shrink-0 ${isRecording ? 'bg-red-600 border-red-500 text-white animate-bounce' : 'bg-orange-500/5 border-orange-500/20 text-orange-400 hover:bg-orange-650 hover:text-white'}`}
+                                        >
+                                            {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            type="submit"
+                                            className="bg-orange-600 hover:bg-orange-500 text-white p-3 rounded-xl transition-all shadow-md shrink-0 border border-orange-500"
+                                        >
+                                            <Send size={15} />
+                                        </button>
+                                    )}
+                                </form>
+                            ) : (
+                                <div className="p-3 bg-zinc-950/80 border border-zinc-900/60 rounded-xl text-center flex items-center justify-center gap-2">
+                                    <Shield className="text-purple-500 animate-pulse" size={13} />
+                                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold font-mono">Ushbu kanalga faqat administratorlar xabar yozishi mumkin.</span>
+                                </div>
+                            )}
 
                         </div>
                     ) : (
@@ -1602,6 +1734,90 @@ export const ChatPage: React.FC = () => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Guruh parametrlarini tahrirlash */}
+                        {user && (activeRoom.creator_id === user.id || userProfile?.role === 'owner') && (
+                            <div className="bg-zinc-950/50 border border-zinc-900/85 p-4 rounded-xl space-y-3">
+                                <h4 className="text-[9px] font-black text-orange-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                                    Guruh sozlamalari (Supabase)
+                                </h4>
+                                
+                                <div className="space-y-2.5">
+                                    <div>
+                                        <label className="text-[7.5px] font-black text-zinc-550 uppercase block mb-1">Guruh nomi</label>
+                                        <input 
+                                            type="text" 
+                                            value={editRoomTitle}
+                                            onChange={e => setEditRoomTitle(e.target.value)}
+                                            placeholder="Masalan: Shingeki Muhokamasi"
+                                            className="w-full bg-[#131318] border border-zinc-850 focus:border-orange-500 rounded-lg p-2.5 text-xs text-white outline-none" 
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[7.5px] font-black text-zinc-550 uppercase block mb-1">Mavzu yoki Tavsif</label>
+                                        <textarea
+                                            value={editRoomDesc || ''}
+                                            onChange={e => setEditRoomDesc(e.target.value)}
+                                            placeholder="Tavsif kiriting..."
+                                            rows={2}
+                                            className="w-full bg-[#131318] border border-zinc-850 focus:border-orange-500 rounded-lg p-2.5 text-xs text-white outline-none resize-none leading-normal" 
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <span className="text-[7.5px] font-black text-zinc-555 uppercase block mb-1">Xabar yozish ruxsati</span>
+                                        <div className="grid grid-cols-2 gap-1.5 mt-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => { triggerTone('click'); setEditRoomIsChannel(false); }}
+                                                className={`py-1.5 px-2 rounded-lg border text-[8.5px] font-black uppercase tracking-wider transition-all text-center ${!editRoomIsChannel ? 'bg-orange-600/15 border-orange-500/40 text-orange-400' : 'bg-[#131318] border-zinc-900 text-zinc-550 hover:text-zinc-300'}`}
+                                            >
+                                                👥 Guruh (Barcha)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { triggerTone('click'); setEditRoomIsChannel(true); }}
+                                                className={`py-1.5 px-2 rounded-lg border text-[8.5px] font-black uppercase tracking-wider transition-all text-center ${editRoomIsChannel ? 'bg-purple-600/15 border-purple-500/40 text-purple-400' : 'bg-[#131318] border-zinc-900 text-zinc-550 hover:text-zinc-300'}`}
+                                            >
+                                                📢 Kanal (Admin)
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <span className="text-[7.5px] font-black text-zinc-555 uppercase block mb-1">Fon rasmini tanlang</span>
+                                        <div className="flex gap-2 items-center mt-1">
+                                            {[
+                                                { name: 'Kosmos', url: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200' },
+                                                { name: 'Yulduz', url: 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=1200' },
+                                                { name: 'Tungi sakura', url: 'https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?q=80&w=1200' },
+                                                { name: 'Kiber', url: 'https://images.unsplash.com/photo-1545239351-ef35f43d514b?q=80&w=1200' }
+                                            ].map(img => (
+                                                <button
+                                                    key={img.name}
+                                                    type="button"
+                                                    onClick={() => { triggerTone('click'); setEditRoomBgImage(img.url); }}
+                                                    className={`relative w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${editRoomBgImage === img.url ? 'border-orange-500 scale-105 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'border-zinc-900 hover:border-zinc-700'}`}
+                                                    title={img.name}
+                                                >
+                                                    <img src={img.url} className="w-full h-full object-cover" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveRoomEdits}
+                                        className="w-full mt-2.5 py-2.5 bg-orange-600 hover:bg-orange-500 active:scale-[0.98] text-white rounded-lg font-black text-[9px] uppercase tracking-widest transition-all shadow-md"
+                                    >
+                                        O'zgarishlarni Saqlash
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Admins listing */}
                         <div className="space-y-2.5">
@@ -1829,26 +2045,87 @@ export const ChatPage: React.FC = () => {
 
                         <div className="space-y-4 mb-5">
                             <div>
-                                <label className="text-[8px] font-black text-zinc-450 uppercase tracking-widest block mb-1.5">Guruh Nomi (Kichik harf va chiziqlar)</label>
+                                <label className="text-[8px] font-black text-zinc-450 uppercase tracking-widest block mb-1.5">Guruh Nomi (Ko'rinadigan sarlavha)</label>
                                 <input 
                                     type="text" 
                                     value={newRoomName}
                                     onChange={e => setNewRoomName(e.target.value)}
-                                    placeholder="Masalan: shingeki-muhokamasi"
+                                    placeholder="Masalan: Shingeki Muhokamasi"
                                     className="w-full bg-[#15151a] border border-zinc-850 focus:border-orange-500 rounded-xl p-3 text-xs text-white outline-none" 
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="text-[8px] font-black text-zinc-450 uppercase tracking-widest block mb-1.5">Mablag' qoidalari yoki qisqacha tavsifi</label>
+                                <label className="text-[8px] font-black text-orange-500 uppercase tracking-widest block mb-1.5">Yagona Guruh Username (@manzil)</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-3.5 text-xs text-zinc-650 font-bold">@</span>
+                                    <input 
+                                        type="text" 
+                                        value={newRoomUsername}
+                                        onChange={e => setNewRoomUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                        placeholder="shingeki_muloqot"
+                                        className="w-full bg-[#15151a] border border-orange-500/20 focus:border-orange-500 rounded-xl p-3 pl-7 text-xs text-white outline-none font-bold" 
+                                        required
+                                    />
+                                </div>
+                                <span className="text-[7px] text-zinc-500 font-bold uppercase mt-1 block">Bu havola yagona bo'lib, o'zgartirib bo'lmaydi!</span>
+                            </div>
+
+                            <div>
+                                <label className="text-[8px] font-black text-zinc-450 uppercase tracking-widest block mb-1.5">Mavzu yoki Tavsif</label>
                                 <input 
                                     type="text" 
                                     value={newRoomDesc}
                                     onChange={e => setNewRoomDesc(e.target.value)}
-                                    placeholder="Bu xona Attack on Titan oxirgi fasli bo'yicha..."
+                                    placeholder="Attack on Titan oxirgi fasli bo'yicha..."
                                     className="w-full bg-[#15151a] border border-zinc-850 focus:border-orange-500 rounded-xl p-3 text-xs text-white outline-none" 
                                 />
+                            </div>
+
+                            <div>
+                                <label className="text-[8px] font-black text-zinc-450 uppercase tracking-widest block mb-1.5">Guruh Turi (Muloqot shakli)</label>
+                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => { triggerTone('click'); setNewRoomIsChannel(false); }}
+                                        className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all text-center ${!newRoomIsChannel ? 'bg-orange-600/15 border-orange-500 text-orange-400' : 'bg-[#15151a] border-zinc-900 text-zinc-500 hover:text-zinc-300'}`}
+                                    >
+                                        👥 Guruh (Hamkor)
+                                        <span className="block text-[6px] text-zinc-500 font-normal normal-case mt-0.5">Barcha yoza oladi</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { triggerTone('click'); setNewRoomIsChannel(true); }}
+                                        className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all text-center ${newRoomIsChannel ? 'bg-purple-600/15 border-purple-500 text-purple-400' : 'bg-[#15151a] border-zinc-900 text-zinc-500 hover:text-zinc-300'}`}
+                                    >
+                                        📢 Kanal (E'lon)
+                                        <span className="block text-[6px] text-zinc-500 font-normal normal-case mt-0.5">Faqat Admin yozadi</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Background Preset picker */}
+                            <div>
+                                <label className="text-[8px] font-black text-zinc-450 uppercase tracking-widest block mb-1.5">Orqa fon uchun rasm</label>
+                                <div className="flex gap-2 items-center">
+                                    {[
+                                        { name: 'Kosmos', url: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1200' },
+                                        { name: 'Yulduz', url: 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=1200' },
+                                        { name: 'Tungi sakura', url: 'https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?q=80&w=1200' },
+                                        { name: 'Kiber', url: 'https://images.unsplash.com/photo-1545239351-ef35f43d514b?q=80&w=1200' }
+                                    ].map(img => (
+                                        <button
+                                            key={img.name}
+                                            type="button"
+                                            onClick={() => { triggerTone('click'); setNewRoomBgImage(img.url); }}
+                                            className={`relative w-10 h-10 rounded-full overflow-hidden border-2 transition-all ${newRoomBgImage === img.url ? 'border-orange-500 scale-110 shadow-lg' : 'border-zinc-900 hover:border-zinc-700'}`}
+                                            title={img.name}
+                                        >
+                                            <img src={img.url} className="w-full h-full object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -1866,7 +2143,7 @@ export const ChatPage: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="text-[8px] font-black text-zinc-450 uppercase tracking-widest block mb-1.5">Muddat (Avto tozalash)</label>
+                                    <label className="text-[8px] font-black text-zinc-450 uppercase tracking-widest block mb-1.5">Tozalash (Muddati)</label>
                                     <select 
                                         value={newRoomExpiry}
                                         onChange={e => { triggerTone('click'); setNewRoomExpiry(Number(e.target.value)); }}
@@ -1899,6 +2176,7 @@ export const ChatPage: React.FC = () => {
                 </div>
             )}
 
+            </div>
         </div>
     );
 };

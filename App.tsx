@@ -23,7 +23,7 @@ import { supabase } from './services/supabaseClient';
 import { CopyrightPage } from './CopyrightPage';
 import { ChatPage } from './ChatPage';
 import { PWAReportPage } from './PWAReportPage';
-import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star, Maximize2, Video, Users } from 'lucide-react';
+import { Home, Search, Sparkles, User, X, Layers, LayoutGrid, ShoppingBag, WifiOff, RefreshCw, AlertTriangle, Moon, Star, Maximize2, Video, Users, Tv } from 'lucide-react';
 import { getUserProfile, getMovies } from './services/dbService';
 import { pruneCache, clearAppCache } from './services/cacheService';
 import { HamburgerMenu } from './components/HamburgerMenu';
@@ -346,31 +346,67 @@ const App: React.FC = () => {
           )}
 
           {!shouldHideGlobalNav && (
-            <div className="fixed bottom-0 left-0 right-0 z-[110] md:hidden">
-                <div className="bg-[#050505]/95 backdrop-blur-xl h-20 flex justify-around items-center px-2 border-t border-zinc-900 pb-2">
-                    <button onClick={() => handleNavigation('dashboard')} className={`flex flex-col items-center gap-1 w-1/4 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-orange-500' : 'text-zinc-600'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Asosiy</span></button>
-                    <button onClick={() => handleNavigation('shop')} className={`flex flex-col items-center gap-1 w-1/4 -mt-6 group`}><div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-[#050505] ${page === 'shop' ? 'bg-orange-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}><ShoppingBag size={20} /></div><span className={`text-[9px] font-black uppercase ${page === 'shop' ? 'text-orange-500' : 'text-zinc-600'}`}>Do'kon</span></button>
-                    <button onClick={() => handleNavigation('studio')} className={`flex flex-col items-center gap-1 w-1/4 relative ${page === 'studio' ? 'text-orange-500' : 'text-zinc-600'}`}>
-                        <LayoutGrid size={22} />
-                        {isAnyLive && <div className="absolute top-0 right-1/4 w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>}
-                        <span className="text-[9px] font-black uppercase">Fandub</span>
+            <div className="fixed bottom-3 left-3 right-3 z-[110] md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-full md:max-w-md">
+                <div className="bg-[#050508]/92 backdrop-blur-2xl h-16 flex justify-around items-center px-4 border border-zinc-800/80 rounded-[1.8rem] shadow-[0_8px_32px_rgba(0,0,0,0.85)] py-1">
+                    
+                    {/* Asosiy */}
+                    <button 
+                      onClick={() => handleNavigation('dashboard')} 
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                        <Home size={19} strokeWidth={2} />
+                        <span className="text-[9px] font-semibold tracking-tight">Asosiy</span>
+                    </button>
+
+                    {/* Qidiruv */}
+                    <button 
+                      onClick={() => handleNavigation('search')} 
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 ${page === 'search' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                        <div className={`p-1 rounded-[10px] border transition-all ${page === 'search' ? 'border-white/90 bg-white/5' : 'border-zinc-800/80 bg-zinc-950/20'}`}>
+                            <Search size={16} strokeWidth={page === 'search' ? 2.5 : 2} />
+                        </div>
+                        <span className="text-[9px] font-semibold tracking-tight mt-0.5">Qidiruv</span>
+                    </button>
+
+                    {/* To'plam */}
+                    <button 
+                      onClick={() => handleNavigation('catalog')} 
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 ${page === 'catalog' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                        <Layers size={19} strokeWidth={2} />
+                        <span className="text-[9px] font-semibold tracking-tight">To'plam</span>
+                    </button>
+
+                    {/* TV */}
+                    <button 
+                      onClick={() => handleNavigation('studio')} 
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 relative ${page === 'studio' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                        <Tv size={19} strokeWidth={2} />
+                        {isAnyLive && <div className="absolute top-1 right-3 w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></div>}
+                        <span className="text-[9px] font-semibold tracking-tight">TV</span>
                     </button>
                     
-                    <button onClick={() => {if(isAuthenticated) setIsMenuOpen(true); else setIsAuthModalOpen(true);}} className={`flex flex-col items-center gap-1 w-1/4 ${isMenuOpen ? 'text-orange-500' : 'text-zinc-600'}`}>
+                    {/* Profil */}
+                    <button 
+                      onClick={() => {if(isAuthenticated) setIsMenuOpen(true); else setIsAuthModalOpen(true);}} 
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 ${isMenuOpen ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
                         {isAuthenticated ? (
-                            <div className={`w-7 h-7 rounded-full border-2 overflow-hidden transition-all duration-300 ${isMenuOpen ? 'border-orange-500 scale-110 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'border-zinc-700'}`}>
+                            <div className={`w-5 h-5 rounded-full border overflow-hidden transition-all duration-300 ${isMenuOpen ? 'border-white scale-105' : 'border-zinc-700'}`}>
                                 {userProfile?.avatar_url ? (
                                     <img src={userProfile.avatar_url} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                                        <User size={14} className="text-zinc-400" />
+                                    <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+                                        <User size={11} className="text-zinc-450" />
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <User size={22} />
+                            <User size={19} strokeWidth={2} />
                         )}
-                        <span className="text-[9px] font-black uppercase">Profil</span>
+                        <span className="text-[9px] font-semibold tracking-tight">Profil</span>
                     </button>
                 </div>
             </div>
