@@ -136,6 +136,28 @@ const App: React.FC = () => {
               setIsAuthenticated(true); 
               await refreshProfile();
               
+              // Restore persisted state for premium "tab & page retention" experience
+              const persistedPage = localStorage.getItem('anilo_persisted_page') as Page;
+              const persistedDashboardPage = localStorage.getItem('anilo_persisted_dashboard_page') as DashboardSubPage;
+              const persistedIsPlayerActive = localStorage.getItem('anilo_persisted_is_player_active') === 'true';
+              const persistedMovieRaw = localStorage.getItem('anilo_persisted_selected_movie');
+              const persistedEpisodeRaw = localStorage.getItem('anilo_persisted_active_episode');
+              
+              if (persistedMovieRaw) {
+                  try {
+                      const movieObj = JSON.parse(persistedMovieRaw);
+                      setSelectedMovie(movieObj);
+                      if (persistedEpisodeRaw) {
+                          setActiveEpisode(JSON.parse(persistedEpisodeRaw));
+                      }
+                      if (persistedIsPlayerActive) {
+                          setIsPlayerActive(true);
+                      }
+                  } catch (e) {
+                      console.error("Failed to restore persisted movie/episode data", e);
+                  }
+              }
+
               if (movieIdParam) {
                   const allMovies = await getMovies();
                   const found = allMovies.find(m => m.id === Number(movieIdParam));
@@ -144,6 +166,9 @@ const App: React.FC = () => {
 
               if (pageParam && ['ramazon', 'search', 'shop', 'studio', 'catalog', 'chat'].includes(pageParam)) {
                   setPage(pageParam);
+              } else if (persistedPage && ['welcome', 'search', 'dashboard', 'ai-assistant', 'admin', 'copyright', 'dub-dashboard', 'studio', 'shop', 'shop-admin', 'catalog', 'fandub-dashboard', 'ramazon', 'chat', 'pwa-report'].includes(persistedPage)) {
+                  setPage(persistedPage);
+                  if (persistedDashboardPage) setDashboardPage(persistedDashboardPage);
               } else {
                   setPage('dashboard');
               }
@@ -187,6 +212,27 @@ const App: React.FC = () => {
         window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Path retention persistence - User exits: store tab / screen status dynamically
+  useEffect(() => {
+    if (isAppReady) {
+      localStorage.setItem('anilo_persisted_page', page);
+      localStorage.setItem('anilo_persisted_dashboard_page', dashboardPage);
+      localStorage.setItem('anilo_persisted_is_player_active', String(isPlayerActive));
+      
+      if (selectedMovie) {
+        localStorage.setItem('anilo_persisted_selected_movie', JSON.stringify(selectedMovie));
+      } else {
+        localStorage.removeItem('anilo_persisted_selected_movie');
+      }
+      
+      if (activeEpisode) {
+        localStorage.setItem('anilo_persisted_active_episode', JSON.stringify(activeEpisode));
+      } else {
+        localStorage.removeItem('anilo_persisted_active_episode');
+      }
+    }
+  }, [page, dashboardPage, selectedMovie, activeEpisode, isPlayerActive, isAppReady]);
 
   const handleNavigation = (targetPage: Page) => {
     setPage(targetPage);

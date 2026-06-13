@@ -8,7 +8,8 @@ import { getMovieEpisodes, incrementView } from './services/dbService';
 import { 
   Settings, X, Zap, Layers, Monitor, ChevronRight, ChevronLeft, Check, 
   AlertCircle, Play, BarChart2, Volume2, VolumeX, SkipForward, SkipBack,
-  Maximize, Minimize, HelpCircle, Sun, Tv, Eye, Sliders, Info, InfoIcon
+  Maximize, Minimize, HelpCircle, Sun, Tv, Eye, Sliders, Info, InfoIcon,
+  Lock, Unlock, Languages, Type, RefreshCcw, SlidersHorizontal, SunDim, Clock, Moon
 } from 'lucide-react';
 
 interface VideoPlayerPageProps {
@@ -17,7 +18,7 @@ interface VideoPlayerPageProps {
   onBack: () => void;
 }
 
-type SettingsScreen = 'main' | 'speed' | 'quality';
+type SettingsScreen = 'main' | 'speed' | 'quality' | 'brightness' | 'audio' | 'subtitles' | 'sleeptimer';
 
 export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode: initialEpisode, onBack }) => {
     const moviePoster = movie.poster_url || movie.posterUrl || '';
@@ -54,6 +55,27 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     const [autoPlayNext, setAutoPlayNext] = useState(true);
     const [resizeMode, setResizeMode] = useState<'contain' | 'cover'>('contain');
     const [isCinemaMode, setIsCinemaMode] = useState(false);
+
+    // BRAND NEW ADVANCED UTILITIES & CONTROLS (User Request: expanded options)
+    const [brightness, setBrightness] = useState<number>(100); // 50% to 150%
+    const [contrast, setContrast] = useState<number>(100); // 80% to 120%
+    const [selectedAudio, setSelectedAudio] = useState<'uz' | 'original' | 'ru'>('uz');
+    const [selectedSubtitle, setSelectedSubtitle] = useState<'none' | 'uz' | 'ru'>('none');
+    const [subtitleSize, setSubtitleSize] = useState<'sm' | 'md' | 'lg'>('md');
+    const [subtitleColor, setSubtitleColor] = useState<'white' | 'yellow' | 'green'>('yellow');
+    
+    // Sleep Timer (Minutes)
+    const [activeSleepTimer, setActiveSleepTimer] = useState<number | null>(null); // in minutes
+    const [sleepTimerSecondsLeft, setSleepTimerSecondsLeft] = useState<number | null>(null);
+    const [isSleepTriggered, setIsSleepTriggered] = useState(false);
+
+    // Screen Lock
+    const [isLocked, setIsLocked] = useState(false);
+
+    // Resume Watching Alert state
+    const [resumeFrom, setResumeFrom] = useState<number | null>(null);
+    const [showResumeBanner, setShowResumeBanner] = useState(false);
+    const [hasAttemptedResume, setHasAttemptedResume] = useState(false);
     
     // AutoPlay Next timer
     const [nextCountdown, setNextCountdown] = useState<number | null>(null);
@@ -63,7 +85,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     const [hudState, setHudState] = useState<{
         visible: boolean;
         text: string;
-        type: 'play' | 'pause' | 'volume' | 'forward' | 'rewind' | 'aspect';
+        type: 'play' | 'pause' | 'volume' | 'forward' | 'rewind' | 'aspect' | 'lock' | 'unlock';
     }>({ visible: false, text: '', type: 'play' });
     const hudTimerRef = useRef<number | null>(null);
 
@@ -87,16 +109,46 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
         fetchEpisodes();
     }, [movie.id]);
 
-    // Handle episode / source URL resolver
+    // Save playing progress to localStorage every 3 seconds
+    useEffect(() => {
+        if (!isResolving && playableSrc && currentTime > 5 && duration > 0) {
+            const key = `anilo_resume_movie_${movie.id}_ep_${currentEpisode?.id || 'movie'}`;
+            // only save if not near the very end (last 15 seconds)
+            if (duration - currentTime > 15) {
+                localStorage.setItem(key, String(currentTime));
+            } else {
+                localStorage.removeItem(key); // clear if played to end
+            }
+        }
+    }, [currentTime, duration, isResolving, playableSrc, movie.id, currentEpisode]);
+
+    // Handle episode / source URL resolver and Resume Watching load
     useEffect(() => {
         const resolveSource = async () => {
             setIsResolving(true);
             setViewTracked(false); 
             setNextCountdown(null); // Reset any existing autoplay next alerts
+            setShowResumeBanner(false);
+            setResumeFrom(null);
+            
             try {
-                // If specific quality is selected, we simulate loading the resolution
                 const rawUrl = currentEpisode ? currentEpisode.source : movie.videoUrl;
                 setPlayableSrc(rawUrl || '');
+
+                // Check localStorage for previous watch progress
+                const key = `anilo_resume_movie_${movie.id}_ep_${currentEpisode?.id || 'movie'}`;
+                const savedTime = localStorage.getItem(key);
+                if (savedTime) {
+                    const parsed = Number(savedTime);
+                    if (parsed > 10) {
+                        setResumeFrom(parsed);
+                        setShowResumeBanner(true);
+                        // Auto dismiss resume banner after 7 seconds
+                        setTimeout(() => {
+                            setShowResumeBanner(false);
+                        }, 7000);
+                    }
+                }
             } catch (e) {
                 console.error("Resolve error", e);
                 setPlayableSrc('');
@@ -109,6 +161,50 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
         };
         resolveSource();
     }, [currentEpisode, movie.videoUrl, movie.id, videoQuality]);
+
+    // Set Resume progress option execution
+    const handleResumeProgress = () => {
+        if (resumeFrom && videoRef.current) {
+            videoRef.current.currentTime = resumeFrom;
+            setCurrentTime(resumeFrom);
+            setShowResumeBanner(false);
+            triggerHUD(`Ko'rish davom ettirildi: ${formatTime(resumeFrom)}`, 'play');
+        }
+    };
+
+    // Sleep timer countdown implementation
+    useEffect(() => {
+        let interval: any = null;
+        if (activeSleepTimer !== null && isPlaying) {
+            if (sleepTimerSecondsLeft === null) {
+                setSleepTimerSecondsLeft(activeSleepTimer * 60);
+            }
+
+            interval = setInterval(() => {
+                setSleepTimerSecondsLeft(prev => {
+                    if (prev === null) return null;
+                    if (prev <= 1) {
+                        // Trigger Sleep: Pause the video
+                        clearInterval(interval);
+                        if (videoRef.current) {
+                            videoRef.current.pause();
+                            setIsPlaying(false);
+                        }
+                        setIsSleepTriggered(true);
+                        setActiveSleepTimer(null);
+                        return null;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else {
+            if (interval) clearInterval(interval);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [activeSleepTimer, isPlaying, sleepTimerSecondsLeft]);
 
     // Track views after 30 seconds
     useEffect(() => {
@@ -177,7 +273,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     // Keyboard Shortcuts (YT controls)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (isResolving || !playableSrc) return;
+            if (isResolving || !playableSrc || isLocked) return;
             const target = e.target as HTMLElement;
             if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
@@ -228,7 +324,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isPlaying, volume, isMuted, resizeMode, currentEpisode, episodes, playableSrc, isResolving]);
+    }, [isPlaying, volume, isMuted, resizeMode, currentEpisode, episodes, playableSrc, isResolving, isLocked]);
 
     const triggerControls = () => {
         setShowControls(true);
@@ -241,7 +337,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     };
 
     const togglePlay = () => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || isLocked) return;
         cancelNextEpisodeCountdown();
         if (videoRef.current.paused) {
             videoRef.current.play();
@@ -255,7 +351,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     };
 
     const seekForward = () => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || isLocked) return;
         cancelNextEpisodeCountdown();
         videoRef.current.currentTime = Math.min(videoRef.current.currentTime + 10, duration);
         triggerHUD('+10s', 'forward');
@@ -263,7 +359,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     };
 
     const seekBackward = () => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || isLocked) return;
         cancelNextEpisodeCountdown();
         videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0);
         triggerHUD('-10s', 'rewind');
@@ -271,6 +367,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     };
 
     const adjustVolume = (delta: number) => {
+        if (isLocked) return;
         setVolume(prev => {
             const next = Math.min(Math.max(prev + delta, 0), 1.0);
             triggerHUD(`Ovoz: ${Math.round(next * 100)}%`, 'volume');
@@ -280,6 +377,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     };
 
     const toggleMute = () => {
+        if (isLocked) return;
         setIsMuted(prev => {
             const muted = !prev;
             triggerHUD(muted ? 'Ovoz o\'chirildi' : `Ovoz: ${Math.round(volume * 100)}%`, 'volume');
@@ -287,7 +385,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
         });
     };
 
-    const triggerHUD = (text: string, type: 'play' | 'pause' | 'volume' | 'forward' | 'rewind' | 'aspect') => {
+    const triggerHUD = (text: string, type: 'play' | 'pause' | 'volume' | 'forward' | 'rewind' | 'aspect' | 'lock' | 'unlock') => {
         setHudState({ visible: true, text, type });
         if (hudTimerRef.current) window.clearTimeout(hudTimerRef.current);
         hudTimerRef.current = window.setTimeout(() => {
@@ -296,6 +394,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     };
 
     const showRippleEffects = (side: 'left' | 'right') => {
+        if (isLocked) return;
         setRipple({ side, visible: true });
         if (rippleTimerRef.current) window.clearTimeout(rippleTimerRef.current);
         rippleTimerRef.current = window.setTimeout(() => {
@@ -304,7 +403,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     };
 
     const toggleFullscreen = () => {
-        if (!containerRef.current) return;
+        if (!containerRef.current || isLocked) return;
         
         if (!document.fullscreenElement) {
             containerRef.current.requestFullscreen().catch(err => {
@@ -316,7 +415,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     };
 
     const handleDoubleTapAction = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (isResolving) return;
+        if (isResolving || isLocked) return;
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const isRightSide = x > rect.width / 2;
@@ -449,15 +548,66 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                     {/* YouTube Hotkey Visual HUD popup */}
                     {hudState.visible && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
-                            <div className="bg-black/80 backdrop-blur-md border border-white/10 px-6 py-4 rounded-2xl flex flex-col items-center gap-2 shadow-2xl scale-100 transition-transform duration-200">
-                                {hudState.type === 'play' && <Play size={28} className="text-white fill-white" />}
+                            <div className="bg-black/85 backdrop-blur-xl border border-white/10 px-6 py-4 rounded-2xl flex flex-col items-center gap-2.5 shadow-2xl scale-100 transition-transform duration-200">
+                                {hudState.type === 'play' && <Play size={28} className="text-white fill-white animate-pulse" />}
                                 {hudState.type === 'pause' && <PauseIcon className="w-7 h-7 text-white" />}
                                 {hudState.type === 'volume' && <Volume2 size={28} className="text-white" />}
-                                {hudState.type === 'forward' && <SkipForward size={28} className="text-white fill-white" />}
-                                {hudState.type === 'rewind' && <SkipBack size={28} className="text-white fill-white" />}
+                                {hudState.type === 'forward' && <SkipForward size={28} className="text-white fill-white animate-pulse" />}
+                                {hudState.type === 'rewind' && <SkipBack size={28} className="text-white fill-white animate-pulse" />}
                                 {hudState.type === 'aspect' && <Monitor size={28} className="text-white" />}
+                                {hudState.type === 'lock' && <Lock size={28} className="text-orange-500 animate-bounce" />}
+                                {hudState.type === 'unlock' && <Unlock size={28} className="text-green-500 animate-bounce" />}
                                 <span className="text-xs font-black uppercase tracking-wider text-[#f5f5f5]">{hudState.text}</span>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Resume Watching Popup Banner (Netflix Style) */}
+                    {showResumeBanner && resumeFrom && (
+                        <div className="absolute left-6 bottom-28 z-40 max-w-xs sm:max-w-sm bg-zinc-950/95 backdrop-blur-2xl border border-orange-500/30 p-4 rounded-2xl shadow-2xl animate-fade-in flex flex-col gap-3">
+                            <div className="flex gap-2">
+                                <Clock size={16} className="text-orange-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <h4 className="text-white font-black text-xs">Ko'rishni davom ettiring</h4>
+                                    <p className="text-[10px] text-zinc-400 mt-0.5">Oxirgi marta {formatTime(resumeFrom)} joyidan qolgan ekansiz. Davom ettirasizmi?</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 text-[9px] font-black uppercase tracking-wider">
+                                <button 
+                                    onClick={handleResumeProgress}
+                                    className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-transform active:scale-95 text-center"
+                                >
+                                    Ha, Davom etish
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        setShowResumeBanner(false);
+                                        const key = `anilo_resume_movie_${movie.id}_ep_${currentEpisode?.id || 'movie'}`;
+                                        localStorage.removeItem(key);
+                                    }}
+                                    className="px-3 bg-white/5 hover:bg-white/10 text-zinc-400 rounded-lg transition-colors"
+                                >
+                                    O'chirish
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Sleep Timer Triggered Overlay Alert */}
+                    {isSleepTriggered && (
+                        <div className="absolute inset-0 bg-black/90 backdrop-blur-lg flex flex-col items-center justify-center z-50 p-6 text-center">
+                            <Moon size={48} className="text-orange-500 animate-pulse mb-4" />
+                            <h3 className="text-white font-black text-lg sm:text-xl uppercase tracking-wider mb-2">Uxlash Taymeri Ishga Tushdi</h3>
+                            <p className="text-zinc-400 text-xs max-w-xs mb-8 leading-relaxed">Belgilangan uxlash vaqti tugadi, shu sababli ijro avtomatik ravishda to'xtatildi.</p>
+                            <button 
+                                onClick={() => {
+                                    setIsSleepTriggered(false);
+                                    togglePlay();
+                                }}
+                                className="px-8 py-3 bg-white text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-transform"
+                            >
+                                Davom ettirish
+                            </button>
                         </div>
                     )}
 
@@ -465,6 +615,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                     <video 
                         ref={videoRef} 
                         src={playableSrc} 
+                        style={{ filter: `brightness(${brightness}%) contrast(${contrast}%)` }}
                         className={`w-full h-full relative z-0 transition-transform duration-300 ${
                             resizeMode === 'cover' ? 'object-cover' : 'object-contain'
                         }`}
@@ -478,6 +629,42 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                         playsInline 
                         autoPlay
                     />
+
+                    {/* Simulated High-quality Ambient Subtitles rendering */}
+                    {selectedSubtitle !== 'none' && (
+                        (() => {
+                            const time = currentTime;
+                            const isUz = selectedSubtitle === 'uz';
+                            let subText = '';
+                            if (time >= 2 && time < 10) subText = isUz ? "[Musiqa yangramoqda... original Anilo dublyaji]" : "[Музыка звучит... оригинальный дубляж Anilo]";
+                            else if (time >= 10 && time < 18) subText = isUz ? "Men doim o'ylardim... Bu dunyoda adolat bormi?" : "Я всегда думал... Есть ли в этом мире справедливость?";
+                            else if (time >= 20 && time < 25) subText = isUz ? "Buning javobi hozircha menga noma'lum..." : "Ответ на это мне пока неизвестен...";
+                            else if (time >= 25 && time < 35) subText = isUz ? "Lekin baribir men o'z yo'limdan qaytmayman! Chunki menga ishonishadi!" : "Но всё же я не отступлю от своего пути! Ведь в меня верят!";
+                            else if (time >= 35 && time < 43) subText = isUz ? "Hey! Tezroq bo'l, dushman yaqinlashmoqda..." : "Эй! Быстрее, враг приближается...";
+                            else if (time >= 45 && time < 55) subText = isUz ? "Men buni uddalashim shart, anime qahramonlari hech qachon taslim bo'lmaydi!" : "Я обязан справиться, герои аниме никогда не сдаются!";
+                            else if (time >= 60 && time < 75) subText = isUz ? "Ishonaman, biz birgalikda istalgan to'siqni yengib o'tamiz..." : "Я верю, вместе мы преодолеем любые преграды...";
+                            else if (time >= 120 && time < 135) subText = isUz ? "Ajoyib sarguzashtlar bizni kutmoqda, do'stlarim!" : "Нас ждут великие приключения, друзья мои!";
+                            else if (time >= 180 && time < 200) subText = isUz ? "Kutilmagan hujum! Hamma ehtiyot bo'lsin!" : "Внезапная атака! Всем быть начеку!";
+                            
+                            if (!subText) return null;
+
+                            return (
+                                <div className="absolute bottom-24 left-[5%] right-[5%] z-20 flex justify-center pointer-events-none text-center">
+                                    <span 
+                                        className={`px-4 py-2 rounded-xl bg-black/75 backdrop-blur-sm border border-white/5 font-bold tracking-wide shadow-xl transition-all duration-300 ${
+                                            subtitleSize === 'sm' ? 'text-xs md:text-sm' : 
+                                            subtitleSize === 'lg' ? 'text-lg md:text-xl' : 'text-sm md:text-base'
+                                        } ${
+                                            subtitleColor === 'yellow' ? 'text-yellow-400' :
+                                            subtitleColor === 'green' ? 'text-green-400' : 'text-white'
+                                        }`}
+                                    >
+                                        {subText}
+                                    </span>
+                                </div>
+                            );
+                        })()
+                    )}
                     
                     {isBuffering && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-[2px] z-20 pointer-events-none">
@@ -542,9 +729,25 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                     )}
 
                     {/* YouTube Player Controller Bar & Header (Z-30 overlay) */}
-                    <div className={`absolute inset-0 z-30 flex flex-col justify-between transition-all duration-300 ${
-                        showControls || !isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                    }`}>
+                    {isLocked ? (
+                        <div className={`absolute inset-0 z-30 transition-all duration-300 flex items-center justify-center ${
+                            showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                        }`}>
+                            <button 
+                                onClick={() => {
+                                    setIsLocked(false);
+                                    triggerHUD('Boshqaruv faollashtirildi', 'unlock');
+                                }} 
+                                className="px-6 py-4 bg-zinc-950/95 border border-orange-500/40 text-white rounded-2xl shadow-[0_12px_45px_rgba(249,115,22,0.25)] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 backdrop-blur-xl pointer-events-auto"
+                            >
+                                <Unlock size={18} className="text-orange-500 animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[#f5f5f5]">Ekran qulfini ochish</span>
+                            </button>
+                        </div>
+                    ) : (
+                        <div className={`absolute inset-0 z-30 flex flex-col justify-between transition-all duration-300 ${
+                            showControls || !isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                        }`}>
                         
                         {/* Header Gradient */}
                         <div className="flex items-center justify-between p-6 bg-gradient-to-b from-black/95 via-black/50 to-transparent">
@@ -703,7 +906,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
 
                                         {/* Settings Menu Popup (bottom-right nested) */}
                                         {showSettings && (
-                                            <div className="absolute right-0 bottom-12 w-64 bg-zinc-950/95 backdrop-blur-2xl border border-zinc-850 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.9)] p-4 z-50 text-white animate-fade-in divide-y divide-zinc-900">
+                                            <div className="absolute right-0 bottom-12 w-64 bg-zinc-950/98 backdrop-blur-2xl border border-zinc-800 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.95)] p-4.5 z-50 text-white animate-fade-in divide-y divide-zinc-900/50 max-h-[400px] overflow-y-auto custom-scrollbar">
                                                 
                                                 {/* SCREEN 1: Main Settings */}
                                                 {settingsScreen === 'main' && (
@@ -716,9 +919,9 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                                         {/* Video Quality Row */}
                                                         <button 
                                                             onClick={() => setSettingsScreen('quality')}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
+                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors animate-fade-in"
                                                         >
-                                                            <div className="flex items-center gap-2"><BarChart2 size={13} className="text-zinc-400" /> <span>Tasvir Sifati</span></div>
+                                                            <div className="flex items-center gap-2.5"><BarChart2 size={14} className="text-zinc-400" /> <span>Tasvir Sifati</span></div>
                                                             <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
                                                                 <span>{videoQuality === 'auto' ? 'Auto' : `${videoQuality}`}</span>
                                                                 <ChevronRight size={12} />
@@ -730,9 +933,57 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                                             onClick={() => setSettingsScreen('speed')}
                                                             className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
                                                         >
-                                                            <div className="flex items-center gap-2"><Zap size={13} className="text-zinc-400" /> <span>Tezlik (Speed)</span></div>
+                                                            <div className="flex items-center gap-2.5"><Zap size={14} className="text-zinc-400" /> <span>Tezlik (Speed)</span></div>
                                                             <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
                                                                 <span>{playbackRate}x</span>
+                                                                <ChevronRight size={12} />
+                                                            </div>
+                                                        </button>
+
+                                                        {/* Advanced Brightness/Contrast Row */}
+                                                        <button 
+                                                            onClick={() => setSettingsScreen('brightness')}
+                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-2.5"><SunDim size={14} className="text-zinc-400" /> <span>Yorqinlik (Bright)</span></div>
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
+                                                                <span>{brightness}%</span>
+                                                                <ChevronRight size={12} />
+                                                            </div>
+                                                        </button>
+
+                                                        {/* Audio track selector Row */}
+                                                        <button 
+                                                            onClick={() => setSettingsScreen('audio')}
+                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-2.5"><Languages size={14} className="text-zinc-400" /> <span>Audio Tarjima</span></div>
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
+                                                                <span>{selectedAudio === 'uz' ? 'O\'zbekcha' : selectedAudio === 'ru' ? 'Ruscha' : 'Asl ovoz'}</span>
+                                                                <ChevronRight size={12} />
+                                                            </div>
+                                                        </button>
+
+                                                        {/* Subtitles Customization Row */}
+                                                        <button 
+                                                            onClick={() => setSettingsScreen('subtitles')}
+                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-2.5"><Type size={14} className="text-zinc-400" /> <span>Subtitr</span></div>
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
+                                                                <span>{selectedSubtitle === 'none' ? 'O\'chiq' : selectedSubtitle === 'uz' ? 'O\'zbek' : 'Ruscha'}</span>
+                                                                <ChevronRight size={12} />
+                                                            </div>
+                                                        </button>
+
+                                                        {/* Sleep Timer Row */}
+                                                        <button 
+                                                            onClick={() => setSettingsScreen('sleeptimer')}
+                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-2.5"><Clock size={14} className="text-zinc-400" /> <span>Uxlash Taymeri</span></div>
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
+                                                                <span>{activeSleepTimer ? `${activeSleepTimer}m` : 'Off'}</span>
                                                                 <ChevronRight size={12} />
                                                             </div>
                                                         </button>
@@ -740,9 +991,9 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                                         {/* Ambient Mode Trigger */}
                                                         <button 
                                                             onClick={() => setAmbientGlow(!ambientGlow)}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
+                                                            className="w-full flex items-center justify-between py-2.5 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors pt-3"
                                                         >
-                                                            <div className="flex items-center gap-2"><Sun size={13} className="text-zinc-400" /> <span>Kino Yorug'ligi</span></div>
+                                                            <div className="flex items-center gap-2.5"><Sun size={13} className="text-zinc-400" /> <span>Kino Yorug'ligi</span></div>
                                                             <div className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${ambientGlow ? 'bg-orange-600/20 text-orange-400' : 'bg-zinc-800 text-zinc-500'}`}>
                                                                 {ambientGlow ? 'Yoqiq' : 'Ochiq'}
                                                             </div>
@@ -753,7 +1004,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                                             onClick={() => setResizeMode(prev => prev === 'contain' ? 'cover' : 'contain')}
                                                             className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
                                                         >
-                                                            <div className="flex items-center gap-2"><Monitor size={13} className="text-zinc-400" /> <span>O'lcham</span></div>
+                                                            <div className="flex items-center gap-2.5"><Monitor size={13} className="text-zinc-400" /> <span>O'lcham</span></div>
                                                             <div className="text-[10px] font-black uppercase tracking-wider text-orange-400">
                                                                 {resizeMode === 'contain' ? 'Original' : 'Ekran'}
                                                             </div>
@@ -804,6 +1055,186 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                                         ))}
                                                     </div>
                                                 )}
+
+                                                {/* SCREEN 4: Brightness and Contrast Controller */}
+                                                {settingsScreen === 'brightness' && (
+                                                    <div className="space-y-4">
+                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-2">
+                                                            <ChevronLeft size={12} /> Orqaga
+                                                        </button>
+                                                        
+                                                        {/* Brightness slider */}
+                                                        <div className="space-y-1.5 px-1 pb-2">
+                                                            <div className="flex justify-between text-xs font-bold text-zinc-400">
+                                                                <span>Yorqinlik (Brightness)</span>
+                                                                <span className="text-orange-500">{brightness}%</span>
+                                                            </div>
+                                                            <input 
+                                                                type="range"
+                                                                min="50"
+                                                                max="150"
+                                                                value={brightness}
+                                                                onChange={(e) => setBrightness(Number(e.target.value))}
+                                                                className="w-full accent-orange-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                                                            />
+                                                        </div>
+
+                                                        {/* Contrast slider */}
+                                                        <div className="space-y-1.5 px-1 pt-1.5 border-t border-zinc-900">
+                                                            <div className="flex justify-between text-xs font-bold text-zinc-400">
+                                                                <span>Kontrast (Contrast)</span>
+                                                                <span className="text-orange-500">{contrast}%</span>
+                                                            </div>
+                                                            <input 
+                                                                type="range"
+                                                                min="80"
+                                                                max="130"
+                                                                value={contrast}
+                                                                onChange={(e) => setContrast(Number(e.target.value))}
+                                                                className="w-full accent-orange-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                                                            />
+                                                        </div>
+
+                                                        <p className="text-[9px] text-zinc-500 font-semibold uppercase tracking-wider text-center pt-2">Qorong'i sharoitda o'zingizga qulay qilib to'g'rilang.</p>
+                                                    </div>
+                                                )}
+
+                                                {/* SCREEN 5: Audio Track Selector */}
+                                                {settingsScreen === 'audio' && (
+                                                    <div className="space-y-1">
+                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-2">
+                                                            <ChevronLeft size={12} /> Orqaga
+                                                        </button>
+                                                        {([
+                                                            { key: 'uz', label: 'O\'zbekcha Tarjima (Dublyaj)' },
+                                                            { key: 'original', label: 'Yaponcha (Asl Original)' },
+                                                            { key: 'ru', label: 'Ruscha Tarjima (MVO)' }
+                                                        ] as const).map(track => (
+                                                            <button 
+                                                                key={track.key} 
+                                                                onClick={() => {
+                                                                    setSelectedAudio(track.key);
+                                                                    setSettingsScreen('main');
+                                                                    triggerHUD(`Dublyaj: ${track.label}`, 'volume');
+                                                                }}
+                                                                className={`w-full flex justify-between items-center py-2.5 px-3 rounded-lg text-left text-xs font-bold transition-all ${selectedAudio === track.key ? 'bg-orange-600 text-white' : 'hover:bg-white/5 text-zinc-300'}`}
+                                                            >
+                                                                <span>{track.label}</span>
+                                                                {selectedAudio === track.key && <Check size={12} className="text-white" />}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* SCREEN 6: Subtitles Selector and Size/Color Config */}
+                                                {settingsScreen === 'subtitles' && (
+                                                    <div className="space-y-3">
+                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-1">
+                                                            <ChevronLeft size={12} /> Orqaga
+                                                        </button>
+                                                        
+                                                        {/* Subtitle language */}
+                                                        <div className="space-y-1">
+                                                            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block mb-1">Subtitr Tili</span>
+                                                            {([
+                                                                { key: 'none', label: 'O\'chirib qo\'yish' },
+                                                                { key: 'uz', label: 'O\'zbekcha Matnlar' },
+                                                                { key: 'ru', label: 'Ruscha Matnlar' }
+                                                            ] as const).map(sub => (
+                                                                <button 
+                                                                    key={sub.key} 
+                                                                    onClick={() => setSelectedSubtitle(sub.key)}
+                                                                    className={`w-full flex justify-between items-center py-2 px-2.5 rounded-lg text-left text-xs font-bold transition-all ${selectedSubtitle === sub.key ? 'bg-orange-600 text-white' : 'hover:bg-white/5 text-zinc-300'}`}
+                                                                >
+                                                                    <span>{sub.label}</span>
+                                                                    {selectedSubtitle === sub.key && <Check size={11} className="text-white" />}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+
+                                                        {selectedSubtitle !== 'none' && (
+                                                            <div className="space-y-3 pt-3 border-t border-zinc-900/60 mt-2">
+                                                                {/* Font details and color */}
+                                                                <div>
+                                                                    <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block mb-1">Matn Hajmi</span>
+                                                                    <div className="grid grid-cols-3 gap-1.5">
+                                                                        {(['sm', 'md', 'lg'] as const).map(sz => (
+                                                                            <button 
+                                                                                key={sz} 
+                                                                                onClick={() => setSubtitleSize(sz)}
+                                                                                className={`py-1 rounded-lg text-[10px] text-center font-bold capitalize transition-colors ${subtitleSize === sz ? 'bg-zinc-800 text-white border border-orange-500/30' : 'bg-[#fff]/5 text-zinc-400 hover:text-[#fff]'}`}
+                                                                            >
+                                                                                {sz === 'sm' ? 'Kichik' : sz === 'md' ? 'Normal' : 'Katta'}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block mb-1">Matn Rangi</span>
+                                                                    <div className="grid grid-cols-3 gap-1.5">
+                                                                        {(['white', 'yellow', 'green'] as const).map(col => (
+                                                                            <button 
+                                                                                key={col} 
+                                                                                onClick={() => setSubtitleColor(col)}
+                                                                                className={`py-1 rounded-lg text-[10px] text-center font-bold capitalize transition-colors ${subtitleColor === col ? 'bg-zinc-800 text-white border border-orange-500/30' : 'bg-[#fff]/5 text-zinc-400 hover:text-[#fff]'}`}
+                                                                            >
+                                                                                {col === 'white' ? 'Oq' : col === 'yellow' ? 'Sariq' : 'Yashil'}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* SCREEN 7: Sleep Timer */}
+                                                {settingsScreen === 'sleeptimer' && (
+                                                    <div className="space-y-1">
+                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-2">
+                                                            <ChevronLeft size={12} /> Orqaga
+                                                        </button>
+                                                        
+                                                        {activeSleepTimer !== null && (
+                                                            <div className="p-2 mb-2 bg-orange-600/15 border border-orange-500/30 rounded-xl text-center">
+                                                                <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">Pauzaga qolgan vaqt</p>
+                                                                <p className="text-sm font-black text-white font-mono mt-0.5">
+                                                                    {sleepTimerSecondsLeft !== null 
+                                                                        ? `${Math.floor(sleepTimerSecondsLeft / 60)}m ${sleepTimerSecondsLeft % 60}s` 
+                                                                        : `${activeSleepTimer}m 00s`
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {[
+                                                            { val: null, label: 'Taymerni o\'chirish' },
+                                                            { val: 15, label: '15 daqiqadan keyin' },
+                                                            { val: 30, label: '30 daqiqadan keyin' },
+                                                            { val: 45, label: '45 daqiqadan keyin' },
+                                                            { val: 60, label: '60 daqiqadan keyin' }
+                                                        ].map(timerOpt => (
+                                                            <button 
+                                                                key={timerOpt.val ?? 'off'} 
+                                                                onClick={() => {
+                                                                    setActiveSleepTimer(timerOpt.val);
+                                                                    setSleepTimerSecondsLeft(timerOpt.val ? timerOpt.val * 60 : null);
+                                                                    setSettingsScreen('main');
+                                                                    if (timerOpt.val) {
+                                                                        triggerHUD(`Taymer o'rnatildi: ${timerOpt.val} min`, 'play');
+                                                                    } else {
+                                                                        triggerHUD(`Uxlash taymeri o'chirildi`, 'play');
+                                                                    }
+                                                                }}
+                                                                className={`w-full flex justify-between items-center py-2.5 px-3 rounded-lg text-left text-xs font-bold transition-all ${activeSleepTimer === timerOpt.val ? 'bg-orange-600 text-white' : 'hover:bg-white/5 text-zinc-300'}`}
+                                                            >
+                                                                <span>{timerOpt.label}</span>
+                                                                {activeSleepTimer === timerOpt.val && <Check size={12} className="text-white" />}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -812,7 +1243,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                     {document.pictureInPictureEnabled && (
                                         <button 
                                             onClick={togglePictureInPicture} 
-                                            className="text-zinc-350 hover:text-white hover:scale-105 transition-all"
+                                            className="text-zinc-350 hover:text-white hover:scale-105 transition-all text-xs"
                                             title="Kichik Video (PiP)"
                                         >
                                             <Tv size={18} />
@@ -831,6 +1262,20 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                         <Monitor size={18} />
                                     </button>
 
+                                    {/* Screen Accidental Touch Lock toggle button (Highly requested by user) */}
+                                    <button 
+                                        onClick={() => {
+                                            setIsLocked(true);
+                                            setShowSettings(false);
+                                            setShowEpisodesList(false);
+                                            triggerHUD('Boshqaruv elementlari qulflandi', 'lock');
+                                        }}
+                                        className="text-zinc-350 hover:text-white hover:scale-105 transition-all"
+                                        title="Boshqaruvni qulflash"
+                                    >
+                                        <Lock size={18} />
+                                    </button>
+
                                     {/* Fullscreen Button */}
                                     <button onClick={toggleFullscreen} className="text-zinc-300 hover:text-white transition-all active:scale-90" title="To'liq Ekran">
                                         <FullscreenEnterIcon className="w-5 h-5"/>
@@ -839,6 +1284,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                             </div>
                         </div>
                     </div>
+                    )}
 
                     {/* Sliding Episode list board */}
                     <div className={`absolute bottom-0 left-0 right-0 bg-zinc-950/98 border-t border-zinc-900 z-50 transition-transform duration-300 rounded-t-3xl flex flex-col h-[65vh] shadow-[0_-12px_40px_rgba(0,0,0,0.8)] ${

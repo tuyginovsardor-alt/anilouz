@@ -133,17 +133,23 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart, onNavigate })
               {/* Brand Logo & Name Area */}
               <motion.div variants={logoVariants} className="mb-6 flex flex-col md:flex-row items-center gap-4 md:gap-5">
                   <div className="relative group cursor-pointer shrink-0">
-                      <motion.img 
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                        src={customLogo || "/logotip.png"} 
-                        alt="Anilo Logo" 
-                        className="w-24 h-24 md:w-28 md:h-28 object-contain drop-shadow-[0_8px_32px_rgba(249,115,22,0.45)]"
-                        onError={(e) => {
-                            // Fallback safe SVG if logo image is broken
-                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzAwMDAwMCIvPjxwYXRoIGQ9Ik0yNTYgMTIwQzE4MC44OSAxMjAgMTIwIDE4MC44OSAxMjAgMjU2QzEyMCAzMzEuMTEgMTgwLjg5IDM5MiAyNTYgMzkyQzMzMS4xMSAzOTIgMzkyIDMzMS4xMSAzOTIgMjU2IiBzdHJva2U9IiNmOTczMTYiIHN0cm9rZS13aWR0aD0iMjQiLz48L3N2Zz4=';
-                        }}
-                      />
+                      {/* Ambient Glowing Aura */}
+                      <div className="absolute -inset-2 bg-orange-600/25 rounded-full opacity-40 blur-xl group-hover:opacity-60 transition duration-500"></div>
+                      
+                      {/* Perfect Glass Circle with Border */}
+                      <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full bg-zinc-950/50 backdrop-blur-xl border border-zinc-800/85 hover:border-orange-500/50 overflow-hidden flex items-center justify-center p-2.5 shadow-[0_16px_48px_rgba(0,0,0,0.85)] transition-all duration-300 group-hover:scale-105">
+                          <motion.img 
+                            whileHover={{ scale: 1.04 }}
+                            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                            src={customLogo || "/logotip.png"} 
+                            alt="Anilo Logo" 
+                            className="w-full h-full object-cover rounded-full filter drop-shadow-[0_4px_12px_rgba(249,115,22,0.3)]"
+                            onError={(e) => {
+                                // Fallback safe SVG if logo image is broken
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzAwMDAwMCIvPjxwYXRoIGQ9Ik0yNTYgMTIwQzE4MC44OSAxMjAgMTIwIDE4MC44OSAxMjAgMjU2QzEyMCAzMzEuMTEgMTgwLjg5IDM5MiAyNTYgMzkyQzMzMS4xMSAzOTIgMzkyIDMzMS4xMSAzOTIgMjU2IiBzdHJva2U9IiNmOTczMTYiIHN0cm9rZS13aWR0aD0iMjQiLz48L3N2Zz4=';
+                            }}
+                          />
+                      </div>
                   </div>
                   <div className="text-center md:text-left">
                       <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] font-mono">
