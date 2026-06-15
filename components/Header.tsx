@@ -113,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between pointer-events-auto">
             <div className="flex items-center gap-4 md:gap-10">
                 <div className="flex items-center gap-3 cursor-pointer group relative" onClick={() => isAuthenticated ? onNavigate('dashboard') : onNavigate('welcome')}>
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1.25rem] md:rounded-[1.5rem] overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-transform hover:scale-110">
                         {customLogo ? (
                             <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
                         ) : (

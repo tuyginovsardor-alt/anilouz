@@ -146,7 +146,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onStart, onNavigate })
                             className="w-full h-full object-cover rounded-full filter drop-shadow-[0_4px_12px_rgba(249,115,22,0.3)]"
                             onError={(e) => {
                                 // Fallback safe SVG if logo image is broken
-                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzAwMDAwMCIvPjxwYXRoIGQ9Ik0yNTYgMTIwQzE4MC44OSAxMjAgMTIwIDE4MC44OSAxMjAgMjU2QzEyMCAzMzEuMTEgMTgwLjg5IDM5MiAyNTYgMzkyQzMzMS4xMSAzOTIgMzkyIDMzMS4xMSAzOTIgMjU2IiBzdHJva2U9IiNmOTczMTYiIHN0cm9rZS13aWR0aD0iMjQiLz48L3N2Zz4=';
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC5zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iYmxhY2siLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzNSIgc3Ryb2tlPSIjZjk3MzE2IiBzdHJva2Utd2lkdGg9IjYiIGZpbGw9Im5vbmUiLz48L3N2Zz4=';
                             }}
                           />
                       </div>

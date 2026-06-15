@@ -15,7 +15,7 @@ export const UzumakiLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
           <stop offset="100%" stopColor="#f97316" />
         </linearGradient>
       </defs>
-      <rect width="512" height="512" rx="160" fill="#000000" />
+      <circle cx="256" cy="256" r="256" fill="#000000" />
       <path 
         d="M256 120C180.89 120 120 180.89 120 256C120 331.11 180.89 392 256 392C331.11 392 392 331.11 392 256" 
         stroke="url(#compGrad)" 
