@@ -146,9 +146,24 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({ onMovieClick }) => {
     // Har bir to'plamning rasm stacklarini tozalash
     const getCollectionStackImages = (collection: Collection) => {
         const matches = allMovies.filter(m => m.genre.toLowerCase().includes(collection.genre.toLowerCase()));
-        const urls = matches.map(m => m.poster_url).filter(Boolean);
-        while (urls.length < 3) {
-            urls.push(collection.fallbackImages[urls.length] || collection.fallbackImages[0]);
+        let urls = matches.map(m => m.poster_url).filter(Boolean);
+        
+        const initialLength = urls.length;
+        if (initialLength > 0) {
+            while (urls.length < 3) {
+                urls.push(urls[urls.length % initialLength]);
+            }
+        } else {
+            const otherRealPosters = allMovies.map(m => m.poster_url).filter(Boolean);
+            if (otherRealPosters.length > 0) {
+                while (urls.length < 3) {
+                    urls.push(otherRealPosters[urls.length % otherRealPosters.length]);
+                }
+            } else {
+                while (urls.length < 3) {
+                    urls.push(collection.fallbackImages[urls.length] || collection.fallbackImages[0]);
+                }
+            }
         }
         return urls.slice(0, 3);
     };
