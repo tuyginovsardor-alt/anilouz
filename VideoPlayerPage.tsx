@@ -48,6 +48,7 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
     // Advanced Settings & Toggles
     const [showSettings, setShowSettings] = useState(false);
     const [settingsScreen, setSettingsScreen] = useState<SettingsScreen>('main');
+    const [activeModalTab, setActiveModalTab] = useState<'audio' | 'video' | 'display' | 'other'>('audio');
     const [showEpisodesList, setShowEpisodesList] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1.0);
     const [videoQuality, setVideoQuality] = useState<'auto' | '1080p' | '720p' | '480p'>('auto');
@@ -887,357 +888,20 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                                 {/* Right Side Actions (Settings Gear, PiP, Cinema, Fullscreen) */}
                                 <div className="flex items-center gap-4 relative">
                                     
-                                    {/* Floating Popover YouTube-Style Settings Cog */}
-                                    <div className="relative">
-                                        <button 
-                                            onClick={() => { 
-                                                setShowSettings(!showSettings); 
-                                                setSettingsScreen('main');
-                                                setShowEpisodesList(false); 
-                                            }} 
-                                            className={`p-2 rounded-full transition-all border ${
-                                                showSettings 
-                                                ? 'bg-orange-600 text-white border-orange-500 animate-spin-once' 
-                                                : 'bg-white/10 hover:bg-white/20 text-white border-white/5 backdrop-blur-md'
-                                            }`}
-                                        >
-                                            <Settings size={18} />
-                                        </button>
-
-                                        {/* Settings Menu Popup (bottom-right nested) */}
-                                        {showSettings && (
-                                            <div className="absolute right-0 bottom-12 w-64 bg-zinc-950/98 backdrop-blur-2xl border border-zinc-800 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.95)] p-4.5 z-50 text-white animate-fade-in divide-y divide-zinc-900/50 max-h-[400px] overflow-y-auto custom-scrollbar">
-                                                
-                                                {/* SCREEN 1: Main Settings */}
-                                                {settingsScreen === 'main' && (
-                                                    <div className="space-y-1">
-                                                        <div className="flex justify-between items-center pb-2.5">
-                                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sozlamalar</span>
-                                                            <button onClick={() => setShowSettings(false)} className="text-zinc-500 hover:text-white transition-colors"><X size={14} /></button>
-                                                        </div>
-
-                                                        {/* Video Quality Row */}
-                                                        <button 
-                                                            onClick={() => setSettingsScreen('quality')}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors animate-fade-in"
-                                                        >
-                                                            <div className="flex items-center gap-2.5"><BarChart2 size={14} className="text-zinc-400" /> <span>Tasvir Sifati</span></div>
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
-                                                                <span>{videoQuality === 'auto' ? 'Auto' : `${videoQuality}`}</span>
-                                                                <ChevronRight size={12} />
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Speed Row */}
-                                                        <button 
-                                                            onClick={() => setSettingsScreen('speed')}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
-                                                        >
-                                                            <div className="flex items-center gap-2.5"><Zap size={14} className="text-zinc-400" /> <span>Tezlik (Speed)</span></div>
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
-                                                                <span>{playbackRate}x</span>
-                                                                <ChevronRight size={12} />
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Advanced Brightness/Contrast Row */}
-                                                        <button 
-                                                            onClick={() => setSettingsScreen('brightness')}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
-                                                        >
-                                                            <div className="flex items-center gap-2.5"><SunDim size={14} className="text-zinc-400" /> <span>Yorqinlik (Bright)</span></div>
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
-                                                                <span>{brightness}%</span>
-                                                                <ChevronRight size={12} />
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Audio track selector Row */}
-                                                        <button 
-                                                            onClick={() => setSettingsScreen('audio')}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
-                                                        >
-                                                            <div className="flex items-center gap-2.5"><Languages size={14} className="text-zinc-400" /> <span>Audio Tarjima</span></div>
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
-                                                                <span>{selectedAudio === 'uz' ? 'O\'zbekcha' : selectedAudio === 'ru' ? 'Ruscha' : 'Asl ovoz'}</span>
-                                                                <ChevronRight size={12} />
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Subtitles Customization Row */}
-                                                        <button 
-                                                            onClick={() => setSettingsScreen('subtitles')}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
-                                                        >
-                                                            <div className="flex items-center gap-2.5"><Type size={14} className="text-zinc-400" /> <span>Subtitr</span></div>
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
-                                                                <span>{selectedSubtitle === 'none' ? 'O\'chiq' : selectedSubtitle === 'uz' ? 'O\'zbek' : 'Ruscha'}</span>
-                                                                <ChevronRight size={12} />
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Sleep Timer Row */}
-                                                        <button 
-                                                            onClick={() => setSettingsScreen('sleeptimer')}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
-                                                        >
-                                                            <div className="flex items-center gap-2.5"><Clock size={14} className="text-zinc-400" /> <span>Uxlash Taymeri</span></div>
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-orange-500 uppercase font-black">
-                                                                <span>{activeSleepTimer ? `${activeSleepTimer}m` : 'Off'}</span>
-                                                                <ChevronRight size={12} />
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Ambient Mode Trigger */}
-                                                        <button 
-                                                            onClick={() => setAmbientGlow(!ambientGlow)}
-                                                            className="w-full flex items-center justify-between py-2.5 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors pt-3"
-                                                        >
-                                                            <div className="flex items-center gap-2.5"><Sun size={13} className="text-zinc-400" /> <span>Kino Yorug'ligi</span></div>
-                                                            <div className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${ambientGlow ? 'bg-orange-600/20 text-orange-400' : 'bg-zinc-800 text-zinc-500'}`}>
-                                                                {ambientGlow ? 'Yoqiq' : 'Ochiq'}
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Scale Mode Trigger */}
-                                                        <button 
-                                                            onClick={() => setResizeMode(prev => prev === 'contain' ? 'cover' : 'contain')}
-                                                            className="w-full flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-colors"
-                                                        >
-                                                            <div className="flex items-center gap-2.5"><Monitor size={13} className="text-zinc-400" /> <span>O'lcham</span></div>
-                                                            <div className="text-[10px] font-black uppercase tracking-wider text-orange-400">
-                                                                {resizeMode === 'contain' ? 'Original' : 'Ekran'}
-                                                            </div>
-                                                        </button>
-                                                    </div>
-                                                )}
-
-                                                {/* SCREEN 2: Quality Changer */}
-                                                {settingsScreen === 'quality' && (
-                                                    <div className="space-y-1">
-                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-2">
-                                                            <ChevronLeft size={12} /> Orqaga
-                                                        </button>
-                                                        {(['auto', '1080p', '720p', '480p'] as const).map(quality => (
-                                                            <button 
-                                                                key={quality} 
-                                                                onClick={() => {
-                                                                    setVideoQuality(quality);
-                                                                    setSettingsScreen('main');
-                                                                }}
-                                                                className={`w-full flex justify-between items-center py-2.5 px-3 rounded-lg text-left text-xs font-bold transition-all ${videoQuality === quality ? 'bg-orange-600 text-white' : 'hover:bg-white/5 text-zinc-300'}`}
-                                                            >
-                                                                <span className="capitalize">{quality === 'auto' ? 'Avtomatik (Auto)' : `${quality} High Def`}</span>
-                                                                {videoQuality === quality && <Check size={12} className="text-white" />}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {/* SCREEN 3: Speed Changer */}
-                                                {settingsScreen === 'speed' && (
-                                                    <div className="space-y-1">
-                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-2">
-                                                            <ChevronLeft size={12} /> Orqaga
-                                                        </button>
-                                                        {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map(speed => (
-                                                            <button 
-                                                                key={speed} 
-                                                                onClick={() => {
-                                                                    setPlaybackRate(speed);
-                                                                    setSettingsScreen('main');
-                                                                }}
-                                                                className={`w-full flex justify-between items-center py-2 px-3 rounded-lg text-left text-xs font-bold transition-all ${playbackRate === speed ? 'bg-orange-600 text-white' : 'hover:bg-white/5 text-zinc-300'}`}
-                                                            >
-                                                                <span>{speed === 1.0 ? 'Oddiy (1x)' : `${speed}x`}</span>
-                                                                {playbackRate === speed && <Check size={12} className="text-white" />}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {/* SCREEN 4: Brightness and Contrast Controller */}
-                                                {settingsScreen === 'brightness' && (
-                                                    <div className="space-y-4">
-                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-2">
-                                                            <ChevronLeft size={12} /> Orqaga
-                                                        </button>
-                                                        
-                                                        {/* Brightness slider */}
-                                                        <div className="space-y-1.5 px-1 pb-2">
-                                                            <div className="flex justify-between text-xs font-bold text-zinc-400">
-                                                                <span>Yorqinlik (Brightness)</span>
-                                                                <span className="text-orange-500">{brightness}%</span>
-                                                            </div>
-                                                            <input 
-                                                                type="range"
-                                                                min="50"
-                                                                max="150"
-                                                                value={brightness}
-                                                                onChange={(e) => setBrightness(Number(e.target.value))}
-                                                                className="w-full accent-orange-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
-                                                            />
-                                                        </div>
-
-                                                        {/* Contrast slider */}
-                                                        <div className="space-y-1.5 px-1 pt-1.5 border-t border-zinc-900">
-                                                            <div className="flex justify-between text-xs font-bold text-zinc-400">
-                                                                <span>Kontrast (Contrast)</span>
-                                                                <span className="text-orange-500">{contrast}%</span>
-                                                            </div>
-                                                            <input 
-                                                                type="range"
-                                                                min="80"
-                                                                max="130"
-                                                                value={contrast}
-                                                                onChange={(e) => setContrast(Number(e.target.value))}
-                                                                className="w-full accent-orange-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
-                                                            />
-                                                        </div>
-
-                                                        <p className="text-[9px] text-zinc-500 font-semibold uppercase tracking-wider text-center pt-2">Qorong'i sharoitda o'zingizga qulay qilib to'g'rilang.</p>
-                                                    </div>
-                                                )}
-
-                                                {/* SCREEN 5: Audio Track Selector */}
-                                                {settingsScreen === 'audio' && (
-                                                    <div className="space-y-1">
-                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-2">
-                                                            <ChevronLeft size={12} /> Orqaga
-                                                        </button>
-                                                        {([
-                                                            { key: 'uz', label: 'O\'zbekcha Tarjima (Dublyaj)' },
-                                                            { key: 'original', label: 'Yaponcha (Asl Original)' },
-                                                            { key: 'ru', label: 'Ruscha Tarjima (MVO)' }
-                                                        ] as const).map(track => (
-                                                            <button 
-                                                                key={track.key} 
-                                                                onClick={() => {
-                                                                    setSelectedAudio(track.key);
-                                                                    setSettingsScreen('main');
-                                                                    triggerHUD(`Dublyaj: ${track.label}`, 'volume');
-                                                                }}
-                                                                className={`w-full flex justify-between items-center py-2.5 px-3 rounded-lg text-left text-xs font-bold transition-all ${selectedAudio === track.key ? 'bg-orange-600 text-white' : 'hover:bg-white/5 text-zinc-300'}`}
-                                                            >
-                                                                <span>{track.label}</span>
-                                                                {selectedAudio === track.key && <Check size={12} className="text-white" />}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {/* SCREEN 6: Subtitles Selector and Size/Color Config */}
-                                                {settingsScreen === 'subtitles' && (
-                                                    <div className="space-y-3">
-                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-1">
-                                                            <ChevronLeft size={12} /> Orqaga
-                                                        </button>
-                                                        
-                                                        {/* Subtitle language */}
-                                                        <div className="space-y-1">
-                                                            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block mb-1">Subtitr Tili</span>
-                                                            {([
-                                                                { key: 'none', label: 'O\'chirib qo\'yish' },
-                                                                { key: 'uz', label: 'O\'zbekcha Matnlar' },
-                                                                { key: 'ru', label: 'Ruscha Matnlar' }
-                                                            ] as const).map(sub => (
-                                                                <button 
-                                                                    key={sub.key} 
-                                                                    onClick={() => setSelectedSubtitle(sub.key)}
-                                                                    className={`w-full flex justify-between items-center py-2 px-2.5 rounded-lg text-left text-xs font-bold transition-all ${selectedSubtitle === sub.key ? 'bg-orange-600 text-white' : 'hover:bg-white/5 text-zinc-300'}`}
-                                                                >
-                                                                    <span>{sub.label}</span>
-                                                                    {selectedSubtitle === sub.key && <Check size={11} className="text-white" />}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-
-                                                        {selectedSubtitle !== 'none' && (
-                                                            <div className="space-y-3 pt-3 border-t border-zinc-900/60 mt-2">
-                                                                {/* Font details and color */}
-                                                                <div>
-                                                                    <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block mb-1">Matn Hajmi</span>
-                                                                    <div className="grid grid-cols-3 gap-1.5">
-                                                                        {(['sm', 'md', 'lg'] as const).map(sz => (
-                                                                            <button 
-                                                                                key={sz} 
-                                                                                onClick={() => setSubtitleSize(sz)}
-                                                                                className={`py-1 rounded-lg text-[10px] text-center font-bold capitalize transition-colors ${subtitleSize === sz ? 'bg-zinc-800 text-white border border-orange-500/30' : 'bg-[#fff]/5 text-zinc-400 hover:text-[#fff]'}`}
-                                                                            >
-                                                                                {sz === 'sm' ? 'Kichik' : sz === 'md' ? 'Normal' : 'Katta'}
-                                                                            </button>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div>
-                                                                    <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block mb-1">Matn Rangi</span>
-                                                                    <div className="grid grid-cols-3 gap-1.5">
-                                                                        {(['white', 'yellow', 'green'] as const).map(col => (
-                                                                            <button 
-                                                                                key={col} 
-                                                                                onClick={() => setSubtitleColor(col)}
-                                                                                className={`py-1 rounded-lg text-[10px] text-center font-bold capitalize transition-colors ${subtitleColor === col ? 'bg-zinc-800 text-white border border-orange-500/30' : 'bg-[#fff]/5 text-zinc-400 hover:text-[#fff]'}`}
-                                                                            >
-                                                                                {col === 'white' ? 'Oq' : col === 'yellow' ? 'Sariq' : 'Yashil'}
-                                                                            </button>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                                {/* SCREEN 7: Sleep Timer */}
-                                                {settingsScreen === 'sleeptimer' && (
-                                                    <div className="space-y-1">
-                                                        <button onClick={() => setSettingsScreen('main')} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-white transition-colors py-2">
-                                                            <ChevronLeft size={12} /> Orqaga
-                                                        </button>
-                                                        
-                                                        {activeSleepTimer !== null && (
-                                                            <div className="p-2 mb-2 bg-orange-600/15 border border-orange-500/30 rounded-xl text-center">
-                                                                <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">Pauzaga qolgan vaqt</p>
-                                                                <p className="text-sm font-black text-white font-mono mt-0.5">
-                                                                    {sleepTimerSecondsLeft !== null 
-                                                                        ? `${Math.floor(sleepTimerSecondsLeft / 60)}m ${sleepTimerSecondsLeft % 60}s` 
-                                                                        : `${activeSleepTimer}m 00s`
-                                                                    }
-                                                                </p>
-                                                            </div>
-                                                        )}
-
-                                                        {[
-                                                            { val: null, label: 'Taymerni o\'chirish' },
-                                                            { val: 15, label: '15 daqiqadan keyin' },
-                                                            { val: 30, label: '30 daqiqadan keyin' },
-                                                            { val: 45, label: '45 daqiqadan keyin' },
-                                                            { val: 60, label: '60 daqiqadan keyin' }
-                                                        ].map(timerOpt => (
-                                                            <button 
-                                                                key={timerOpt.val ?? 'off'} 
-                                                                onClick={() => {
-                                                                    setActiveSleepTimer(timerOpt.val);
-                                                                    setSleepTimerSecondsLeft(timerOpt.val ? timerOpt.val * 60 : null);
-                                                                    setSettingsScreen('main');
-                                                                    if (timerOpt.val) {
-                                                                        triggerHUD(`Taymer o'rnatildi: ${timerOpt.val} min`, 'play');
-                                                                    } else {
-                                                                        triggerHUD(`Uxlash taymeri o'chirildi`, 'play');
-                                                                    }
-                                                                }}
-                                                                className={`w-full flex justify-between items-center py-2.5 px-3 rounded-lg text-left text-xs font-bold transition-all ${activeSleepTimer === timerOpt.val ? 'bg-orange-600 text-white' : 'hover:bg-white/5 text-zinc-300'}`}
-                                                            >
-                                                                <span>{timerOpt.label}</span>
-                                                                {activeSleepTimer === timerOpt.val && <Check size={12} className="text-white" />}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
+                                    {/* Settings Cog Button */}
+                                    <button 
+                                        onClick={() => { 
+                                            setShowSettings(!showSettings); 
+                                            setShowEpisodesList(false); 
+                                        }} 
+                                        className={`p-2 rounded-full transition-all border ${
+                                            showSettings 
+                                            ? 'bg-orange-600 text-white border-orange-500 animate-spin-once' 
+                                            : 'bg-white/10 hover:bg-white/20 text-white border-white/5 backdrop-blur-md'
+                                        }`}
+                                    >
+                                        <Settings size={18} />
+                                    </button>
 
                                     {/* Picture-in-picture (PiP) */}
                                     {document.pictureInPictureEnabled && (
@@ -1341,6 +1005,396 @@ export const VideoPlayerPage: React.FC<VideoPlayerPageProps> = ({ movie, episode
                             </div>
                         </div>
                     </div>
+
+                    {/* Settings Modal Window (Yangi modal oyna for expanded player preferences) */}
+                    {showSettings && (
+                        <div className="absolute inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6 select-none animate-fade-in pointer-events-auto">
+                            <div className="w-full max-w-2xl bg-zinc-950/98 backdrop-blur-3xl border border-zinc-800/80 rounded-3xl p-5 sm:p-6 shadow-[0_24px_60px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col max-h-[90%] text-white">
+                                
+                                {/* Header */}
+                                <div className="flex justify-between items-start border-b border-zinc-850 pb-4 mb-4 shrink-0">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="bg-orange-600/10 text-orange-500 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-orange-500/20">Sozlamalar paneli</span>
+                                            <span className="text-zinc-500 text-[10px] font-bold">V1.0.4</span>
+                                        </div>
+                                        <h3 className="text-white font-black text-xs uppercase tracking-wide truncate max-w-sm sm:max-w-md">
+                                            {displayTitle}
+                                        </h3>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowSettings(false)} 
+                                        className="p-1.5 bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800 hover:text-red-500 text-zinc-400 transition-all active:scale-95"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
+
+                                {/* Main Modal Dashboard (Dual-pane) */}
+                                <div className="flex-1 overflow-hidden flex flex-col sm:flex-row gap-4 min-h-0">
+                                    
+                                    {/* Sidebar Tab Selectors */}
+                                    <div className="flex flex-row sm:flex-col overflow-x-auto sm:overflow-x-visible shrink-0 gap-1.5 sm:w-44 border-b sm:border-b-0 sm:border-r border-zinc-900 pb-2 sm:pb-0 sm:pr-4 scrollbar-none">
+                                        {[
+                                            { id: 'audio', label: 'Tarjima va Ovoz', icon: <Volume2 size={15} /> },
+                                            { id: 'video', label: 'Sifat va Tezlik', icon: <BarChart2 size={15} /> },
+                                            { id: 'display', label: 'Tasvir va O\'lcham', icon: <Sliders size={15} /> },
+                                            { id: 'other', label: 'Taymer va Subtitr', icon: <Clock size={15} /> }
+                                        ].map(tab => (
+                                            <button 
+                                                key={tab.id}
+                                                onClick={() => setActiveModalTab(tab.id as any)}
+                                                className={`flex items-center gap-2.5 py-3 px-3.5 rounded-xl text-left text-xs font-bold transition-all whitespace-nowrap ${
+                                                    activeModalTab === tab.id 
+                                                    ? 'bg-orange-600/10 text-orange-400 border border-orange-500/30' 
+                                                    : 'hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent'
+                                                }`}
+                                            >
+                                                {tab.icon}
+                                                <span>{tab.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Scrollable content pane */}
+                                    <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-5 pb-4">
+                                        
+                                        {/* TAB 1: AUDIO & VOLUME */}
+                                        {activeModalTab === 'audio' && (
+                                            <div className="space-y-5 animate-fade-in">
+                                                {/* Volume slider control */}
+                                                <div className="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-850/60 space-y-4">
+                                                    <div className="flex justify-between items-center">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="p-2 bg-orange-600/10 border border-orange-500/20 text-orange-500 rounded-lg">
+                                                                <Volume2 size={15} />
+                                                            </div>
+                                                            <span className="text-xs font-black uppercase tracking-wider text-zinc-300">Ovoz kuchaytirgich</span>
+                                                        </div>
+                                                        <span className="font-mono text-xs font-black text-orange-400">
+                                                            {isMuted ? 'MUTE (0%)' : `${Math.round(volume * 100)}%`}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-3">
+                                                        <button 
+                                                            onClick={() => {
+                                                                setIsMuted(!isMuted);
+                                                                triggerHUD(!isMuted ? 'Ovoz o\'chirildi' : `Ovoz: ${Math.round(volume * 100)}%`, 'volume');
+                                                            }}
+                                                            className="p-2 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors shrink-0"
+                                                        >
+                                                            {isMuted || volume === 0 ? <VolumeX size={16} className="text-red-500 animate-pulse" /> : <Volume2 size={16} />}
+                                                        </button>
+                                                        <input 
+                                                            type="range"
+                                                            min="0"
+                                                            max="1"
+                                                            step="0.05"
+                                                            value={isMuted ? 0 : volume}
+                                                            onChange={(e) => {
+                                                                const val = Number(e.target.value);
+                                                                setVolume(val);
+                                                                setIsMuted(false);
+                                                                localStorage.setItem('player_volume', String(val));
+                                                            }}
+                                                            className="flex-1 accent-orange-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Dubbing language selector */}
+                                                <div className="space-y-3">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">Tarjima (Dublyaj) tili</span>
+                                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-2.5">
+                                                        {([
+                                                            { key: 'uz', label: 'O\'zbekcha Tarjima (Dublyaj / Professional)', desc: 'Anilo guruhidan maxsus sifatli dublyaj' },
+                                                            { key: 'original', label: 'Yaponcha (Asl / Subtitr bilan)', desc: 'Asl audio + o\'zbekcha/ruscha matn' },
+                                                            { key: 'ru', label: 'Ruscha Tarjima (MVO / Sub)', desc: 'Rossiya yetakchi ovozli tarjimalari' }
+                                                        ] as const).map(track => (
+                                                            <button 
+                                                                key={track.key} 
+                                                                onClick={() => {
+                                                                    setSelectedAudio(track.key);
+                                                                    triggerHUD(`Tarjima: ${track.label.split('(')[0]}`, 'volume');
+                                                                }}
+                                                                className={`w-full flex justify-between items-center p-3.5 rounded-2xl text-left text-xs font-bold transition-all border ${
+                                                                    selectedAudio === track.key 
+                                                                    ? 'bg-orange-600/5 border-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.08)]' 
+                                                                    : 'bg-white/5 hover:bg-white/10 text-zinc-300 border-transparent hover:border-zinc-850'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedAudio === track.key ? 'border-orange-500' : 'border-zinc-600'}`}>
+                                                                        {selectedAudio === track.key && <div className="w-2 h-2 bg-orange-500 rounded-full" />}
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-extrabold text-white text-xs leading-none mb-0.5">{track.label}</span>
+                                                                        <span className="text-[9px] text-zinc-500/90 font-medium">{track.desc}</span>
+                                                                    </div>
+                                                                </div>
+                                                                {selectedAudio === track.key && (
+                                                                    <span className="bg-orange-600/20 text-orange-400 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-orange-500/20 shrink-0">Faol</span>
+                                                                )}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* TAB 2: VIDEO & QUALITY */}
+                                        {activeModalTab === 'video' && (
+                                            <div className="space-y-5 animate-fade-in">
+                                                {/* Video quality selector */}
+                                                <div className="space-y-3">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">Tasvir Sifati</span>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        {(['auto', '1080p', '720p', '480p'] as const).map(quality => (
+                                                            <button 
+                                                                key={quality} 
+                                                                onClick={() => {
+                                                                    setVideoQuality(quality);
+                                                                    triggerHUD(`Sifati: ${quality === 'auto' ? 'Avtomatik' : quality}`, 'aspect');
+                                                                }}
+                                                                className={`flex flex-col gap-1 p-3.5 rounded-2xl text-left text-xs font-bold transition-all border ${
+                                                                    videoQuality === quality 
+                                                                    ? 'bg-orange-600/5 border-orange-500 text-white shadow-[0_4px_20px_rgba(249,115,22,0.1)]' 
+                                                                    : 'bg-white/5 hover:bg-white/10 text-zinc-300 border-transparent'
+                                                                }`}
+                                                            >
+                                                                <div className="flex justify-between items-center w-full">
+                                                                    <span className="uppercase text-white font-extrabold text-xs">{quality === 'auto' ? 'Avtomatik (Auto)' : `${quality}`}</span>
+                                                                    <BarChart2 size={13} className={videoQuality === quality ? 'text-orange-500' : 'text-zinc-650'} />
+                                                                </div>
+                                                                <span className="text-[9px] text-zinc-500/90 leading-tight font-medium">
+                                                                    {quality === 'auto' ? 'Tezlikka qarab moslashadi' : quality === '1080p' ? 'Full HD - Yuqori tiniqlik' : quality === '720p' ? 'HD - Optimal balans' : 'SD - Mobil trafik tejovchi'}
+                                                                </span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Playback Speed selector */}
+                                                <div className="space-y-3 pt-2">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block">Tezlik (Playback speed)</span>
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map(speed => (
+                                                            <button 
+                                                                key={speed} 
+                                                                onClick={() => {
+                                                                    setPlaybackRate(speed);
+                                                                    triggerHUD(`Tezlik ${speed}x`, 'play');
+                                                                }}
+                                                                className={`py-3.5 rounded-xl text-center text-xs font-black transition-all border ${
+                                                                    playbackRate === speed 
+                                                                    ? 'bg-orange-600/10 border-orange-500 text-orange-400' 
+                                                                    : 'bg-white/5 hover:bg-white/10 text-zinc-350 border-transparent'
+                                                                }`}
+                                                            >
+                                                                {speed === 1.0 ? 'Normal (1x)' : `${speed}x`}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* TAB 3: DISPLAY CONTROLS */}
+                                        {activeModalTab === 'display' && (
+                                            <div className="space-y-5 animate-fade-in">
+                                                {/* Sliders for brightness and contrast */}
+                                                <div className="space-y-4 bg-zinc-900/40 p-4 rounded-2xl border border-zinc-850/60">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-orange-500 block">Kengaytirilgan Ekran Tasviri</span>
+                                                    
+                                                    {/* Brightness slider */}
+                                                    <div className="space-y-1.5">
+                                                        <div className="flex justify-between text-xs font-bold text-zinc-400">
+                                                            <div className="flex items-center gap-1.5"><SunDim size={14} className="text-zinc-500" /> <span>Yorqinlik (Brightness)</span></div>
+                                                            <span className="text-orange-500 font-mono text-xs">{brightness}%</span>
+                                                        </div>
+                                                        <input 
+                                                            type="range"
+                                                            min="50"
+                                                            max="150"
+                                                            value={brightness}
+                                                            onChange={(e) => setBrightness(Number(e.target.value))}
+                                                            className="w-full accent-orange-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                                                        />
+                                                    </div>
+
+                                                    {/* Contrast slider */}
+                                                    <div className="space-y-1.5 pt-2 border-t border-zinc-900">
+                                                        <div className="flex justify-between text-xs font-bold text-zinc-400">
+                                                            <div className="flex items-center gap-1.5"><SlidersHorizontal size={14} className="text-zinc-500" /> <span>Kontrast (Contrast)</span></div>
+                                                            <span className="text-orange-500 font-mono text-xs">{contrast}%</span>
+                                                        </div>
+                                                        <input 
+                                                            type="range"
+                                                            min="80"
+                                                            max="130"
+                                                            value={contrast}
+                                                            onChange={(e) => setContrast(Number(e.target.value))}
+                                                            className="w-full accent-orange-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Ambient and scale mode configs */}
+                                                <div className="grid grid-cols-2 gap-3 pt-1">
+                                                    <div className="bg-zinc-900/40 p-3.5 rounded-2xl border border-zinc-850/60 leading-tight space-y-2.5">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-[#555]">KINO CHONG'I</span>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-xs font-bold text-white">Yorug'lik Glow</span>
+                                                            <button 
+                                                                onClick={() => setAmbientGlow(!ambientGlow)}
+                                                                className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full transition-all border ${ambientGlow ? 'bg-orange-600/10 text-orange-400 border-orange-500/20' : 'bg-zinc-800 text-zinc-500 border-transparent'}`}
+                                                            >
+                                                                {ambientGlow ? 'Yoqiq' : 'Ochiq'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-zinc-900/40 p-3.5 rounded-2xl border border-zinc-850/60 leading-tight space-y-2.5">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-[#555]">PROPORSIYA</span>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-xs font-bold text-white">Ekran o'lchami</span>
+                                                            <button 
+                                                                onClick={() => setResizeMode(prev => prev === 'contain' ? 'cover' : 'contain')}
+                                                                className="text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-800 hover:text-white text-orange-400"
+                                                            >
+                                                                {resizeMode === 'contain' ? 'Original' : 'Kengaytirilgan'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* TAB 4: SUBTITLES & SLEEP TIMER */}
+                                        {activeModalTab === 'other' && (
+                                            <div className="space-y-5 animate-fade-in">
+                                                {/* Subtitles controls */}
+                                                <div className="bg-zinc-900/40 p-4 rounded-2xl border border-zinc-850/60 space-y-3">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-orange-500 block">Subtitr Matnlari</span>
+                                                    
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        {([
+                                                            { key: 'none', label: 'O\'chirib qo\'yish' },
+                                                            { key: 'uz', label: 'O\'zbekcha' },
+                                                            { key: 'ru', label: 'Ruscha Matnlar' }
+                                                        ] as const).map(sub => (
+                                                            <button 
+                                                                key={sub.key} 
+                                                                onClick={() => setSelectedSubtitle(sub.key)}
+                                                                className={`py-3 px-1 rounded-xl text-center text-[11px] font-black transition-all border ${
+                                                                    selectedSubtitle === sub.key 
+                                                                    ? 'bg-orange-600/10 border-orange-500 text-orange-400' 
+                                                                    : 'bg-white/5 hover:bg-white/10 text-zinc-400 border-transparent'
+                                                                }`}
+                                                            >
+                                                                {sub.label.split(' ')[0]}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    {selectedSubtitle !== 'none' && (
+                                                        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-zinc-900/80">
+                                                            <div>
+                                                                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block mb-1">Matn Hajmi</span>
+                                                                <div className="grid grid-cols-3 gap-1">
+                                                                    {(['sm', 'md', 'lg'] as const).map(sz => (
+                                                                        <button 
+                                                                            key={sz} 
+                                                                            onClick={() => setSubtitleSize(sz)}
+                                                                            className={`py-1 rounded text-[9px] text-center font-bold transition-all ${subtitleSize === sz ? 'bg-zinc-800 text-white border border-orange-500/20' : 'bg-transparent text-zinc-500'}`}
+                                                                        >
+                                                                            {sz === 'sm' ? 'Kichik' : sz === 'md' ? 'Norma' : 'Katta'}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block mb-1">Rangi</span>
+                                                                <div className="grid grid-cols-3 gap-1">
+                                                                    {(['white', 'yellow', 'green'] as const).map(col => (
+                                                                        <button 
+                                                                            key={col} 
+                                                                            onClick={() => setSubtitleColor(col)}
+                                                                            className={`py-1 rounded text-[9px] text-center font-bold transition-all ${subtitleColor === col ? 'bg-zinc-800 text-white border border-orange-500/20' : 'bg-transparent text-zinc-500'}`}
+                                                                        >
+                                                                            {col === 'white' ? 'Oq' : col === 'yellow' ? 'Sariq' : 'Yashil'}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Sleep timer */}
+                                                <div className="bg-zinc-900/40 p-4 rounded-2xl border border-zinc-850/60 space-y-3">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-orange-500 block">Uxlash Taymeri (Avtomatik ijrodan to'xtatish)</span>
+                                                    
+                                                    <div className="grid grid-cols-5 gap-1.5">
+                                                        {[
+                                                            { val: null, label: 'Off' },
+                                                            { val: 15, label: '15m' },
+                                                            { val: 30, label: '30m' },
+                                                            { val: 45, label: '45m' },
+                                                            { val: 60, label: '60m' }
+                                                        ].map(timerOpt => (
+                                                            <button 
+                                                                key={timerOpt.val ?? 'off'} 
+                                                                onClick={() => {
+                                                                    setActiveSleepTimer(timerOpt.val);
+                                                                    setSleepTimerSecondsLeft(timerOpt.val ? timerOpt.val * 60 : null);
+                                                                    if (timerOpt.val) {
+                                                                        triggerHUD(`Taymer o'rnatildi: ${timerOpt.val} min`, 'play');
+                                                                    } else {
+                                                                        triggerHUD(`Uxlash taymeri yopildi`, 'play');
+                                                                    }
+                                                                }}
+                                                                className={`py-2 rounded-xl text-center text-[10px] font-black transition-all border ${
+                                                                    activeSleepTimer === timerOpt.val 
+                                                                    ? 'bg-orange-600/10 border-orange-500 text-orange-400' 
+                                                                    : 'bg-white/5 hover:bg-white/10 text-zinc-400 border-transparent'
+                                                                }`}
+                                                            >
+                                                                {timerOpt.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    {activeSleepTimer !== null && (
+                                                        <div className="flex justify-between items-center p-2.5 bg-black/40 border border-zinc-850 rounded-xl text-[11px] font-bold">
+                                                            <span className="text-zinc-500 uppercase tracking-wider text-[9px]">Avto pauza uchun orqaga hisoblash</span>
+                                                            <span className="text-orange-500 font-mono text-xs font-black">
+                                                                {sleepTimerSecondsLeft !== null 
+                                                                    ? `${Math.floor(sleepTimerSecondsLeft / 60)}m ${sleepTimerSecondsLeft % 60}s` 
+                                                                    : `${activeSleepTimer}m 00s`
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Footer Confirmation */}
+                                <div className="border-t border-zinc-850 pt-3.5 mt-3.5 flex justify-end shrink-0">
+                                    <button 
+                                        onClick={() => setShowSettings(false)}
+                                        className="px-6 py-2.5 bg-orange-600 text-white rounded-xl text-xs font-black hover:bg-orange-700 hover:scale-[1.03] active:scale-95 transition-all shadow-[0_4px_20px_rgba(249,115,22,0.2)]"
+                                    >
+                                        TASDIQLASH VA YOPISH
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </div>
