@@ -12,7 +12,7 @@ import { PlusIcon } from './components/icons/PlusIcon';
 import { AddMovieModal } from './components/AddMovieModal';
 import { useNotification } from './hooks/useNotification';
 import { Pagination } from './components/Pagination';
-import { Mic, CheckCircle, Eye, AlertCircle, Check, X } from 'lucide-react';
+import { Mic, CheckCircle, Eye, AlertCircle, Check, X, Activity } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -140,34 +140,42 @@ export const MovieManagementPage: React.FC = () => {
             </div>
             
             {isLoading ? <div className="flex justify-center py-20"><LoadingSpinner /></div> : (
-                <div className="bg-[#0a0a0a] border border-white/5 rounded-[3rem] overflow-hidden shadow-3xl">
-                    <table className="w-full text-left">
-                        <thead className="bg-[#111] text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
-                            <tr>
-                                <th className="p-6">Anime / Sarlavha</th>
-                                <th className="p-6">Ko'rishlar</th>
-                                <th className="p-6">Janr</th>
-                                <th className="p-6">Turi</th>
-                                <th className="p-6">Holat</th>
-                                <th className="p-6 text-right">Amallar</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {currentItems.map(item => (
-                                <tr key={`${item.type}-${item.id}`} className="group hover:bg-white/5 transition-all">
-                                    <td className="p-6 flex items-center gap-5">
-                                        <img src={item.poster_url || item.posterUrl} className="w-14 h-20 rounded-xl object-cover shadow-2xl border border-white/10" alt="" />
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[200px]">{item.title}</p>
-                                            <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{item.year} • {item.translator || 'Anilo'}</p>
-                                        </div>
-                                    </td>
-                                    <td className="p-6">
-                                        <div className="flex items-center gap-2 text-white font-black text-sm">
-                                            <Eye size={14} className="text-blue-500"/>
-                                            {item.view_count?.toLocaleString() || 0}
-                                        </div>
-                                    </td>
+                <div className="bg-[#0a0a0a] border border-white/5 rounded-[3rem] overflow-hidden shadow-3xl flex flex-col max-h-[800px]">
+                    <div className="overflow-y-auto custom-scrollbar overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-[#111] text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] sticky top-0 z-20">
+                                <tr>
+                                    <th className="p-6">Anime / Sarlavha</th>
+                                    <th className="p-6">Ko'rishlar</th>
+                                    <th className="p-6">Janr</th>
+                                    <th className="p-6">Turi</th>
+                                    <th className="p-6">Holat</th>
+                                    <th className="p-6 text-right">Amallar</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {currentItems.map(item => (
+                                    <tr key={`${item.type}-${item.id}`} className="group hover:bg-white/5 transition-all">
+                                        <td className="p-6 flex items-center gap-5 min-w-[250px]">
+                                            <div className="relative shrink-0">
+                                                <img src={item.poster_url || item.posterUrl} className="w-14 h-20 rounded-xl object-cover shadow-2xl border border-white/10" alt="" />
+                                                {(item.video_url?.includes('mega.nz') || item.videoUrl?.includes('mega.nz')) && (
+                                                    <div className="absolute -top-1 -right-1 bg-blue-600 text-white p-1 rounded-md shadow-lg" title="Mega.io">
+                                                        <Activity size={10} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[200px]">{item.title}</p>
+                                                <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{item.year} • {item.translator || 'Anilo'}</p>
+                                            </div>
+                                        </td>
+                                        <td className="p-6">
+                                            <div className="flex items-center gap-2 text-white font-black text-sm">
+                                                <Eye size={14} className="text-blue-500"/>
+                                                {(item.view_count || item.views || 0).toLocaleString()}
+                                            </div>
+                                        </td>
                                     <td className="p-6">
                                         <p className="text-[10px] font-bold text-zinc-500 uppercase truncate max-w-[100px]">{item.genre || 'Noma\'lum'}</p>
                                     </td>
@@ -204,13 +212,14 @@ export const MovieManagementPage: React.FC = () => {
                             ))}
                         </tbody>
                     </table>
-                    <div className="p-8 border-t border-white/5 bg-[#0d0d0d]">
-                        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-                    </div>
                 </div>
-            )}
+                <div className="p-8 border-t border-white/5 bg-[#0d0d0d]">
+                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                </div>
+            </div>
+        )}
 
-            {isModalOpen && (
+        {isModalOpen && (
                 <AddMovieModal 
                     initialData={editingItem}
                     onClose={() => !isSaving && setIsModalOpen(false)}

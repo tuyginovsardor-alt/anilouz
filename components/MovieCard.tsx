@@ -12,9 +12,9 @@ interface MovieCardProps {
 export const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
   const posterSrc = movie.poster_url || movie.posterUrl || 'https://via.placeholder.com/400x600?text=No+Poster';
   
-  // Mock view count logic if not present (for visual consistency based on user request)
-  // In real app, movie.view_count would come from DB
-  const viewCount = (movie as any).view_count || Math.floor(Math.random() * 5000) + 500;
+  // Use real view count from DB
+  const viewCount = movie.view_count || 0;
+  const isMega = movie.video_url?.includes('mega.nz') || movie.videoUrl?.includes('mega.nz');
 
   return (
     <div 
@@ -48,8 +48,16 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
               </div>
           </div>
           
-          <div className="absolute top-2 right-2 bg-gradient-to-r from-orange-600 to-red-600 px-2 py-0.5 rounded-md text-[8px] font-black text-white uppercase tracking-wider shadow-lg">
-              {movie.quality}
+          <div className="absolute top-2 right-2 flex flex-col items-end gap-1.5">
+              <div className="bg-gradient-to-r from-orange-600 to-red-600 px-2 py-0.5 rounded-md text-[8px] font-black text-white uppercase tracking-wider shadow-lg">
+                  {movie.quality}
+              </div>
+              {isMega && (
+                  <div className="bg-blue-600/90 backdrop-blur-md px-2 py-0.5 rounded-md text-[7px] font-black text-white uppercase tracking-tighter shadow-xl border border-blue-400/30 flex items-center gap-1">
+                      <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                      Mega.io
+                  </div>
+              )}
           </div>
 
           {/* Bottom Info Overlay (Views & Year) - Always visible or on hover based on preference */}

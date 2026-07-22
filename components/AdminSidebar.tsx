@@ -19,7 +19,7 @@ import { BroadcastIcon } from './icons/BroadcastIcon';
 import { MapIcon } from './icons/MapIcon';
 import { ShieldIcon } from './icons/ShieldIcon';
 import { StampIcon } from './icons/StampIcon';
-import { Layers, Truck, ShoppingCart } from 'lucide-react';
+import { Layers, Truck, ShoppingCart, ExternalLink } from 'lucide-react';
 
 interface AdminSidebarProps {
   currentRole: UserRole;
@@ -76,6 +76,7 @@ const primaryMenuItems: { page: any, label: string, icon: React.ReactNode, roles
 
 // EXTRA CATEGORIES (Secondary/Tools)
 const secondaryMenuItems: { page: any, label: string, icon: React.ReactNode, roles: UserRole[] }[] = [
+    { page: 'dub_site', label: 'Dublyaj Platformasi', icon: <ExternalLink size={20} className="text-orange-500" />, roles: ['owner', 'admin', 'dub'] },
     { page: 'bundle_manager', label: 'Premium To\'plamlar', icon: <Layers size={20} />, roles: ['owner'] },
     { page: 'broadcasts', label: 'Brodkast', icon: <BroadcastIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'sitemap', label: 'SEO Generator', icon: <MapIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
@@ -131,7 +132,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     icon={item.icon}
                     label={item.label}
                     isActive={currentPage === item.page}
-                    onClick={() => onNavigate(item.page)}
+                    onClick={() => {
+                        if (item.page === 'dub_site') {
+                            window.open('https://dub.anilo.uz', '_blank');
+                        } else {
+                            onNavigate(item.page);
+                        }
+                    }}
                 />
               ))}
             </ul>

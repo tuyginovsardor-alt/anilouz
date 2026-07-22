@@ -321,45 +321,65 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ viewUserId, onMainNavi
 
       {/* TABS */}
       <div className="mt-8">
-          <div className="flex border-b border-white/10 bg-[#050505] sticky top-16 z-20">
-              <button onClick={() => setActiveTab('history')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-center relative transition-colors ${activeTab === 'history' ? 'text-orange-500' : 'text-zinc-500 hover:text-white'}`}>
-                  Ko'rilganlar {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>}
+          <div className="flex border-b border-white/5 bg-[#050505] sticky top-16 z-20 px-4">
+              <button onClick={() => setActiveTab('history')} className={`flex-1 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-center relative transition-all ${activeTab === 'history' ? 'text-orange-500 scale-105' : 'text-zinc-600 hover:text-zinc-400'}`}>
+                  KO'RILGANLAR {activeTab === 'history' && <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.8)] rounded-full"></div>}
               </button>
-              <button onClick={() => setActiveTab('saved')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-center relative transition-colors ${activeTab === 'saved' ? 'text-orange-500' : 'text-zinc-500 hover:text-white'}`}>
-                  Moliya {activeTab === 'saved' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>}
+              <button onClick={() => setActiveTab('saved')} className={`flex-1 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-center relative transition-all ${activeTab === 'saved' ? 'text-orange-500 scale-105' : 'text-zinc-600 hover:text-zinc-400'}`}>
+                  HAMYON {activeTab === 'saved' && <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.8)] rounded-full"></div>}
               </button>
           </div>
 
-          <div className="min-h-[200px] bg-[#050505]">
+          <div className="min-h-[300px] bg-[#050505]">
               {activeTab === 'history' && (
-                  <div className="grid grid-cols-3 gap-0.5">
+                  <div className="grid grid-cols-3 gap-0.5 p-0.5">
                       {history.map(movie => (
-                          <div key={movie.id} className="aspect-[2/3] relative bg-zinc-900 cursor-pointer group overflow-hidden">
-                              <img src={movie.poster_url || movie.posterUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100" alt="" />
+                          <div key={movie.id} className="aspect-[2/3] relative bg-zinc-900 cursor-pointer group overflow-hidden" onClick={() => onMainNavigate?.('dashboard')}>
+                              <img src={movie.poster_url || movie.posterUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-100" alt="" />
                               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
-                              <div className="absolute bottom-0 left-0 right-0 p-2">
-                                  <span className="text-[9px] text-white font-black uppercase tracking-wider line-clamp-1 drop-shadow-md">{movie.title}</span>
+                              <div className="absolute bottom-0 left-0 right-0 p-3">
+                                  <span className="text-[8px] text-white font-black uppercase tracking-widest line-clamp-1 drop-shadow-lg">{movie.title}</span>
                               </div>
                           </div>
                       ))}
                       {history.length === 0 && (
-                          <div className="col-span-3 py-20 flex flex-col items-center text-zinc-600">
-                              <Clock size={48} className="mb-4 opacity-50"/>
-                              <p className="text-xs font-bold uppercase tracking-widest">Tarix bo'sh</p>
+                          <div className="col-span-3 py-32 flex flex-col items-center text-zinc-800">
+                              <Clock size={40} className="mb-4 opacity-20"/>
+                              <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40">Tarix topilmadi</p>
                           </div>
                       )}
                   </div>
               )}
 
               {activeTab === 'saved' && (
-                  <div className="p-6">
-                      <div className="bg-gradient-to-br from-zinc-900 to-black rounded-[2rem] p-8 text-white shadow-2xl border border-white/10 relative overflow-hidden mb-6">
-                          <p className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.3em] mb-2">Asosiy Balans</p>
-                          <h2 className="text-4xl font-black tracking-tight">{(profile?.balance || 0).toLocaleString()} <span className="text-lg text-orange-500 font-bold">UZS</span></h2>
+                  <div className="p-6 space-y-6">
+                      <div className="relative group">
+                          <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-600 to-red-600 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                          <div className="relative bg-[#0d0d0d] border border-white/5 rounded-[2.5rem] p-10 text-white shadow-2xl flex flex-col items-center overflow-hidden">
+                              <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12 scale-150"><Wallet size={120} /></div>
+                              <p className="text-zinc-500 text-[8px] font-black uppercase tracking-[0.4em] mb-4">Balans Miqdori</p>
+                              <h2 className="text-5xl font-black tracking-tight flex items-baseline gap-3">
+                                  {(profile?.balance || 0).toLocaleString()} 
+                                  <span className="text-sm text-orange-500 font-black uppercase">uzs</span>
+                              </h2>
+                          </div>
                       </div>
-                      <button onClick={() => onMainNavigate?.('dashboard')} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-zinc-200 transition-all active:scale-95">
-                          <Wallet size={18} /> Hisobni to'ldirish
-                      </button>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <button onClick={() => onMainNavigate?.('shop')} className="py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:bg-zinc-200 transition-all active:scale-95">
+                            <Wallet size={16} /> To'ldirish
+                        </button>
+                        <button onClick={() => onMainNavigate?.('dashboard')} className="py-4 bg-zinc-900 text-white border border-white/5 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all active:scale-95">
+                            <Clock size={16} /> Tarix
+                        </button>
+                      </div>
+
+                      <div className="bg-orange-600/5 border border-orange-500/10 rounded-2xl p-4 flex items-center gap-4">
+                          <div className="p-2 bg-orange-600/10 rounded-lg text-orange-500"><Info size={18}/></div>
+                          <p className="text-[10px] text-zinc-500 leading-relaxed font-bold uppercase tracking-tight">
+                              Sizning balansingiz orqali premium obuna va do'kondan mahsulotlar xarid qilishingiz mumkin.
+                          </p>
+                      </div>
                   </div>
               )}
           </div>

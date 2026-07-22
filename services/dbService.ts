@@ -35,6 +35,11 @@ export const normalizeUrl = (url: string): string => {
             normalized = `https://lh3.googleusercontent.com/d/${fileId}`;
         }
     }
+    // Support Mega.io links (simple normalization)
+    if (normalized.includes('mega.nz')) {
+        // Mega links are usually direct enough, but we ensure they are clean
+        normalized = normalized.split('!')[0] + '!' + normalized.split('!').slice(1).join('!');
+    }
     return normalized;
 };
 
@@ -111,7 +116,7 @@ export const getAdminAllContent = async (): Promise<any[]> => {
             poster_url: normalizeUrl(m.poster_url || m.posterUrl || ''),
             videoUrl: normalizeUrl(m.video_url || m.videoUrl || ''),
             video_url: normalizeUrl(m.video_url || m.videoUrl || ''),
-            view_count: m.view_count || 0 
+            view_count: m.view_count || m.views || 0 
         }));
         
         const community = (fandubs || []).map(f => ({ 
