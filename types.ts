@@ -315,6 +315,15 @@ export interface PaymentRequestDB {
     profiles?: { full_name: string; email: string; };
 }
 
+export enum Sender { User, Bot, System }
+export interface Message {
+  id: string;
+  text: string;
+  sender: Sender;
+  timestamp: number;
+  isError?: boolean;
+}
+
 export interface ATCWallet {
   user_id: string;
   balance: number;
