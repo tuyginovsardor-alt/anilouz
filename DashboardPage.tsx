@@ -12,11 +12,15 @@ import { SavedPage } from './SavedPage';
 import { DashboardSupportPage } from './components/DashboardSupportPage';
 import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { getSocialLinks } from './services/dbService';
+import { Footer } from './components/Footer';
 import { 
-    LogOut, Settings, CreditCard, History, ShieldCheck, 
+    LogOut, Settings, CreditCard, History as HistoryIcon, ShieldCheck, 
     Instagram, Send, Youtube, Facebook, MessageCircle, 
-    Globe, ExternalLink, Mic, Star, LayoutGrid, ChevronRight
+    Globe, ExternalLink, Mic, Star, LayoutGrid, ChevronRight,
+    Terminal, Filter, List, Clock as ClockIcon
 } from 'lucide-react';
+
+import { RightSidebar } from './components/RightSidebar';
 
 interface DashboardPageProps {
   currentPage: DashboardSubPage;
@@ -161,7 +165,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
                                 <button onClick={() => onNavigate('history')} className="group w-full flex flex-col p-6 bg-white/5 border border-white/5 rounded-[2.5rem] hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95">
                                     <div className="w-12 h-12 bg-purple-600/20 text-purple-500 rounded-2xl flex items-center justify-center mb-4">
-                                        <History size={24}/>
+                                        <HistoryIcon size={24}/>
                                     </div>
                                     <p className="text-white font-bold text-lg">Tarix</p>
                                     <p className="text-gray-500 text-xs mt-1">Ko'rilgan animelar</p>
@@ -212,8 +216,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
 
     return (
-        <div className={currentPage === 'main' ? "w-full" : "container mx-auto px-4 pt-4"}>
-            {renderContent()}
+        <div className="flex flex-col min-h-screen">
+            <div className={currentPage === 'main' ? "w-full" : "container mx-auto px-4 pt-4"}>
+                <div className={`grid grid-cols-1 ${currentPage === 'main' ? 'lg:grid-cols-12' : ''} gap-12`}>
+                    <div className={currentPage === 'main' ? 'lg:col-span-9' : 'w-full'}>
+                        {renderContent()}
+                    </div>
+                    {currentPage === 'main' && (
+                        <div className="lg:col-span-3">
+                            <RightSidebar />
+                        </div>
+                    )}
+                </div>
+            </div>
+            <Footer onNavigate={onMainNavigate} />
         </div>
     );
 };

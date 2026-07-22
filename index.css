@@ -66,6 +66,22 @@
     100% { transform: translateY(-200px) scale(1.5); opacity: 0; }
 }
 
-.animate-float-up {
-    animation: floatUp 3s ease-out forwards;
+@layer utilities {
+  .mask-gradient {
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  }
+}
+
+.hero-gradient {
+    background: linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.8) 70%, #050505 100%);
+}
+
+.text-glow {
+    text-shadow: 0 0 30px rgba(249, 115, 22, 0.4);
+}
+
+.glass-morphism {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }

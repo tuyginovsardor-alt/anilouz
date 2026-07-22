@@ -255,14 +255,55 @@ export interface LiveChatMessage {
     created_at: string;
 }
 
-export enum Sender { User, Bot, System }
-export interface Message {
-  id: string;
-  text: string;
-  sender: Sender;
-  timestamp: number;
-  isError?: boolean;
+export interface TopAnime {
+    id: number;
+    title: string;
+    image: string;
+    rating: number;
 }
+
+export interface ScheduleItem {
+    time: string;
+    title: string;
+    episode: number;
+}
+
+export interface Category {
+    id: number;
+    name: string;
+    count: number;
+}
+
+export const CATEGORIES: Category[] = [
+    { id: 1, name: 'Action', count: 1240 },
+    { id: 2, name: 'Adventure', count: 980 },
+    { id: 3, name: 'Comedy', count: 1150 },
+    { id: 4, name: 'Drama', count: 860 },
+    { id: 5, name: 'Fantasy', count: 1030 },
+    { id: 6, name: 'Horror', count: 320 },
+    { id: 7, name: 'Romance', count: 780 },
+    { id: 8, name: 'School', count: 540 },
+    { id: 9, name: 'Sci-Fi', count: 670 },
+    { id: 10, name: 'Slice of Life', count: 480 },
+    { id: 11, name: 'Sports', count: 410 },
+    { id: 12, name: 'Supernatural', count: 690 },
+];
+
+export const TOP_ANIME: TopAnime[] = [
+    { id: 1, title: 'Fullmetal Alchemist: Brotherhood', image: 'https://images.unsplash.com/photo-1541562232579-512a21360020?auto=format&fit=crop&q=80&w=200', rating: 9.6 },
+    { id: 2, title: 'Attack on Titan Final Season', image: 'https://images.unsplash.com/photo-1541562232579-512a21360020?auto=format&fit=crop&q=80&w=200', rating: 9.4 },
+    { id: 3, title: 'Death Note', image: 'https://images.unsplash.com/photo-1541562232579-512a21360020?auto=format&fit=crop&q=80&w=200', rating: 9.0 },
+    { id: 4, title: 'One Piece', image: 'https://images.unsplash.com/photo-1541562232579-512a21360020?auto=format&fit=crop&q=80&w=200', rating: 8.9 },
+    { id: 5, title: 'Jujutsu Kaisen (S02)', image: 'https://images.unsplash.com/photo-1541562232579-512a21360020?auto=format&fit=crop&q=80&w=200', rating: 8.8 },
+];
+
+export const SCHEDULE: ScheduleItem[] = [
+    { time: '18:00', title: 'Solo Leveling (S02)', episode: 8 },
+    { time: '18:30', title: 'Mashle: Magic and Muscles', episode: 4 },
+    { time: '19:00', title: 'Kimetsu no Yaiba', episode: 6 },
+    { time: '19:30', title: 'Wind Breaker', episode: 10 },
+    { time: '20:00', title: 'Sen va men Qarama-qarshi 2', episode: 3 },
+];
 
 export interface PaymentRequestDB {
     id: number;

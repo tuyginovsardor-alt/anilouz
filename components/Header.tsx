@@ -128,19 +128,26 @@ export const Header: React.FC<HeaderProps> = ({
                     )}
                 </div>
 
-                <nav className="hidden xl:flex items-center gap-4">
-                    <button onClick={() => onNavigate('dashboard')} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all ${currentPage === 'dashboard' ? 'bg-white/10 border-white/10' : 'hover:bg-white/5 border-transparent'}`}>
-                        <Play size={20} fill={currentPage === 'dashboard' ? "currentColor" : "none"} className={currentPage === 'dashboard' ? 'text-orange-600' : 'text-zinc-500'} />
-                        <p className="text-sm font-black uppercase tracking-wide">Katalog</p>
-                    </button>
-                    <button onClick={() => onNavigate('studio')} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all ${currentPage === 'studio' ? 'bg-white/10 border-white/10' : 'hover:bg-white/5 border-transparent'}`}>
-                        <Mic size={20} className={currentPage === 'studio' ? 'text-purple-600' : 'text-zinc-500'} />
-                        <p className="text-sm font-black uppercase tracking-wide">Fandub</p>
-                    </button>
-                    <button onClick={() => onNavigate('chat')} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all ${currentPage === 'chat' ? 'bg-white/10 border-white/10' : 'hover:bg-white/5 border-transparent'}`}>
-                        <MessageSquare size={20} className={currentPage === 'chat' ? 'text-orange-600' : 'text-zinc-500'} />
-                        <p className="text-sm font-black uppercase tracking-wide">Suhbat</p>
-                    </button>
+                <nav className="hidden lg:flex items-center gap-6">
+                    {['BOSH SAHIFA', 'ANIME', 'DUB SAHIFAMIZ', 'KATEGORIYALAR', 'YANGILIKLAR', 'JADVAL', 'MANGA', 'FORUM'].map((item) => (
+                        <button 
+                            key={item}
+                            onClick={() => {
+                                if (item === 'ANIME') onNavigate('catalog');
+                                else if (item === 'BOSH SAHIFA') onNavigate('dashboard');
+                                else if (item === 'KATEGORIYALAR') onNavigate('catalog');
+                                else if (item === 'DUB SAHIFAMIZ') window.open('https://dub.anilo.uz', '_blank');
+                                else onNavigate('dashboard');
+                            }} 
+                            className={`text-[10px] font-black tracking-[0.2em] uppercase transition-all ${
+                                (item === 'BOSH SAHIFA' && currentPage === 'dashboard') || 
+                                (item === 'ANIME' && currentPage === 'catalog') 
+                                ? 'text-orange-500' : 'text-zinc-400 hover:text-white'
+                            }`}
+                        >
+                            {item}
+                        </button>
+                    ))}
                 </nav>
             </div>
 
