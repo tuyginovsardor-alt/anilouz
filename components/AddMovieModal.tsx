@@ -63,6 +63,7 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
     const [videoSource, setVideoSource] = useState<string | File>('');
     const [status, setStatus] = useState<'ongoing' | 'completed'>('completed');
     const [accessType, setAccessType] = useState<'free' | 'premium'>('free');
+    const [type, setType] = useState<string>('anime');
     
     const [isSaving, setIsSaving] = useState(isSavingProp);
     const [posterProgress, setPosterProgress] = useState<number | null>(null);
@@ -184,6 +185,7 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             posterType,
             is_series,
             status,
+            type,
             access_type: accessType,
             videoSource: !is_series ? (videoSourceType === 'file' ? videoUrl : videoSource) : undefined,
             video_id: !is_series ? initialData?.video_id : undefined,
@@ -213,6 +215,20 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Media Turi</label>
+                            <select 
+                                value={type} 
+                                onChange={(e) => setType(e.target.value)}
+                                disabled={isSaving}
+                                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white font-bold"
+                            >
+                                <option value="anime">ANIME</option>
+                                <option value="kino">KINO</option>
+                                <option value="kdrama">KDRAMA</option>
+                                <option value="multfilm">MULTFILM</option>
+                            </select>
+                        </div>
+                        <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">Holati</label>
                             <select 
                                 value={status} 
@@ -224,18 +240,19 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                                 <option value="ongoing">Davom etmoqda (Ongoing)</option>
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Kirish turi (Access)</label>
-                            <select 
-                                value={accessType} 
-                                onChange={(e) => setAccessType(e.target.value as 'free' | 'premium')}
-                                disabled={isSaving}
-                                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white font-bold"
-                            >
-                                <option value="free" className="text-green-400">BEPUL (Hamma ko'radi)</option>
-                                <option value="premium" className="text-yellow-400">PREMIUM (Faqat obunachilar)</option>
-                            </select>
-                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Kirish turi (Access)</label>
+                        <select 
+                            value={accessType} 
+                            onChange={(e) => setAccessType(e.target.value as 'free' | 'premium')}
+                            disabled={isSaving}
+                            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white font-bold"
+                        >
+                            <option value="free" className="text-green-400">BEPUL (Hamma ko'radi)</option>
+                            <option value="premium" className="text-yellow-400">PREMIUM (Faqat obunachilar)</option>
+                        </select>
                     </div>
 
                     <div>

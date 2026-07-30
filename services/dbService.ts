@@ -526,8 +526,8 @@ export const uploadToCodeUsta = async (
 ): Promise<{ url: string; id: string }> => {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        // O'zimizning proxy serverimizga murojaat qilamiz
-        const uploadUrl = '/api/upload';
+        // Yangi storage server IP manzili (api.anilo.uz o'rniga)
+        const uploadUrl = 'http://192.155.84.148/upload';
         
         xhr.open('POST', uploadUrl);
 
@@ -542,26 +542,19 @@ export const uploadToCodeUsta = async (
             if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                     const data = JSON.parse(xhr.responseText);
-                    // TechMentor /f/{id} formatida qaytaradi
-                    const apiUrl = import.meta.env.VITE_CODEUSTA_API_URL || 'https://api.techmentor.uz';
                     resolve({
-                        url: data.url || `${apiUrl.replace(/\/$/, '')}/f/${data.id}`,
-                        id: data.id
+                        url: data.url,
+                        id: data.filename
                     });
                 } catch (e) {
-                    reject(new Error('Javobni o\'qib bo\'lmadi'));
+                    reject(new Error('Response parsing error'));
                 }
             } else {
-                try {
-                    const errorData = JSON.parse(xhr.responseText);
-                    reject(new Error(errorData.error || `Server xatosi (${xhr.status})`));
-                } catch (e) {
-                    reject(new Error(`Server xatosi (${xhr.status})`));
-                }
+                reject(new Error(`Server xatosi (${xhr.status})`));
             }
         };
 
-        xhr.onerror = () => reject(new Error('Tarmoq xatosi (Proxy bilan bog\'lanib bo\'lmadi)'));
+        xhr.onerror = () => reject(new Error('Tarmoq xatosi'));
 
         const formData = new FormData();
         formData.append('file', file);

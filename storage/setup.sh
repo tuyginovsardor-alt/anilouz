@@ -4,7 +4,7 @@
 echo "--- Anilo Storage & API Setup ---"
 
 # Prompt for Supabase details
-read -p "Supabase URL kiriting: " sb_url
+read -p "Supabase URL kiriting (Masalan: https://xyz.supabase.co): " sb_url
 read -p "Supabase Service Role Key kiriting: " sb_key
 read -p "Server IP manzilini kiriting (DNS pishguncha): " server_ip
 
