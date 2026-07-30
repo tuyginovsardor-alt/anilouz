@@ -63,7 +63,7 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
     const [videoSource, setVideoSource] = useState<string | File>('');
     const [status, setStatus] = useState<'ongoing' | 'completed'>('completed');
     const [accessType, setAccessType] = useState<'free' | 'premium'>('free');
-    const [type, setType] = useState<string>('anime');
+    const [type, setType] = useState<string>(initialData?.type || 'anime');
     
     const [isSaving, setIsSaving] = useState(isSavingProp);
     const [posterProgress, setPosterProgress] = useState<number | null>(null);

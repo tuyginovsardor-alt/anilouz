@@ -35,6 +35,20 @@ admin_states = {}
 # 4. Enter Year
 # 5. Enter Genre
 
+def get_type_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(types.InlineKeyboardButton(text="ANIME", callback_data="type_anime"))
+    builder.row(types.InlineKeyboardButton(text="KINO", callback_data="type_kino"))
+    builder.row(types.InlineKeyboardButton(text="KDRAMA", callback_data="type_kdrama"))
+    builder.row(types.InlineKeyboardButton(text="MULTFILM", callback_data="type_multfilm"))
+    return builder.as_markup()
+
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    if message.from_user.id not in ADMINS:
+        return await message.answer("Siz admin emassiz!")
+    await message.answer("Xush kelibsiz Admin! Media turini tanlang:", reply_markup=get_type_keyboard())
+
 @dp.callback_query(F.data.startswith("type_"))
 async def select_type(callback: types.CallbackQuery):
     selected_type = callback.data.split("_")[1]
@@ -105,18 +119,34 @@ async def handle_text_inputs(message: types.Message):
 
     elif step == "genre":
         state["genre"] = message.text
+        state["step"] = "plot"
+        await message.answer("Qisqacha mazmunini (Plot) kiriting:")
+
+    elif step == "plot":
+        state["plot"] = message.text
+        state["step"] = "poster"
+        await message.answer("Poster URL manzilini kiriting (Rasm havolasi):\n(Standart rasm uchun '.' yuboring)")
+
+    elif step == "poster":
+        if message.text != ".":
+            state["poster_url"] = message.text
+        else:
+            state["poster_url"] = "https://via.placeholder.com/400x600?text=No+Poster"
         
         # Final Save to Supabase
         try:
             movie_data = {
                 "title": state["title"],
-                "poster_url": "https://via.placeholder.com/400x600?text=No+Poster",
+                "poster_url": state["poster_url"],
                 "video_url": state["video_url"],
                 "type": state["type"],
                 "year": state["year"],
                 "genre": state["genre"],
+                "plot": state["plot"],
                 "rating": 5.0,
-                "view_count": 0
+                "view_count": 0,
+                "status": "completed",
+                "access_type": "free"
             }
             
             supabase.table("movies").insert(movie_data).execute()
