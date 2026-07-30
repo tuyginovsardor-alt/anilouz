@@ -5,7 +5,7 @@ import { getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { MovieCard } from './components/MovieCard';
-import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight, Bookmark, Plus, Moon, Crown } from 'lucide-react';
+import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight, Bookmark, Plus, Moon, Crown, Compass } from 'lucide-react';
 import { useNotification } from './hooks/useNotification';
 import { Page } from './App';
 
@@ -337,6 +337,78 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                     </div>
                 </div>
 
+                {/* 2. ANIMELAR */}
+                <div>
+                    <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center gap-4">
+                            <div className="h-6 w-1 bg-purple-600 rounded-full"></div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Animelar</h2>
+                        </div>
+                        <button className="flex items-center gap-2 text-zinc-500 hover:text-purple-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                            Barchasi
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+                        {allMovies.filter(m => m.type === 'anime').slice(0, 6).map(movie => (
+                            <MovieCard key={`anime-${movie.id}`} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                        ))}
+                        {allMovies.filter(m => m.type === 'anime').length === 0 && (
+                            <div className="col-span-full py-10 text-center bg-white/5 rounded-[2rem] border border-dashed border-white/10">
+                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Hozircha animelar yo'q</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 3. TARJIMA FILMLAR */}
+                <div>
+                    <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center gap-4">
+                            <div className="h-6 w-1 bg-blue-600 rounded-full"></div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Tarjima Filmlar</h2>
+                        </div>
+                        <button className="flex items-center gap-2 text-zinc-500 hover:text-blue-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                            Barchasi
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+                        {allMovies.filter(m => m.type === 'kino').slice(0, 6).map(movie => (
+                            <MovieCard key={`kino-${movie.id}`} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                        ))}
+                        {allMovies.filter(m => m.type === 'kino').length === 0 && (
+                            <div className="col-span-full py-10 text-center bg-white/5 rounded-[2rem] border border-dashed border-white/10">
+                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Hozircha filmlar yo'q</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 4. DORAMALAR */}
+                <div>
+                    <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center gap-4">
+                            <div className="h-6 w-1 bg-emerald-600 rounded-full"></div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Doramalar</h2>
+                        </div>
+                        <button className="flex items-center gap-2 text-zinc-500 hover:text-emerald-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                            Barchasi
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+                        {allMovies.filter(m => m.type === 'kdrama').slice(0, 6).map(movie => (
+                            <MovieCard key={`kdrama-${movie.id}`} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                        ))}
+                        {allMovies.filter(m => m.type === 'kdrama').length === 0 && (
+                            <div className="col-span-full py-10 text-center bg-white/5 rounded-[2rem] border border-dashed border-white/10">
+                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Hozircha doramalar yo'q</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* KATEGORIYALAR SECTION */}
                 <div>
                     <div className="flex items-center justify-between mb-12">
@@ -372,6 +444,48 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                                 </div>
                                 <ChevronRight size={14} className="text-zinc-800 group-hover:text-red-600" />
                             </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* TOP REYTING SECTION */}
+                <div>
+                    <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center gap-4">
+                            <div className="h-6 w-1 bg-yellow-500 rounded-full"></div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Top Reyting</h2>
+                        </div>
+                        <button className="flex items-center gap-2 text-zinc-500 hover:text-yellow-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                            To'liq Ro'yxat
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[...allMovies].sort((a,b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 3).map((movie, idx) => (
+                            <div key={`top-${movie.id}`} className="group relative bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-orange-500/50 transition-all">
+                                <div className="flex items-center p-4 gap-6">
+                                    <div className="relative w-24 h-32 flex-shrink-0 rounded-2xl overflow-hidden">
+                                        <img src={movie.poster_url || movie.posterUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                        <div className="absolute top-2 left-2 w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center font-black text-sm">
+                                            #{idx + 1}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-sm font-black text-white uppercase tracking-tight mb-2 line-clamp-1">{movie.title}</h3>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className="text-[10px] font-black text-zinc-500 uppercase">{movie.year}</span>
+                                            <span className="text-[10px] font-black text-orange-500 uppercase">{movie.type}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-zinc-400">
+                                            <Play size={12} className="text-orange-500" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">{movie.view_count || 0} ko'rilgan</span>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => onMovieClick(movie)} className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center hover:bg-orange-600 hover:text-white transition-all">
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>

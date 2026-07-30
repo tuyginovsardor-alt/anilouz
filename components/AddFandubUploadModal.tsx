@@ -21,6 +21,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
     const [genre, setGenre] = useState<string[]>([]);
     const [desc, setDesc] = useState('');
     const [access, setAccess] = useState<'free' | 'premium'>('free');
+    const [type, setType] = useState<string>('anime');
     const [tags, setTags] = useState('');
     const [is_series, setIsSeries] = useState(true);
     
@@ -43,6 +44,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
             setGenre(initialData.genre.split(',').map((g: string) => g.trim()));
             setDesc(initialData.desc);
             setAccess(initialData.access);
+            setType(initialData.type || 'anime');
             setTags(initialData.tags || '');
             setIsSeries(initialData.is_series !== undefined ? initialData.is_series : true);
             setPosterUrl(initialData.poster_url || initialData.posterUrl || '');
@@ -109,7 +111,7 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
 
         onSave({
             id: initialData?.id,
-            title, year, genre: genre.join(', '), desc, access, tags, is_series,
+            title, year, genre: genre.join(', '), desc, access, tags, is_series, type,
             poster_url: posterUrl,
             episodes
         });
@@ -141,6 +143,15 @@ export const AddFandubUploadModal: React.FC<AddFandubUploadModalProps> = ({ onCl
                                 <select value={access} onChange={e=>setAccess(e.target.value as any)} className="w-full bg-zinc-900 border border-white/10 rounded-2xl p-5 text-white font-bold appearance-none">
                                     <option value="free">BEPUL</option>
                                     <option value="premium">PREMIUM</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Media Turi</label>
+                                <select value={type} onChange={e=>setType(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-2xl p-5 text-white font-bold appearance-none">
+                                    <option value="anime">ANIME</option>
+                                    <option value="kino">KINO</option>
+                                    <option value="kdrama">KDRAMA</option>
+                                    <option value="multfilm">MULTFILM</option>
                                 </select>
                             </div>
                         </div>

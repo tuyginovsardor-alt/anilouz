@@ -25,6 +25,13 @@ export interface UserProfile {
   created_at: string;
 }
 
+export enum MovieType {
+  ANIME = 'anime',
+  KINO = 'kino',
+  KDRAMA = 'kdrama',
+  MULTFILM = 'multfilm'
+}
+
 export interface Movie {
   id?: number;
   title: string;
@@ -50,6 +57,7 @@ export interface Movie {
   is_series?: boolean;
   view_count?: number;
   channel_id?: string;
+  type?: MovieType;
 }
 
 export interface Episode {

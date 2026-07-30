@@ -370,7 +370,8 @@ export const addMovieToDB = async (movieData: any) => {
         quality: rest.quality || 'HD',
         rating: rest.rating ? Number(rest.rating) : 5.0,
         is_archived: rest.is_archived ?? false,
-        view_count: rest.view_count || 0
+        view_count: rest.view_count || 0,
+        type: rest.type || 'anime'
     };
 
     const { data, error } = await supabase.from('movies').insert(cleanMovie).select().single();
@@ -412,7 +413,8 @@ export const updateMovieInDB = async (id: number, movieData: any) => {
         language: rest.language || 'UZ',
         quality: rest.quality || 'HD',
         rating: rest.rating ? Number(rest.rating) : 5.0,
-        is_archived: rest.is_archived ?? false
+        is_archived: rest.is_archived ?? false,
+        type: rest.type || 'anime'
     };
 
     const { error } = await supabase.from('movies').update(cleanMovie).eq('id', id);
