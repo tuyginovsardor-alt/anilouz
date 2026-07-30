@@ -3,21 +3,20 @@
 # Anilo Admin Bot Setup Script
 echo "--- Anilo Admin Bot Setup ---"
 
-# Check if .env exists, if not, we need more info
 if [ ! -f ".env" ]; then
-    echo ".env fayli topilmadi. Avval setup.sh ni ishga tushiring yoki qo'lda yarating."
+    echo ".env fayli topilmadi. Avval setup.sh ni ishga tushiring."
     exit 1
 fi
 
 # Prompt for credentials
 read -p "Telegram Bot Token kiriting: " bot_token
-read -p "Admin IDlarini kiriting (vergul bilan ajrating, masalan: 8021115446,8304278813): " admin_ids
+read -p "Admin IDlarini kiriting (vergul bilan): " admin_ids
 
 # Append to .env
 echo "BOT_TOKEN=$bot_token
 ADMIN_IDS=$admin_ids" >> .env
 
-# Ensure requirements are installed in venv
+# Install requirements again just in case
 source venv/bin/activate
 pip install -r requirements.txt
 

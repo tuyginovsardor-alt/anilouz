@@ -6,33 +6,33 @@ echo "--- Anilo Storage & API Setup ---"
 # Prompt for Supabase details
 read -p "Supabase URL kiriting: " sb_url
 read -p "Supabase Service Role Key kiriting: " sb_key
-read -p "Server IP manzilini kiriting (DNS pishguncha ishlatiladi): " server_ip
+read -p "Server IP manzilini kiriting (DNS pishguncha): " server_ip
 
 # Create .env
 echo "SUPABASE_URL=$sb_url
 SUPABASE_SERVICE_ROLE_KEY=$sb_key
 STORAGE_URL=http://$server_ip/films/
-# DNS tayyor bo'lganda STORAGE_URL=https://api.anilo.uz/films/ qilib o'zgartirish mumkin" > .env
+SERVER_IP=$server_ip" > .env
 
 # Update system
 sudo apt update
 sudo apt install python3-pip python3-venv caddy -y
 
-# Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
-fi
-
-# Install/Update requirements
+# Create virtual environment
+rm -rf venv
+python3 -m venv venv
 source venv/bin/activate
+
+# Install requirements INSIDE venv
 pip install --upgrade pip
+pip install wheel
 pip install -r requirements.txt
 
 # Create storage directory
 mkdir -p films
 chmod 777 films
 
-# Setup Caddyfile (handling both IP and domain if possible)
+# Setup Caddyfile
 echo ":80 {
     reverse_proxy localhost:8000
 }" | sudo tee /etc/caddy/Caddyfile
@@ -48,7 +48,7 @@ After=network.target
 User=$USER
 WorkingDirectory=$(pwd)
 EnvironmentFile=$(pwd)/.env
-ExecStart=$(pwd)/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+ExecStart=$(pwd)/venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
 Restart=always
 
 [Install]
