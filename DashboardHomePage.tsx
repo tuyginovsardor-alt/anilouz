@@ -409,6 +409,30 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                     </div>
                 </div>
 
+                {/* 5. MULTFILMLAR */}
+                <div>
+                    <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center gap-4">
+                            <div className="h-6 w-1 bg-pink-600 rounded-full"></div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Multfilmlar</h2>
+                        </div>
+                        <button className="flex items-center gap-2 text-zinc-500 hover:text-pink-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                            Barchasi
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+                        {allMovies.filter(m => m.type === 'multfilm').slice(0, 6).map(movie => (
+                            <MovieCard key={`multfilm-${movie.id}`} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
+                        ))}
+                        {allMovies.filter(m => m.type === 'multfilm').length === 0 && (
+                            <div className="col-span-full py-10 text-center bg-white/5 rounded-[2rem] border border-dashed border-white/10">
+                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Hozircha multfilmlar yo'q</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* KATEGORIYALAR SECTION */}
                 <div>
                     <div className="flex items-center justify-between mb-12">

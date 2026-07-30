@@ -1,7 +1,15 @@
 #!/bin/bash
 
 # Anilo Admin Bot Setup Script
-echo "Starting Anilo Admin Bot Setup..."
+echo "--- Anilo Admin Bot Setup ---"
+
+# Prompt for credentials
+read -p "Telegram Bot Token kiriting: " bot_token
+read -p "Admin IDlarini kiriting (vergul bilan ajrating, masalan: 123,456): " admin_ids
+
+# Append to .env
+echo "BOT_TOKEN=$bot_token
+ADMIN_IDS=$admin_ids" >> .env
 
 # Setup Systemd Service for Bot
 echo "[Unit]
@@ -11,6 +19,7 @@ After=network.target
 [Service]
 User=$USER
 WorkingDirectory=$(pwd)
+EnvironmentFile=$(pwd)/.env
 ExecStart=$(pwd)/venv/bin/python bot.py
 Restart=always
 
@@ -21,4 +30,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable anilo-bot
 sudo systemctl start anilo-bot
 
-echo "Bot Setup Complete! Admin bot is now running."
+echo "Bot Setup Complete! Admin bot is running."

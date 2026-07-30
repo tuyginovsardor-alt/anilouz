@@ -1,36 +1,40 @@
 import asyncio
 import logging
 import os
-import sqlite3
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import FSInputFile
-import aiohttp
+from supabase import create_client, Client
+from dotenv import load_dotenv
 
-# KONFIGURATSIYA
-BOT_TOKEN = "BOT_TOKEN_SHER_YERGA"
-ADMINS = [8021115446, 8304278813]
+# Load environment variables
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") # Use service role for admin bypass
+ADMINS = [int(id) for id in os.getenv("ADMIN_IDS", "").split(",") if id]
+
 STORAGE_URL = "https://api.anilo.uz/films/"
 STORAGE_PATH = "films/"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     if message.from_user.id not in ADMINS:
         return await message.answer("Siz admin emassiz!")
-    await message.answer("Xush kelibsiz Admin! Video faylni yoki linkni yuboring, men uni storagega qo'shaman.")
+    await message.answer("Xush kelibsiz Admin! Video faylni yuboring, men uni storagega va saytga qo'shaman.")
 
 @dp.message()
 async def handle_message(message: types.Message):
     if message.from_user.id not in ADMINS:
         return
 
-    # Agar video fayl bo'lsa
     if message.video:
-        msg = await message.answer("Video yuklanmoqda... Kuting.")
+        msg = await message.answer("Video yuklanmoqda va Supabasega qo'shilmoqda...")
         file_id = message.video.file_id
         file = await bot.get_file(file_id)
         
@@ -39,16 +43,25 @@ async def handle_message(message: types.Message):
         
         await bot.download_file(file.file_path, destination)
         
-        url = f"{STORAGE_URL}{file_name}"
-        await msg.edit_text(f"Muvaffaqiyatli yuklandi!\nURL: {url}")
+        video_url = f"{STORAGE_URL}{file_name}"
         
-    # Agar havola (link) bo'lsa
-    elif message.text and message.text.startswith("http"):
-        msg = await message.answer("Havola orqali yuklash boshlandi (Max 25 min)...")
-        # Bu yerda yuklash logikasi (masalan yt-dlp yoki aiohttp orqali)
-        # Soddalik uchun hozircha faqat xabar
-        await asyncio.sleep(5)
-        await msg.edit_text("Havola qabul qilindi. Server fonda yuklamoqda.")
+        # Supabasega ma'lumot qo'shish
+        try:
+            movie_data = {
+                "title": message.video.file_name or "Yangi Film",
+                "poster_url": "https://via.placeholder.com/400x600?text=No+Poster",
+                "video_url": video_url,
+                "type": "anime", # Default type
+                "year": "2026",
+                "genre": "Action",
+                "rating": 5.0,
+                "view_count": 0
+            }
+            
+            supabase.table("movies").insert(movie_data).execute()
+            await msg.edit_text(f"Muvaffaqiyatli yuklandi va saytga qo'shildi!\nURL: {video_url}")
+        except Exception as e:
+            await msg.edit_text(f"Xatolik yuz berdi: {str(e)}")
 
 async def main():
     await dp.start_polling(bot)

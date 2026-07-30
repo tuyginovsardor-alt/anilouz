@@ -1,12 +1,18 @@
 #!/bin/bash
 
 # Anilo Storage Setup Script
-echo "Starting Anilo Storage Setup..."
+echo "--- Anilo Storage & API Setup ---"
+
+# Prompt for Supabase details
+read -p "Supabase URL kiriting: " sb_url
+read -p "Supabase Service Role Key kiriting: " sb_key
+
+# Create .env
+echo "SUPABASE_URL=$sb_url
+SUPABASE_SERVICE_ROLE_KEY=$sb_key" > .env
 
 # Update system
 sudo apt update && sudo apt upgrade -y
-
-# Install Python and dependencies
 sudo apt install python3-pip python3-venv caddy -y
 
 # Create virtual environment
@@ -22,7 +28,6 @@ echo "api.anilo.uz {
     reverse_proxy localhost:8000
 }" | sudo tee /etc/caddy/Caddyfile
 
-# Restart Caddy
 sudo systemctl restart caddy
 
 # Setup Systemd Service for FastAPI
@@ -33,6 +38,7 @@ After=network.target
 [Service]
 User=$USER
 WorkingDirectory=$(pwd)
+EnvironmentFile=$(pwd)/.env
 ExecStart=$(pwd)/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
 Restart=always
 
@@ -43,4 +49,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable anilo-storage
 sudo systemctl start anilo-storage
 
-echo "Setup Complete! Backend running on http://api.anilo.uz"
+echo "Setup Complete! API running on http://api.anilo.uz"
