@@ -5,3 +5,6 @@ aiogram
 aiohttp
 aiofiles
 uvloop
+supabase
+python-dotenv
+httpx
