@@ -111,7 +111,8 @@ export const getAdminAllContent = async (): Promise<any[]> => {
         
         const official = (movies || []).map(m => ({ 
             ...m, 
-            type: 'official', 
+            origin: 'official', 
+            media_type: m.type, // Store original type
             posterUrl: normalizeUrl(m.poster_url || m.posterUrl || ''),
             poster_url: normalizeUrl(m.poster_url || m.posterUrl || ''),
             videoUrl: normalizeUrl(m.video_url || m.videoUrl || ''),
@@ -121,7 +122,8 @@ export const getAdminAllContent = async (): Promise<any[]> => {
         
         const community = (fandubs || []).map(f => ({ 
             ...f, 
-            type: 'fandub', 
+            origin: 'fandub', 
+            media_type: f.type || 'anime',
             posterUrl: normalizeUrl(f.poster_url || ''),
             poster_url: normalizeUrl(f.poster_url || ''),
             videoUrl: normalizeUrl(f.video_url || ''),
@@ -526,8 +528,8 @@ export const uploadToCodeUsta = async (
 ): Promise<{ url: string; id: string }> => {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        // Yangi storage server IP manzili (api.anilo.uz o'rniga)
-        const uploadUrl = 'http://192.155.84.148/upload';
+        // Yangi storage server domaini (DNS pishguncha IP ham ishlatilishi mumkin)
+        const uploadUrl = 'http://apibot.wentric.uz/upload';
         
         xhr.open('POST', uploadUrl);
 

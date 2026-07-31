@@ -8,13 +8,23 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
-# Prompt for credentials
-read -p "Telegram Bot Token kiriting: " bot_token
-read -p "Admin IDlarini kiriting (vergul bilan): " admin_ids
+# Load existing .env
+export $(grep -v '^#' .env | xargs)
 
-# Append to .env
-echo "BOT_TOKEN=$bot_token
-ADMIN_IDS=$admin_ids" >> .env
+# Prompt for credentials with defaults
+read -p "Telegram Bot Token kiriting [${BOT_TOKEN:-token}]: " bot_token
+bot_token=${bot_token:-$BOT_TOKEN}
+
+read -p "Admin IDlarini kiriting (vergul bilan) [${ADMIN_IDS:-123456}]: " admin_ids
+admin_ids=${admin_ids:-$ADMIN_IDS}
+
+# Rewrite .env with all values
+echo "SUPABASE_URL=$SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+STORAGE_URL=$STORAGE_URL
+SERVER_IP=$SERVER_IP
+BOT_TOKEN=$bot_token
+ADMIN_IDS=$admin_ids" > .env
 
 # Install requirements again just in case
 source venv/bin/activate

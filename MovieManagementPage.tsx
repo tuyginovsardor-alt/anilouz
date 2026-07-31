@@ -51,7 +51,7 @@ export const MovieManagementPage: React.FC = () => {
                 video_url: data.videoSource, // AddMovieModal-dan kelgan URL
             };
 
-            if (editingItem?.type === 'fandub') {
+            if (editingItem?.origin === 'fandub') {
                 await updateFandubUpload(editingItem.id, {
                     title: data.title,
                     year: data.year,
@@ -62,7 +62,8 @@ export const MovieManagementPage: React.FC = () => {
                     episodes: data.episodes,
                     status: 'approved',
                     is_series: data.is_series,
-                    tags: data.tags
+                    tags: data.tags,
+                    type: data.type
                 });
                 addNotification({ type: 'success', title: 'Yangilandi', message: 'Fandub loyihasi yangilandi.' });
             } else {
@@ -87,7 +88,7 @@ export const MovieManagementPage: React.FC = () => {
         if (!window.confirm(`"${item.title}" ni o'chirmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi.`)) return;
 
         try {
-            if (item.type === 'fandub') {
+            if (item.origin === 'fandub') {
                 await deleteFandubProject(item.id);
             } else {
                 await deleteMovieFromDB(item.id);
@@ -109,7 +110,7 @@ export const MovieManagementPage: React.FC = () => {
 
     const filteredContent = content.filter(item => {
         if (activeTab === 'all') return true;
-        return item.type === activeTab;
+        return item.origin === activeTab;
     });
 
     const totalPages = Math.ceil(filteredContent.length / ITEMS_PER_PAGE);
@@ -155,7 +156,7 @@ export const MovieManagementPage: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {currentItems.map(item => (
-                                    <tr key={`${item.type}-${item.id}`} className="group hover:bg-white/5 transition-all">
+                                    <tr key={`${item.origin}-${item.id}`} className="group hover:bg-white/5 transition-all">
                                         <td className="p-6 flex items-center gap-5 min-w-[250px]">
                                             <div className="relative shrink-0">
                                                 <img src={item.poster_url || item.posterUrl} className="w-14 h-20 rounded-xl object-cover shadow-2xl border border-white/10" alt="" />
@@ -180,12 +181,12 @@ export const MovieManagementPage: React.FC = () => {
                                         <p className="text-[10px] font-bold text-zinc-500 uppercase truncate max-w-[100px]">{item.genre || 'Noma\'lum'}</p>
                                     </td>
                                     <td className="p-6">
-                                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${item.type === 'official' ? 'bg-blue-600/10 text-blue-400 border-blue-500/20' : 'bg-purple-600/10 text-purple-400 border-purple-500/20'}`}>
-                                            {item.type}
+                                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${item.media_type === 'anime' ? 'bg-orange-600/10 text-orange-400 border-orange-500/20' : item.media_type === 'kino' ? 'bg-blue-600/10 text-blue-400 border-blue-500/20' : 'bg-purple-600/10 text-purple-400 border-purple-500/20'}`}>
+                                            {item.media_type || 'Noma\'lum'}
                                         </span>
                                     </td>
                                     <td className="p-6">
-                                        {item.type === 'fandub' ? (
+                                        {item.origin === 'fandub' ? (
                                             <div className="flex items-center gap-2">
                                                 {item.status === 'pending' ? (
                                                     <span className="flex items-center gap-1 bg-yellow-600/20 text-yellow-500 px-2 py-1 rounded text-[8px] font-black uppercase"> <AlertCircle size={10}/> Kutilmoqda</span>
@@ -196,12 +197,12 @@ export const MovieManagementPage: React.FC = () => {
                                                 )}
                                             </div>
                                         ) : (
-                                            <span className="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-[8px] font-black uppercase">Rasmiy</span>
+                                            <span className="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-[8px] font-black uppercase">{item.status === 'ongoing' ? 'Ongoing' : 'Tayyor'}</span>
                                         )}
                                     </td>
                                     <td className="p-6 text-right">
                                         <div className="flex justify-end gap-2">
-                                            {item.type === 'fandub' && item.status === 'pending' && (
+                                            {item.origin === 'fandub' && item.status === 'pending' && (
                                                 <button onClick={() => handleApprove(item.id)} className="p-3 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white rounded-2xl transition-all shadow-xl" title="Tasdiqlash"><Check size={18}/></button>
                                             )}
                                             <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="p-3 bg-white/5 hover:bg-blue-600 text-zinc-500 hover:text-white rounded-2xl transition-all shadow-xl"><EditIcon className="w-5 h-5"/></button>

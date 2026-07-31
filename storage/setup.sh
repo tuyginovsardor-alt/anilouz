@@ -3,10 +3,20 @@
 # Anilo Storage Setup Script
 echo "--- Anilo Storage & API Setup ---"
 
-# Prompt for Supabase details
-read -p "Supabase URL kiriting (Masalan: https://xyz.supabase.co): " sb_url
-read -p "Supabase Service Role Key kiriting: " sb_key
-read -p "Server IP manzilini kiriting (DNS pishguncha): " server_ip
+# Load existing .env if it exists
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+# Prompt for Supabase details with defaults
+read -p "Supabase URL kiriting [${SUPABASE_URL:-https://xyz.supabase.co}]: " sb_url
+sb_url=${sb_url:-$SUPABASE_URL}
+
+read -p "Supabase Service Role Key kiriting [${SUPABASE_SERVICE_ROLE_KEY:-key}]: " sb_key
+sb_key=${sb_key:-$SUPABASE_SERVICE_ROLE_KEY}
+
+read -p "Server IP yoki Domain manzilini kiriting [${SERVER_IP:-apibot.wentric.uz}]: " server_ip
+server_ip=${server_ip:-$SERVER_IP}
 
 # Create .env
 echo "SUPABASE_URL=$sb_url
