@@ -202,10 +202,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     return (
         <div className="flex bg-[#131313] min-h-screen text-white font-sans selection:bg-orange-600/30">
             {/* Left Sidebar */}
-            <aside className="fixed left-0 top-0 h-screen w-[220px] bg-[#1c1b1b] flex flex-col py-6 z-50 border-r border-white/5">
-                <div className="px-6 mb-8 cursor-pointer group" onClick={() => onNavigate('main')}>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full overflow-hidden border border-orange-500/20 bg-black group-hover:scale-105 transition-transform">
+            <aside className="fixed left-0 top-0 h-screen w-48 bg-[#1c1b1b] flex flex-col py-5 z-50 border-r border-white/5">
+                <div className="px-5 mb-6 cursor-pointer group" onClick={() => onNavigate('main')}>
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-orange-500/20 bg-black group-hover:scale-105 transition-transform">
                             {customLogo ? (
                                 <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
                             ) : (
@@ -213,19 +213,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             )}
                         </div>
                         <div>
-                            <h1 className="text-lg font-black text-white tracking-tighter leading-none">ANILO.UZ</h1>
-                            <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.1em]">Anime Platform</p>
+                            <h1 className="text-sm font-black text-white tracking-tighter leading-none">ANILO.UZ</h1>
+                            <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-[0.1em]">Anime Platform</p>
                         </div>
                     </div>
                 </div>
                 
-                <nav className="flex-1 overflow-y-auto no-scrollbar space-y-1">
+                <nav className="flex-1 overflow-y-auto no-scrollbar space-y-0.5">
                     <button 
                         onClick={() => onNavigate('main')}
-                        className={`w-full flex items-center px-4 py-2.5 mx-2 rounded-xl transition-all duration-200 ${currentPage === 'main' ? 'bg-orange-600 text-white font-bold shadow-lg shadow-orange-600/20' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                        className={`w-full flex items-center px-4 py-2 mx-2 rounded-lg transition-all duration-200 ${currentPage === 'main' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
                     >
-                        <Home className="mr-3" size={18} />
-                        <span className="text-xs font-bold">Bosh sahifa</span>
+                        <Home className="mr-2.5" size={16} />
+                        <span className="text-[11px] uppercase tracking-tight">Bosh sahifa</span>
                     </button>
                     
                     {[
@@ -239,39 +239,39 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     ].map((item) => (
                         <button 
                             key={item.label}
-                            className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-2.5 mx-2 rounded-xl transition-all"
+                            className="w-full flex items-center text-zinc-500 hover:text-white hover:bg-white/5 px-4 py-2 mx-2 rounded-lg transition-all"
                         >
-                            <item.icon className="mr-3" size={18} />
-                            <span className="text-xs font-bold">{item.label}</span>
+                            <item.icon className="mr-2.5" size={16} />
+                            <span className="text-[11px] font-bold uppercase tracking-tight">{item.label}</span>
                         </button>
                     ))}
 
-                    <div className="pt-6 pb-2 px-6">
-                        <h3 className="text-zinc-600 font-black text-[9px] uppercase tracking-widest">Top janrlar</h3>
+                    <div className="pt-5 pb-1.5 px-6">
+                        <h3 className="text-zinc-600 font-black text-[8px] uppercase tracking-[0.2em]">Top janrlar</h3>
                     </div>
                     
-                    {['Aksiya', 'Sarguzasht', 'Drama', 'Fantastika', 'Romantika'].map((genre) => (
-                        <button key={genre} className="w-full flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5 px-6 py-1.5 transition-all">
-                            <span className="text-xs font-medium">{genre}</span>
+                    {['Aksiya', 'Sarguzasht', 'Drama', 'Fantastika'].map((genre) => (
+                        <button key={genre} className="w-full flex items-center justify-between text-zinc-500 hover:text-white hover:bg-white/5 px-6 py-1 transition-all">
+                            <span className="text-[10px] font-bold uppercase tracking-tight">{genre}</span>
                         </button>
                     ))}
                     
                     <button 
                         onClick={() => onNavigate('more')}
-                        className={`w-full flex items-center px-4 py-2.5 mx-2 rounded-xl mt-4 transition-all duration-200 ${currentPage === 'more' ? 'bg-orange-600 text-white font-bold shadow-lg shadow-orange-600/20' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                        className={`w-full flex items-center px-4 py-2 mx-2 rounded-lg mt-2 transition-all duration-200 ${currentPage === 'more' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
                     >
-                        <LayoutGrid className="mr-3" size={18} />
-                        <span className="text-xs font-bold">Yana</span>
+                        <LayoutGrid className="mr-2.5" size={16} />
+                        <span className="text-[11px] font-black uppercase tracking-tight">Yana</span>
                     </button>
                 </nav>
 
-                <div className="px-4 mt-auto pt-6 space-y-4">
-                    <div className="bg-[#2a2a2a] rounded-2xl p-4 text-center border border-white/5 group">
-                        <Star className="text-orange-500 mx-auto mb-2 fill-orange-500 group-hover:scale-125 transition-transform" size={20} />
-                        <p className="text-[10px] font-black text-white mb-2 leading-tight uppercase tracking-tight">Reklamasiz tomosha qiling!</p>
+                <div className="px-3 mt-auto pt-4 space-y-3">
+                    <div className="bg-[#2a2a2a] rounded-xl p-3 text-center border border-white/5 group">
+                        <Star className="text-orange-500 mx-auto mb-1.5 fill-orange-500 group-hover:scale-110 transition-transform" size={16} />
+                        <p className="text-[9px] font-black text-white mb-2 leading-tight uppercase tracking-tight">Reklama Yo'q!</p>
                         <button 
                             onClick={() => onNavigate('plans')}
-                            className="w-full bg-orange-600 text-white font-black py-2 rounded-lg text-[9px] hover:brightness-110 transition-all uppercase tracking-widest"
+                            className="w-full bg-orange-600 text-white font-black py-1.5 rounded-lg text-[8px] hover:brightness-110 transition-all uppercase tracking-widest"
                         >
                             PREMIUM
                         </button>
@@ -279,57 +279,57 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
                     <button 
                         onClick={onLogout}
-                        className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-red-600/10 border border-red-600/20 rounded-xl text-red-500 font-black uppercase tracking-widest text-[9px] hover:bg-red-600 hover:text-white transition-all active:scale-95"
+                        className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-600/10 border border-red-600/20 rounded-lg text-red-500 font-black uppercase tracking-widest text-[8px] hover:bg-red-600 hover:text-white transition-all active:scale-95"
                     >
-                        <LogOut size={14}/> Chiqish
+                        <LogOut size={12}/> Chiqish
                     </button>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 ml-[220px] flex flex-col min-h-screen">
+            <div className="flex-1 ml-48 flex flex-col min-h-screen">
                 {/* Top Header */}
-                <header className="h-16 bg-[#131313]/90 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-8 border-b border-white/5">
-                    <div className="flex items-center gap-8 flex-1">
-                        <form onSubmit={handleSearch} className="max-w-md w-full">
+                <header className="h-14 bg-[#131313]/95 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-6 border-b border-white/5">
+                    <div className="flex items-center gap-6 flex-1">
+                        <form onSubmit={handleSearch} className="max-w-xs w-full">
                             <div className="relative group">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-orange-500 transition-colors" size={16} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-orange-500 transition-colors" size={14} />
                                 <input 
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-[#2a2a2a] border-none rounded-full pl-10 pr-4 py-2 text-xs focus:ring-1 focus:ring-orange-500/50 transition-all placeholder:text-zinc-600 text-white" 
+                                    className="w-full bg-[#2a2a2a] border-none rounded-full pl-9 pr-3 py-1.5 text-[10px] focus:ring-1 focus:ring-orange-500/50 transition-all placeholder:text-zinc-700 text-white font-bold" 
                                     placeholder="Qidirish..." 
                                     type="text"
                                 />
                             </div>
                         </form>
 
-                        <nav className="hidden xl:flex items-center gap-5">
-                            {['Bosh sahifa', 'Anime', 'Dub sahifamiz', 'Kategoriyalar', 'Yangiliklar', 'Jadval'].map(link => (
-                                <button key={link} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors">{link}</button>
+                        <nav className="hidden lg:flex items-center gap-4">
+                            {['Bosh sahifa', 'Anime', 'Kategoriyalar', 'Jadval'].map(link => (
+                                <button key={link} className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors">{link}</button>
                             ))}
                         </nav>
                     </div>
                     
-                    <div className="flex items-center gap-5 ml-8">
-                        <div className="flex items-center gap-5 pr-5 border-r border-white/5">
-                            <button className="text-zinc-400 hover:text-white transition-colors"><Sparkles size={18} /></button>
-                            <button className="text-zinc-400 hover:text-white transition-colors relative">
-                                <Bell size={18} />
-                                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full border border-[#131313]"></span>
+                    <div className="flex items-center gap-4 ml-6">
+                        <div className="flex items-center gap-4 pr-4 border-r border-white/5">
+                            <button className="text-zinc-500 hover:text-white transition-colors"><Sparkles size={16} /></button>
+                            <button className="text-zinc-500 hover:text-white transition-colors relative">
+                                <Bell size={16} />
+                                <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-red-600 rounded-full border border-[#131313]"></span>
                             </button>
                         </div>
                         
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5">
                             <div className="flex flex-col items-end hidden lg:flex">
-                                <span className="text-[10px] font-black text-white uppercase tracking-tight">Foydalanuvchi</span>
-                                <span className="text-[8px] text-orange-500 font-black uppercase tracking-widest">VIP</span>
+                                <span className="text-[9px] font-black text-white uppercase tracking-tight">Foydalanuvchi</span>
+                                <span className="text-[7px] text-orange-500 font-black uppercase tracking-widest">VIP</span>
                             </div>
                             <button 
                                 onClick={() => onNavigate('profile')}
-                                className="w-9 h-9 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-500 hover:border-orange-500 transition-all overflow-hidden"
+                                className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-500 hover:border-orange-500 transition-all overflow-hidden shadow-lg"
                             >
-                                {avatarUrl ? <img src={avatarUrl} className="w-full h-full object-cover" /> : <User size={18} />}
+                                {avatarUrl ? <img src={avatarUrl} className="w-full h-full object-cover" /> : <User size={16} />}
                             </button>
                         </div>
                     </div>

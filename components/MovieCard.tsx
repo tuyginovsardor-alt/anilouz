@@ -37,24 +37,24 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
           </div>
 
           {/* Top Badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-              <div className="bg-orange-600 px-2 py-0.5 rounded text-[7px] font-black text-white uppercase tracking-widest shadow-lg">
+          <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10">
+              <div className="bg-orange-600 px-1.5 py-0.5 rounded text-[6px] font-black text-white uppercase tracking-widest shadow-lg">
                   YANGI QISM
               </div>
           </div>
           
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded-md border border-white/10 z-10">
-              <Star size={10} className="text-orange-500 fill-orange-500" />
-              <span className="text-[10px] font-black text-white">{movie.rating.toFixed(1)}</span>
+          <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 bg-black/80 backdrop-blur-md px-1 py-0.5 rounded-md border border-white/5 z-10">
+              <Star size={8} className="text-orange-500 fill-orange-500" />
+              <span className="text-[9px] font-black text-white">{movie.rating.toFixed(1)}</span>
           </div>
       </div>
       
-      <div className="flex flex-col mt-2">
-          <h3 className="text-white font-bold text-[12px] leading-tight mb-1 line-clamp-1 group-hover:text-orange-500 transition-colors uppercase tracking-tight">
+      <div className="flex flex-col mt-1.5">
+          <h3 className="text-white font-bold text-[11px] leading-tight mb-0.5 line-clamp-1 group-hover:text-orange-500 transition-colors uppercase tracking-tight">
               {movie.title}
           </h3>
-          <p className="text-[10px] text-zinc-500 font-medium">
-              {movie.status === 'ongoing' ? 'Davom etmoqda' : `${movie.year} - tugallangan`}
+          <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tight">
+              {movie.status === 'ongoing' ? 'Ongoing' : `${movie.year}`}
           </p>
       </div>
     </div>
