@@ -61,9 +61,17 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
           <h3 className="text-white font-black text-[14px] uppercase tracking-tight leading-tight mb-2 line-clamp-2 group-hover:text-orange-500 transition-colors">
               {movie.title}
           </h3>
-          <div className="flex items-center gap-3">
-              <span className="bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[8px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors">UZ</span>
-              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-600 truncate">{movie.genre.split(',')[0]}</span>
+          <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                  <span className="bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[8px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors">UZ</span>
+                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-600 truncate">{movie.genre.split(',')[0]}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                      <Eye size={10} className="text-zinc-600" />
+                      <span className="text-[9px] font-bold text-zinc-600 uppercase">{(movie.view_count || 0).toLocaleString()}</span>
+                  </div>
+              </div>
           </div>
       </div>
     </div>
