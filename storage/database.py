@@ -4,8 +4,9 @@ import os
 DB_PATH = os.path.join(os.path.dirname(__file__), "settings.db")
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     cursor = conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -24,14 +25,14 @@ def init_db():
     conn.close()
 
 def log_user(user_id, username, full_name):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     cursor = conn.cursor()
     cursor.execute("INSERT OR REPLACE INTO bot_users (user_id, username, full_name) VALUES (?, ?, ?)", (user_id, username, full_name))
     conn.commit()
     conn.close()
 
 def get_bot_users_count():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM bot_users")
     count = cursor.fetchone()[0]
@@ -39,7 +40,7 @@ def get_bot_users_count():
     return count
 
 def get_bot_users(limit=50):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     cursor = conn.cursor()
     cursor.execute("SELECT user_id, username, full_name, first_seen FROM bot_users ORDER BY first_seen DESC LIMIT ?", (limit,))
     rows = cursor.fetchall()
@@ -47,14 +48,14 @@ def get_bot_users(limit=50):
     return rows
 
 def set_setting(key, value):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     cursor = conn.cursor()
     cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value))
     conn.commit()
     conn.close()
 
 def get_setting(key, default=None):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     cursor = conn.cursor()
     cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
     row = cursor.fetchone()

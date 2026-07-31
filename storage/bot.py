@@ -237,32 +237,26 @@ async def handle_video(message: types.Message):
         orig_name = message.video.file_name or f"video_{file_id}.mp4"
         file_name = f"{file_id}_{orig_name}"
         destination = os.path.join(STORAGE_PATH, file_name)
-        
         if file_size_mb > 20:
-            from userbot import is_authenticated, download_file_by_msg
-            if await is_authenticated():
-                await msg.edit_text("⚡️ <b>Katta fayl aniqlandi. UserBot orqali yuklanmoqda...</b>", parse_mode="HTML")
-                
-                # Download using UserBot
-                # The chat_id is the bot itself (the userbot sent/received message there)
-                # We add a progress indicator
-                async def progress_callback(received, total):
-                    percent = (received / total) * 100
-                    if int(percent) % 25 == 0: # Update every 25%
-                        try:
-                            await msg.edit_text(f"⚡️ <b>UserBot yuklamoqda: {percent:.1f}%</b>", parse_mode="HTML")
-                        except Exception: pass
+            from userbot import init_client
+            client = await init_client()
+            success = False
+            if client:
+                try:
+                    if await client.is_user_authorized():
+                        await msg.edit_text("⚡️ <b>Katta fayl aniqlandi. UserBot orqali yuklanmoqda...</b>", parse_mode="HTML")
+                        
+                        async def progress_callback(received, total):
+                            percent = (received / total) * 100
+                            if int(percent) % 25 == 0:
+                                try:
+                                    await msg.edit_text(f"⚡️ <b>UserBot yuklamoqda: {percent:.1f}%</b>", parse_mode="HTML")
+                                except Exception: pass
 
-                from userbot import init_client
-                client = await init_client()
-                if client:
-                    try:
                         bot_info = await bot.get_me()
-                        # Try to get the message. First by ID, then by looking at recent messages if ID lookup fails
                         tg_msg = await client.get_messages(bot_info.username, ids=message.message_id)
                         
                         if not tg_msg or not tg_msg.media:
-                            # Fallback: get the last message in the chat with the bot
                             messages = await client.get_messages(bot_info.username, limit=5)
                             for m in messages:
                                 if m.media:
@@ -274,24 +268,25 @@ async def handle_video(message: types.Message):
                             success = True
                         else:
                             logging.error(f"UserBot could not find message with media. Bot username: {bot_info.username}, Msg ID: {message.message_id}")
-                            success = False
+                    else:
+                        logging.error("UserBot not authorized")
+                except Exception as e:
+                    logging.error(f"UserBot download error: {e}")
+                finally:
+                    await client.disconnect()
+            
+            if not success:
+                # Fallback to Bot API if size permits
+                if file_size_mb <= 20:
+                    try:
+                        file = await bot.get_file(file_id)
+                        await bot.download_file(file.file_path, destination)
+                        success = True
                     except Exception as e:
-                        logging.error(f"UserBot download error: {e}")
-                        success = False
-                    finally:
-                        await client.disconnect()
-                else:
-                    success = False
+                        logging.error(f"Bot API download error: {e}")
                 
                 if not success:
                     await msg.edit_text("❌ UserBot orqali yuklab bo'lmadi. Iltimos, UserBot sozlamalarini tekshiring yoki faylni kichikroq qiling.")
-                    return
-            else:
-                try:
-                    file = await bot.get_file(file_id)
-                    await bot.download_file(file.file_path, destination)
-                except Exception:
-                    await msg.edit_text("❌ Bot API limiti sababli yuklab bo'lmadi. Iltimos, UserBot orqali yuklashni sozlang (2 GB gacha ruxsat beradi).")
                     return
         else:
             file = await bot.get_file(file_id)
