@@ -33,8 +33,21 @@ admin_states = {}
 def get_main_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="➕ Yangi Media", callback_data="admin_add"))
+    builder.row(types.InlineKeyboardButton(text="📝 Tahrirlash", callback_data="admin_edit_list"))
     builder.row(types.InlineKeyboardButton(text="📊 Statistika", callback_data="admin_stats"))
     builder.row(types.InlineKeyboardButton(text="⚙️ Sozlamalar", callback_data="admin_settings"))
+    return builder.as_markup()
+
+def get_settings_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(types.InlineKeyboardButton(text="👥 Adminlar", callback_data="settings_admins"))
+    builder.row(types.InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_main"))
+    return builder.as_markup()
+
+def get_admins_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(types.InlineKeyboardButton(text="➕ Admin Qo'shish", callback_data="admin_add_new"))
+    builder.row(types.InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_settings"))
     return builder.as_markup()
 
 def get_type_keyboard():
@@ -64,17 +77,12 @@ def get_access_keyboard():
 async def cmd_start(message: types.Message):
     if message.from_user.id not in ADMINS:
         return await message.answer("⚠️ Kechirasiz, siz ushbu botning admini emassiz.")
-    
-    welcome_text = (
-        "👋 <b>Xush kelibsiz, Admin!</b>\n\n"
-        "Ushbu bot orqali saytdagi kontentni boshqarishingiz mumkin.\n"
-        "Kerakli bo'limni tanlang:"
-    )
+    welcome_text = "👋 <b>Xush kelibsiz, Admin!</b>\n\nKerakli bo'limni tanlang:"
     await message.answer(welcome_text, reply_markup=get_main_keyboard(), parse_mode="HTML")
 
 @dp.callback_query(F.data == "admin_main")
 async def main_menu(callback: types.CallbackQuery):
-    admin_states[callback.from_user.id] = {} # Clear state
+    admin_states[callback.from_user.id] = {}
     await callback.message.edit_text("Kerakli bo'limni tanlang:", reply_markup=get_main_keyboard())
 
 @dp.callback_query(F.data == "admin_stats")
@@ -83,7 +91,6 @@ async def show_stats(callback: types.CallbackQuery):
         movies_count = supabase.table("movies").select("id", count="exact").execute().count
         fandub_count = supabase.table("fandub_projects").select("id", count="exact").execute().count
         users_count = supabase.table("profiles").select("id", count="exact").execute().count
-        
         stats_text = (
             "📊 <b>Sayt Statistikasi</b>\n\n"
             f"🎬 Jami Filmlar: <b>{movies_count}</b>\n"
@@ -94,6 +101,17 @@ async def show_stats(callback: types.CallbackQuery):
         await callback.message.edit_text(stats_text, reply_markup=get_main_keyboard(), parse_mode="HTML")
     except Exception as e:
         await callback.answer(f"Xatolik: {str(e)}", show_alert=True)
+
+@dp.callback_query(F.data == "admin_settings")
+async def settings_menu(callback: types.CallbackQuery):
+    await callback.message.edit_text("⚙️ <b>Sozlamalar bo'limi:</b>", reply_markup=get_settings_keyboard(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "settings_admins")
+async def manage_admins(callback: types.CallbackQuery):
+    admins_list = "\n".join([f"• <code>{id}</code>" for id in ADMINS])
+    text = f"👥 <b>Hozirgi Adminlar:</b>\n\n{admins_list}\n\nAdmin qo'shish uchun uning ID raqamini yuboring."
+    admin_states[callback.from_user.id] = {"step": "add_admin"}
+    await callback.message.edit_text(text, reply_markup=get_admins_keyboard(), parse_mode="HTML")
 
 @dp.callback_query(F.data == "admin_add")
 async def start_add_flow(callback: types.CallbackQuery):
@@ -112,54 +130,28 @@ async def handle_video(message: types.Message):
     if not state or state.get("step") != "upload":
         return await message.answer("⚠️ Avval media turini tanlang! /start")
 
-    # Telegram Bot API limit check (Standard API limit is 20MB for downloads)
     file_size_mb = message.video.file_size / (1024 * 1024)
-    if file_size_mb > 20:
-        warning_text = (
-            f"⚠️ <b>Fayl juda katta ({file_size_mb:.1f} MB)!</b>\n\n"
-            "Telegram Bot API standart limiti 20 MB. Katta fayllarni yuklash uchun:\n"
-            "1. Faylni kichikroq bo'laklarga bo'ling.\n"
-            "2. Yoki videoni botga emas, to'g'ridan-to'g'ri serverga (FTP/SCP) yuklang.\n"
-            "3. Sayt admin panelidan 'Video URL' sifatida serverdagi manzilni bering."
-        )
-        return await message.answer(warning_text, parse_mode="HTML")
+    if file_size_mb > 50: # Limit increased for local server usage but warned
+        await message.answer("⚠️ Fayl katta. Yuklash biroz vaqt olishi mumkin.")
 
     msg = await message.answer("⏳ <b>Video serverga yuklanmoqda...</b>", parse_mode="HTML")
-    
     try:
         file_id = message.video.file_id
         file = await bot.get_file(file_id)
-        
         orig_name = message.video.file_name or f"video_{file_id}.mp4"
-        safe_name = "".join([c if c.isalnum() or c in "._-" else "_" for c in orig_name])
-        file_name = f"{file_id}_{safe_name}"
+        file_name = f"{file_id}_{orig_name}"
         destination = os.path.join(STORAGE_PATH, file_name)
-        
-        os.makedirs(STORAGE_PATH, exist_ok=True)
         await bot.download_file(file.file_path, destination)
-        
         video_url = f"{STORAGE_URL}{file_name}"
-        
-        state.update({
-            "video_url": video_url,
-            "temp_title": orig_name.rsplit('.', 1)[0],
-            "step": "title"
-        })
-        
-        await msg.edit_text(
-            f"✅ <b>Video yuklandi!</b>\n\n📝 Sarlavhani kiriting:\n(Hozirgi: <code>{state['temp_title']}</code>)\n\n<i>O'zgartirmaslik uchun '.' yuboring.</i>",
-            parse_mode="HTML"
-        )
-        
+        state.update({"video_url": video_url, "temp_title": orig_name.rsplit('.', 1)[0], "step": "title"})
+        await msg.edit_text(f"✅ <b>Video yuklandi!</b>\n\n📝 Sarlavhani kiriting:\n(Hozirgi: <code>{state['temp_title']}</code>)\n\n<i>O'zgartirmaslik uchun '.' yuboring.</i>", parse_mode="HTML")
     except Exception as e:
-        logging.error(f"Error: {str(e)}")
-        await msg.edit_text(f"❌ <b>Yuklashda xatolik yuz berdi:</b>\n{str(e)}", parse_mode="HTML")
+        await msg.edit_text(f"❌ Yuklashda xatolik: {str(e)}")
 
 @dp.callback_query(F.data.startswith("status_"))
 async def select_status(callback: types.CallbackQuery):
     state = admin_states.get(callback.from_user.id)
     if not state or state.get("step") != "status": return
-    
     state["status"] = callback.data.split("_")[1]
     state["step"] = "access"
     await callback.message.edit_text("🔓 Kirish turini tanlang:", reply_markup=get_access_keyboard())
@@ -168,126 +160,82 @@ async def select_status(callback: types.CallbackQuery):
 async def select_access(callback: types.CallbackQuery):
     state = admin_states.get(callback.from_user.id)
     if not state or state.get("step") != "access": return
-    
     state["access_type"] = callback.data.split("_")[1]
     state["step"] = "genre"
-    await callback.message.edit_text("🎭 <b>Janrlarni kiriting:</b>\n(Masalan: Jangari, Sarguzasht, Komediya)", parse_mode="HTML")
+    await callback.message.edit_text("🎭 <b>Janrlarni kiriting:</b>", parse_mode="HTML")
 
 @dp.message(F.photo | F.document)
 async def handle_poster_file(message: types.Message):
     if message.from_user.id not in ADMINS: return
     state = admin_states.get(message.from_user.id)
     if not state or state.get("step") != "poster": return
-
-    # User uploaded a file instead of URL
     msg = await message.answer("⏳ <b>Poster yuklanmoqda...</b>", parse_mode="HTML")
-    
     try:
-        if message.photo:
-            file_id = message.photo[-1].file_id
-            ext = "jpg"
-        else:
-            file_id = message.document.file_id
-            ext = message.document.file_name.split('.')[-1] if '.' in message.document.file_name else "file"
-            
+        file_id = message.photo[-1].file_id if message.photo else message.document.file_id
+        ext = "jpg" if message.photo else "file"
         file = await bot.get_file(file_id)
         file_name = f"poster_{file_id}.{ext}"
-        destination = os.path.join(STORAGE_PATH, file_name)
-        
-        await bot.download_file(file.file_path, destination)
-        
+        await bot.download_file(file.file_path, os.path.join(STORAGE_PATH, file_name))
         state["poster_url"] = f"{STORAGE_URL}{file_name}"
         await save_to_supabase(message, state)
-        
     except Exception as e:
-        await msg.edit_text(f"❌ Poster yuklashda xatolik: {str(e)}")
+        await msg.edit_text(f"❌ Xatolik: {str(e)}")
 
 @dp.message()
 async def handle_text_inputs(message: types.Message):
     if message.from_user.id not in ADMINS: return
     state = admin_states.get(message.from_user.id)
-    if not state: 
-        if message.text and not message.text.startswith("/"):
-             await message.answer("⚠️ Amal bajarish uchun menyudan foydalaning yoki /start bosing.")
-        return
-
+    if not state: return
     step = state.get("step")
     
-    if step == "title":
+    if step == "add_admin":
+        if message.text.isdigit():
+            ADMINS.append(int(message.text))
+            await message.answer(f"✅ Admin qo'shildi: {message.text}")
+            del admin_states[message.from_user.id]
+        return
+    elif step == "title":
         state["title"] = state["temp_title"] if message.text == "." else message.text
         state["step"] = "year"
-        await message.answer("📅 <b>Chiqish yili:</b>\n(Masalan: 2024)", parse_mode="HTML")
-
+        await message.answer("📅 <b>Chiqish yili:</b>", parse_mode="HTML")
     elif step == "year":
         state["year"] = message.text
         state["step"] = "status"
         await message.answer("📌 <b>Media holati:</b>", reply_markup=get_status_keyboard())
-
     elif step == "genre":
         state["genre"] = message.text
         state["step"] = "translator"
-        await message.answer("✍️ <b>Tarjimon / Studiya nomi:</b>", parse_mode="HTML")
-
+        await message.answer("✍️ <b>Tarjimon:</b>", parse_mode="HTML")
     elif step == "translator":
         state["translator"] = message.text
         state["step"] = "tags"
-        await message.answer("🏷 <b>Qidiruv so'zlari (Tags):</b>\n(Masalan: Ninja, Boruto, Vampir...)", parse_mode="HTML")
-
+        await message.answer("🏷 <b>Tags:</b>", parse_mode="HTML")
     elif step == "tags":
         state["tags"] = message.text
         state["step"] = "plot"
-        await message.answer("📖 <b>Qisqacha mazmuni:</b>", parse_mode="HTML")
-
+        await message.answer("📖 <b>Mazmuni:</b>", parse_mode="HTML")
     elif step == "plot":
         state["plot"] = message.text
         state["step"] = "poster"
-        await message.answer("🖼 <b>Poster URL manzilini yuboring yoki rasm fayli tashlang:</b>\n(Yoki '.' yuboring)", parse_mode="HTML")
-
+        await message.answer("🖼 <b>Poster yuboring yoki URL:</b>", parse_mode="HTML")
     elif step == "poster":
-        state["poster_url"] = "https://via.placeholder.com/400x600?text=No+Poster" if message.text == "." else message.text
+        state["poster_url"] = message.text
         await save_to_supabase(message, state)
 
 async def save_to_supabase(message: types.Message, state: dict):
-    msg = await message.answer("🚀 <b>Ma'lumotlar saqlanmoqda...</b>", parse_mode="HTML")
+    msg = await message.answer("🚀 Saqlanmoqda...")
     try:
-        movie_data = {
-            "title": state["title"],
-            "poster_url": state["poster_url"],
-            "video_url": state["video_url"],
-            "type": state["type"],
-            "year": state["year"],
-            "genre": state["genre"],
-            "plot": state["plot"],
-            "status": state["status"],
-            "access_type": state["access_type"],
-            "translator": state["translator"],
-            "tags": state["tags"],
-            "rating": 5.0,
-            "view_count": 0,
-            "is_series": False
+        data = {
+            "title": state["title"], "poster_url": state["poster_url"], "video_url": state["video_url"],
+            "type": state["type"], "year": state["year"], "genre": state["genre"], "plot": state["plot"],
+            "status": state["status"], "access_type": state["access_type"], "translator": state["translator"],
+            "tags": state["tags"], "rating": 5.0, "view_count": 0, "is_series": False
         }
-        
-        supabase.table("movies").insert(movie_data).execute()
-        
-        final_text = (
-            "✅ <b>Muvaffaqiyatli qo'shildi!</b>\n\n"
-            f"🎬 <b>Nomi:</b> {state['title']}\n"
-            f"📅 <b>Yili:</b> {state['year']}\n"
-            f"📂 <b>Turi:</b> {state['type'].upper()}\n"
-            f"📌 <b>Holati:</b> {state['status']}\n"
-            f"💎 <b>Access:</b> {state['access_type']}\n"
-            f"🔗 <a href='{state['video_url']}'>Video URL</a>"
-        )
-        await msg.edit_text(final_text, parse_mode="HTML", disable_web_page_preview=True)
-        # Clear state
-        if message.from_user.id in admin_states:
-            del admin_states[message.from_user.id]
-        
+        supabase.table("movies").insert(data).execute()
+        await msg.edit_text("✅ Muvaffaqiyatli qo'shildi!")
+        if message.from_user.id in admin_states: del admin_states[message.from_user.id]
     except Exception as e:
-        await msg.edit_text(f"❌ <b>Supabase xatoligi:</b>\n{str(e)}", parse_mode="HTML")
+        await msg.edit_text(f"❌ Xatolik: {str(e)}")
 
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+async def main(): await dp.start_polling(bot)
+if __name__ == "__main__": asyncio.run(main())

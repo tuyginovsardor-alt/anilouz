@@ -65,18 +65,20 @@ pip install --upgrade pip
 pip install wheel
 pip install -r requirements.txt
 
-# Create storage directory
-mkdir -p films
-chmod 777 films
+# Create storage directory in a web-accessible location to avoid 403 errors
+STORAGE_BASE="/var/www/anilo"
+sudo mkdir -p $STORAGE_BASE/films
+sudo chmod -R 755 $STORAGE_BASE
+sudo chown -R caddy:caddy $STORAGE_BASE
+
+# Create a symlink in the current directory for the bot to use
+ln -sfn $STORAGE_BASE/films films
 
 # Setup Caddyfile with Domain (Automatic HTTPS)
-# Get absolute path for storage
-ABS_PATH=$(pwd)
-
 echo "$server_ip {
-    # Static files should be handled first
+    # Static files handled from /var/www/anilo
     handle_path /films/* {
-        root * $ABS_PATH/films
+        root * $STORAGE_BASE/films
         file_server
     }
     
