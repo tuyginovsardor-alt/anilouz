@@ -49,11 +49,11 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
           </div>
       </div>
       
-      <div className="flex flex-col mt-1.5">
-          <h3 className="text-white font-bold text-[11px] leading-tight mb-0.5 line-clamp-1 group-hover:text-orange-500 transition-colors uppercase tracking-tight">
+      <div className="flex flex-col mt-1">
+          <h3 className="text-white font-bold text-[10px] leading-tight mb-0.5 line-clamp-1 group-hover:text-orange-500 transition-colors uppercase tracking-tight">
               {movie.title}
           </h3>
-          <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tight">
+          <p className="text-[8px] text-zinc-600 font-bold uppercase tracking-tight">
               {movie.status === 'ongoing' ? 'Ongoing' : `${movie.year}`}
           </p>
       </div>

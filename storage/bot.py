@@ -258,13 +258,22 @@ async def handle_video(message: types.Message):
                 if client:
                     try:
                         bot_info = await bot.get_me()
-                        # Get the message from the bot chat
-                        # Using username is often more reliable for initial peer resolution in Telethon
+                        # Try to get the message. First by ID, then by looking at recent messages if ID lookup fails
                         tg_msg = await client.get_messages(bot_info.username, ids=message.message_id)
+                        
+                        if not tg_msg or not tg_msg.media:
+                            # Fallback: get the last message in the chat with the bot
+                            messages = await client.get_messages(bot_info.username, limit=5)
+                            for m in messages:
+                                if m.media:
+                                    tg_msg = m
+                                    break
+                                    
                         if tg_msg and tg_msg.media:
                             await client.download_media(tg_msg, file=destination, progress_callback=progress_callback)
                             success = True
                         else:
+                            logging.error(f"UserBot could not find message with media. Bot username: {bot_info.username}, Msg ID: {message.message_id}")
                             success = False
                     except Exception as e:
                         logging.error(f"UserBot download error: {e}")

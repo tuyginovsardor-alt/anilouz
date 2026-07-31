@@ -175,22 +175,22 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
             )}
 
             {/* Main Content Areas */}
-            <div className="px-5 mt-10 space-y-10">
+            <div className="px-5 mt-8 space-y-8">
                 {/* Mashhur Animelar Section */}
                 <section>
-                    <div className="flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 bg-orange-600/10 rounded-lg flex items-center justify-center text-orange-500 border border-orange-600/20">
-                                <Flame size={14} className="fill-current" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-6 h-6 bg-orange-600/10 rounded-lg flex items-center justify-center text-orange-500 border border-orange-600/20">
+                                <Flame size={12} className="fill-current" />
                             </div>
-                            <h3 className="text-base font-black text-white uppercase tracking-tighter">Mashhur animelar</h3>
+                            <h3 className="text-sm font-black text-white uppercase tracking-tighter">Mashhur animelar</h3>
                         </div>
-                        <button className="flex items-center gap-1 text-zinc-600 hover:text-orange-500 font-black text-[8px] uppercase tracking-widest transition-all group">
+                        <button className="flex items-center gap-1 text-zinc-600 hover:text-orange-500 font-black text-[7px] uppercase tracking-widest transition-all group">
                             Barchasini ko'rish
-                            <ChevronRight size={10} className="group-hover:translate-x-1 transition-transform" />
+                            <ChevronRight size={8} className="group-hover:translate-x-1 transition-transform" />
                         </button>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
                         {allMovies.slice(0, 16).map((movie) => (
                             <MovieCard key={movie.id} movie={movie} onClick={() => onMovieClick(movie)} isActive={false} />
                         ))}
@@ -199,19 +199,19 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
 
                 {/* Yangi Chiqarilganlar Section */}
                 <section>
-                    <div className="flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 bg-blue-600/10 rounded-lg flex items-center justify-center text-blue-500 border border-blue-600/20">
-                                <Zap size={14} className="fill-current" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-6 h-6 bg-blue-600/10 rounded-lg flex items-center justify-center text-blue-500 border border-blue-600/20">
+                                <Zap size={12} className="fill-current" />
                             </div>
-                            <h3 className="text-base font-black text-white uppercase tracking-tighter">Yangi chiqarilganlar</h3>
+                            <h3 className="text-sm font-black text-white uppercase tracking-tighter">Yangi chiqarilganlar</h3>
                         </div>
-                        <button className="flex items-center gap-1 text-zinc-600 hover:text-blue-500 font-black text-[8px] uppercase tracking-widest transition-all group">
+                        <button className="flex items-center gap-1 text-zinc-600 hover:text-blue-500 font-black text-[7px] uppercase tracking-widest transition-all group">
                             Barchasini ko'rish
-                            <ChevronRight size={10} className="group-hover:translate-x-1 transition-transform" />
+                            <ChevronRight size={8} className="group-hover:translate-x-1 transition-transform" />
                         </button>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
                         {allMovies.filter(m => m.type === 'anime').slice(0, 16).map((movie) => (
                             <MovieCard key={`new-${movie.id}`} movie={movie} onClick={() => onMovieClick(movie)} isActive={false} />
                         ))}
