@@ -186,8 +186,6 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             is_series,
             status,
             type,
-            translator,
-            tags,
             access_type: accessType,
             videoSource: !is_series ? (videoSourceType === 'file' ? videoUrl : videoSource) : undefined,
             video_id: !is_series ? initialData?.video_id : undefined,

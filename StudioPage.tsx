@@ -81,71 +81,14 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
     return (
         <div className="min-h-screen bg-[#050505] text-white pb-32 animate-fade-in font-sans">
             
-            {/* Story Bar */}
-            <div className="w-full bg-[#0a0a0a]/50 border-b border-white/5 py-8 overflow-x-hidden">
-                <div className="container mx-auto px-4">
-                    <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
-                        <div className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group">
-                            <div className="w-20 h-20 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-purple-600 hover:text-purple-600 transition-all duration-500 active:scale-95 bg-black">
-                                <Plus size={32}/>
-                            </div>
-                            <span className="text-[10px] font-black uppercase text-zinc-600 tracking-widest">Sizniki</span>
-                        </div>
-
-                        {stories.map((story, i) => (
-                            <div key={story.id} onClick={() => handleOpenStory(i)} className="flex flex-col items-center gap-3 flex-shrink-0 cursor-pointer group animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
-                                <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500 shadow-2xl group-active:scale-95 transition-all duration-300">
-                                    <div className="w-full h-full rounded-full bg-black border-2 border-black overflow-hidden relative">
-                                        {story.media_type === 'image' ? (
-                                            <img src={story.media_url} className="w-full h-full object-cover" alt="" />
-                                        ) : (
-                                            <video src={story.media_url} className="w-full h-full object-cover" muted />
-                                        )}
-                                    </div>
-                                </div>
-                                <span className="text-[10px] font-black uppercase text-white truncate max-w-[80px] tracking-widest">{story.profiles?.username || 'user'}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
             <div className="container mx-auto px-4 mt-16 space-y-24">
 
                 <section>
                     <div className="flex items-center gap-4 mb-10">
                         <div className="w-1.5 h-8 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(147,51,234,0.5)]"></div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter">Mashhur Studiyalar</h2>
+                        <h2 className="text-3xl font-black uppercase tracking-tighter">TV Rejim</h2>
                     </div>
-
-                    <div className="flex gap-6 overflow-x-auto pb-12 scrollbar-hide px-2">
-                        {channels.map(ch => (
-                            <div key={ch.id} onClick={() => { setSelectedChannel(ch); setActiveTab('content'); }} className="flex-shrink-0 w-80 h-96 relative rounded-[2.5rem] overflow-hidden cursor-pointer group shadow-2xl transition-all duration-500 hover:scale-105">
-                                <img src={ch.banner_url || 'https://i.imgur.com/8y9q1Xh.jpg'} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90 group-hover:opacity-80 transition-opacity"></div>
-                                <div className="absolute inset-0 p-6 flex flex-col justify-end items-center text-center z-10">
-                                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-purple-500 to-pink-500 mb-4 shadow-xl relative">
-                                        <div className="w-full h-full rounded-full bg-black overflow-hidden border-2 border-black">
-                                            {ch.avatar_url ? <img src={ch.avatar_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-black text-2xl">{ch.name.charAt(0)}</div>}
-                                        </div>
-
-                                    </div>
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-1">{ch.name}</h3>
-                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-6">@{ch.username} • {ch.subscriber_count} Muxlis</p>
-                                    <button onClick={(e) => { e.stopPropagation(); handleFollow(ch); }} className={`w-full py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl backdrop-blur-md border ${ch.is_following ? 'bg-white/10 text-white border-white/20' : 'bg-purple-600 text-white border-purple-500'}`}>
-                                        {ch.is_following ? 'OBUNA BO\'LINGAN' : 'OBUNA BO\'LISH'}
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                <section>
-                    <div className="flex items-center gap-4 mb-10">
-                        <div className="w-1.5 h-8 bg-orange-600 rounded-full shadow-[0_0_20px_rgba(249,115,22,0.5)]"></div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter">So'nggi Dublyajlar</h2>
-                    </div>
+                    
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-12">
                         {allMovies.map(movie => (
                             <MovieCard key={movie.id} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
@@ -153,6 +96,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onMovieClick, onArtistCl
                     </div>
                 </section>
             </div>
+
 
             {/* CHANNEL DETAIL MODAL */}
             {selectedChannel && (

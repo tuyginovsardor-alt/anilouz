@@ -433,41 +433,17 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                     </div>
                 </div>
 
-                {/* KATEGORIYALAR SECTION */}
+                {/* SO'NGGI MULTFILMLAR */}
                 <div>
                     <div className="flex items-center justify-between mb-12">
                         <div className="flex items-center gap-4">
-                            <div className="h-6 w-1 bg-red-600 rounded-full"></div>
-                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Kategoriyalar</h2>
+                            <div className="h-6 w-1 bg-yellow-500 rounded-full"></div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">So'nggi Multfilmlar</h2>
                         </div>
-                        <button className="flex items-center gap-2 text-zinc-500 hover:text-red-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
-                            Barchasi
-                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                        </button>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {[
-                            { name: 'Action', count: 1240 },
-                            { name: 'Adventure', count: 980 },
-                            { name: 'Comedy', count: 1150 },
-                            { name: 'Drama', count: 860 },
-                            { name: 'Fantasy', count: 1030 },
-                            { name: 'Horror', count: 320 },
-                            { name: 'Romance', count: 780 },
-                            { name: 'School', count: 540 },
-                        ].map((cat, i) => (
-                            <button key={i} className="flex items-center justify-between p-6 bg-[#0a0a0a] border border-white/5 rounded-[2rem] hover:bg-white/[0.02] hover:border-white/10 transition-all group active:scale-95 text-left">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-zinc-500 group-hover:bg-red-600 group-hover:text-white transition-all">
-                                        <Compass size={20} />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-black text-white uppercase tracking-widest">{cat.name}</p>
-                                        <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">({cat.count})</p>
-                                    </div>
-                                </div>
-                                <ChevronRight size={14} className="text-zinc-800 group-hover:text-red-600" />
-                            </button>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-12">
+                        {movies.filter(m => m.type === 'multfilm').slice(0, 6).map((movie, i) => (
+                            <MovieCard key={movie.id} movie={movie} isActive={i === 0} onClick={() => onMovieClick(movie)} />
                         ))}
                     </div>
                 </div>

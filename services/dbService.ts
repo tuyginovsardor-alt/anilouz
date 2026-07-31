@@ -315,6 +315,7 @@ export const getMovies = async (): Promise<Movie[]> => {
                     quality: 'HD',
                     rating: 5.0,
                     is_fandub: true,
+                    type: m.type || 'anime',
                     channel_id: m.channel_id,
                     translator: m.fandub_channels?.name || 'Fandub',
                     status: 'completed',
@@ -529,7 +530,7 @@ export const uploadToCodeUsta = async (
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         // Yangi storage server domaini (DNS pishguncha IP ham ishlatilishi mumkin)
-        const uploadUrl = 'http://apibot.wentric.uz/upload';
+        const uploadUrl = 'https://apibot.wentric.uz/upload';
         
         xhr.open('POST', uploadUrl);
 

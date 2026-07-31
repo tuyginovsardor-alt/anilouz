@@ -398,7 +398,7 @@ const App: React.FC = () => {
                     {/* Asosiy */}
                     <button 
                       onClick={() => handleNavigation('dashboard')} 
-                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/4 transition-all active:scale-90 ${page === 'dashboard' && dashboardPage === 'main' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
                         <Home size={19} strokeWidth={2} />
                         <span className="text-[9px] font-semibold tracking-tight">Asosiy</span>
@@ -407,7 +407,7 @@ const App: React.FC = () => {
                     {/* Qidiruv */}
                     <button 
                       onClick={() => handleNavigation('search')} 
-                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 ${page === 'search' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/4 transition-all active:scale-90 ${page === 'search' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
                         <div className={`p-1 rounded-[10px] border transition-all ${page === 'search' ? 'border-white/90 bg-white/5' : 'border-zinc-800/80 bg-zinc-950/20'}`}>
                             <Search size={16} strokeWidth={page === 'search' ? 2.5 : 2} />
@@ -415,19 +415,10 @@ const App: React.FC = () => {
                         <span className="text-[9px] font-semibold tracking-tight mt-0.5">Qidiruv</span>
                     </button>
 
-                    {/* To'plam */}
-                    <button 
-                      onClick={() => handleNavigation('catalog')} 
-                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 ${page === 'catalog' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-                    >
-                        <Layers size={19} strokeWidth={2} />
-                        <span className="text-[9px] font-semibold tracking-tight">To'plam</span>
-                    </button>
-
                     {/* TV */}
                     <button 
                       onClick={() => handleNavigation('studio')} 
-                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 relative ${page === 'studio' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/4 transition-all active:scale-90 relative ${page === 'studio' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
                         <Tv size={19} strokeWidth={2} />
                         {isAnyLive && <div className="absolute top-1 right-3 w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></div>}
@@ -437,7 +428,7 @@ const App: React.FC = () => {
                     {/* Profil */}
                     <button 
                       onClick={() => {if(isAuthenticated) setIsMenuOpen(true); else setIsAuthModalOpen(true);}} 
-                      className={`flex flex-col items-center justify-center gap-0.5 w-1/5 transition-all active:scale-90 ${isMenuOpen ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      className={`flex flex-col items-center justify-center gap-0.5 w-1/4 transition-all active:scale-90 ${isMenuOpen ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
                         {isAuthenticated ? (
                             <div className={`w-5 h-5 rounded-full border overflow-hidden transition-all duration-300 ${isMenuOpen ? 'border-white scale-105' : 'border-zinc-700'}`}>

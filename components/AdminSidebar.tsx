@@ -77,7 +77,6 @@ const primaryMenuItems: { page: any, label: string, icon: React.ReactNode, roles
 // EXTRA CATEGORIES (Secondary/Tools)
 const secondaryMenuItems: { page: any, label: string, icon: React.ReactNode, roles: UserRole[] }[] = [
     { page: 'dub_site', label: 'Dublyaj Platformasi', icon: <ExternalLink size={20} className="text-orange-500" />, roles: ['owner', 'admin', 'dub'] },
-    { page: 'bundle_manager', label: 'Premium To\'plamlar', icon: <Layers size={20} />, roles: ['owner'] },
     { page: 'broadcasts', label: 'Brodkast', icon: <BroadcastIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'sitemap', label: 'SEO Generator', icon: <MapIcon className="w-5 h-5" />, roles: ['owner', 'admin'] },
     { page: 'stamp_tool', label: 'E-Muhr Tool', icon: <StampIcon className="w-5 h-5" />, roles: ['owner'] },

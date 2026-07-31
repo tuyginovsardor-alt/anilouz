@@ -40,7 +40,7 @@ server_ip=$SERVER_IP
 # Create/Update .env
 echo "SUPABASE_URL=$sb_url
 SUPABASE_SERVICE_ROLE_KEY=$sb_key
-STORAGE_URL=http://$server_ip/films/
+STORAGE_URL=https://$server_ip/films/
 SERVER_IP=$server_ip" > .env
 
 # Retain existing BOT tokens if they exist
@@ -69,9 +69,15 @@ pip install -r requirements.txt
 mkdir -p films
 chmod 777 films
 
-# Setup Caddyfile
-echo ":80 {
+# Setup Caddyfile with Domain (Automatic HTTPS)
+echo "$server_ip {
     reverse_proxy localhost:8000
+    
+    handle_path /films/* {
+        file_server {
+            root films/
+        }
+    }
 }" | sudo tee /etc/caddy/Caddyfile
 
 sudo systemctl restart caddy
