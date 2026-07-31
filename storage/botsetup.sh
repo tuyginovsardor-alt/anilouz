@@ -29,13 +29,23 @@ prompt_if_empty() {
 prompt_if_empty BOT_TOKEN "Telegram Bot Token kiriting"
 prompt_if_empty ADMIN_IDS "Admin IDlarini kiriting (vergul bilan)"
 
+# Optional UserBot credentials
+if [ -z "$TG_API_ID" ]; then
+    read -p "Telegram API ID (ixtiyoriy, Enter bosing): " TG_API_ID
+fi
+if [ -z "$TG_API_HASH" ]; then
+    read -p "Telegram API HASH (ixtiyoriy, Enter bosing): " TG_API_HASH
+fi
+
 # Rewrite .env with all values
 echo "SUPABASE_URL=$SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
 STORAGE_URL=$STORAGE_URL
 SERVER_IP=$SERVER_IP
 BOT_TOKEN=$BOT_TOKEN
-ADMIN_IDS=$ADMIN_IDS" > .env
+ADMIN_IDS=$ADMIN_IDS
+TG_API_ID=$TG_API_ID
+TG_API_HASH=$TG_API_HASH" > .env
 
 # Install requirements again
 source venv/bin/activate

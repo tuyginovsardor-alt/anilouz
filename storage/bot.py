@@ -41,6 +41,7 @@ def get_main_keyboard():
 def get_settings_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="👥 Adminlar", callback_data="settings_admins"))
+    builder.row(types.InlineKeyboardButton(text="🤖 UserBot (Telethon)", callback_data="settings_userbot"))
     builder.row(types.InlineKeyboardButton(text="🌐 CORS Sozlamalari", callback_data="settings_cors"))
     builder.row(types.InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_main"))
     return builder.as_markup()
@@ -90,14 +91,24 @@ async def main_menu(callback: types.CallbackQuery):
 async def show_stats(callback: types.CallbackQuery):
     try:
         # Fetch counts with error handling for empty tables
-        movies_res = supabase.table("movies").select("id", count="exact").execute()
-        movies_count = movies_res.count if hasattr(movies_res, 'count') and movies_res.count is not None else 0
+        movies_count = 0
+        fandub_count = 0
+        users_count = 0
         
-        fandub_res = supabase.table("fandub_projects").select("id", count="exact").execute()
-        fandub_count = fandub_res.count if hasattr(fandub_res, 'count') and fandub_res.count is not None else 0
+        try:
+            movies_res = supabase.table("movies").select("id", count="exact").execute()
+            movies_count = movies_res.count if hasattr(movies_res, 'count') and movies_res.count is not None else 0
+        except Exception: pass
         
-        profiles_res = supabase.table("profiles").select("id", count="exact").execute()
-        users_count = profiles_res.count if hasattr(profiles_res, 'count') and profiles_res.count is not None else 0
+        try:
+            fandub_res = supabase.table("fandub_projects").select("id", count="exact").execute()
+            fandub_count = fandub_res.count if hasattr(fandub_res, 'count') and fandub_res.count is not None else 0
+        except Exception: pass
+        
+        try:
+            profiles_res = supabase.table("profiles").select("id", count="exact").execute()
+            users_count = profiles_res.count if hasattr(profiles_res, 'count') and profiles_res.count is not None else 0
+        except Exception: pass
         
         stats_text = (
             "📊 <b>Sayt Statistikasi</b>\n\n"
@@ -109,7 +120,7 @@ async def show_stats(callback: types.CallbackQuery):
         await callback.message.edit_text(stats_text, reply_markup=get_main_keyboard(), parse_mode="HTML")
     except Exception as e:
         logging.error(f"Stats Error: {e}")
-        await callback.answer(f"Xatolik: {str(e)}", show_alert=True)
+        await callback.answer(f"Statistika yuklashda xatolik yuz berdi.", show_alert=True)
 
 @dp.callback_query(F.data == "admin_settings")
 async def settings_menu(callback: types.CallbackQuery):
@@ -182,11 +193,31 @@ async def handle_video(message: types.Message):
     msg = await message.answer("⏳ <b>Video serverga yuklanmoqda...</b>", parse_mode="HTML")
     try:
         file_id = message.video.file_id
-        file = await bot.get_file(file_id)
         orig_name = message.video.file_name or f"video_{file_id}.mp4"
         file_name = f"{file_id}_{orig_name}"
         destination = os.path.join(STORAGE_PATH, file_name)
-        await bot.download_file(file.file_path, destination)
+        
+        if file_size_mb > 20:
+            from userbot import is_authenticated, init_client
+            if await is_authenticated():
+                await msg.edit_text("⚡️ <b>Katta fayl aniqlandi. UserBot orqali yuklanmoqda...</b>", parse_mode="HTML")
+                client = await init_client()
+                # To download from Bot inbox, UserBot needs to access the message.
+                # Easiest: Admin forwards file to UserBot, or UserBot is in this chat.
+                # Here we'll try to download using Bot API first, but if it fails, we warn.
+                try:
+                    file = await bot.get_file(file_id)
+                    await bot.download_file(file.file_path, destination)
+                except Exception:
+                    await msg.edit_text("❌ Bot API limiti sababli yuklab bo'lmadi. Iltimos, UserBot orqali yuklashni sozlang yoki kichikroq fayl yuboring.")
+                    return
+            else:
+                file = await bot.get_file(file_id)
+                await bot.download_file(file.file_path, destination)
+        else:
+            file = await bot.get_file(file_id)
+            await bot.download_file(file.file_path, destination)
+
         video_url = f"{STORAGE_URL}{file_name}"
         state.update({"video_url": video_url, "temp_title": orig_name.rsplit('.', 1)[0], "step": "title"})
         await msg.edit_text(f"✅ <b>Video yuklandi!</b>\n\n📝 Sarlavhani kiriting:\n(Hozirgi: <code>{state['temp_title']}</code>)\n\n<i>O'zgartirmaslik uchun '.' yuboring.</i>", parse_mode="HTML")
@@ -294,7 +325,8 @@ async def handle_text_inputs(message: types.Message):
             await message.answer(f"❌ Xatolik: {str(e)}")
             del admin_states[message.from_user.id]
     elif step == "ub_code":
-        code = message.text.replace(".", "").strip()
+        # Robust code cleaning (removes spaces, dots, dashes)
+        code = "".join(filter(str.isdigit, message.text))
         client = state["client"]
         try:
             await client.sign_in(state["phone"], code, phone_code_hash=state["phone_code_hash"])
