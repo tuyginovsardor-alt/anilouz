@@ -33,7 +33,7 @@ admin_states = {}
 def get_main_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="➕ Yangi Media", callback_data="admin_add"))
-    builder.row(types.InlineKeyboardButton(text="📊 Statistika", callback_data="admin_stats"))
+    builder.row(types.InlineKeyboardButton(text="📊 Statistika", callback_897="admin_stats"))
     builder.row(types.InlineKeyboardButton(text="⚙️ Sozlamalar", callback_data="admin_settings"))
     return builder.as_markup()
 
@@ -74,6 +74,7 @@ async def cmd_start(message: types.Message):
 
 @dp.callback_query(F.data == "admin_main")
 async def main_menu(callback: types.CallbackQuery):
+    admin_states[callback.from_user.id] = {} # Clear state
     await callback.message.edit_text("Kerakli bo'limni tanlang:", reply_markup=get_main_keyboard())
 
 @dp.callback_query(F.data == "admin_stats")
@@ -109,9 +110,10 @@ async def handle_video(message: types.Message):
     if message.from_user.id not in ADMINS: return
     state = admin_states.get(message.from_user.id)
     if not state or state.get("step") != "upload":
+        # Check if they are just sending a random video without starting flow
         return await message.answer("⚠️ Avval media turini tanlang! /start")
 
-    msg = await message.answer("⏳ <b>Video serverga yuklanmoqda...</b>\nBu biroz vaqt olishi mumkin.", parse_mode="HTML")
+    msg = await message.answer("⏳ <b>Video serverga yuklanmoqda...</b>", parse_mode="HTML")
     
     try:
         file_id = message.video.file_id
@@ -160,11 +162,43 @@ async def select_access(callback: types.CallbackQuery):
     state["step"] = "genre"
     await callback.message.edit_text("🎭 <b>Janrlarni kiriting:</b>\n(Masalan: Jangari, Sarguzasht, Komediya)", parse_mode="HTML")
 
+@dp.message(F.photo | F.document)
+async def handle_poster_file(message: types.Message):
+    if message.from_user.id not in ADMINS: return
+    state = admin_states.get(message.from_user.id)
+    if not state or state.get("step") != "poster": return
+
+    # User uploaded a file instead of URL
+    msg = await message.answer("⏳ <b>Poster yuklanmoqda...</b>", parse_mode="HTML")
+    
+    try:
+        if message.photo:
+            file_id = message.photo[-1].file_id
+            ext = "jpg"
+        else:
+            file_id = message.document.file_id
+            ext = message.document.file_name.split('.')[-1] if '.' in message.document.file_name else "file"
+            
+        file = await bot.get_file(file_id)
+        file_name = f"poster_{file_id}.{ext}"
+        destination = os.path.join(STORAGE_PATH, file_name)
+        
+        await bot.download_file(file.file_path, destination)
+        
+        state["poster_url"] = f"{STORAGE_URL}{file_name}"
+        await save_to_supabase(message, state)
+        
+    except Exception as e:
+        await msg.edit_text(f"❌ Poster yuklashda xatolik: {str(e)}")
+
 @dp.message()
 async def handle_text_inputs(message: types.Message):
     if message.from_user.id not in ADMINS: return
     state = admin_states.get(message.from_user.id)
-    if not state: return
+    if not state: 
+        if message.text and not message.text.startswith("/"):
+             await message.answer("⚠️ Amal bajarish uchun menyudan foydalaning yoki /start bosing.")
+        return
 
     step = state.get("step")
     
@@ -196,47 +230,50 @@ async def handle_text_inputs(message: types.Message):
     elif step == "plot":
         state["plot"] = message.text
         state["step"] = "poster"
-        await message.answer("🖼 <b>Poster URL manzilini yuboring:</b>\n(Yoki '.' yuboring)", parse_mode="HTML")
+        await message.answer("🖼 <b>Poster URL manzilini yuboring yoki rasm fayli tashlang:</b>\n(Yoki '.' yuboring)", parse_mode="HTML")
 
     elif step == "poster":
         state["poster_url"] = "https://via.placeholder.com/400x600?text=No+Poster" if message.text == "." else message.text
+        await save_to_supabase(message, state)
+
+async def save_to_supabase(message: types.Message, state: dict):
+    msg = await message.answer("🚀 <b>Ma'lumotlar saqlanmoqda...</b>", parse_mode="HTML")
+    try:
+        movie_data = {
+            "title": state["title"],
+            "poster_url": state["poster_url"],
+            "video_url": state["video_url"],
+            "type": state["type"],
+            "year": state["year"],
+            "genre": state["genre"],
+            "plot": state["plot"],
+            "status": state["status"],
+            "access_type": state["access_type"],
+            "translator": state["translator"],
+            "tags": state["tags"],
+            "rating": 5.0,
+            "view_count": 0,
+            "is_series": False
+        }
         
-        # Save to Supabase
-        msg = await message.answer("🚀 <b>Ma'lumotlar saqlanmoqda...</b>", parse_mode="HTML")
-        try:
-            movie_data = {
-                "title": state["title"],
-                "poster_url": state["poster_url"],
-                "video_url": state["video_url"],
-                "type": state["type"],
-                "year": state["year"],
-                "genre": state["genre"],
-                "plot": state["plot"],
-                "status": state["status"],
-                "access_type": state["access_type"],
-                "translator": state["translator"],
-                "tags": state["tags"],
-                "rating": 5.0,
-                "view_count": 0,
-                "is_series": False # Basic support
-            }
-            
-            supabase.table("movies").insert(movie_data).execute()
-            
-            final_text = (
-                "✅ <b>Muvaffaqiyatli qo'shildi!</b>\n\n"
-                f"🎬 <b>Nomi:</b> {state['title']}\n"
-                f"📅 <b>Yili:</b> {state['year']}\n"
-                f"📂 <b>Turi:</b> {state['type'].upper()}\n"
-                f"📌 <b>Holati:</b> {state['status']}\n"
-                f"💎 <b>Access:</b> {state['access_type']}\n"
-                f"🔗 <a href='{state['video_url']}'>Video URL</a>"
-            )
-            await msg.edit_text(final_text, parse_mode="HTML")
+        supabase.table("movies").insert(movie_data).execute()
+        
+        final_text = (
+            "✅ <b>Muvaffaqiyatli qo'shildi!</b>\n\n"
+            f"🎬 <b>Nomi:</b> {state['title']}\n"
+            f"📅 <b>Yili:</b> {state['year']}\n"
+            f"📂 <b>Turi:</b> {state['type'].upper()}\n"
+            f"📌 <b>Holati:</b> {state['status']}\n"
+            f"💎 <b>Access:</b> {state['access_type']}\n"
+            f"🔗 <a href='{state['video_url']}'>Video URL</a>"
+        )
+        await msg.edit_text(final_text, parse_mode="HTML", disable_web_page_preview=True)
+        # Clear state
+        if message.from_user.id in admin_states:
             del admin_states[message.from_user.id]
-            
-        except Exception as e:
-            await msg.edit_text(f"❌ <b>Xatolik:</b> {str(e)}", parse_mode="HTML")
+        
+    except Exception as e:
+        await msg.edit_text(f"❌ <b>Supabase xatoligi:</b>\n{str(e)}", parse_mode="HTML")
 
 async def main():
     await dp.start_polling(bot)

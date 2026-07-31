@@ -11,22 +11,37 @@ fi
 # Load existing .env
 export $(grep -v '^#' .env | xargs)
 
-# Prompt for credentials with defaults
-read -p "Telegram Bot Token kiriting [${BOT_TOKEN:-token}]: " bot_token
-bot_token=${bot_token:-$BOT_TOKEN}
+# Function to prompt if not set
+prompt_if_empty() {
+    local var_name=$1
+    local prompt_text=$2
+    local current_val=${!var_name}
 
-read -p "Admin IDlarini kiriting (vergul bilan) [${ADMIN_IDS:-123456}]: " admin_ids
-admin_ids=${admin_ids:-$ADMIN_IDS}
+    if [ -z "$current_val" ] || [ "$current_val" == "token" ] || [ "$current_val" == "123456" ]; then
+        read -p "$prompt_text: " input_val
+        eval "$var_name=\$input_val"
+    else
+        echo "$var_name allaqachon mavjud."
+        read -p "O'zgartirmoqchimisiz? (y/N): " change
+        if [[ "$change" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            read -p "$prompt_text: " input_val
+            eval "$var_name=\$input_val"
+        fi
+    fi
+}
+
+prompt_if_empty BOT_TOKEN "Telegram Bot Token kiriting"
+prompt_if_empty ADMIN_IDS "Admin IDlarini kiriting (vergul bilan)"
 
 # Rewrite .env with all values
 echo "SUPABASE_URL=$SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
 STORAGE_URL=$STORAGE_URL
 SERVER_IP=$SERVER_IP
-BOT_TOKEN=$bot_token
-ADMIN_IDS=$admin_ids" > .env
+BOT_TOKEN=$BOT_TOKEN
+ADMIN_IDS=$ADMIN_IDS" > .env
 
-# Install requirements again just in case
+# Install requirements again
 source venv/bin/activate
 pip install -r requirements.txt
 

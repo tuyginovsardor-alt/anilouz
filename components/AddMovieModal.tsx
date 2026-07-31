@@ -53,17 +53,17 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
     const [year, setYear] = useState(new Date().getFullYear());
     const [plot, setPlot] = useState('');
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-    const [tags, setTags] = useState('');
-    const [translator, setTranslator] = useState('');
     const [poster, setPoster] = useState<string | File>('');
     const [posterType, setPosterType] = useState<'url' | 'file'>('url');
     const [is_series, setIsSeries] = useState(false);
     const [episodes, setEpisodes] = useState<Partial<Episode>[]>([{ title: '1-qism', sourceType: 'url', source: '' }]);
     const [videoSourceType, setVideoSourceType] = useState<'url' | 'file'>('url');
     const [videoSource, setVideoSource] = useState<string | File>('');
-    const [status, setStatus] = useState<'ongoing' | 'completed'>('completed');
-    const [accessType, setAccessType] = useState<'free' | 'premium'>('free');
+    const [status, setStatus] = useState<'ongoing' | 'completed'>(initialData?.status || 'completed');
+    const [accessType, setAccessType] = useState<'free' | 'premium'>(initialData?.access_type || 'free');
     const [type, setType] = useState<string>(initialData?.type || 'anime');
+    const [translator, setTranslator] = useState<string>(initialData?.translator || '');
+    const [tags, setTags] = useState<string>(initialData?.tags || '');
     
     const [isSaving, setIsSaving] = useState(isSavingProp);
     const [posterProgress, setPosterProgress] = useState<number | null>(null);
@@ -186,6 +186,8 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
             is_series,
             status,
             type,
+            translator,
+            tags,
             access_type: accessType,
             videoSource: !is_series ? (videoSourceType === 'file' ? videoUrl : videoSource) : undefined,
             video_id: !is_series ? initialData?.video_id : undefined,
@@ -239,6 +241,29 @@ export const AddMovieModal: React.FC<AddMovieModalProps> = ({ onClose, onSave, i
                                 <option value="completed">Tugallangan</option>
                                 <option value="ongoing">Davom etmoqda (Ongoing)</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Tarjimon (Translator)</label>
+                            <input 
+                                type="text"
+                                value={translator}
+                                onChange={(e) => setTranslator(e.target.value)}
+                                placeholder="Masalan: Anilo.uz"
+                                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Qidiruv so'zlari (Tags)</label>
+                            <input 
+                                type="text"
+                                value={tags}
+                                onChange={(e) => setTags(e.target.value)}
+                                placeholder="Masalan: Ninja, Boruto..."
+                                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none text-white"
+                            />
                         </div>
                     </div>
 

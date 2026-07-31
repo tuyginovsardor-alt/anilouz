@@ -5,35 +5,62 @@ echo "--- Anilo Storage & API Setup ---"
 
 # Load existing .env if it exists
 if [ -f .env ]; then
+    # Use a more robust way to load env vars
     export $(grep -v '^#' .env | xargs)
 fi
 
-# Prompt for Supabase details with defaults
-read -p "Supabase URL kiriting [${SUPABASE_URL:-https://xyz.supabase.co}]: " sb_url
-sb_url=${sb_url:-$SUPABASE_URL}
+# Function to prompt if not set
+prompt_if_empty() {
+    local var_name=$1
+    local prompt_text=$2
+    local current_val=${!var_name}
 
-read -p "Supabase Service Role Key kiriting [${SUPABASE_SERVICE_ROLE_KEY:-key}]: " sb_key
-sb_key=${sb_key:-$SUPABASE_SERVICE_ROLE_KEY}
+    if [ -z "$current_val" ]; then
+        read -p "$prompt_text: " input_val
+        eval "$var_name=\$input_val"
+    else
+        echo "$var_name allaqachon mavjud: $current_val"
+        read -p "O'zgartirmoqchimisiz? (y/N): " change
+        if [[ "$change" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            read -p "$prompt_text: " input_val
+            eval "$var_name=\$input_val"
+        fi
+    fi
+}
 
-read -p "Server IP yoki Domain manzilini kiriting [${SERVER_IP:-apibot.wentric.uz}]: " server_ip
-server_ip=${server_ip:-$SERVER_IP}
+prompt_if_empty SUPABASE_URL "Supabase URL kiriting (Masalan: https://xyz.supabase.co)"
+prompt_if_empty SUPABASE_SERVICE_ROLE_KEY "Supabase Service Role Key kiriting"
+prompt_if_empty SERVER_IP "Server IP yoki Domain manzilini kiriting (Masalan: apibot.wentric.uz)"
 
-# Create .env
+# Final values
+sb_url=$SUPABASE_URL
+sb_key=$SUPABASE_SERVICE_ROLE_KEY
+server_ip=$SERVER_IP
+
+# Create/Update .env
 echo "SUPABASE_URL=$sb_url
 SUPABASE_SERVICE_ROLE_KEY=$sb_key
 STORAGE_URL=http://$server_ip/films/
 SERVER_IP=$server_ip" > .env
+
+# Retain existing BOT tokens if they exist
+if [ ! -z "$BOT_TOKEN" ]; then
+    echo "BOT_TOKEN=$BOT_TOKEN" >> .env
+fi
+if [ ! -z "$ADMIN_IDS" ]; then
+    echo "ADMIN_IDS=$ADMIN_IDS" >> .env
+fi
 
 # Update system
 sudo apt update
 sudo apt install python3-pip python3-venv caddy -y
 
 # Create virtual environment
-rm -rf venv
-python3 -m venv venv
-source venv/bin/activate
+if [ ! -d "venv" ]; then
+    python3 -m venv venv
+fi
 
-# Install requirements INSIDE venv
+source venv/bin/activate
 pip install --upgrade pip
 pip install wheel
 pip install -r requirements.txt
