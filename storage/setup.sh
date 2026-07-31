@@ -74,11 +74,18 @@ echo "$server_ip {
     reverse_proxy localhost:8000
     
     handle_path /films/* {
-        file_server {
-            root films/
-        }
+        root * $(pwd)/films
+        file_server
     }
 }" | sudo tee /etc/caddy/Caddyfile
+
+# Open Firewall ports
+if command -v ufw > /dev/null; then
+    sudo ufw allow 80/tcp
+    sudo ufw allow 443/tcp
+    sudo ufw allow 8000/tcp
+    sudo ufw --force enable
+fi
 
 sudo systemctl restart caddy
 
