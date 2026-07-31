@@ -181,7 +181,7 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
             
             {/* HERO CAROUSEL */}
             <div 
-                className="relative w-full h-[60vh] md:h-[80vh] group overflow-hidden mb-12 md:mb-20 shadow-2xl -mt-24"
+                className="relative w-full h-[45vh] md:h-[65vh] group overflow-hidden mb-8 md:mb-16 shadow-2xl -mt-24"
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
@@ -201,59 +201,58 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                             >
                                 <img 
                                     src={movie.poster_url || movie.posterUrl} 
-                                    className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-out ${heroIndex === idx ? 'scale-110' : 'scale-100'}`} 
+                                    className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-out ${heroIndex === idx ? 'scale-105' : 'scale-100'}`} 
                                     alt="" 
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent"></div>
-                                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent"></div>
                             </div>
 
-                            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-16 z-20 max-w-6xl mx-auto">
+                            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 z-20 max-w-6xl mx-auto">
                                 <div className={`transition-all duration-1000 transform ${heroIndex === idx ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
                                     
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-[0.2em] shadow-2xl shadow-orange-600/50">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="bg-orange-600 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-[0.2em] shadow-2xl shadow-orange-600/50">
                                             YANGI
                                         </span>
-                                        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl px-3 py-1 rounded-lg border border-white/10 shadow-2xl">
-                                            <Star size={12} className="text-yellow-400 fill-yellow-400"/>
-                                            <span className="text-white font-black text-xs">{movie.rating.toFixed(1)}</span>
+                                        <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-xl px-2 py-0.5 rounded-md border border-white/10 shadow-2xl">
+                                            <Star size={10} className="text-yellow-400 fill-yellow-400"/>
+                                            <span className="text-white font-black text-[10px]">{movie.rating.toFixed(1)}</span>
                                         </div>
-                                        <span className="bg-white/10 backdrop-blur-xl text-white text-[10px] font-black px-3 py-1 rounded-lg border border-white/10 uppercase tracking-[0.2em]">
+                                        <span className="bg-white/10 backdrop-blur-xl text-white text-[8px] font-black px-2 py-0.5 rounded-md border border-white/10 uppercase tracking-[0.2em]">
                                             {movie.genre.split(',')[0]}
                                         </span>
                                     </div>
                                     
-                                    <h1 className="text-4xl md:text-8xl lg:text-9xl font-black text-white mb-6 uppercase leading-[0.9] tracking-tighter drop-shadow-2xl max-w-4xl">
+                                    <h1 className="text-3xl md:text-6xl lg:text-7xl font-black text-white mb-4 uppercase leading-[0.9] tracking-tighter drop-shadow-2xl max-w-3xl">
                                         {movie.title}
                                     </h1>
                                     
-                                    <p className="text-zinc-300 text-xs md:text-lg max-w-2xl mb-10 font-medium leading-relaxed drop-shadow-2xl line-clamp-2 md:line-clamp-3">
+                                    <p className="text-zinc-300 text-[10px] md:text-sm max-w-xl mb-8 font-medium leading-relaxed drop-shadow-2xl line-clamp-2 md:line-clamp-3">
                                         {movie.plot}
                                     </p>
 
-                                    <div className="flex flex-wrap items-center gap-4">
+                                    <div className="flex flex-wrap items-center gap-3">
                                         <button 
                                             onClick={() => onMovieClick(movie)}
-                                            className="px-8 md:px-12 py-4 md:py-5 bg-white text-black hover:bg-orange-600 hover:text-white rounded-2xl md:rounded-[2rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-95 group"
+                                            className="px-6 md:px-8 py-3 md:py-4 bg-white text-black hover:bg-orange-600 hover:text-white rounded-xl md:rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95 group"
                                         >
-                                            <Play fill="currentColor" size={20}/> 
+                                            <Play fill="currentColor" size={16}/> 
                                             KO'RISH
                                         </button>
                                         
                                         <button 
                                             onClick={() => onMovieClick(movie)}
-                                            className="px-8 md:px-12 py-4 md:py-5 bg-black/40 backdrop-blur-2xl border border-white/10 text-white rounded-2xl md:rounded-[2rem] font-black uppercase tracking-widest text-[11px] hover:bg-white/10 transition-all flex items-center justify-center gap-4 active:scale-95"
+                                            className="px-6 md:px-8 py-3 md:py-4 bg-black/40 backdrop-blur-2xl border border-white/10 text-white rounded-xl md:rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] hover:bg-white/10 transition-all flex items-center justify-center gap-3 active:scale-95"
                                         >
-                                            <Info size={20} />
+                                            <Info size={16} />
                                             BATAFSIL
                                         </button>
 
                                         <button 
                                             onClick={handleHeroSave}
-                                            className={`p-4 md:p-5 rounded-2xl md:rounded-[2rem] flex items-center justify-center transition-all active:scale-90 border ${isHeroSaved ? 'bg-orange-600 border-orange-600 text-white' : 'bg-black/40 backdrop-blur-xl border-white/10 text-white hover:bg-white/10'}`}
+                                            className={`p-3 md:p-4 rounded-xl md:rounded-[1.5rem] flex items-center justify-center transition-all active:scale-90 border ${isHeroSaved ? 'bg-orange-600 border-orange-600 text-white' : 'bg-black/40 backdrop-blur-xl border-white/10 text-white hover:bg-white/10'}`}
                                         >
-                                            <Plus size={24} className={isHeroSaved ? 'rotate-45' : ''} />
+                                            <Plus size={20} className={isHeroSaved ? 'rotate-45' : ''} />
                                         </button>
                                     </div>
                                 </div>
@@ -263,47 +262,47 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                 </div>
 
                 {/* SLIDE NAVIGATION CONTROLS - Desktop Only */}
-                <div className="hidden md:block absolute top-1/2 -translate-y-1/2 left-8 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleManualNav('prev')} className="p-4 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full text-white hover:bg-orange-600 transition-all active:scale-90">
-                        <ChevronLeft size={32} />
+                <div className="hidden md:block absolute top-1/2 -translate-y-1/2 left-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleManualNav('prev')} className="p-3 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full text-white hover:bg-orange-600 transition-all active:scale-90">
+                        <ChevronLeft size={24} />
                     </button>
                 </div>
-                <div className="hidden md:block absolute top-1/2 -translate-y-1/2 right-8 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleManualNav('next')} className="p-4 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full text-white hover:bg-orange-600 transition-all active:scale-90">
-                        <ChevronRight size={32} />
+                <div className="hidden md:block absolute top-1/2 -translate-y-1/2 right-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleManualNav('next')} className="p-3 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full text-white hover:bg-orange-600 transition-all active:scale-90">
+                        <ChevronRight size={24} />
                     </button>
                 </div>
 
                 {/* PAGINATION INDICATORS */}
-                <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30 bg-black/20 backdrop-blur-xl px-6 py-3 rounded-full border border-white/5">
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30 bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full border border-white/5">
                     {heroMovies.map((_, i) => (
                         <button 
                             key={i} 
                             onClick={() => { setHeroIndex(i); setIsAutoPlaying(false); }} 
-                            className={`transition-all duration-500 rounded-full ${i === heroIndex ? 'w-8 h-1.5 bg-orange-600' : 'w-1.5 h-1.5 bg-zinc-500 hover:bg-white'}`}
+                            className={`transition-all duration-500 rounded-full ${i === heroIndex ? 'w-6 h-1 bg-orange-600' : 'w-1 h-1 bg-zinc-500 hover:bg-white'}`}
                         />
                     ))}
                 </div>
             </div>
 
-            <div className="container mx-auto px-6 md:px-12 mt-12">
-                <div className="flex flex-col lg:flex-row gap-16 md:gap-24">
+            <div className="container mx-auto px-4 md:px-8 mt-8">
+                <div className="flex flex-col lg:flex-row gap-12 md:gap-16">
                     {/* MAIN CONTENT AREA */}
-                    <div className="flex-1 space-y-24 md:space-y-32">
+                    <div className="flex-1 space-y-16 md:space-y-24">
                         
                         {/* STUDIYALAR SECTION */}
                         <div>
-                            <div className="flex items-center justify-between mb-12">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-6 w-1 bg-white rounded-full"></div>
-                                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Studiyalar</h2>
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-4 w-1 bg-white rounded-full"></div>
+                                    <h2 className="text-xl font-black text-white uppercase tracking-tighter">Studiyalar</h2>
                                 </div>
-                                <button onClick={() => onMainNavigate?.('studio')} className="flex items-center gap-2 text-zinc-500 hover:text-white font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                                <button onClick={() => onMainNavigate?.('studio')} className="flex items-center gap-2 text-zinc-500 hover:text-white font-black text-[9px] uppercase tracking-[0.2em] transition-colors group">
                                     Barchasi
-                                    <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                    <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
-                            <div className="flex gap-4 md:gap-8 overflow-x-auto pb-8 no-scrollbar scroll-smooth">
+                            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-6 no-scrollbar scroll-smooth">
                                 {[
                                     { name: 'Anilo', color: 'from-orange-600 to-red-600', icon: 'A' },
                                     { name: 'Kuzuki', color: 'from-purple-600 to-blue-600', icon: 'K' },
@@ -312,11 +311,11 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                                     { name: 'AnimeStar', color: 'from-pink-600 to-rose-600', icon: 'AS' },
                                     { name: 'Fandub', color: 'from-yellow-600 to-orange-600', icon: 'F' },
                                 ].map((studio, i) => (
-                                    <div key={i} className="flex-shrink-0 w-24 md:w-36 flex flex-col items-center gap-4 group cursor-pointer" onClick={() => onMainNavigate?.('studio')}>
-                                        <div className={`w-16 h-16 md:w-28 md:h-28 rounded-full bg-gradient-to-br ${studio.color} flex items-center justify-center text-white text-lg md:text-3xl font-black shadow-2xl group-hover:scale-110 transition-transform duration-500 border-4 border-white/10`}>
+                                    <div key={i} className="flex-shrink-0 w-20 md:w-30 flex flex-col items-center gap-3 group cursor-pointer" onClick={() => onMainNavigate?.('studio')}>
+                                        <div className={`w-14 h-14 md:w-24 md:h-24 rounded-full bg-gradient-to-br ${studio.color} flex items-center justify-center text-white text-base md:text-2xl font-black shadow-2xl group-hover:scale-110 transition-transform duration-500 border-2 border-white/10`}>
                                             {studio.icon}
                                         </div>
-                                        <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 group-hover:text-white transition-colors">{studio.name}</span>
+                                        <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-zinc-500 group-hover:text-white transition-colors">{studio.name}</span>
                                     </div>
                                 ))}
                             </div>
@@ -324,17 +323,17 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
 
                         {/* YANGI QO'SHILGANLAR */}
                         <div>
-                            <div className="flex items-center justify-between mb-12">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-6 w-1 bg-orange-600 rounded-full"></div>
-                                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Yangi Qo'shilganlar</h2>
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-4 w-1 bg-orange-600 rounded-full"></div>
+                                    <h2 className="text-xl font-black text-white uppercase tracking-tighter">Yangi Qo'shilganlar</h2>
                                 </div>
-                                <button className="flex items-center gap-2 text-zinc-500 hover:text-orange-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                                <button className="flex items-center gap-2 text-zinc-500 hover:text-orange-500 font-black text-[9px] uppercase tracking-[0.2em] transition-colors group">
                                     Barchasi
-                                    <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                    <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-x-6 gap-y-12">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-8">
                                 {allMovies.slice(0, 10).map((movie, i) => (
                                     <MovieCard key={movie.id} movie={movie} isActive={i === 0} onClick={() => onMovieClick(movie)} />
                                 ))}
@@ -343,17 +342,17 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
 
                         {/* ANIMELAR */}
                         <div>
-                            <div className="flex items-center justify-between mb-12">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-6 w-1 bg-purple-600 rounded-full"></div>
-                                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Mashhur Animelar</h2>
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-4 w-1 bg-purple-600 rounded-full"></div>
+                                    <h2 className="text-xl font-black text-white uppercase tracking-tighter">Mashhur Animelar</h2>
                                 </div>
-                                <button className="flex items-center gap-2 text-zinc-500 hover:text-purple-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                                <button className="flex items-center gap-2 text-zinc-500 hover:text-purple-500 font-black text-[9px] uppercase tracking-[0.2em] transition-colors group">
                                     Barchasi
-                                    <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                    <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-x-6 gap-y-12">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-8">
                                 {allMovies.filter(m => m.type === 'anime').slice(0, 10).map((movie) => (
                                     <MovieCard key={`anime-${movie.id}`} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
                                 ))}
@@ -362,68 +361,68 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                     </div>
 
                     {/* SIDE PANEL (Reference Style) */}
-                    <div className="hidden xl:block w-96 space-y-16">
+                    <div className="hidden xl:block w-80 space-y-12">
                         {/* QUICK ACCESS */}
-                        <div className="bg-[#0a0a0a] rounded-[2.5rem] border border-white/5 p-8 shadow-2xl">
-                            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-8 px-2">Tez Ko'rish</h3>
-                            <div className="space-y-3">
+                        <div className="bg-[#0a0a0a] rounded-[2rem] border border-white/5 p-6 shadow-2xl">
+                            <h3 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-6 px-2">Tez Ko'rish</h3>
+                            <div className="space-y-2">
                                 {[
-                                    { label: 'Eng yangi seriyalar', icon: <TrendingUp size={16} className="text-orange-500" /> },
-                                    { label: 'Eng ko\'p ko\'rilgan', icon: <Compass size={16} className="text-blue-500" /> },
-                                    { label: 'Eng yaxshi reyting', icon: <Star size={16} className="text-yellow-500" /> },
-                                    { label: 'Tavsiya etilgan', icon: <Play size={16} className="text-purple-500" /> },
-                                    { label: 'Sevimli anime', icon: <Bookmark size={16} className="text-pink-500" /> },
+                                    { label: 'Eng yangi seriyalar', icon: <TrendingUp size={14} className="text-orange-500" /> },
+                                    { label: 'Eng ko\'p ko\'rilgan', icon: <Compass size={14} className="text-blue-500" /> },
+                                    { label: 'Eng yaxshi reyting', icon: <Star size={14} className="text-yellow-500" /> },
+                                    { label: 'Tavsiya etilgan', icon: <Play size={14} className="text-purple-500" /> },
+                                    { label: 'Sevimli anime', icon: <Bookmark size={14} className="text-pink-500" /> },
                                 ].map((item, i) => (
-                                    <button key={i} className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition-all group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <button key={i} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all group">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                                                 {item.icon}
                                             </div>
-                                            <span className="text-[10px] font-black uppercase text-zinc-400 group-hover:text-white transition-colors">{item.label}</span>
+                                            <span className="text-[9px] font-black uppercase text-zinc-400 group-hover:text-white transition-colors">{item.label}</span>
                                         </div>
-                                        <ChevronRight size={14} className="text-zinc-800 group-hover:text-white transition-colors" />
+                                        <ChevronRight size={12} className="text-zinc-800 group-hover:text-white transition-colors" />
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         {/* TOP ANIME - Real Data from Supabase */}
-                        <div className="bg-[#0a0a0a] rounded-[2.5rem] border border-white/5 p-8 shadow-2xl">
-                            <div className="flex items-center justify-between mb-10 px-2">
-                                <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">Top Anime</h3>
-                                <div className="flex gap-2">
-                                    <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest border border-orange-500/30 px-2.5 py-1 rounded-lg">Kun</span>
-                                    <span className="text-[8px] font-black text-zinc-700 uppercase tracking-widest border border-white/5 px-2.5 py-1 rounded-lg hover:text-white transition-colors cursor-pointer">Hafta</span>
+                        <div className="bg-[#0a0a0a] rounded-[2rem] border border-white/5 p-6 shadow-2xl">
+                            <div className="flex items-center justify-between mb-8 px-2">
+                                <h3 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em]">Top Anime</h3>
+                                <div className="flex gap-1.5">
+                                    <span className="text-[7px] font-black text-orange-500 uppercase tracking-widest border border-orange-500/30 px-2 py-0.5 rounded-md">Kun</span>
+                                    <span className="text-[7px] font-black text-zinc-700 uppercase tracking-widest border border-white/5 px-2 py-0.5 rounded-md hover:text-white transition-colors cursor-pointer">Hafta</span>
                                 </div>
                             </div>
                             
-                            <div className="space-y-8">
+                            <div className="space-y-6">
                                 {[...allMovies].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 6).map((movie, i) => (
                                     <div 
                                         key={movie.id} 
                                         onClick={() => onMovieClick(movie)}
-                                        className="flex items-center gap-5 group cursor-pointer"
+                                        className="flex items-center gap-4 group cursor-pointer"
                                     >
-                                        <span className="text-3xl font-black text-zinc-900 group-hover:text-orange-600/50 transition-colors w-8">{i + 1}</span>
-                                        <div className="w-16 h-20 rounded-xl overflow-hidden shadow-2xl shrink-0 border border-white/5">
+                                        <span className="text-xl font-black text-zinc-900 group-hover:text-orange-600/50 transition-colors w-6">{i + 1}</span>
+                                        <div className="w-12 h-16 rounded-lg overflow-hidden shadow-2xl shrink-0 border border-white/5">
                                             <img src={movie.poster_url || movie.posterUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
                                         </div>
                                         <div className="flex-1 overflow-hidden">
-                                            <h4 className="text-[11px] font-black text-white uppercase tracking-tight line-clamp-1 mb-2 group-hover:text-orange-500 transition-colors">{movie.title}</h4>
-                                            <div className="flex items-center gap-3">
+                                            <h4 className="text-[10px] font-black text-white uppercase tracking-tight line-clamp-1 mb-1 group-hover:text-orange-500 transition-colors">{movie.title}</h4>
+                                            <div className="flex items-center gap-2">
                                                 <div className="flex items-center gap-1">
-                                                    <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                                                    <span className="text-[10px] font-black text-zinc-500">{movie.rating.toFixed(1)}</span>
+                                                    <Star size={8} className="text-yellow-500 fill-yellow-500" />
+                                                    <span className="text-[9px] font-black text-zinc-500">{movie.rating.toFixed(1)}</span>
                                                 </div>
-                                                <div className="w-1 h-1 bg-zinc-800 rounded-full"></div>
-                                                <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter">{(movie.view_count || 0).toLocaleString()} ko'rish</span>
+                                                <div className="w-0.5 h-0.5 bg-zinc-800 rounded-full"></div>
+                                                <span className="text-[8px] font-black text-zinc-600 uppercase tracking-tighter">{(movie.view_count || 0).toLocaleString()} ko'rish</span>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                             
-                            <button className="w-full mt-10 py-4 bg-white/5 border border-white/5 rounded-2xl text-[9px] font-black text-zinc-500 uppercase tracking-widest hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all">
+                            <button className="w-full mt-8 py-3 bg-white/5 border border-white/5 rounded-xl text-[8px] font-black text-zinc-500 uppercase tracking-widest hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all">
                                 To'liq ro'yxat
                             </button>
                         </div>
