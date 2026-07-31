@@ -8,3 +8,4 @@ uvloop
 supabase
 python-dotenv
 httpx
+telethon

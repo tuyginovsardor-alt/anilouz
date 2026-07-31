@@ -65,18 +65,15 @@ pip install --upgrade pip
 pip install wheel
 pip install -r requirements.txt
 
-# Create storage directory in a web-accessible location to avoid 403 errors
-STORAGE_BASE="/var/www/anilo"
-sudo mkdir -p $STORAGE_BASE/films
-sudo chmod -R 755 $STORAGE_BASE
-sudo chown -R caddy:caddy $STORAGE_BASE
-
-# Create a symlink in the current directory for the bot to use
-ln -sfn $STORAGE_BASE/films films
+# Create storage directory
+mkdir -p films
+chmod 777 films
 
 # Setup Caddyfile with Domain (Automatic HTTPS)
+# Using absolute path /root/anilouz/storage/films as requested
+ABS_PATH=$(pwd)
 echo "$server_ip {
-    # CORS Headers for all requests
+    # CORS Headers for website access
     header {
         Access-Control-Allow-Origin *
         Access-Control-Allow-Methods \"GET, POST, OPTIONS\"
@@ -84,20 +81,21 @@ echo "$server_ip {
         Access-Control-Expose-Headers \"*\"
     }
 
-    # Static files handled from /var/www/anilo
+    # Serve films directly from the storage path
     handle_path /films/* {
-        root * $STORAGE_BASE/films
+        root * $ABS_PATH/films
         file_server
     }
-    
-    # Everything else to FastAPI
+
+    # Proxy all other requests to FastAPI
     reverse_proxy localhost:8000
 }" | sudo tee /etc/caddy/Caddyfile
 
-# Ensure permissions are set correctly for web access
-sudo chown -R caddy:caddy $STORAGE_BASE
-sudo find $STORAGE_BASE -type d -exec chmod 755 {} +
-sudo find $STORAGE_BASE -type f -exec chmod 644 {} +
+# Crucial: Give Caddy permission to traverse the root home directory (if it's being used)
+# Note: It's better to move storage to /var/www, but we'll try to fix permissions for now
+sudo chmod 755 /root
+sudo chmod -R 755 /root/anilouz/storage
+sudo chown -R caddy:caddy /root/anilouz/storage/films
 
 # Open Firewall ports
 if command -v ufw > /dev/null; then

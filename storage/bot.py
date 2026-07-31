@@ -89,9 +89,16 @@ async def main_menu(callback: types.CallbackQuery):
 @dp.callback_query(F.data == "admin_stats")
 async def show_stats(callback: types.CallbackQuery):
     try:
-        movies_count = supabase.table("movies").select("id", count="exact").execute().count
-        fandub_count = supabase.table("fandub_projects").select("id", count="exact").execute().count
-        users_count = supabase.table("profiles").select("id", count="exact").execute().count
+        # Fetch counts with error handling for empty tables
+        movies_res = supabase.table("movies").select("id", count="exact").execute()
+        movies_count = movies_res.count if hasattr(movies_res, 'count') and movies_res.count is not None else 0
+        
+        fandub_res = supabase.table("fandub_projects").select("id", count="exact").execute()
+        fandub_count = fandub_res.count if hasattr(fandub_res, 'count') and fandub_res.count is not None else 0
+        
+        profiles_res = supabase.table("profiles").select("id", count="exact").execute()
+        users_count = profiles_res.count if hasattr(profiles_res, 'count') and profiles_res.count is not None else 0
+        
         stats_text = (
             "📊 <b>Sayt Statistikasi</b>\n\n"
             f"🎬 Jami Filmlar: <b>{movies_count}</b>\n"
@@ -101,6 +108,7 @@ async def show_stats(callback: types.CallbackQuery):
         )
         await callback.message.edit_text(stats_text, reply_markup=get_main_keyboard(), parse_mode="HTML")
     except Exception as e:
+        logging.error(f"Stats Error: {e}")
         await callback.answer(f"Xatolik: {str(e)}", show_alert=True)
 
 @dp.callback_query(F.data == "admin_settings")
@@ -144,6 +152,11 @@ async def manage_admins(callback: types.CallbackQuery):
     text = f"👥 <b>Hozirgi Adminlar:</b>\n\n{admins_list}\n\nAdmin qo'shish uchun uning ID raqamini yuboring."
     admin_states[callback.from_user.id] = {"step": "add_admin"}
     await callback.message.edit_text(text, reply_markup=get_admins_keyboard(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "admin_add_new")
+async def add_admin_callback(callback: types.CallbackQuery):
+    admin_states[callback.from_user.id] = {"step": "add_admin"}
+    await callback.message.edit_text("👥 <b>Yangi Admin ID</b> raqamini yuboring:", parse_mode="HTML")
 
 @dp.callback_query(F.data == "admin_add")
 async def start_add_flow(callback: types.CallbackQuery):
@@ -213,6 +226,31 @@ async def handle_poster_file(message: types.Message):
     except Exception as e:
         await msg.edit_text(f"❌ Xatolik: {str(e)}")
 
+@dp.callback_query(F.data == "settings_userbot")
+async def userbot_menu(callback: types.CallbackQuery):
+    from userbot import is_authenticated
+    auth = await is_authenticated()
+    status = "✅ Ulangan" if auth else "❌ Ulanmagan"
+    
+    text = (
+        "🤖 <b>UserBot (Telethon) Sozlamalari</b>\n\n"
+        f"Holati: {status}\n\n"
+        "Ushbu bo'lim orqali Telegram API ID va Hash yordamida shaxsiy hisobingizni ulashingiz mumkin. "
+        "Bu 2 GB gacha bo'lgan fayllarni yuklash imkonini beradi."
+    )
+    builder = InlineKeyboardBuilder()
+    if not auth:
+        builder.row(types.InlineKeyboardButton(text="🔗 Hisobni Ulash", callback_data="userbot_connect"))
+    else:
+        builder.row(types.InlineKeyboardButton(text="🔴 Uzish", callback_data="userbot_logout"))
+    builder.row(types.InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_settings"))
+    await callback.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "userbot_connect")
+async def connect_userbot_start(callback: types.CallbackQuery):
+    admin_states[callback.from_user.id] = {"step": "ub_api_id"}
+    await callback.message.edit_text("📱 <b>Telegram API ID</b> ni kiriting:\n(my.telegram.org saytidan olinadi)", parse_mode="HTML")
+
 @dp.message()
 async def handle_text_inputs(message: types.Message):
     if message.from_user.id not in ADMINS: return
@@ -222,10 +260,72 @@ async def handle_text_inputs(message: types.Message):
     
     if step == "add_admin":
         if message.text.isdigit():
-            ADMINS.append(int(message.text))
-            await message.answer(f"✅ Admin qo'shildi: {message.text}")
+            new_admin_id = int(message.text)
+            if new_admin_id not in ADMINS:
+                ADMINS.append(new_admin_id)
+                await message.answer(f"✅ Admin qo'shildi: {new_admin_id}")
+            else:
+                await message.answer("⚠️ Ushbu ID allaqachon admin.")
             del admin_states[message.from_user.id]
+        else:
+            await message.answer("⚠️ Faqat raqamli ID yuboring.")
         return
+
+    if step == "ub_api_id":
+        state["api_id"] = message.text.strip()
+        state["step"] = "ub_api_hash"
+        await message.answer("🔑 Endi <b>API HASH</b> ni kiriting:", parse_mode="HTML")
+    elif step == "ub_api_hash":
+        state["api_hash"] = message.text.strip()
+        state["step"] = "ub_phone"
+        await message.answer("📞 Telegram <b>Telefon raqamingizni</b> kiriting:\n(Masalan: +998901234567)", parse_mode="HTML")
+    elif step == "ub_phone":
+        state["phone"] = message.text.strip()
+        from telethon import TelegramClient
+        try:
+            client = TelegramClient("anilo_user", int(state["api_id"]), state["api_hash"])
+            await client.connect()
+            sent_code = await client.send_code_request(state["phone"])
+            state["phone_code_hash"] = sent_code.phone_code_hash
+            state["client"] = client
+            state["step"] = "ub_code"
+            await message.answer("📩 Telegramdan kelgan <b>KOD</b> ni kiriting:\n(Format: <code>1.2.3.4.5</code> yoki <code>12345</code>)", parse_mode="HTML")
+        except Exception as e:
+            await message.answer(f"❌ Xatolik: {str(e)}")
+            del admin_states[message.from_user.id]
+    elif step == "ub_code":
+        code = message.text.replace(".", "").strip()
+        client = state["client"]
+        try:
+            await client.sign_in(state["phone"], code, phone_code_hash=state["phone_code_hash"])
+            await message.answer("✅ <b>Tabriklaymiz! UserBot muvaffaqiyatli ulandi.</b>", parse_mode="HTML")
+            # Save to .env for persistence
+            with open(".env", "a") as f:
+                f.write(f"\nTG_API_ID={state['api_id']}\nTG_API_HASH={state['api_hash']}\n")
+            await client.disconnect()
+            del admin_states[message.from_user.id]
+        except Exception as e:
+            if "2FA" in str(e) or "password" in str(e).lower():
+                state["step"] = "ub_2fa"
+                await message.answer("🔐 <b>Ikki bosqichli parolni (2FA)</b> kiriting:", parse_mode="HTML")
+            else:
+                await message.answer(f"❌ Xatolik: {str(e)}")
+                await client.disconnect()
+                del admin_states[message.from_user.id]
+    elif step == "ub_2fa":
+        password = message.text.strip()
+        client = state["client"]
+        try:
+            await client.sign_in(password=password)
+            await message.answer("✅ <b>Tabriklaymiz! UserBot (2FA bilan) muvaffaqiyatli ulandi.</b>", parse_mode="HTML")
+            with open(".env", "a") as f:
+                f.write(f"\nTG_API_ID={state['api_id']}\nTG_API_HASH={state['api_hash']}\n")
+            await client.disconnect()
+            del admin_states[message.from_user.id]
+        except Exception as e:
+            await message.answer(f"❌ Xatolik: {str(e)}")
+            await client.disconnect()
+            del admin_states[message.from_user.id]
     elif step == "title":
         state["title"] = state["temp_title"] if message.text == "." else message.text
         state["step"] = "year"
