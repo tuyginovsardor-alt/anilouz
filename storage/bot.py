@@ -18,7 +18,8 @@ SUPABASE_URL = raw_url.split("/rest/v1")[0].rstrip("/")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 ADMINS = [int(id.strip()) for id in os.getenv("ADMIN_IDS", "").split(",") if id.strip()]
 STORAGE_URL = os.getenv("STORAGE_URL")
-STORAGE_PATH = "films/"
+STORAGE_PATH = os.path.join(os.path.dirname(__file__), "films")
+os.makedirs(STORAGE_PATH, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
@@ -238,22 +239,51 @@ async def handle_video(message: types.Message):
         destination = os.path.join(STORAGE_PATH, file_name)
         
         if file_size_mb > 20:
-            from userbot import is_authenticated, init_client
+            from userbot import is_authenticated, download_file_by_msg
             if await is_authenticated():
                 await msg.edit_text("⚡️ <b>Katta fayl aniqlandi. UserBot orqali yuklanmoqda...</b>", parse_mode="HTML")
+                
+                # Download using UserBot
+                # The chat_id is the bot itself (the userbot sent/received message there)
+                # We add a progress indicator
+                async def progress_callback(received, total):
+                    percent = (received / total) * 100
+                    if int(percent) % 25 == 0: # Update every 25%
+                        try:
+                            await msg.edit_text(f"⚡️ <b>UserBot yuklamoqda: {percent:.1f}%</b>", parse_mode="HTML")
+                        except Exception: pass
+
+                from userbot import init_client
                 client = await init_client()
-                # To download from Bot inbox, UserBot needs to access the message.
-                # Easiest: Admin forwards file to UserBot, or UserBot is in this chat.
-                # Here we'll try to download using Bot API first, but if it fails, we warn.
+                if client:
+                    try:
+                        bot_info = await bot.get_me()
+                        # Get the message from the bot chat
+                        # Using username is often more reliable for initial peer resolution in Telethon
+                        tg_msg = await client.get_messages(bot_info.username, ids=message.message_id)
+                        if tg_msg and tg_msg.media:
+                            await client.download_media(tg_msg, file=destination, progress_callback=progress_callback)
+                            success = True
+                        else:
+                            success = False
+                    except Exception as e:
+                        logging.error(f"UserBot download error: {e}")
+                        success = False
+                    finally:
+                        await client.disconnect()
+                else:
+                    success = False
+                
+                if not success:
+                    await msg.edit_text("❌ UserBot orqali yuklab bo'lmadi. Iltimos, UserBot sozlamalarini tekshiring yoki faylni kichikroq qiling.")
+                    return
+            else:
                 try:
                     file = await bot.get_file(file_id)
                     await bot.download_file(file.file_path, destination)
                 except Exception:
-                    await msg.edit_text("❌ Bot API limiti sababli yuklab bo'lmadi. Iltimos, UserBot orqali yuklashni sozlang yoki kichikroq fayl yuboring.")
+                    await msg.edit_text("❌ Bot API limiti sababli yuklab bo'lmadi. Iltimos, UserBot orqali yuklashni sozlang (2 GB gacha ruxsat beradi).")
                     return
-            else:
-                file = await bot.get_file(file_id)
-                await bot.download_file(file.file_path, destination)
         else:
             file = await bot.get_file(file_id)
             await bot.download_file(file.file_path, destination)

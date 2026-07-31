@@ -35,7 +35,24 @@ async def is_authenticated():
     except Exception:
         return False
 
-async def download_large_video(file_id, destination):
-    # This would be used if we store TG file_ids
-    # For now it's a placeholder for the logic
-    pass
+async def download_file_by_msg(chat_id, message_id, destination):
+    client = await init_client()
+    if not client: return False
+    try:
+        # We need to make sure we are connected
+        if not await client.is_user_authorized():
+            return False
+            
+        # Get the message from the chat
+        # chat_id can be 'me', or the bot's ID/username
+        msg = await client.get_messages(chat_id, ids=message_id)
+        if msg and msg.media:
+            # Add a progress callback or just download
+            await client.download_media(msg, file=destination)
+            return True
+        return False
+    except Exception as e:
+        print(f"UserBot download error: {e}")
+        return False
+    finally:
+        await client.disconnect()
