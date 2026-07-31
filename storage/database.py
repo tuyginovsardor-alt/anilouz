@@ -12,8 +12,39 @@ def init_db():
             value TEXT
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bot_users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            full_name TEXT,
+            first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     conn.close()
+
+def log_user(user_id, username, full_name):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR REPLACE INTO bot_users (user_id, username, full_name) VALUES (?, ?, ?)", (user_id, username, full_name))
+    conn.commit()
+    conn.close()
+
+def get_bot_users_count():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM bot_users")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+
+def get_bot_users(limit=50):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id, username, full_name, first_seen FROM bot_users ORDER BY first_seen DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
 
 def set_setting(key, value):
     conn = sqlite3.connect(DB_PATH)

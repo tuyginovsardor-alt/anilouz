@@ -36,6 +36,7 @@ def get_main_keyboard():
     builder.row(types.InlineKeyboardButton(text="📝 Tahrirlash", callback_data="admin_edit_list"))
     builder.row(types.InlineKeyboardButton(text="📊 Statistika", callback_data="admin_stats"))
     builder.row(types.InlineKeyboardButton(text="⚙️ Sozlamalar", callback_data="admin_settings"))
+    builder.row(types.InlineKeyboardButton(text="👥 Bot Foydalanuvchilari", callback_data="admin_bot_users"))
     return builder.as_markup()
 
 def get_settings_keyboard():
@@ -77,8 +78,11 @@ def get_access_keyboard():
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
+    from database import log_user
+    log_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
+    
     if message.from_user.id not in ADMINS:
-        return await message.answer("⚠️ Kechirasiz, siz ushbu botning admini emassiz.")
+        return await message.answer("⚠️ Kechirasiz, siz ushbu botning admini emassiz.\nLekin botga kirganingiz qayd etildi.")
     welcome_text = "👋 <b>Xush kelibsiz, Admin!</b>\n\nKerakli bo'limni tanlang:"
     await message.answer(welcome_text, reply_markup=get_main_keyboard(), parse_mode="HTML")
 
@@ -90,37 +94,69 @@ async def main_menu(callback: types.CallbackQuery):
 @dp.callback_query(F.data == "admin_stats")
 async def show_stats(callback: types.CallbackQuery):
     try:
+        from database import get_bot_users_count
         # Fetch counts with error handling for empty tables
-        movies_count = 0
-        fandub_count = 0
-        users_count = 0
+        movies_count = "N/A"
+        fandub_count = "N/A"
+        users_count = "N/A"
+        bot_users_count = get_bot_users_count()
         
-        try:
-            movies_res = supabase.table("movies").select("id", count="exact").execute()
-            movies_count = movies_res.count if hasattr(movies_res, 'count') and movies_res.count is not None else 0
-        except Exception: pass
-        
-        try:
-            fandub_res = supabase.table("fandub_projects").select("id", count="exact").execute()
-            fandub_count = fandub_res.count if hasattr(fandub_res, 'count') and fandub_res.count is not None else 0
-        except Exception: pass
-        
-        try:
-            profiles_res = supabase.table("profiles").select("id", count="exact").execute()
-            users_count = profiles_res.count if hasattr(profiles_res, 'count') and profiles_res.count is not None else 0
-        except Exception: pass
+        # Check Supabase connection
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            error_msg = "⚠️ Supabase URL yoki KEY topilmadi (.env faylini tekshiring)"
+        else:
+            try:
+                movies_res = supabase.table("movies").select("id", count="exact").execute()
+                movies_count = movies_res.count if hasattr(movies_res, 'count') and movies_res.count is not None else 0
+            except Exception as e: 
+                logging.error(f"Movies count error: {e}")
+                movies_count = "Xatolik"
+            
+            try:
+                fandub_res = supabase.table("fandub_projects").select("id", count="exact").execute()
+                fandub_count = fandub_res.count if hasattr(fandub_res, 'count') and fandub_res.count is not None else 0
+            except Exception as e: 
+                logging.error(f"Fandub count error: {e}")
+                fandub_count = "Xatolik"
+            
+            try:
+                profiles_res = supabase.table("profiles").select("id", count="exact").execute()
+                users_count = profiles_res.count if hasattr(profiles_res, 'count') and profiles_res.count is not None else 0
+            except Exception as e: 
+                logging.error(f"Profiles count error: {e}")
+                users_count = "Xatolik"
         
         stats_text = (
-            "📊 <b>Sayt Statistikasi</b>\n\n"
+            "📊 <b>Bot va Sayt Statistikasi</b>\n\n"
             f"🎬 Jami Filmlar: <b>{movies_count}</b>\n"
-            f"🎭 Fandub Loyihalar: <b>{fandub_count}</b>\n"
-            f"👥 Ro'yxatdan o'tganlar: <b>{users_count}</b>\n\n"
+            f"🎙 Fandub Loyihalar: <b>{fandub_count}</b>\n"
+            f"👥 Saytda ro'yxatdan o'tganlar: <b>{users_count}</b>\n"
+            f"🤖 Bot foydalanuvchilari: <b>{bot_users_count}</b>\n\n"
             f"🕒 Yangilangan vaqt: <i>{datetime.datetime.now().strftime('%H:%M:%S')}</i>"
         )
         await callback.message.edit_text(stats_text, reply_markup=get_main_keyboard(), parse_mode="HTML")
     except Exception as e:
         logging.error(f"Stats Error: {e}")
         await callback.answer(f"Statistika yuklashda xatolik yuz berdi.", show_alert=True)
+
+@dp.callback_query(F.data == "admin_bot_users")
+async def show_bot_users(callback: types.CallbackQuery):
+    try:
+        from database import get_bot_users
+        users = get_bot_users(30) # Last 30 users
+        
+        if not users:
+            return await callback.message.edit_text("📭 Bot foydalanuvchilari hali mavjud emas.", reply_markup=get_main_keyboard())
+            
+        text = "👥 <b>So'nggi 30 ta bot foydalanuvchilari:</b>\n\n"
+        for user_id, username, full_name, first_seen in users:
+            uname = f"@{username}" if username else "Noma'lum"
+            text += f"🔹 {full_name} ({uname})\n   └ ID: <code>{user_id}</code> | {first_seen[:16]}\n\n"
+            
+        await callback.message.edit_text(text, reply_markup=get_main_keyboard(), parse_mode="HTML")
+    except Exception as e:
+        logging.error(f"Users list Error: {e}")
+        await callback.answer("Foydalanuvchilar ro'yxatini yuklashda xatolik.", show_alert=True)
 
 @dp.callback_query(F.data == "admin_settings")
 async def settings_menu(callback: types.CallbackQuery):
