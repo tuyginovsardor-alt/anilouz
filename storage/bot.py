@@ -110,8 +110,19 @@ async def handle_video(message: types.Message):
     if message.from_user.id not in ADMINS: return
     state = admin_states.get(message.from_user.id)
     if not state or state.get("step") != "upload":
-        # Check if they are just sending a random video without starting flow
         return await message.answer("⚠️ Avval media turini tanlang! /start")
+
+    # Telegram Bot API limit check (Standard API limit is 20MB for downloads)
+    file_size_mb = message.video.file_size / (1024 * 1024)
+    if file_size_mb > 20:
+        warning_text = (
+            f"⚠️ <b>Fayl juda katta ({file_size_mb:.1f} MB)!</b>\n\n"
+            "Telegram Bot API standart limiti 20 MB. Katta fayllarni yuklash uchun:\n"
+            "1. Faylni kichikroq bo'laklarga bo'ling.\n"
+            "2. Yoki videoni botga emas, to'g'ridan-to'g'ri serverga (FTP/SCP) yuklang.\n"
+            "3. Sayt admin panelidan 'Video URL' sifatida serverdagi manzilni bering."
+        )
+        return await message.answer(warning_text, parse_mode="HTML")
 
     msg = await message.answer("⏳ <b>Video serverga yuklanmoqda...</b>", parse_mode="HTML")
     

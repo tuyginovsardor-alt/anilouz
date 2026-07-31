@@ -70,13 +70,18 @@ mkdir -p films
 chmod 777 films
 
 # Setup Caddyfile with Domain (Automatic HTTPS)
+# Get absolute path for storage
+ABS_PATH=$(pwd)
+
 echo "$server_ip {
-    reverse_proxy localhost:8000
-    
+    # Static files should be handled first
     handle_path /films/* {
-        root * $(pwd)/films
+        root * $ABS_PATH/films
         file_server
     }
+    
+    # Everything else to FastAPI
+    reverse_proxy localhost:8000
 }" | sudo tee /etc/caddy/Caddyfile
 
 # Open Firewall ports

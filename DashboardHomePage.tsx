@@ -442,7 +442,7 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                         </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-12">
-                        {movies.filter(m => m.type === 'multfilm').slice(0, 6).map((movie, i) => (
+                        {allMovies.filter(m => m.type === 'multfilm').slice(0, 6).map((movie, i) => (
                             <MovieCard key={movie.id} movie={movie} isActive={i === 0} onClick={() => onMovieClick(movie)} />
                         ))}
                     </div>

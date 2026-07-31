@@ -21,12 +21,8 @@ prompt_if_empty() {
         read -p "$prompt_text: " input_val
         eval "$var_name=\$input_val"
     else
-        echo "$var_name allaqachon mavjud."
-        read -p "O'zgartirmoqchimisiz? (y/N): " change
-        if [[ "$change" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            read -p "$prompt_text: " input_val
-            eval "$var_name=\$input_val"
-        fi
+        echo "✅ $var_name mavjud."
+        return
     fi
 }
 
