@@ -277,6 +277,18 @@ async def userbot_menu(callback: types.CallbackQuery):
     builder.row(types.InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_settings"))
     await callback.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode="HTML")
 
+@dp.callback_query(F.data == "userbot_logout")
+async def logout_userbot(callback: types.CallbackQuery):
+    from database import set_setting
+    import os
+    set_setting("TG_API_ID", "")
+    set_setting("TG_API_HASH", "")
+    session_file = os.path.join(os.path.dirname(__file__), "anilo_user.session")
+    if os.path.exists(session_file):
+        os.remove(session_file)
+    await callback.answer("✅ UserBot ma'lumotlari o'chirildi.", show_alert=True)
+    await userbot_menu(callback)
+
 @dp.callback_query(F.data == "userbot_connect")
 async def connect_userbot_start(callback: types.CallbackQuery):
     admin_states[callback.from_user.id] = {"step": "ub_api_id"}
@@ -312,9 +324,10 @@ async def handle_text_inputs(message: types.Message):
         await message.answer("📞 Telegram <b>Telefon raqamingizni</b> kiriting:\n(Masalan: +998901234567)", parse_mode="HTML")
     elif step == "ub_phone":
         state["phone"] = message.text.strip()
+        from userbot import SESSION_NAME
         from telethon import TelegramClient
         try:
-            client = TelegramClient("anilo_user", int(state["api_id"]), state["api_hash"])
+            client = TelegramClient(SESSION_NAME, int(state["api_id"]), state["api_hash"])
             await client.connect()
             sent_code = await client.send_code_request(state["phone"])
             state["phone_code_hash"] = sent_code.phone_code_hash
@@ -331,9 +344,10 @@ async def handle_text_inputs(message: types.Message):
         try:
             await client.sign_in(state["phone"], code, phone_code_hash=state["phone_code_hash"])
             await message.answer("✅ <b>Tabriklaymiz! UserBot muvaffaqiyatli ulandi.</b>", parse_mode="HTML")
-            # Save to .env for persistence
-            with open(".env", "a") as f:
-                f.write(f"\nTG_API_ID={state['api_id']}\nTG_API_HASH={state['api_hash']}\n")
+            # Save to database for persistence
+            from database import set_setting
+            set_setting("TG_API_ID", state["api_id"])
+            set_setting("TG_API_HASH", state["api_hash"])
             await client.disconnect()
             del admin_states[message.from_user.id]
         except Exception as e:
@@ -350,8 +364,9 @@ async def handle_text_inputs(message: types.Message):
         try:
             await client.sign_in(password=password)
             await message.answer("✅ <b>Tabriklaymiz! UserBot (2FA bilan) muvaffaqiyatli ulandi.</b>", parse_mode="HTML")
-            with open(".env", "a") as f:
-                f.write(f"\nTG_API_ID={state['api_id']}\nTG_API_HASH={state['api_hash']}\n")
+            from database import set_setting
+            set_setting("TG_API_ID", state["api_id"])
+            set_setting("TG_API_HASH", state["api_hash"])
             await client.disconnect()
             del admin_states[message.from_user.id]
         except Exception as e:
