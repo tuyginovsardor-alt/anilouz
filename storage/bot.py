@@ -33,7 +33,7 @@ admin_states = {}
 def get_main_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="➕ Yangi Media", callback_data="admin_add"))
-    builder.row(types.InlineKeyboardButton(text="📊 Statistika", callback_897="admin_stats"))
+    builder.row(types.InlineKeyboardButton(text="📊 Statistika", callback_data="admin_stats"))
     builder.row(types.InlineKeyboardButton(text="⚙️ Sozlamalar", callback_data="admin_settings"))
     return builder.as_markup()
 
