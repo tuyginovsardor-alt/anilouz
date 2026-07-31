@@ -5,7 +5,7 @@ import { getMovies, isMovieSaved, toggleSaveMovie } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { MovieCard } from './components/MovieCard';
-import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight, Bookmark, Plus, Moon, Crown, Compass } from 'lucide-react';
+import { Play, Star, TrendingUp, Info, ChevronLeft, ChevronRight, Bookmark, Plus, Zap, Heart, History, Clock, Flame } from 'lucide-react';
 import { useNotification } from './hooks/useNotification';
 import { Page } from './App';
 
@@ -15,12 +15,6 @@ interface DashboardHomePageProps {
   onMainNavigate?: (page: Page) => void;
 }
 
-const TITLE_STYLES = [
-    "font-sans tracking-tighter", 
-    "font-serif tracking-wide italic", 
-    "font-mono tracking-tight", 
-];
-
 export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieClick, onMainNavigate }) => {
     const [allMovies, setAllMovies] = useState<Movie[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -29,11 +23,6 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
     const [userId, setUserId] = useState<string | null>(null);
     const [isHeroSaved, setIsHeroSaved] = useState(false);
     
-    const [scrollY, setScrollY] = useState(0);
-    
-    const [touchStart, setTouchStart] = useState<number | null>(null);
-    const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
     const { addNotification } = useNotification();
     const timerRef = useRef<number | null>(null);
 
@@ -43,61 +32,12 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
             if(user) setUserId(user.id);
             const movies = await getMovies();
             setAllMovies(movies);
-            
-            // SEO: Inject JSON-LD ItemList for Google Bot to discover movies
-            if (movies.length > 0) {
-                const schemaList = {
-                    "@context": "https://schema.org",
-                    "@type": "ItemList",
-                    "numberOfItems": movies.length,
-                    "itemListElement": movies.slice(0, 50).map((movie, index) => ({
-                        "@type": "ListItem",
-                        "position": index + 1,
-                        "item": {
-                            "@type": "Movie",
-                            "name": movie.title,
-                            "url": `https://anilo.uz/?movie_id=${movie.id}`,
-                            "image": movie.posterUrl,
-                            "datePublished": movie.year.toString(),
-                            "genre": movie.genre,
-                            "aggregateRating": {
-                                "@type": "AggregateRating",
-                                "ratingValue": movie.rating.toFixed(1),
-                                "bestRating": "5",
-                                "worstRating": "1"
-                            }
-                        }
-                    }))
-                };
-                
-                const scriptId = 'json-ld-catalog';
-                let script = document.getElementById(scriptId) as HTMLScriptElement;
-                if (!script) {
-                    script = document.createElement('script');
-                    script.id = scriptId;
-                    script.type = 'application/ld+json';
-                    document.head.appendChild(script);
-                }
-                script.text = JSON.stringify(schemaList);
-            }
-
             setIsLoading(false);
         };
         fetch();
-
-        const handleScroll = () => {
-            setScrollY(window.scrollY);
-        };
-        window.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-            const script = document.getElementById('json-ld-catalog');
-            if (script) script.remove();
-        };
     }, []);
 
-    const heroMovies = allMovies.slice(0, 6);
+    const heroMovies = allMovies.slice(0, 5);
     const currentHeroMovie = heroMovies[heroIndex];
 
     useEffect(() => {
@@ -115,26 +55,14 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
         setHeroIndex((prev) => (prev + 1) % heroMovies.length);
     }, [heroMovies.length]);
 
-    const prevHero = useCallback(() => {
-        if (heroMovies.length === 0) return;
-        setHeroIndex((prev) => (prev - 1 + heroMovies.length) % heroMovies.length);
-    }, [heroMovies.length]);
-
     useEffect(() => {
         if (isAutoPlaying && heroMovies.length > 0) {
-            timerRef.current = window.setInterval(nextHero, 7000);
+            timerRef.current = window.setInterval(nextHero, 8000);
         }
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [isAutoPlaying, nextHero, heroMovies.length]);
-
-    const handleManualNav = (direction: 'next' | 'prev') => {
-        setIsAutoPlaying(false);
-        if (direction === 'next') nextHero();
-        else prevHero();
-        setTimeout(() => setIsAutoPlaying(true), 10000);
-    };
 
     const handleHeroSave = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -151,283 +79,144 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
         });
     };
 
-    const onTouchStart = (e: React.TouchEvent) => {
-        setTouchEnd(null);
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const onTouchMove = (e: React.TouchEvent) => {
-        setTouchEnd(e.targetTouches[0].clientX);
-    };
-
-    const onTouchEnd = () => {
-        if (!touchStart || !touchEnd) return;
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > 50;
-        const isRightSwipe = distance < -50;
-
-        if (isLeftSwipe) {
-            handleManualNav('next');
-        }
-        if (isRightSwipe) {
-            handleManualNav('prev');
-        }
-    };
-
-    if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#050505]"><LoadingSpinner /></div>;
+    if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#131313]"><LoadingSpinner /></div>;
 
     return (
-        <div className="pb-32 bg-[#050505] animate-fade-in">
-            
-            {/* HERO CAROUSEL */}
-            <div 
-                className="relative w-full h-[45vh] md:h-[65vh] group overflow-hidden mb-8 md:mb-16 shadow-2xl -mt-24"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-            >
-                <div 
-                    className="flex h-full transition-transform duration-1000 cubic-bezier(0.4, 0, 0.2, 1)"
-                    style={{ transform: `translateX(-${heroIndex * 100}%)` }}
-                >
-                    {heroMovies.map((movie, idx) => (
-                        <div key={movie.id} className="relative w-full h-full flex-shrink-0 overflow-hidden">
-                            <div 
-                                className="absolute inset-0 w-full h-full"
-                                style={{ 
-                                    transform: `translateY(${scrollY * 0.2}px)`,
-                                    transition: 'transform 0.1s linear'
-                                }}
-                            >
-                                <img 
-                                    src={movie.poster_url || movie.posterUrl} 
-                                    className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-out ${heroIndex === idx ? 'scale-105' : 'scale-100'}`} 
-                                    alt="" 
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent"></div>
-                            </div>
-
-                            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 z-20 max-w-6xl mx-auto">
-                                <div className={`transition-all duration-1000 transform ${heroIndex === idx ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-                                    
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <span className="bg-orange-600 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-[0.2em] shadow-2xl shadow-orange-600/50">
-                                            YANGI
-                                        </span>
-                                        <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-xl px-2 py-0.5 rounded-md border border-white/10 shadow-2xl">
-                                            <Star size={10} className="text-yellow-400 fill-yellow-400"/>
-                                            <span className="text-white font-black text-[10px]">{movie.rating.toFixed(1)}</span>
-                                        </div>
-                                        <span className="bg-white/10 backdrop-blur-xl text-white text-[8px] font-black px-2 py-0.5 rounded-md border border-white/10 uppercase tracking-[0.2em]">
-                                            {movie.genre.split(',')[0]}
-                                        </span>
-                                    </div>
-                                    
-                                    <h1 className="text-3xl md:text-6xl lg:text-7xl font-black text-white mb-4 uppercase leading-[0.9] tracking-tighter drop-shadow-2xl max-w-3xl">
-                                        {movie.title}
-                                    </h1>
-                                    
-                                    <p className="text-zinc-300 text-[10px] md:text-sm max-w-xl mb-8 font-medium leading-relaxed drop-shadow-2xl line-clamp-2 md:line-clamp-3">
-                                        {movie.plot}
-                                    </p>
-
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <button 
-                                            onClick={() => onMovieClick(movie)}
-                                            className="px-6 md:px-8 py-3 md:py-4 bg-white text-black hover:bg-orange-600 hover:text-white rounded-xl md:rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95 group"
-                                        >
-                                            <Play fill="currentColor" size={16}/> 
-                                            KO'RISH
-                                        </button>
-                                        
-                                        <button 
-                                            onClick={() => onMovieClick(movie)}
-                                            className="px-6 md:px-8 py-3 md:py-4 bg-black/40 backdrop-blur-2xl border border-white/10 text-white rounded-xl md:rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] hover:bg-white/10 transition-all flex items-center justify-center gap-3 active:scale-95"
-                                        >
-                                            <Info size={16} />
-                                            BATAFSIL
-                                        </button>
-
-                                        <button 
-                                            onClick={handleHeroSave}
-                                            className={`p-3 md:p-4 rounded-xl md:rounded-[1.5rem] flex items-center justify-center transition-all active:scale-90 border ${isHeroSaved ? 'bg-orange-600 border-orange-600 text-white' : 'bg-black/40 backdrop-blur-xl border-white/10 text-white hover:bg-white/10'}`}
-                                        >
-                                            <Plus size={20} className={isHeroSaved ? 'rotate-45' : ''} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* SLIDE NAVIGATION CONTROLS - Desktop Only */}
-                <div className="hidden md:block absolute top-1/2 -translate-y-1/2 left-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleManualNav('prev')} className="p-3 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full text-white hover:bg-orange-600 transition-all active:scale-90">
-                        <ChevronLeft size={24} />
-                    </button>
-                </div>
-                <div className="hidden md:block absolute top-1/2 -translate-y-1/2 right-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleManualNav('next')} className="p-3 bg-black/20 backdrop-blur-xl border border-white/10 rounded-full text-white hover:bg-orange-600 transition-all active:scale-90">
-                        <ChevronRight size={24} />
-                    </button>
-                </div>
-
-                {/* PAGINATION INDICATORS */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30 bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full border border-white/5">
-                    {heroMovies.map((_, i) => (
-                        <button 
-                            key={i} 
-                            onClick={() => { setHeroIndex(i); setIsAutoPlaying(false); }} 
-                            className={`transition-all duration-500 rounded-full ${i === heroIndex ? 'w-6 h-1 bg-orange-600' : 'w-1 h-1 bg-zinc-500 hover:bg-white'}`}
+        <div className="pb-32 animate-fade-in bg-[#131313]">
+            {/* Hero Section */}
+            {currentHeroMovie && (
+                <section className="relative h-[500px] bg-[#1A1A1A] overflow-hidden group rounded-[32px] mx-12 mt-8">
+                    <div className="absolute inset-0">
+                        <img 
+                            src={currentHeroMovie.posterUrl || currentHeroMovie.poster_url} 
+                            className="w-full h-full object-cover opacity-60 transition-transform duration-[10000ms] scale-105 group-hover:scale-110" 
+                            alt="" 
                         />
-                    ))}
-                </div>
-            </div>
-
-            <div className="container mx-auto px-4 md:px-8 mt-8">
-                <div className="flex flex-col lg:flex-row gap-12 md:gap-16">
-                    {/* MAIN CONTENT AREA */}
-                    <div className="flex-1 space-y-16 md:space-y-24">
-                        
-                        {/* STUDIYALAR SECTION */}
-                        <div>
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-4 w-1 bg-white rounded-full"></div>
-                                    <h2 className="text-xl font-black text-white uppercase tracking-tighter">Studiyalar</h2>
-                                </div>
-                                <button onClick={() => onMainNavigate?.('studio')} className="flex items-center gap-2 text-zinc-500 hover:text-white font-black text-[9px] uppercase tracking-[0.2em] transition-colors group">
-                                    Barchasi
-                                    <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </div>
-                            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-6 no-scrollbar scroll-smooth">
-                                {[
-                                    { name: 'Anilo', color: 'from-orange-600 to-red-600', icon: 'A' },
-                                    { name: 'Kuzuki', color: 'from-purple-600 to-blue-600', icon: 'K' },
-                                    { name: 'A-Media', color: 'from-emerald-600 to-teal-600', icon: 'AM' },
-                                    { name: 'DubUZ', color: 'from-blue-600 to-indigo-600', icon: 'D' },
-                                    { name: 'AnimeStar', color: 'from-pink-600 to-rose-600', icon: 'AS' },
-                                    { name: 'Fandub', color: 'from-yellow-600 to-orange-600', icon: 'F' },
-                                ].map((studio, i) => (
-                                    <div key={i} className="flex-shrink-0 w-20 md:w-30 flex flex-col items-center gap-3 group cursor-pointer" onClick={() => onMainNavigate?.('studio')}>
-                                        <div className={`w-14 h-14 md:w-24 md:h-24 rounded-full bg-gradient-to-br ${studio.color} flex items-center justify-center text-white text-base md:text-2xl font-black shadow-2xl group-hover:scale-110 transition-transform duration-500 border-2 border-white/10`}>
-                                            {studio.icon}
-                                        </div>
-                                        <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-zinc-500 group-hover:text-white transition-colors">{studio.name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* YANGI QO'SHILGANLAR */}
-                        <div>
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-4 w-1 bg-orange-600 rounded-full"></div>
-                                    <h2 className="text-xl font-black text-white uppercase tracking-tighter">Yangi Qo'shilganlar</h2>
-                                </div>
-                                <button className="flex items-center gap-2 text-zinc-500 hover:text-orange-500 font-black text-[9px] uppercase tracking-[0.2em] transition-colors group">
-                                    Barchasi
-                                    <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-8">
-                                {allMovies.slice(0, 10).map((movie, i) => (
-                                    <MovieCard key={movie.id} movie={movie} isActive={i === 0} onClick={() => onMovieClick(movie)} />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* ANIMELAR */}
-                        <div>
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-4 w-1 bg-purple-600 rounded-full"></div>
-                                    <h2 className="text-xl font-black text-white uppercase tracking-tighter">Mashhur Animelar</h2>
-                                </div>
-                                <button className="flex items-center gap-2 text-zinc-500 hover:text-purple-500 font-black text-[9px] uppercase tracking-[0.2em] transition-colors group">
-                                    Barchasi
-                                    <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-8">
-                                {allMovies.filter(m => m.type === 'anime').slice(0, 10).map((movie) => (
-                                    <MovieCard key={`anime-${movie.id}`} movie={movie} isActive={true} onClick={() => onMovieClick(movie)} />
-                                ))}
-                            </div>
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#131313] via-[#131313]/70 to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#131313] via-transparent to-transparent"></div>
                     </div>
 
-                    {/* SIDE PANEL (Reference Style) */}
-                    <div className="hidden xl:block w-80 space-y-12">
-                        {/* QUICK ACCESS */}
-                        <div className="bg-[#0a0a0a] rounded-[2rem] border border-white/5 p-6 shadow-2xl">
-                            <h3 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-6 px-2">Tez Ko'rish</h3>
-                            <div className="space-y-2">
-                                {[
-                                    { label: 'Eng yangi seriyalar', icon: <TrendingUp size={14} className="text-orange-500" /> },
-                                    { label: 'Eng ko\'p ko\'rilgan', icon: <Compass size={14} className="text-blue-500" /> },
-                                    { label: 'Eng yaxshi reyting', icon: <Star size={14} className="text-yellow-500" /> },
-                                    { label: 'Tavsiya etilgan', icon: <Play size={14} className="text-purple-500" /> },
-                                    { label: 'Sevimli anime', icon: <Bookmark size={14} className="text-pink-500" /> },
-                                ].map((item, i) => (
-                                    <button key={i} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                {item.icon}
-                                            </div>
-                                            <span className="text-[9px] font-black uppercase text-zinc-400 group-hover:text-white transition-colors">{item.label}</span>
-                                        </div>
-                                        <ChevronRight size={12} className="text-zinc-800 group-hover:text-white transition-colors" />
-                                    </button>
-                                ))}
+                    <div className="relative h-full flex flex-col justify-center px-12 z-10 max-w-3xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="bg-[#ffb77d] text-[#4d2600] text-[10px] font-black px-2 py-0.5 rounded tracking-widest uppercase">Trendda</span>
+                            <div className="flex items-center gap-1 text-[#ffb77d]">
+                                <Star size={18} className="fill-current" />
+                                <span className="font-bold text-sm">{currentHeroMovie.rating.toFixed(1)}</span>
                             </div>
                         </div>
 
-                        {/* TOP ANIME - Real Data from Supabase */}
-                        <div className="bg-[#0a0a0a] rounded-[2rem] border border-white/5 p-6 shadow-2xl">
-                            <div className="flex items-center justify-between mb-8 px-2">
-                                <h3 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em]">Top Anime</h3>
-                                <div className="flex gap-1.5">
-                                    <span className="text-[7px] font-black text-orange-500 uppercase tracking-widest border border-orange-500/30 px-2 py-0.5 rounded-md">Kun</span>
-                                    <span className="text-[7px] font-black text-zinc-700 uppercase tracking-widest border border-white/5 px-2 py-0.5 rounded-md hover:text-white transition-colors cursor-pointer">Hafta</span>
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-6">
-                                {[...allMovies].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 6).map((movie, i) => (
-                                    <div 
-                                        key={movie.id} 
-                                        onClick={() => onMovieClick(movie)}
-                                        className="flex items-center gap-4 group cursor-pointer"
-                                    >
-                                        <span className="text-xl font-black text-zinc-900 group-hover:text-orange-600/50 transition-colors w-6">{i + 1}</span>
-                                        <div className="w-12 h-16 rounded-lg overflow-hidden shadow-2xl shrink-0 border border-white/5">
-                                            <img src={movie.poster_url || movie.posterUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                                        </div>
-                                        <div className="flex-1 overflow-hidden">
-                                            <h4 className="text-[10px] font-black text-white uppercase tracking-tight line-clamp-1 mb-1 group-hover:text-orange-500 transition-colors">{movie.title}</h4>
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-1">
-                                                    <Star size={8} className="text-yellow-500 fill-yellow-500" />
-                                                    <span className="text-[9px] font-black text-zinc-500">{movie.rating.toFixed(1)}</span>
-                                                </div>
-                                                <div className="w-0.5 h-0.5 bg-zinc-800 rounded-full"></div>
-                                                <span className="text-[8px] font-black text-zinc-600 uppercase tracking-tighter">{(movie.view_count || 0).toLocaleString()} ko'rish</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            <button className="w-full mt-8 py-3 bg-white/5 border border-white/5 rounded-xl text-[8px] font-black text-zinc-500 uppercase tracking-widest hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all">
-                                To'liq ro'yxat
+                        <h2 className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tighter leading-none uppercase drop-shadow-xl">
+                            {currentHeroMovie.title}
+                        </h2>
+
+                        <div className="flex items-center gap-4 text-zinc-400 font-bold text-xs mb-6 uppercase tracking-widest">
+                            <span>{currentHeroMovie.year}</span>
+                            <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
+                            <span>{currentHeroMovie.genre.split(',')[0]}</span>
+                        </div>
+
+                        <p className="text-zinc-300 text-base mb-8 max-w-xl leading-relaxed font-medium drop-shadow-lg line-clamp-3">
+                            {currentHeroMovie.plot}
+                        </p>
+
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={() => onMovieClick(currentHeroMovie)}
+                                className="bg-[#ff8c00] text-white font-bold px-8 py-4 rounded-xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#ff8c00]/20"
+                            >
+                                <Play fill="currentColor" size={20} />
+                                <span className="text-sm uppercase tracking-tight font-black">Tomosha qilish</span>
+                            </button>
+                            <button 
+                                onClick={handleHeroSave}
+                                className="bg-white/10 backdrop-blur-md text-white border border-white/20 font-bold px-8 py-4 rounded-xl flex items-center gap-3 hover:bg-white/20 transition-all"
+                            >
+                                <Plus size={20} className={isHeroSaved ? 'rotate-45' : ''} />
+                                <span className="text-sm uppercase tracking-tight font-black">Sevimli</span>
                             </button>
                         </div>
+
+                        {/* Slide Indicators */}
+                        <div className="absolute bottom-8 left-12 flex gap-2">
+                            {heroMovies.map((_, i) => (
+                                <button 
+                                    key={i} 
+                                    onClick={() => { setHeroIndex(i); setIsAutoPlaying(false); }} 
+                                    className={`transition-all duration-500 rounded-full h-1.5 ${i === heroIndex ? 'w-8 bg-orange-500' : 'w-4 bg-white/20 hover:bg-white/40'}`}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
+
+                    {/* Right Sidebar Panel: Continue Watching */}
+                    <div className="absolute top-0 right-0 bottom-0 w-80 bg-black/40 backdrop-blur-xl border-l border-white/10 flex flex-col p-6 overflow-hidden hidden xl:flex">
+                        <h3 className="text-sm font-black text-white mb-6 flex items-center justify-between uppercase">
+                            <span>Davom etayotgan</span>
+                            <ChevronRight size={20} className="text-orange-500" />
+                        </h3>
+                        <div className="space-y-4">
+                            {allMovies.slice(5, 9).map((m, idx) => (
+                                <div key={m.id} className="flex gap-3 group/item cursor-pointer" onClick={() => onMovieClick(m)}>
+                                    <div className="w-16 h-20 rounded-lg overflow-hidden flex-shrink-0 relative">
+                                        <img src={m.posterUrl || m.poster_url} className="w-full h-full object-cover transition-transform group-hover/item:scale-110" alt="" />
+                                    </div>
+                                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                                        <h4 className="text-[12px] font-bold text-white truncate group-hover/item:text-orange-500 transition-colors uppercase">{m.title}</h4>
+                                        <p className="text-[10px] text-zinc-500 mb-2">{Math.floor(Math.random() * 12) + 1}-qism</p>
+                                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                                            <div className="bg-orange-500 h-full" style={{ width: `${Math.floor(Math.random() * 60) + 30}%` }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* Main Content Areas */}
+            <div className="px-12 mt-16 space-y-16">
+                {/* Mashhur Animelar Section */}
+                <section>
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-orange-600/10 rounded-xl flex items-center justify-center text-orange-500 border border-orange-600/20">
+                                <Flame size={20} className="fill-current" />
+                            </div>
+                            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Mashhur animelar</h3>
+                        </div>
+                        <button className="flex items-center gap-2 text-zinc-500 hover:text-orange-500 font-black text-[10px] uppercase tracking-widest transition-all group">
+                            Barchasini ko'rish
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                        {allMovies.slice(0, 12).map((movie) => (
+                            <MovieCard key={movie.id} movie={movie} onClick={() => onMovieClick(movie)} isActive={false} />
+                        ))}
+                    </div>
+                </section>
+
+                {/* Yangi Chiqarilganlar Section */}
+                <section>
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-500 border border-blue-600/20">
+                                <Zap size={20} className="fill-current" />
+                            </div>
+                            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Yangi chiqarilganlar</h3>
+                        </div>
+                        <button className="flex items-center gap-2 text-zinc-500 hover:text-blue-500 font-black text-[10px] uppercase tracking-widest transition-all group">
+                            Barchasini ko'rish
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                        {allMovies.filter(m => m.type === 'anime').slice(0, 12).map((movie) => (
+                            <MovieCard key={`new-${movie.id}`} movie={movie} onClick={() => onMovieClick(movie)} isActive={false} />
+                        ))}
+                    </div>
+                </section>
             </div>
         </div>
     );

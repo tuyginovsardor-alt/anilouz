@@ -17,10 +17,9 @@ import {
     LogOut, Settings, CreditCard, History as HistoryIcon, ShieldCheck, 
     Instagram, Send, Youtube, Facebook, MessageCircle, 
     Globe, ExternalLink, Mic, Star, LayoutGrid, ChevronRight,
-    Terminal, Filter, List, Clock as ClockIcon
+    Terminal, Filter, List, Clock as ClockIcon,
+    Home, Film, Tv, Clapperboard, Zap, TrendingUp, CalendarDays, Search, Heart, History, User
 } from 'lucide-react';
-
-import { RightSidebar } from './components/RightSidebar';
 
 interface DashboardPageProps {
   currentPage: DashboardSubPage;
@@ -46,6 +45,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     viewUserId 
 }) => {
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const isAdmin = ['admin', 'owner', 'manager'].includes(currentRole);
     const canAccessCreatorStudio = ['fandub', 'admin', 'owner', 'dub'].includes(currentRole);
 
@@ -55,14 +55,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         }
     }, [currentPage]);
 
-    const getSocialIcon = (platform: string) => {
-        switch(platform) {
-            case 'instagram': return <Instagram size={20}/>;
-            case 'telegram': return <Send size={20}/>;
-            case 'youtube': return <Youtube size={20}/>;
-            case 'facebook': return <Facebook size={20}/>;
-            default: return <Globe size={20}/>;
-        }
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSearch(searchQuery);
     };
 
     const renderContent = () => {
@@ -180,33 +175,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                                 </button>
                             </div>
                         </div>
-
-                        <div className="space-y-6 pt-10 border-t border-white/5">
-                            <p className="text-xs font-black text-gray-500 uppercase tracking-[0.3em] text-center">Biz Ijtimoiy Tarmoqlarda</p>
-                            <div className="flex flex-wrap justify-center gap-4">
-                                {socialLinks.length > 0 ? socialLinks.map(link => (
-                                    <a 
-                                        key={link.id}
-                                        href={link.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="w-14 h-14 bg-white/5 hover:bg-orange-600 border border-white/5 rounded-2xl text-gray-400 hover:text-white transition-all flex items-center justify-center shadow-lg active:scale-90"
-                                        title={link.label}
-                                    >
-                                        {getSocialIcon(link.platform)}
-                                    </a>
-                                )) : (
-                                    <p className="text-gray-700 text-xs italic">Havolalar yuklanmoqda...</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <button 
-                            onClick={onLogout}
-                            className="w-full flex items-center justify-center gap-3 p-6 bg-red-600/10 border border-red-600/20 rounded-[2rem] text-red-500 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all shadow-xl shadow-red-600/5 active:scale-95"
-                        >
-                            <LogOut size={18}/> Hisobdan Chiqish
-                        </button>
                     </div>
                 );
             case 'main':
@@ -216,20 +184,170 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
 
     return (
-        <div className="flex flex-col min-h-screen">
-            <div className={currentPage === 'main' ? "w-full" : "container mx-auto px-4 pt-4"}>
-                <div className={`grid grid-cols-1 ${currentPage === 'main' ? 'lg:grid-cols-12' : ''} gap-12`}>
-                    <div className={currentPage === 'main' ? 'lg:col-span-9' : 'w-full'}>
-                        {renderContent()}
-                    </div>
-                    {currentPage === 'main' && (
-                        <div className="lg:col-span-3">
-                            <RightSidebar />
-                        </div>
-                    )}
+        <div className="flex bg-[#131313] min-h-screen">
+            {/* Left Sidebar */}
+            <aside className="fixed left-0 top-0 h-screen w-60 bg-[#1c1b1b] flex flex-col py-6 z-50 border-r border-white/5">
+                <div className="px-6 mb-8 cursor-pointer" onClick={() => onNavigate('main')}>
+                    <h1 className="text-2xl font-black text-orange-500 tracking-tighter">ANILO.UZ</h1>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">Anime Platform</p>
                 </div>
+                
+                <nav className="flex-1 overflow-y-auto no-scrollbar space-y-1">
+                    <button 
+                        onClick={() => onNavigate('main')}
+                        className={`w-full flex items-center px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${currentPage === 'main' ? 'bg-orange-600 text-white font-bold shadow-lg shadow-orange-600/20' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                        <Home className="mr-3" size={20} />
+                        <span className="text-sm">Bosh sahifa</span>
+                    </button>
+                    
+                    <button 
+                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
+                    >
+                        <Film className="mr-3" size={20} />
+                        <span className="text-sm">Animelar</span>
+                    </button>
+                    
+                    <button 
+                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
+                    >
+                        <Tv className="mr-3" size={20} />
+                        <span className="text-sm">Seriallar</span>
+                    </button>
+                    
+                    <button 
+                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
+                    >
+                        <Clapperboard className="mr-3" size={20} />
+                        <span className="text-sm">Filmlar</span>
+                    </button>
+                    
+                    <button 
+                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
+                    >
+                        <LayoutGrid className="mr-3" size={20} />
+                        <span className="text-sm">Janrlar</span>
+                    </button>
+                    
+                    <button 
+                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
+                    >
+                        <Zap className="mr-3" size={20} />
+                        <span className="text-sm">Yangi chiqdi</span>
+                    </button>
+                    
+                    <button 
+                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
+                    >
+                        <TrendingUp className="mr-3" size={20} />
+                        <span className="text-sm">Mashhur</span>
+                    </button>
+                    
+                    <button 
+                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
+                    >
+                        <CalendarDays className="mr-3" size={20} />
+                        <span className="text-sm">Ongoing</span>
+                    </button>
+
+                    <div className="pt-6 pb-2 px-6">
+                        <h3 className="text-zinc-600 font-bold text-[10px] uppercase tracking-wider">Top janrlar</h3>
+                    </div>
+                    
+                    <button className="w-full flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5 px-6 py-2 transition-all">
+                        <span className="text-sm">Aksiya</span>
+                    </button>
+                    <button className="w-full flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5 px-6 py-2 transition-all">
+                        <span className="text-sm">Sarguzasht</span>
+                    </button>
+                    <button className="w-full flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5 px-6 py-2 transition-all">
+                        <span className="text-sm">Drama</span>
+                    </button>
+                    <button 
+                        onClick={() => onNavigate('more')}
+                        className={`w-full flex items-center px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${currentPage === 'more' ? 'bg-orange-600 text-white font-bold shadow-lg shadow-orange-600/20' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                        <LayoutGrid className="mr-3" size={20} />
+                        <span className="text-sm">Yana</span>
+                    </button>
+                </nav>
+
+                <div className="px-4 mt-auto pt-6 space-y-4">
+                    <div className="bg-[#2a2a2a] rounded-2xl p-4 text-center border border-white/5">
+                        <Star className="text-orange-500 mx-auto mb-2 fill-orange-500" size={20} />
+                        <p className="text-[11px] font-black text-white mb-3 leading-tight uppercase">Reklamasiz tomosha qiling!</p>
+                        <button 
+                            onClick={() => onNavigate('plans')}
+                            className="w-full bg-orange-600 text-white font-black py-2.5 rounded-xl text-[10px] hover:brightness-110 transition-all uppercase tracking-widest"
+                        >
+                            PREMIUM
+                        </button>
+                    </div>
+
+                    <button 
+                        onClick={onLogout}
+                        className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-red-600/10 border border-red-600/20 rounded-xl text-red-500 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all active:scale-95"
+                    >
+                        <LogOut size={16}/> Chiqish
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <div className="flex-1 ml-60 flex flex-col min-h-screen">
+                {/* Top Header */}
+                <header className="h-20 bg-[#131313]/80 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-8 border-b border-white/5">
+                    <form onSubmit={handleSearch} className="flex-1 max-w-xl">
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-orange-500 transition-colors" size={18} />
+                            <input 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-[#2a2a2a] border-none rounded-full pl-12 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500/30 transition-all placeholder:text-zinc-600 text-white" 
+                                placeholder="Qidirish... (anime nomi, janr, yili...)" 
+                                type="text"
+                            />
+                        </div>
+                    </form>
+                    
+                    <div className="flex items-center gap-6 ml-8">
+                        <div className="hidden md:flex items-center gap-6 border-r border-white/10 pr-6">
+                            <button onClick={() => onNavigate('plans')} className="flex items-center gap-2 text-zinc-400 hover:text-orange-500 transition-colors">
+                                <Star size={18} className="fill-current" />
+                                <span className="text-xs font-black uppercase tracking-widest">Premium</span>
+                            </button>
+                            <button onClick={() => onNavigate('saved')} className="flex items-center gap-2 text-zinc-400 hover:text-orange-500 transition-colors">
+                                <Heart size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest">Sevimli</span>
+                            </button>
+                            <button onClick={() => onNavigate('history')} className="flex items-center gap-2 text-zinc-400 hover:text-orange-500 transition-colors">
+                                <History size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest">Tarix</span>
+                            </button>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                            <div className="flex flex-col items-end hidden sm:flex">
+                                <span className="text-xs font-black text-white uppercase tracking-tight">Foydalanuvchi</span>
+                                <span className="text-[9px] text-orange-500 font-black uppercase tracking-widest">VIP</span>
+                            </div>
+                            <button 
+                                onClick={() => onNavigate('profile')}
+                                className="w-10 h-10 rounded-full bg-zinc-800 border-2 border-white/5 flex items-center justify-center text-zinc-500 hover:border-orange-500 transition-all overflow-hidden"
+                            >
+                                <User size={20} />
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                {/* Content Area */}
+                <main className={`flex-1 ${currentPage === 'main' ? 'p-0' : 'p-8'}`}>
+                    {renderContent()}
+                </main>
+
+                <Footer onNavigate={onMainNavigate} />
             </div>
-            <Footer onNavigate={onMainNavigate} />
         </div>
     );
 };

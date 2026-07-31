@@ -95,49 +95,53 @@ async def main_menu(callback: types.CallbackQuery):
 async def show_stats(callback: types.CallbackQuery):
     try:
         from database import get_bot_users_count
-        # Fetch counts with error handling for empty tables
-        movies_count = "N/A"
-        fandub_count = "N/A"
-        users_count = "N/A"
+        
+        movies_count = 0
+        fandub_count = 0
+        users_count = 0
         bot_users_count = get_bot_users_count()
         
-        # Check Supabase connection
-        if not SUPABASE_URL or not SUPABASE_KEY:
-            error_msg = "⚠️ Supabase URL yoki KEY topilmadi (.env faylini tekshiring)"
-        else:
+        try:
+            # Get movies count
+            movies_res = supabase.table("movies").select("id", count="exact").execute()
+            movies_count = movies_res.count if movies_res.count is not None else 0
+        except Exception as e:
+            logging.error(f"Movies count error: {e}")
+            movies_count = "Xatolik"
+
+        try:
+            # Get fandub count
+            fandub_res = supabase.table("fandub_projects").select("id", count="exact").execute()
+            fandub_count = fandub_res.count if fandub_res.count is not None else 0
+        except Exception:
             try:
-                movies_res = supabase.table("movies").select("id", count="exact").execute()
-                movies_count = movies_res.count if hasattr(movies_res, 'count') and movies_res.count is not None else 0
-            except Exception as e: 
-                logging.error(f"Movies count error: {e}")
-                movies_count = "Xatolik"
-            
-            try:
-                fandub_res = supabase.table("fandub_projects").select("id", count="exact").execute()
-                fandub_count = fandub_res.count if hasattr(fandub_res, 'count') and fandub_res.count is not None else 0
-            except Exception as e: 
+                # Fallback to fandub_uploads if fandub_projects doesn't exist
+                fandub_res = supabase.table("fandub_uploads").select("id", count="exact").execute()
+                fandub_count = fandub_res.count if fandub_res.count is not None else 0
+            except Exception as e:
                 logging.error(f"Fandub count error: {e}")
                 fandub_count = "Xatolik"
-            
-            try:
-                profiles_res = supabase.table("profiles").select("id", count="exact").execute()
-                users_count = profiles_res.count if hasattr(profiles_res, 'count') and profiles_res.count is not None else 0
-            except Exception as e: 
-                logging.error(f"Profiles count error: {e}")
-                users_count = "Xatolik"
         
+        try:
+            # Get profiles count
+            profiles_res = supabase.table("profiles").select("id", count="exact").execute()
+            users_count = profiles_res.count if profiles_res.count is not None else 0
+        except Exception as e:
+            logging.error(f"Profiles count error: {e}")
+            users_count = "Xatolik"
+
         stats_text = (
-            "📊 <b>Bot va Sayt Statistikasi</b>\n\n"
-            f"🎬 Jami Filmlar: <b>{movies_count}</b>\n"
-            f"🎙 Fandub Loyihalar: <b>{fandub_count}</b>\n"
-            f"👥 Saytda ro'yxatdan o'tganlar: <b>{users_count}</b>\n"
+            "📊 <b>Asosiy Statistika</b>\n\n"
+            f"🎬 Filmlar (Supabase): <b>{movies_count}</b>\n"
+            f"🎙 Loyihalar: <b>{fandub_count}</b>\n"
+            f"👥 Sayt foydalanuvchilari: <b>{users_count}</b>\n"
             f"🤖 Bot foydalanuvchilari: <b>{bot_users_count}</b>\n\n"
-            f"🕒 Yangilangan vaqt: <i>{datetime.datetime.now().strftime('%H:%M:%S')}</i>"
+            "<i>Statistika Supabase va mahalliy bazadan olindi.</i>"
         )
         await callback.message.edit_text(stats_text, reply_markup=get_main_keyboard(), parse_mode="HTML")
     except Exception as e:
-        logging.error(f"Stats Error: {e}")
-        await callback.answer(f"Statistika yuklashda xatolik yuz berdi.", show_alert=True)
+        logging.error(f"General Stats Error: {e}")
+        await callback.answer(f"Xatolik: {str(e)}", show_alert=True)
 
 @dp.callback_query(F.data == "admin_bot_users")
 async def show_bot_users(callback: types.CallbackQuery):

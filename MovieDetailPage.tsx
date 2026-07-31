@@ -200,7 +200,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
   }, [userProfile]);
 
   const canWatch = movie.access_type === 'free' || isPremiumUser;
-  const viewCount = (movie as any).view_count || Math.floor(Math.random() * 5000) + 1000;
+  const viewCount = (movie as any).view_count || 0;
 
   const finalRating = useMemo(() => {
       const base = Number(movie.rating) || 5.0;
@@ -383,7 +383,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
     <div className="bg-[#050505] min-h-screen text-white pb-32 overflow-x-hidden font-sans">
         
         {/* HERO HEADER */}
-        <div className="relative w-full h-[85vh] lg:h-[90vh] overflow-hidden">
+        <div className="relative w-full h-[45vh] lg:h-[50vh] overflow-hidden">
             <div 
                 className="absolute inset-0 z-0"
                 style={{ 
@@ -429,7 +429,7 @@ export const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onBack,
                         </div>
                     </div>
 
-                    <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none drop-shadow-2xl text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-gray-400">
+                    <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter leading-none drop-shadow-2xl text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-gray-400">
                         {movie.title}
                     </h1>
                     
