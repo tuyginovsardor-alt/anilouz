@@ -41,6 +41,7 @@ def get_main_keyboard():
 def get_settings_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="👥 Adminlar", callback_data="settings_admins"))
+    builder.row(types.InlineKeyboardButton(text="🌐 CORS Sozlamalari", callback_data="settings_cors"))
     builder.row(types.InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_main"))
     return builder.as_markup()
 
@@ -105,6 +106,37 @@ async def show_stats(callback: types.CallbackQuery):
 @dp.callback_query(F.data == "admin_settings")
 async def settings_menu(callback: types.CallbackQuery):
     await callback.message.edit_text("⚙️ <b>Sozlamalar bo'limi:</b>", reply_markup=get_settings_keyboard(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "settings_cors")
+async def manage_cors(callback: types.CallbackQuery):
+    text = (
+        "🌐 <b>CORS Sozlamalari</b>\n\n"
+        "Hozirda barcha domainlar uchun ruxsat berilgan (<code>*</code>).\n\n"
+        "Agar maxsus domainlar (masalan: <code>anilo.uz</code>) qo'shmoqchi bo'lsangiz, "
+        "bu funksiya Caddyfile ni yangilashni talab qiladi.\n\n"
+        "Hozircha barcha domainlar ruxsat etilgan rejimda ishlamoqda."
+    )
+    builder = InlineKeyboardBuilder()
+    builder.row(types.InlineKeyboardButton(text="🔄 Caddy Restart", callback_data="cors_restart_caddy"))
+    builder.row(types.InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_settings"))
+    await callback.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "cors_restart_caddy")
+async def restart_caddy(callback: types.CallbackQuery):
+    try:
+        # This requires the user running the bot to have sudo permissions for caddy
+        process = await asyncio.create_subprocess_shell(
+            "sudo systemctl restart caddy",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode == 0:
+            await callback.answer("✅ Caddy muvaffaqiyatli qayta ishga tushirildi!", show_alert=True)
+        else:
+            await callback.answer(f"❌ Xatolik: {stderr.decode()}", show_alert=True)
+    except Exception as e:
+        await callback.answer(f"❌ Xatolik: {str(e)}", show_alert=True)
 
 @dp.callback_query(F.data == "settings_admins")
 async def manage_admins(callback: types.CallbackQuery):

@@ -76,6 +76,14 @@ ln -sfn $STORAGE_BASE/films films
 
 # Setup Caddyfile with Domain (Automatic HTTPS)
 echo "$server_ip {
+    # CORS Headers for all requests
+    header {
+        Access-Control-Allow-Origin *
+        Access-Control-Allow-Methods \"GET, POST, OPTIONS\"
+        Access-Control-Allow-Headers \"*\"
+        Access-Control-Expose-Headers \"*\"
+    }
+
     # Static files handled from /var/www/anilo
     handle_path /films/* {
         root * $STORAGE_BASE/films
@@ -85,6 +93,11 @@ echo "$server_ip {
     # Everything else to FastAPI
     reverse_proxy localhost:8000
 }" | sudo tee /etc/caddy/Caddyfile
+
+# Ensure permissions are set correctly for web access
+sudo chown -R caddy:caddy $STORAGE_BASE
+sudo find $STORAGE_BASE -type d -exec chmod 755 {} +
+sudo find $STORAGE_BASE -type f -exec chmod 644 {} +
 
 # Open Firewall ports
 if command -v ufw > /dev/null; then

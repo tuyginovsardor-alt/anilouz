@@ -321,6 +321,37 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                 <div>
                     <div className="flex items-center justify-between mb-12">
                         <div className="flex items-center gap-4">
+                            <div className="h-6 w-1 bg-white rounded-full"></div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Studiyalar</h2>
+                        </div>
+                        <button onClick={() => onMainNavigate?.('studio')} className="flex items-center gap-2 text-zinc-500 hover:text-white font-black text-[10px] uppercase tracking-[0.2em] transition-colors group">
+                            Barchasi
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="flex gap-6 overflow-x-auto pb-8 no-scrollbar scroll-smooth">
+                        {[
+                            { name: 'Anilo', color: 'from-orange-600 to-red-600', icon: 'A' },
+                            { name: 'Kuzuki', color: 'from-purple-600 to-blue-600', icon: 'K' },
+                            { name: 'A-Media', color: 'from-emerald-600 to-teal-600', icon: 'AM' },
+                            { name: 'DubUZ', color: 'from-blue-600 to-indigo-600', icon: 'D' },
+                            { name: 'AnimeStar', color: 'from-pink-600 to-rose-600', icon: 'AS' },
+                            { name: 'Fandub', color: 'from-yellow-600 to-orange-600', icon: 'F' },
+                        ].map((studio, i) => (
+                            <div key={i} className="flex-shrink-0 w-32 md:w-40 flex flex-col items-center gap-4 group cursor-pointer" onClick={() => onMainNavigate?.('studio')}>
+                                <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br ${studio.color} flex items-center justify-center text-white text-2xl md:text-4xl font-black shadow-2xl group-hover:scale-110 transition-transform duration-500 border-4 border-white/10`}>
+                                    {studio.icon}
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-white transition-colors">{studio.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 1. YANGI QO'SHILGANLAR */}
+                <div>
+                    <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center gap-4">
                             <div className="h-6 w-1 bg-orange-600 rounded-full"></div>
                             <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Yangi Qo'shilganlar</h2>
                         </div>
@@ -430,21 +461,6 @@ export const DashboardHomePage: React.FC<DashboardHomePageProps> = ({ onMovieCli
                                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Hozircha multfilmlar yo'q</p>
                             </div>
                         )}
-                    </div>
-                </div>
-
-                {/* SO'NGGI MULTFILMLAR */}
-                <div>
-                    <div className="flex items-center justify-between mb-12">
-                        <div className="flex items-center gap-4">
-                            <div className="h-6 w-1 bg-yellow-500 rounded-full"></div>
-                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">So'nggi Multfilmlar</h2>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-12">
-                        {allMovies.filter(m => m.type === 'multfilm').slice(0, 6).map((movie, i) => (
-                            <MovieCard key={movie.id} movie={movie} isActive={i === 0} onClick={() => onMovieClick(movie)} />
-                        ))}
                     </div>
                 </div>
 
