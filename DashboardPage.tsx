@@ -11,14 +11,16 @@ import { BillingPage } from './BillingPage';
 import { SavedPage } from './SavedPage';
 import { DashboardSupportPage } from './components/DashboardSupportPage';
 import { SubscriptionPlans } from './components/SubscriptionPlans';
-import { getSocialLinks } from './services/dbService';
+import * as db from './services/dbService';
+import { supabase } from './services/supabaseClient';
 import { Footer } from './components/Footer';
 import { 
     LogOut, Settings, CreditCard, History as HistoryIcon, ShieldCheck, 
     Instagram, Send, Youtube, Facebook, MessageCircle, 
     Globe, ExternalLink, Mic, Star, LayoutGrid, ChevronRight,
     Terminal, Filter, List, Clock as ClockIcon,
-    Home, Film, Tv, Clapperboard, Zap, TrendingUp, CalendarDays, Search, Heart, History, User
+    Home, Film, Tv, Clapperboard, Zap, TrendingUp, CalendarDays, Search, Heart, History, User,
+    Sparkles, Bell
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -46,12 +48,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [customLogo, setCustomLogo] = useState<string | null>(null);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const isAdmin = ['admin', 'owner', 'manager'].includes(currentRole);
     const canAccessCreatorStudio = ['fandub', 'admin', 'owner', 'dub'].includes(currentRole);
 
     useEffect(() => {
+        db.getAppConfig().then(config => {
+            if (config['site_logo']) setCustomLogo(config['site_logo']);
+        });
+
+        supabase.auth.getUser().then(({data: {user}}) => {
+            if (user) {
+                db.getUserProfile(user.id).then(profile => {
+                    if (profile) setAvatarUrl(profile.avatar_url);
+                });
+            }
+        });
+
         if (currentPage === 'more') {
-            getSocialLinks().then(setSocialLinks);
+            db.getSocialLinks().then(setSocialLinks);
         }
     }, [currentPage]);
 
@@ -184,101 +200,78 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
 
     return (
-        <div className="flex bg-[#131313] min-h-screen">
+        <div className="flex bg-[#131313] min-h-screen text-white font-sans selection:bg-orange-600/30">
             {/* Left Sidebar */}
-            <aside className="fixed left-0 top-0 h-screen w-60 bg-[#1c1b1b] flex flex-col py-6 z-50 border-r border-white/5">
-                <div className="px-6 mb-8 cursor-pointer" onClick={() => onNavigate('main')}>
-                    <h1 className="text-2xl font-black text-orange-500 tracking-tighter">ANILO.UZ</h1>
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">Anime Platform</p>
+            <aside className="fixed left-0 top-0 h-screen w-[220px] bg-[#1c1b1b] flex flex-col py-6 z-50 border-r border-white/5">
+                <div className="px-6 mb-8 cursor-pointer group" onClick={() => onNavigate('main')}>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-orange-500/20 bg-black group-hover:scale-105 transition-transform">
+                            {customLogo ? (
+                                <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-orange-600 rounded-full" />
+                            )}
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-black text-white tracking-tighter leading-none">ANILO.UZ</h1>
+                            <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.1em]">Anime Platform</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <nav className="flex-1 overflow-y-auto no-scrollbar space-y-1">
                     <button 
                         onClick={() => onNavigate('main')}
-                        className={`w-full flex items-center px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${currentPage === 'main' ? 'bg-orange-600 text-white font-bold shadow-lg shadow-orange-600/20' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                        className={`w-full flex items-center px-4 py-2.5 mx-2 rounded-xl transition-all duration-200 ${currentPage === 'main' ? 'bg-orange-600 text-white font-bold shadow-lg shadow-orange-600/20' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
                     >
-                        <Home className="mr-3" size={20} />
-                        <span className="text-sm">Bosh sahifa</span>
+                        <Home className="mr-3" size={18} />
+                        <span className="text-xs font-bold">Bosh sahifa</span>
                     </button>
                     
-                    <button 
-                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
-                    >
-                        <Film className="mr-3" size={20} />
-                        <span className="text-sm">Animelar</span>
-                    </button>
-                    
-                    <button 
-                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
-                    >
-                        <Tv className="mr-3" size={20} />
-                        <span className="text-sm">Seriallar</span>
-                    </button>
-                    
-                    <button 
-                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
-                    >
-                        <Clapperboard className="mr-3" size={20} />
-                        <span className="text-sm">Filmlar</span>
-                    </button>
-                    
-                    <button 
-                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
-                    >
-                        <LayoutGrid className="mr-3" size={20} />
-                        <span className="text-sm">Janrlar</span>
-                    </button>
-                    
-                    <button 
-                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
-                    >
-                        <Zap className="mr-3" size={20} />
-                        <span className="text-sm">Yangi chiqdi</span>
-                    </button>
-                    
-                    <button 
-                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
-                    >
-                        <TrendingUp className="mr-3" size={20} />
-                        <span className="text-sm">Mashhur</span>
-                    </button>
-                    
-                    <button 
-                        className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-3 mx-2 rounded-xl transition-all"
-                    >
-                        <CalendarDays className="mr-3" size={20} />
-                        <span className="text-sm">Ongoing</span>
-                    </button>
+                    {[
+                        { label: 'Animelar', icon: Film },
+                        { label: 'Seriallar', icon: Tv },
+                        { label: 'Filmlar', icon: Clapperboard },
+                        { label: 'Janrlar', icon: LayoutGrid },
+                        { label: 'Yangi chiqdi', icon: Zap },
+                        { label: 'Mashhur', icon: TrendingUp },
+                        { label: 'Ongoing', icon: CalendarDays },
+                    ].map((item) => (
+                        <button 
+                            key={item.label}
+                            className="w-full flex items-center text-zinc-400 hover:text-white hover:bg-white/5 px-4 py-2.5 mx-2 rounded-xl transition-all"
+                        >
+                            <item.icon className="mr-3" size={18} />
+                            <span className="text-xs font-bold">{item.label}</span>
+                        </button>
+                    ))}
 
                     <div className="pt-6 pb-2 px-6">
-                        <h3 className="text-zinc-600 font-bold text-[10px] uppercase tracking-wider">Top janrlar</h3>
+                        <h3 className="text-zinc-600 font-black text-[9px] uppercase tracking-widest">Top janrlar</h3>
                     </div>
                     
-                    <button className="w-full flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5 px-6 py-2 transition-all">
-                        <span className="text-sm">Aksiya</span>
-                    </button>
-                    <button className="w-full flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5 px-6 py-2 transition-all">
-                        <span className="text-sm">Sarguzasht</span>
-                    </button>
-                    <button className="w-full flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5 px-6 py-2 transition-all">
-                        <span className="text-sm">Drama</span>
-                    </button>
+                    {['Aksiya', 'Sarguzasht', 'Drama', 'Fantastika', 'Romantika'].map((genre) => (
+                        <button key={genre} className="w-full flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5 px-6 py-1.5 transition-all">
+                            <span className="text-xs font-medium">{genre}</span>
+                        </button>
+                    ))}
+                    
                     <button 
                         onClick={() => onNavigate('more')}
-                        className={`w-full flex items-center px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${currentPage === 'more' ? 'bg-orange-600 text-white font-bold shadow-lg shadow-orange-600/20' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                        className={`w-full flex items-center px-4 py-2.5 mx-2 rounded-xl mt-4 transition-all duration-200 ${currentPage === 'more' ? 'bg-orange-600 text-white font-bold shadow-lg shadow-orange-600/20' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
                     >
-                        <LayoutGrid className="mr-3" size={20} />
-                        <span className="text-sm">Yana</span>
+                        <LayoutGrid className="mr-3" size={18} />
+                        <span className="text-xs font-bold">Yana</span>
                     </button>
                 </nav>
 
                 <div className="px-4 mt-auto pt-6 space-y-4">
-                    <div className="bg-[#2a2a2a] rounded-2xl p-4 text-center border border-white/5">
-                        <Star className="text-orange-500 mx-auto mb-2 fill-orange-500" size={20} />
-                        <p className="text-[11px] font-black text-white mb-3 leading-tight uppercase">Reklamasiz tomosha qiling!</p>
+                    <div className="bg-[#2a2a2a] rounded-2xl p-4 text-center border border-white/5 group">
+                        <Star className="text-orange-500 mx-auto mb-2 fill-orange-500 group-hover:scale-125 transition-transform" size={20} />
+                        <p className="text-[10px] font-black text-white mb-2 leading-tight uppercase tracking-tight">Reklamasiz tomosha qiling!</p>
                         <button 
                             onClick={() => onNavigate('plans')}
-                            className="w-full bg-orange-600 text-white font-black py-2.5 rounded-xl text-[10px] hover:brightness-110 transition-all uppercase tracking-widest"
+                            className="w-full bg-orange-600 text-white font-black py-2 rounded-lg text-[9px] hover:brightness-110 transition-all uppercase tracking-widest"
                         >
                             PREMIUM
                         </button>
@@ -286,63 +279,64 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
                     <button 
                         onClick={onLogout}
-                        className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-red-600/10 border border-red-600/20 rounded-xl text-red-500 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all active:scale-95"
+                        className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-red-600/10 border border-red-600/20 rounded-xl text-red-500 font-black uppercase tracking-widest text-[9px] hover:bg-red-600 hover:text-white transition-all active:scale-95"
                     >
-                        <LogOut size={16}/> Chiqish
+                        <LogOut size={14}/> Chiqish
                     </button>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 ml-60 flex flex-col min-h-screen">
+            <div className="flex-1 ml-[220px] flex flex-col min-h-screen">
                 {/* Top Header */}
-                <header className="h-20 bg-[#131313]/80 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-8 border-b border-white/5">
-                    <form onSubmit={handleSearch} className="flex-1 max-w-xl">
-                        <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-orange-500 transition-colors" size={18} />
-                            <input 
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-[#2a2a2a] border-none rounded-full pl-12 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500/30 transition-all placeholder:text-zinc-600 text-white" 
-                                placeholder="Qidirish... (anime nomi, janr, yili...)" 
-                                type="text"
-                            />
-                        </div>
-                    </form>
+                <header className="h-16 bg-[#131313]/90 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-8 border-b border-white/5">
+                    <div className="flex items-center gap-8 flex-1">
+                        <form onSubmit={handleSearch} className="max-w-md w-full">
+                            <div className="relative group">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-orange-500 transition-colors" size={16} />
+                                <input 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-[#2a2a2a] border-none rounded-full pl-10 pr-4 py-2 text-xs focus:ring-1 focus:ring-orange-500/50 transition-all placeholder:text-zinc-600 text-white" 
+                                    placeholder="Qidirish..." 
+                                    type="text"
+                                />
+                            </div>
+                        </form>
+
+                        <nav className="hidden xl:flex items-center gap-5">
+                            {['Bosh sahifa', 'Anime', 'Dub sahifamiz', 'Kategoriyalar', 'Yangiliklar', 'Jadval'].map(link => (
+                                <button key={link} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors">{link}</button>
+                            ))}
+                        </nav>
+                    </div>
                     
-                    <div className="flex items-center gap-6 ml-8">
-                        <div className="hidden md:flex items-center gap-6 border-r border-white/10 pr-6">
-                            <button onClick={() => onNavigate('plans')} className="flex items-center gap-2 text-zinc-400 hover:text-orange-500 transition-colors">
-                                <Star size={18} className="fill-current" />
-                                <span className="text-xs font-black uppercase tracking-widest">Premium</span>
-                            </button>
-                            <button onClick={() => onNavigate('saved')} className="flex items-center gap-2 text-zinc-400 hover:text-orange-500 transition-colors">
-                                <Heart size={18} />
-                                <span className="text-xs font-black uppercase tracking-widest">Sevimli</span>
-                            </button>
-                            <button onClick={() => onNavigate('history')} className="flex items-center gap-2 text-zinc-400 hover:text-orange-500 transition-colors">
-                                <History size={18} />
-                                <span className="text-xs font-black uppercase tracking-widest">Tarix</span>
+                    <div className="flex items-center gap-5 ml-8">
+                        <div className="flex items-center gap-5 pr-5 border-r border-white/5">
+                            <button className="text-zinc-400 hover:text-white transition-colors"><Sparkles size={18} /></button>
+                            <button className="text-zinc-400 hover:text-white transition-colors relative">
+                                <Bell size={18} />
+                                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full border border-[#131313]"></span>
                             </button>
                         </div>
                         
                         <div className="flex items-center gap-3">
-                            <div className="flex flex-col items-end hidden sm:flex">
-                                <span className="text-xs font-black text-white uppercase tracking-tight">Foydalanuvchi</span>
-                                <span className="text-[9px] text-orange-500 font-black uppercase tracking-widest">VIP</span>
+                            <div className="flex flex-col items-end hidden lg:flex">
+                                <span className="text-[10px] font-black text-white uppercase tracking-tight">Foydalanuvchi</span>
+                                <span className="text-[8px] text-orange-500 font-black uppercase tracking-widest">VIP</span>
                             </div>
                             <button 
                                 onClick={() => onNavigate('profile')}
-                                className="w-10 h-10 rounded-full bg-zinc-800 border-2 border-white/5 flex items-center justify-center text-zinc-500 hover:border-orange-500 transition-all overflow-hidden"
+                                className="w-9 h-9 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-500 hover:border-orange-500 transition-all overflow-hidden"
                             >
-                                <User size={20} />
+                                {avatarUrl ? <img src={avatarUrl} className="w-full h-full object-cover" /> : <User size={18} />}
                             </button>
                         </div>
                     </div>
                 </header>
 
                 {/* Content Area */}
-                <main className={`flex-1 ${currentPage === 'main' ? 'p-0' : 'p-8'}`}>
+                <main className={`flex-1 ${currentPage === 'main' ? 'p-0' : 'p-6'}`}>
                     {renderContent()}
                 </main>
 
