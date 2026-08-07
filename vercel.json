@@ -1,54 +1,17 @@
+import requests
+import sys
 
-{
-  "rewrites": [
-    {
-      "source": "/api-tspay/(.*)",
-      "destination": "https://tspay.uz/api/v1/$1"
-    },
-    {
-      "source": "/logotip.png",
-      "destination": "/logotip.png"
-    },
-    {
-      "source": "/((?!assets/|logotip\\.png|manifest\\.json|sw\\.js|sitemap\\.xml|robots\\.txt|.*\\.(?:png|svg|ico|jpg|jpeg|json|xml|js|css)$).*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/sw.js",
-      "headers": [
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        }
-      ]
-    },
-    {
-      "source": "/logotip.png",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "image/png"
-        }
-      ]
-    },
-    {
-      "source": "/manifest.json",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/manifest+json"
-        }
-      ]
-    }
-  ]
-}
+URL = "http://api.anilo.uz/"
+
+def test_api():
+    try:
+        response = requests.get(URL)
+        if response.status_code == 200:
+            print(f"✅ Backend URL ishlayapti: {response.json()}")
+        else:
+            print(f"❌ Backend xatosi: {response.status_code}")
+    except Exception as e:
+        print(f"❌ Ulanib bo'lmadi: {str(e)}")
+
+if __name__ == "__main__":
+    test_api()

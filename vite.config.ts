@@ -1,46 +1,22 @@
-
-import { defineConfig, loadEnv } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from 'tailwindcss';
-import autoprefixer from 'autoprefixer';
-// Fix: Import process to ensure that Node.js specific methods like cwd() are recognized by the TypeScript compiler
-import process from 'process';
+import path from 'path';
+import {defineConfig} from 'vite';
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-
+export default defineConfig(() => {
   return {
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '.'),
+      },
+    },
     server: {
-      port: 3000,
-      host: '0.0.0.0',
-      proxy: {
-        '/api-tspay': {
-          target: 'https://tspay.uz/api/v1',
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/api-tspay/, ''),
-        }
-      }
+      // HMR is disabled in AI Studio via DISABLE_HMR env var.
+      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      hmr: process.env.DISABLE_HMR !== 'true',
+      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
+      watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
-    plugins: [react()],
-    css: {
-      postcss: {
-        plugins: [
-          tailwindcss,
-          autoprefixer,
-        ],
-      },
-    },
-    // process.env ni butunlay bo'shatmaslik kerak, Gemini API uchun kerak bo'lishi mumkin
-    define: {
-      // API_KEY runtime muhitdan olinishi uchun bu yerda o'zgartirmaymiz
-    },
-    build: {
-      outDir: 'dist',
-      sourcemap: false,
-      commonjsOptions: {
-        transformMixedEsModules: true,
-      },
-    }
   };
 });
