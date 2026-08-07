@@ -35,29 +35,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         
         {/* Left: Mobile Menu Toggle & Brand Logo (Mobile only) */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={onToggleMobileSidebar}
-            className="lg:hidden w-10 h-10 rounded-xl bg-[#1c1f26] hover:bg-[#292d38] text-white flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-95 border border-white/10 shadow-md group"
-            aria-label="Menyu"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="transition-transform group-hover:scale-110"
-            >
-              <path d="M14 16.5H4" />
-              <path d="M4 10.5h13.5" />
-              <path d="M4 4.5h16.5" />
-            </svg>
-          </button>
-
           <div 
             onClick={() => setActiveTab('home')}
             className="lg:hidden flex items-center gap-2.5 cursor-pointer group select-none"
@@ -167,59 +144,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
       </div>
-
-      {/* Mobile Nav Categories Horizontal Strip */}
-      <nav className="flex items-center justify-between text-xs font-semibold text-gray-400 overflow-x-auto no-scrollbar gap-5 pt-3 pb-1 border-t border-white/5 mt-2 lg:hidden">
-        <button 
-          onClick={() => setActiveTab('home')}
-          className={`flex flex-col items-center flex-shrink-0 transition-colors ${
-            activeTab === 'home' ? 'text-orange-500 font-bold' : 'hover:text-white'
-          }`}
-        >
-          <span>Bosh sahifa</span>
-          {activeTab === 'home' && <div className="h-[2px] w-full bg-orange-500 mt-1 rounded-full" />}
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('popular')}
-          className={`flex flex-col items-center flex-shrink-0 transition-colors ${
-            activeTab === 'popular' ? 'text-orange-500 font-bold' : 'hover:text-white'
-          }`}
-        >
-          <span>Anime</span>
-          {activeTab === 'popular' && <div className="h-[2px] w-full bg-orange-500 mt-1 rounded-full" />}
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('series')}
-          className={`flex flex-col items-center flex-shrink-0 transition-colors ${
-            activeTab === 'series' ? 'text-orange-500 font-bold' : 'hover:text-white'
-          }`}
-        >
-          <span>Seriallar</span>
-          {activeTab === 'series' && <div className="h-[2px] w-full bg-orange-500 mt-1 rounded-full" />}
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('movies')}
-          className={`flex flex-col items-center flex-shrink-0 transition-colors ${
-            activeTab === 'movies' ? 'text-orange-500 font-bold' : 'hover:text-white'
-          }`}
-        >
-          <span>Filmlar</span>
-          {activeTab === 'movies' && <div className="h-[2px] w-full bg-orange-500 mt-1 rounded-full" />}
-        </button>
-
-        <button 
-          onClick={() => setActiveTab('genres')}
-          className={`flex flex-col items-center flex-shrink-0 transition-colors ${
-            activeTab === 'genres' ? 'text-orange-500 font-bold' : 'hover:text-white'
-          }`}
-        >
-          <span>Janrlar</span>
-          {activeTab === 'genres' && <div className="h-[2px] w-full bg-orange-500 mt-1 rounded-full" />}
-        </button>
-      </nav>
     </header>
   );
 };
