@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { 
   User, Edit3, Crown, Wallet, Bookmark, History, Settings, 
   MessageSquare, Mic, HelpCircle, ChevronRight, Check, X,
-  ShieldCheck, Sparkles, Send, Bot, Image as ImageIcon, Palette, CheckCircle2
+  ShieldCheck, Sparkles, Send, Bot, Image as ImageIcon, Palette, CheckCircle2,
+  LogOut, ShieldAlert
 } from 'lucide-react';
-import { UserProfile, ActiveTab } from '../types';
+import { UserProfile, ActiveTab, Anime } from '../types';
+import { supabase } from '../lib/supabase';
+import { AdminView } from './AdminView';
 
 export const PROFILE_BACKGROUNDS = [
   { id: '1', title: '1. Crimson Horizon', ibbUrl: 'https://ibb.co/81K2tRJ', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop' },
@@ -45,6 +48,7 @@ interface ProfileViewProps {
   onOpenPremium: () => void;
   savedCount: number;
   historyCount: number;
+  onAnimeAdded?: (anime: Anime) => void;
 }
 
 const sanitizeImageUrl = (url?: string): string => {
@@ -63,6 +67,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onOpenPremium,
   savedCount,
   historyCount,
+  onAnimeAdded,
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
@@ -70,6 +75,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isFandubModalOpen, setIsFandubModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
 
   // Form edit states
   const [editName, setEditName] = useState(user.name || 'ANILO EGA²');
@@ -92,6 +98,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       coverImage: editCover,
     });
     setIsEditModalOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   const handleSelectCover = (bgUrl: string) => {
@@ -414,8 +424,33 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition" />
             </button>
 
+            {/* 3. Admin Panel (If applicable) */}
+            <button
+              onClick={() => setIsAdminPanelOpen(true)}
+              className="w-full flex items-center justify-between py-3.5 px-4 hover:bg-white/5 transition group"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                  <ShieldAlert className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">
+                  Admin Panel (Anime Qo'shish)
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition" />
+            </button>
+
           </div>
         </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-2xl p-4 flex items-center justify-center gap-3 text-red-500 font-black text-sm transition-all active:scale-[0.98] mt-4 mb-8"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>TIZIMDAN CHIQISH</span>
+        </button>
 
         {/* Platform Footer Info */}
         <div className="text-center pt-4 text-xs text-gray-500 space-y-1">
@@ -424,6 +459,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
 
       </div>
+
+      {/* MODAL: Admin Panel */}
+      {isAdminPanelOpen && (
+        <AdminView 
+          onClose={() => setIsAdminPanelOpen(false)} 
+          onAnimeAdded={(anime) => {
+            onAnimeAdded?.(anime);
+            setIsAdminPanelOpen(false);
+          }}
+        />
+      )}
 
       {/* MODAL: Background Wallpapers Selector (29 Anime Wallpapers) */}
       {isBackgroundModalOpen && (

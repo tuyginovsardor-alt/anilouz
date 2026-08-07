@@ -15,12 +15,19 @@ import { HistoryView } from './components/HistoryView';
 import { ProfileView } from './components/ProfileView';
 import { CommunityChatView } from './components/CommunityChatView';
 import { Footer } from './components/Footer';
+import { AuthView } from './components/AuthView';
+import { supabase } from './lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 import { ANIME_DATABASE, GENRES_DATA, INITIAL_CONTINUE_WATCHING } from './data/animeData';
 import { Anime, ActiveTab, WatchProgress, UserProfile } from './types';
 import { ChevronRight, Flame, Sparkles, Tv, Clapperboard, Film, PlayCircle, Star, Monitor, Smartphone, LayoutGrid } from 'lucide-react';
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [animeList, setAnimeList] = useState<Anime[]>(ANIME_DATABASE);
+  const [isAnimeLoading, setIsAnimeLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [cardFormat, setCardFormat] = useState<'16/9' | '2/3'>('16/9');
@@ -83,6 +90,50 @@ export default function App() {
   const [lang, setLang] = useState('UZ');
 
   useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsAuthLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session?.user) {
+        setUser(prev => ({
+          ...prev,
+          name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
+          avatar: session.user.user_metadata.avatar_url || prev.avatar
+        }));
+      }
+    });
+
+    // Fetch anime from Supabase
+    const fetchAnime = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('anime')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          setAnimeList(data as Anime[]);
+        }
+      } catch (err) {
+        console.error('Error fetching anime from Supabase:', err);
+        // Fallback to local data is already set as initial state
+      } finally {
+        setIsAnimeLoading(false);
+      }
+    };
+
+    fetchAnime();
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('anilo_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
@@ -106,7 +157,7 @@ export default function App() {
   };
 
   const updateWatchProgress = (animeId: string, episodeNum: number, pct: number) => {
-    const targetAnime = ANIME_DATABASE.find((a) => a.id === animeId);
+    const targetAnime = animeList.find((a) => a.id === animeId);
     if (!targetAnime) return;
 
     setHistory((prev) => {
@@ -131,7 +182,7 @@ export default function App() {
 
   // Filter lists based on selected genre & current view tab
   const getDisplayedAnimeList = (): { title: string; subtitle?: string; list: Anime[] } => {
-    let list = ANIME_DATABASE;
+    let list = animeList;
 
     if (selectedGenre) {
       list = list.filter((a) => a.genres.includes(selectedGenre));
@@ -157,11 +208,23 @@ export default function App() {
     }
   };
 
-  const favoritedAnimeObjects = ANIME_DATABASE.filter((a) => favorites.includes(a.id));
+  const favoritedAnimeObjects = animeList.filter((a) => favorites.includes(a.id));
   const displayedContent = getDisplayedAnimeList();
 
-  const popularAnime = ANIME_DATABASE.filter((a) => a.isPopular || a.rating >= 8.5);
-  const newAnime = ANIME_DATABASE.filter((a) => a.isNew || a.year === 2024);
+  const popularAnime = animeList.filter((a) => a.isPopular || a.rating >= 8.5);
+  const newAnime = animeList.filter((a) => a.isNew || a.year === 2024);
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#0E0E12] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <AuthView onSuccess={() => {}} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#0E0E12] text-gray-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black">
@@ -211,7 +274,7 @@ export default function App() {
           {detailAnime ? (
             <AnimeDetailView
               anime={detailAnime}
-              allAnime={ANIME_DATABASE}
+              allAnime={animeList}
               onPlayAnime={handlePlayAnime}
               onOpenDetail={(anime) => setDetailAnime(anime)}
               onToggleFavorite={toggleFavorite}
@@ -231,7 +294,7 @@ export default function App() {
             /* View 2: History */
             <HistoryView
               history={history}
-              animeList={ANIME_DATABASE}
+              animeList={animeList}
               onPlayAnime={handlePlayAnime}
               onClearHistory={() => setHistory([])}
             />
@@ -253,6 +316,7 @@ export default function App() {
               onOpenPremium={() => setIsPremiumOpen(true)}
               savedCount={favorites.length}
               historyCount={history.length}
+              onAnimeAdded={(newAnime) => setAnimeList(prev => [newAnime, ...prev])}
             />
           ) : activeTab === 'home' && !selectedGenre ? (
             /* View 3: Default Home Screen */
@@ -261,7 +325,7 @@ export default function App() {
               {/* Full-width Grand Hero Showcase Banner */}
               <div className="w-full">
                 <HeroSlider
-                  animeList={ANIME_DATABASE}
+                  animeList={animeList}
                   onPlayAnime={handlePlayAnime}
                   onOpenDetail={(anime) => setDetailAnime(anime)}
                   onToggleFavorite={toggleFavorite}
@@ -313,7 +377,7 @@ export default function App() {
                 <div className="w-full">
                   <ContinueWatching
                     progressList={history.slice(0, 4)}
-                    animeList={ANIME_DATABASE}
+                    animeList={animeList}
                     onPlayAnime={handlePlayAnime}
                   />
                 </div>
@@ -520,7 +584,7 @@ export default function App() {
       <SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-        animeList={ANIME_DATABASE}
+        animeList={animeList}
         genres={GENRES_DATA}
         onPlayAnime={handlePlayAnime}
         onOpenDetail={(anime) => setDetailAnime(anime)}
