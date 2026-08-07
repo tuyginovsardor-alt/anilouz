@@ -79,59 +79,22 @@ export const AdminView: React.FC<AdminViewProps> = ({ onClose, onAnimeAdded }) =
     setSuccess(null);
 
     try {
-      // 1. Insert Anime
-      const animeData = {
+      // 1. Insert into movies table
+      const movieData = {
         title,
-        titleOriginal: originalTitle,
         year: Number(year),
-        rating: Number(rating),
-        genres: genres.split(',').map(g => g.trim()),
-        description,
-        posterImage: posterUrl,
-        bannerImage: bannerUrl,
-        videoUrl: videoUrl,
-        studio,
+        plot: description,
+        poster_url: posterUrl,
+        genre: genres,
+        video_url: videoUrl,
         status,
-        totalEpisodes: 1,
-        episodeCount: status === 'Ongoing' ? "1-qism" : "1-qism (Tugallangan)",
-        releaseYear: Number(year),
-        voiceovers: ["Anilo Studio"],
-      };
-
-      const { data: animeInsert, error: insertError } = await supabase
-        .from('anime')
-        .insert([animeData])
-        .select();
-
-      if (insertError) throw insertError;
-      
-      const newlyCreatedAnime = animeInsert[0];
-
-      // 2. Insert Episode (to episodes table if it exists)
-      const episodeData = {
-        anime_id: newlyCreatedAnime.id,
-        number: 1,
-        title: '1-qism',
-        duration: '24:00',
-        videoUrl: videoUrl,
-        thumbnail: posterUrl
-      };
-
-      // Try to insert into episodes table
-      try {
-        await supabase.from('episodes').insert([episodeData]);
-      } catch (e) {
-        console.warn("Episodes table may not exist or error inserting:", e);
-      }
-
-      setSuccess("Anime muvaffaqiyatli qo'shildi!");
-      
-      // Combine for UI state
-      const fullAnime: Anime = {
-        ...newlyCreatedAnime,
+        rating: Number(rating),
+        translator: "Anilo.uz",
+        is_series: true,
+        type: 'anime',
         episodes: [
           {
-            id: 'ep-1',
+            id: `ep-${Date.now()}`,
             number: 1,
             title: '1-qism',
             duration: '24:00',
@@ -139,6 +102,38 @@ export const AdminView: React.FC<AdminViewProps> = ({ onClose, onAnimeAdded }) =
             thumbnail: posterUrl
           }
         ]
+      };
+
+      const { data: movieInsert, error: insertError } = await supabase
+        .from('movies')
+        .insert([movieData])
+        .select();
+
+      if (insertError) throw insertError;
+      
+      const newlyCreatedMovie = movieInsert[0];
+
+      setSuccess("Anime muvaffaqiyatli qo'shildi!");
+      
+      // Map back to Anime interface for UI update
+      const fullAnime: Anime = {
+        id: newlyCreatedMovie.id.toString(),
+        title: newlyCreatedMovie.title,
+        rating: Number(newlyCreatedMovie.rating) || 0,
+        year: newlyCreatedMovie.year || 2024,
+        genres: newlyCreatedMovie.genre ? newlyCreatedMovie.genre.split(',').map((g: string) => g.trim()) : [],
+        description: newlyCreatedMovie.plot || '',
+        posterImage: newlyCreatedMovie.poster_url || '',
+        bannerImage: newlyCreatedMovie.poster_url || '',
+        videoUrl: newlyCreatedMovie.video_url || '',
+        status: (newlyCreatedMovie.status === 'Ongoing' ? 'Ongoing' : 'Yakunlangan') as 'Ongoing' | 'Yakunlangan',
+        studio: newlyCreatedMovie.studio || 'Anilo Studio',
+        voiceovers: newlyCreatedMovie.voiceovers || ['Anilo Studio'],
+        releaseYear: newlyCreatedMovie.year || 2024,
+        episodes: newlyCreatedMovie.episodes || [],
+        episodeCount: newlyCreatedMovie.is_series ? `${newlyCreatedMovie.episodes?.length || 0}-qism` : 'Film',
+        totalEpisodes: newlyCreatedMovie.episodes?.length || 1,
+        season: newlyCreatedMovie.year?.toString() || '2024',
       };
 
       onAnimeAdded(fullAnime);

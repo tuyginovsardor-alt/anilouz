@@ -183,15 +183,39 @@ export default function App() {
 
     // Fetch anime from Supabase
     const fetchAnime = async () => {
+      setIsAnimeLoading(true);
       try {
         const { data, error } = await supabase
-          .from('anime')
-          .select('*, episodes(*)')
+          .from('movies')
+          .select('*')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
+        
         if (data && data.length > 0) {
-          setAnimeList(data as Anime[]);
+          const mappedAnime: Anime[] = data.map(m => ({
+            id: m.id.toString(),
+            title: m.title,
+            rating: Number(m.rating) || 0,
+            year: m.year || 2024,
+            genres: m.genre ? m.genre.split(',').map((g: string) => g.trim()) : [],
+            description: m.plot || '',
+            posterImage: m.poster_url || m.posterUrl || '',
+            bannerImage: m.poster_url || m.posterUrl || '',
+            videoUrl: m.video_url || '',
+            status: (m.status === 'Ongoing' ? 'Ongoing' : 'Yakunlangan') as 'Ongoing' | 'Yakunlangan',
+            studio: m.studio || 'Anilo Studio',
+            voiceovers: m.voiceovers || ['Anilo Studio'],
+            releaseYear: m.year || 2024,
+            episodes: Array.isArray(m.episodes) ? m.episodes : [],
+            episodeCount: m.is_series ? `${m.episodes?.length || 0}-qism` : 'Film',
+            totalEpisodes: m.episodes?.length || 1,
+            season: m.year?.toString() || '2024',
+            isTrending: m.view_count > 100,
+            isPopular: m.like_count > 50,
+            isNew: new Date(m.created_at).getTime() > Date.now() - (7 * 24 * 60 * 60 * 1000)
+          }));
+          setAnimeList(mappedAnime);
         }
       } catch (err) {
         console.error('Error fetching anime from Supabase:', err);
