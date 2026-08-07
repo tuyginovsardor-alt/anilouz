@@ -125,7 +125,8 @@ export default function App() {
               avatar: profile.avatar_url || session.user.user_metadata.avatar_url || 'https://i.postimg.cc/1XYBLxjY/photo-2026-06-01-00-29-48.jpg',
               coverImage: profile.banner_url || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
               isPremium: !!profile.subscription_plan || false,
-              balance: profile.balance || 0,
+              balance: Number(profile.balance) || 0,
+              role: profile.role || 'user',
             });
           } else if (error && error.code === 'PGRST116') {
             // Profile doesn't exist, create it
@@ -173,7 +174,8 @@ export default function App() {
             avatar: profile.avatar_url,
             coverImage: profile.banner_url,
             isPremium: !!profile.subscription_plan,
-            balance: profile.balance,
+            balance: Number(profile.balance) || 0,
+            role: profile.role || 'user',
           });
         }
       }

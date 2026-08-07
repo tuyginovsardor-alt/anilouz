@@ -476,8 +476,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition" />
             </button>
 
-            {/* 3. Admin Panel (If applicable) */}
-            {supabase && (
+            {/* 3. Admin Panel (Only for admins) */}
+            {(supabase && user.role === 'admin') && (
               <button
                 onClick={() => setIsAdminPanelOpen(true)}
                 className="w-full flex items-center justify-between py-3.5 px-4 hover:bg-white/5 transition group"

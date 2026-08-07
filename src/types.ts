@@ -92,4 +92,5 @@ export interface UserProfile {
   isPremium: boolean;
   premiumExpires?: string;
   balance?: number;
+  role?: string;
 }
