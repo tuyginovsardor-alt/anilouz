@@ -96,6 +96,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [notifications, setNotifications] = useState(true);
 
   const activeCover = user.coverImage || PROFILE_BACKGROUNDS[0].url;
+  const isPremium = user.isPremium;
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,30 +163,47 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#111115] text-[#e5e2e1] pb-28 animate-fadeIn">
+    <div className={`min-h-screen ${isPremium ? 'bg-[#0a0a02]' : 'bg-[#111115]'} text-[#e5e2e1] pb-28 animate-fadeIn`}>
       
       {/* Header Section with Background Banner & Gradient Vignette */}
       <div 
-        className="relative h-72 sm:h-80 w-full bg-cover bg-center flex flex-col items-center justify-end pb-6 border-b border-white/10 shadow-2xl transition-all duration-500 overflow-hidden"
+        className={`relative h-72 sm:h-80 w-full bg-cover bg-center flex flex-col items-center justify-end pb-6 border-b ${isPremium ? 'border-yellow-500/30 shadow-[0_10px_50px_rgba(234,179,8,0.15)]' : 'border-white/10 shadow-2xl'} transition-all duration-500 overflow-hidden`}
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(17, 17, 21, 0.3), rgba(17, 17, 21, 0.85) 70%, rgba(17, 17, 21, 1)), url('${sanitizeImageUrl(activeCover)}')`
+          backgroundImage: `linear-gradient(to bottom, rgba(17, 17, 21, 0.3), ${isPremium ? 'rgba(10, 10, 2, 0.85)' : 'rgba(17, 17, 21, 0.85)'} 70%, ${isPremium ? 'rgba(10, 10, 2, 1)' : 'rgba(17, 17, 21, 1)'}), url('${sanitizeImageUrl(activeCover)}')`
         }}
       >
+        {/* Premium Ornament Overlays */}
+        {isPremium && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/gold-dust.png')]" />
+            <div className="absolute top-4 left-4 w-16 h-16 border-t-2 border-l-2 border-yellow-500/30 rounded-tl-3xl" />
+            <div className="absolute top-4 right-4 w-16 h-16 border-t-2 border-r-2 border-yellow-500/30 rounded-tr-3xl" />
+          </div>
+        )}
+
         {/* Top-Right Background Switcher Trigger */}
         <button
           onClick={() => setIsBackgroundModalOpen(true)}
-          className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-black/60 hover:bg-orange-500 hover:text-black text-white backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-xl active:scale-95 group"
+          className={`absolute top-4 right-4 z-20 flex items-center gap-2 backdrop-blur-md border px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-xl active:scale-95 group ${
+            isPremium 
+              ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-500 hover:bg-yellow-500 hover:text-black' 
+              : 'bg-black/60 border-white/20 text-white hover:bg-orange-500 hover:text-black'
+          }`}
         >
-          <Palette className="w-4 h-4 text-orange-400 group-hover:text-black transition" />
+          <Palette className={`w-4 h-4 transition ${isPremium ? 'text-yellow-400 group-hover:text-black' : 'text-orange-400 group-hover:text-black'}`} />
           <span>Orqa Fon Oboylar</span>
-          <span className="bg-orange-500 group-hover:bg-black group-hover:text-orange-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full">
+          <span className={`${isPremium ? 'bg-yellow-500' : 'bg-orange-500'} group-hover:bg-black group-hover:text-orange-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full`}>
             29
           </span>
         </button>
 
         {/* Avatar Container */}
         <div className="relative mb-3 z-10">
-          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-[#17171f] bg-[#1a1a24] overflow-hidden shadow-[0_0_30px_rgba(255,107,0,0.4)] flex items-center justify-center transition hover:scale-105">
+          <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 overflow-hidden flex items-center justify-center transition hover:scale-105 ${
+            isPremium 
+              ? 'border-yellow-500 bg-yellow-900/20 shadow-[0_0_40px_rgba(234,179,8,0.4)]' 
+              : 'border-[#17171f] bg-[#1a1a24] shadow-[0_0_30px_rgba(255,107,0,0.4)]'
+          }`}>
             <img
               src={user.avatar}
               alt={user.name}
@@ -196,9 +214,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               }}
             />
           </div>
+          {isPremium && (
+            <div className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-600 to-yellow-400 p-1.5 rounded-full shadow-lg border border-yellow-300/50">
+              <Crown className="w-4 h-4 text-black" fill="currentColor" />
+            </div>
+          )}
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="absolute bottom-1 right-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-110 rounded-full p-2 text-black shadow-lg transition active:scale-95"
+            className={`absolute bottom-1 right-1 rounded-full p-2 text-black shadow-lg transition active:scale-95 ${
+              isPremium 
+                ? 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:scale-110' 
+                : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-110'
+            }`}
             title="Profilni tahrirlash"
           >
             <Edit3 className="w-4 h-4 font-bold" />
@@ -206,20 +233,32 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
 
         {/* User Name & Badges */}
-        <div className="bg-[#181824]/80 backdrop-blur-xl rounded-2xl px-6 py-3 flex flex-col items-center border border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-10 max-w-sm w-full mx-4">
-          <div className="flex items-center gap-2">
-            <h1 className="font-black text-xl sm:text-2xl text-white tracking-tight">
+        <div className={`backdrop-blur-xl rounded-2xl px-6 py-3 flex flex-col items-center border shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-10 max-w-sm w-full mx-4 ${
+          isPremium 
+            ? 'bg-yellow-950/20 border-yellow-500/25 shadow-[0_10px_30px_rgba(234,179,8,0.1)]' 
+            : 'bg-[#181824]/80 border-white/15'
+        }`}>
+          <div className="flex items-center gap-2 text-center">
+            <h1 className={`font-black text-xl sm:text-2xl tracking-tight ${
+              isPremium 
+                ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-yellow-400 to-yellow-100' 
+                : 'text-white'
+            }`}>
               {user.name || 'ANILO EGA²'}
             </h1>
-            {user.isPremium && (
-              <Crown className="w-5 h-5 text-amber-400 fill-amber-400 animate-pulse" />
+            {isPremium && (
+              <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
             )}
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className="font-extrabold text-xs text-orange-400">@Anilo.uz</span>
+            <span className={`font-extrabold text-xs ${isPremium ? 'text-yellow-500/80' : 'text-orange-400'}`}>@Anilo.uz</span>
             <span className="text-gray-500">•</span>
-            <span className="text-[11px] font-extrabold text-amber-300 flex items-center gap-1 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30 shadow-[0_0_12px_rgba(255,191,0,0.2)]">
-              <Sparkles className="w-3.5 h-3.5 fill-amber-300" />
+            <span className={`text-[11px] font-extrabold flex items-center gap-1 px-2.5 py-0.5 rounded-full border shadow-lg ${
+              isPremium 
+                ? 'text-yellow-400 bg-yellow-500/20 border-yellow-500/40' 
+                : 'text-amber-300 bg-amber-500/20 border-amber-500/30'
+            }`}>
+              <Crown className={`w-3.5 h-3.5 ${isPremium ? 'fill-yellow-400' : 'fill-amber-300'}`} />
               VIP A'zo
             </span>
           </div>
@@ -233,10 +272,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         <div className="grid grid-cols-3 gap-3">
           <button 
             onClick={() => setIsWalletModalOpen(true)}
-            className="bg-[#191924] border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center hover:border-emerald-500/50 transition cursor-pointer group"
+            className={`border rounded-2xl p-3 flex flex-col items-center text-center transition cursor-pointer group ${
+              isPremium 
+                ? 'bg-yellow-900/5 border-yellow-500/20 hover:border-yellow-500/50' 
+                : 'bg-[#191924] border-white/10 hover:border-emerald-500/50'
+            }`}
           >
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Hamyon</span>
-            <span className="text-xs sm:text-sm font-black font-mono text-emerald-400 mt-1 truncate">
+            <span className={`text-xs sm:text-sm font-black font-mono mt-1 truncate ${
+              isPremium ? 'text-yellow-400' : 'text-emerald-400'
+            }`}>
               {(balance / 1000).toFixed(0)}k UZS
             </span>
           </button>
@@ -480,17 +525,23 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {(supabase && user.role === 'admin') && (
               <button
                 onClick={() => setIsAdminPanelOpen(true)}
-                className="w-full flex items-center justify-between py-3.5 px-4 hover:bg-white/5 transition group"
+                className={`w-full flex items-center justify-between py-3.5 px-4 hover:bg-white/5 transition group ${isPremium ? 'border-l-2 border-yellow-500/50' : ''}`}
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
+                    isPremium 
+                      ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500' 
+                      : 'bg-red-500/10 border-red-500/20 text-red-400'
+                  }`}>
                     <ShieldAlert className="w-4 h-4" />
                   </div>
-                  <span className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">
+                  <span className={`text-sm font-bold transition-colors ${
+                    isPremium ? 'text-yellow-100 group-hover:text-yellow-400' : 'text-white group-hover:text-orange-400'
+                  }`}>
                     Admin Panel (Anime Qo'shish)
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition" />
+                <ChevronRight className={`w-4 h-4 transition ${isPremium ? 'text-yellow-600 group-hover:text-yellow-400' : 'text-gray-500 group-hover:text-white'}`} />
               </button>
             )}
 
