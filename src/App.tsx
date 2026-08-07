@@ -9,7 +9,6 @@ import { GenrePills } from './components/GenrePills';
 import { VideoPlayerModal } from './components/VideoPlayerModal';
 import { SearchModal } from './components/SearchModal';
 import { PremiumModal } from './components/PremiumModal';
-import { AuthModal } from './components/AuthModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { FavoritesView } from './components/FavoritesView';
 import { HistoryView } from './components/HistoryView';
@@ -18,7 +17,6 @@ import { CommunityChatView } from './components/CommunityChatView';
 import { Footer } from './components/Footer';
 
 import { ANIME_DATABASE, GENRES_DATA, INITIAL_CONTINUE_WATCHING } from './data/animeData';
-import { getAnimesFromDatabase, onAuthStateChange, getCurrentUserSession, getUserProfileFromDatabase, saveUserProfileToDatabase } from './services/dbService';
 import { Anime, ActiveTab, WatchProgress, UserProfile } from './types';
 import { ChevronRight, Flame, Sparkles, Tv, Clapperboard, Film, PlayCircle, Star, Monitor, Smartphone, LayoutGrid } from 'lucide-react';
 
@@ -27,16 +25,12 @@ export default function App() {
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [cardFormat, setCardFormat] = useState<'16/9' | '2/3'>('16/9');
 
-  // Dynamic Anime list from Supabase DB
-  const [animeList, setAnimeList] = useState<Anime[]>(ANIME_DATABASE);
-
   // Detail view state
   const [detailAnime, setDetailAnime] = useState<Anime | null>(null);
 
   // Modals state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isPremiumOpen, setIsPremiumOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Active Video Player state
@@ -88,57 +82,6 @@ export default function App() {
   // Language state
   const [lang, setLang] = useState('UZ');
 
-  // Load anime database from Supabase and listen to Auth session
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadData() {
-      try {
-        const fetchedAnimes = await getAnimesFromDatabase();
-        if (isMounted && fetchedAnimes && fetchedAnimes.length > 0) {
-          setAnimeList(fetchedAnimes);
-        }
-      } catch (e) {
-        console.warn('Failed to load DB animes:', e);
-      }
-    }
-
-    loadData();
-
-    // Check existing auth session
-    getCurrentUserSession().then(async (session) => {
-      if (session?.user && isMounted) {
-        const dbProfile = await getUserProfileFromDatabase(session.user.id);
-        setUser((prev) => ({
-          ...prev,
-          name: dbProfile?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || prev.name,
-          avatar: dbProfile?.avatar || prev.avatar,
-          coverImage: dbProfile?.coverImage || prev.coverImage,
-          isPremium: dbProfile?.isPremium ?? prev.isPremium,
-        }));
-      }
-    });
-
-    // Auth state change listener
-    const subscription = onAuthStateChange(async (session) => {
-      if (session?.user && isMounted) {
-        const dbProfile = await getUserProfileFromDatabase(session.user.id);
-        setUser((prev) => ({
-          ...prev,
-          name: dbProfile?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || prev.name,
-          avatar: dbProfile?.avatar || prev.avatar,
-          coverImage: dbProfile?.coverImage || prev.coverImage,
-          isPremium: dbProfile?.isPremium ?? prev.isPremium,
-        }));
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      if (subscription?.unsubscribe) subscription.unsubscribe();
-    };
-  }, []);
-
   useEffect(() => {
     localStorage.setItem('anilo_favorites', JSON.stringify(favorites));
   }, [favorites]);
@@ -149,7 +92,6 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('anilo_user_profile', JSON.stringify(user));
-    saveUserProfileToDatabase(user);
   }, [user]);
 
   const toggleFavorite = (animeId: string) => {
@@ -164,7 +106,7 @@ export default function App() {
   };
 
   const updateWatchProgress = (animeId: string, episodeNum: number, pct: number) => {
-    const targetAnime = animeList.find((a) => a.id === animeId);
+    const targetAnime = ANIME_DATABASE.find((a) => a.id === animeId);
     if (!targetAnime) return;
 
     setHistory((prev) => {
@@ -189,7 +131,7 @@ export default function App() {
 
   // Filter lists based on selected genre & current view tab
   const getDisplayedAnimeList = (): { title: string; subtitle?: string; list: Anime[] } => {
-    let list = animeList;
+    let list = ANIME_DATABASE;
 
     if (selectedGenre) {
       list = list.filter((a) => a.genres.includes(selectedGenre));
@@ -215,11 +157,11 @@ export default function App() {
     }
   };
 
-  const favoritedAnimeObjects = animeList.filter((a) => favorites.includes(a.id));
+  const favoritedAnimeObjects = ANIME_DATABASE.filter((a) => favorites.includes(a.id));
   const displayedContent = getDisplayedAnimeList();
 
-  const popularAnime = animeList.filter((a) => a.isPopular || a.rating >= 8.5);
-  const newAnime = animeList.filter((a) => a.isNew || a.year === 2024);
+  const popularAnime = ANIME_DATABASE.filter((a) => a.isPopular || a.rating >= 8.5);
+  const newAnime = ANIME_DATABASE.filter((a) => a.isNew || a.year === 2024);
 
   return (
     <div className="min-h-screen bg-[#0E0E12] text-gray-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black">
@@ -233,7 +175,6 @@ export default function App() {
         }}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenPremium={() => setIsPremiumOpen(true)}
-        onOpenAuth={() => setIsAuthOpen(true)}
         favoritesCount={favorites.length}
         historyCount={history.length}
         user={user}
@@ -270,7 +211,7 @@ export default function App() {
           {detailAnime ? (
             <AnimeDetailView
               anime={detailAnime}
-              allAnime={animeList}
+              allAnime={ANIME_DATABASE}
               onPlayAnime={handlePlayAnime}
               onOpenDetail={(anime) => setDetailAnime(anime)}
               onToggleFavorite={toggleFavorite}
@@ -290,7 +231,7 @@ export default function App() {
             /* View 2: History */
             <HistoryView
               history={history}
-              animeList={animeList}
+              animeList={ANIME_DATABASE}
               onPlayAnime={handlePlayAnime}
               onClearHistory={() => setHistory([])}
             />
@@ -310,7 +251,6 @@ export default function App() {
                 setActiveTab(tab);
               }}
               onOpenPremium={() => setIsPremiumOpen(true)}
-              onOpenAuth={() => setIsAuthOpen(true)}
               savedCount={favorites.length}
               historyCount={history.length}
             />
@@ -321,7 +261,7 @@ export default function App() {
               {/* Full-width Grand Hero Showcase Banner */}
               <div className="w-full">
                 <HeroSlider
-                  animeList={animeList}
+                  animeList={ANIME_DATABASE}
                   onPlayAnime={handlePlayAnime}
                   onOpenDetail={(anime) => setDetailAnime(anime)}
                   onToggleFavorite={toggleFavorite}
@@ -373,7 +313,7 @@ export default function App() {
                 <div className="w-full">
                   <ContinueWatching
                     progressList={history.slice(0, 4)}
-                    animeList={animeList}
+                    animeList={ANIME_DATABASE}
                     onPlayAnime={handlePlayAnime}
                   />
                 </div>
@@ -580,7 +520,7 @@ export default function App() {
       <SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-        animeList={animeList}
+        animeList={ANIME_DATABASE}
         genres={GENRES_DATA}
         onPlayAnime={handlePlayAnime}
         onOpenDetail={(anime) => setDetailAnime(anime)}
@@ -591,16 +531,6 @@ export default function App() {
         onClose={() => setIsPremiumOpen(false)}
         user={user}
         onUpgradeSuccess={() => setUser({ ...user, isPremium: true })}
-      />
-
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        onAuthSuccess={(userData) => {
-          if (userData.name) {
-            setUser((prev) => ({ ...prev, name: userData.name }));
-          }
-        }}
       />
 
     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Crown, Heart, History, Sparkles, User, Globe, Menu, X, Flame, MessageSquare, LogIn } from 'lucide-react';
+import { Search, Crown, Heart, History, Sparkles, User, Globe, Menu, X, Flame, MessageSquare } from 'lucide-react';
 import { ActiveTab, UserProfile } from '../types';
 
 interface NavbarProps {
@@ -7,7 +7,6 @@ interface NavbarProps {
   setActiveTab: (tab: ActiveTab) => void;
   onOpenSearch: () => void;
   onOpenPremium: () => void;
-  onOpenAuth: () => void;
   favoritesCount: number;
   historyCount: number;
   user: UserProfile;
@@ -21,7 +20,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenSearch,
   onOpenPremium,
-  onOpenAuth,
   favoritesCount,
   historyCount,
   user,
@@ -144,16 +142,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {favoritesCount}
               </span>
             )}
-          </button>
-
-          {/* Kirish / Auth Button */}
-          <button
-            onClick={onOpenAuth}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 hover:text-orange-300 text-xs font-extrabold transition shadow-sm active:scale-95"
-            title="Tizimga kirish yoki ro'yxatdan o'tish"
-          >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>Kirish</span>
           </button>
 
           {/* User Profile Avatar Button */}
