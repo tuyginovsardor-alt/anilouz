@@ -56,8 +56,8 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
 
   return (
     <div className="min-h-screen bg-[#0F0F13] text-white pb-24 animate-fadeIn">
-      {/* Cinematic Hero Section (70vh height) */}
-      <section className="relative h-[65vh] sm:h-[75vh] w-full overflow-hidden">
+      {/* Cinematic Hero Section (Mobile Optimized Height) */}
+      <section className="relative h-[55vh] sm:h-[75vh] w-full overflow-hidden">
         {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center transform scale-105 transition-transform duration-1000"
@@ -71,13 +71,13 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
         <div className="absolute inset-0 bg-gradient-to-r from-[#0F0F13] via-transparent to-[#0F0F13]/40" />
 
         {/* Top Back Navigation Button */}
-        <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-30">
+        <div className="absolute top-4 left-4 z-30">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/60 hover:bg-orange-500 text-white hover:text-black font-extrabold text-xs tracking-wider backdrop-blur-md border border-white/10 shadow-xl transition active:scale-95 group"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-black/60 hover:bg-orange-500 text-white hover:text-black font-extrabold text-[10px] sm:text-xs tracking-wider backdrop-blur-md border border-white/10 shadow-xl transition active:scale-95 group"
           >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span>Katalogga qaytish</span>
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" />
+            <span>ORQAGA</span>
           </button>
         </div>
 
@@ -99,8 +99,8 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
               </span>
             </div>
 
-            {/* Title */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight drop-shadow-2xl leading-none">
+            {/* Title (Mobile Responsive) */}
+            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight drop-shadow-2xl leading-[1.1] sm:leading-none">
               {anime.title}
             </h1>
 
@@ -116,26 +116,26 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
               ))}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            {/* Action Buttons (Mobile Grid) */}
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-3 sm:gap-4 pt-2">
               <button
                 onClick={() => onPlayAnime(anime, 1)}
-                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black px-6 sm:px-10 py-3.5 sm:py-4 rounded-2xl flex items-center gap-3 transition-all font-black text-xs sm:text-sm tracking-widest shadow-2xl shadow-orange-500/30 active:scale-95"
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black px-6 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl flex items-center justify-center gap-3 transition-all font-black text-xs sm:text-sm tracking-widest shadow-2xl shadow-orange-500/30 active:scale-95"
               >
-                <Play className="w-5 h-5 fill-black" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-black" />
                 <span>TOMOSHA QILISH</span>
               </button>
 
               <button
                 onClick={() => onToggleFavorite(anime.id)}
-                className={`px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl flex items-center gap-3 transition-all font-bold text-xs sm:text-sm backdrop-blur-md border ${
+                className={`px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl flex items-center justify-center gap-3 transition-all font-bold text-xs sm:text-sm backdrop-blur-md border ${
                   isFavorite
                     ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
                     : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
                 }`}
               >
-                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-orange-400 text-orange-400' : ''}`} />
-                <span>{isFavorite ? 'SEVIMLI (Saqlangan)' : 'SEVIMLILARGA QO\'SHISH'}</span>
+                <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorite ? 'fill-orange-400 text-orange-400' : ''}`} />
+                <span className="truncate">{isFavorite ? 'SAQLANGAN' : 'SEVIMLIKLAR'}</span>
               </button>
             </div>
 

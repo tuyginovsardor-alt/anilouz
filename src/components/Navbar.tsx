@@ -54,7 +54,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-lg font-black tracking-tight text-white font-sans flex items-center">
                 ANILO<span className="text-orange-500 font-extrabold text-xs">.UZ</span>
               </span>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] leading-none">Anilo.uz</p>
             </div>
           </div>
         </div>

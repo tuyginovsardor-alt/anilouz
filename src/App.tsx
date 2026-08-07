@@ -42,6 +42,7 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isPremiumOpen, setIsPremiumOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isPrivateChatOpen, setIsPrivateChatOpen] = useState(false);
 
   // Active Video Player state
   const [activeAnime, setActiveAnime] = useState<Anime | null>(null);
@@ -429,22 +430,24 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0E0E12] text-gray-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black">
       
-      {/* Top Navbar */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          setDetailAnime(null);
-          setActiveTab(tab);
-        }}
-        onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenPremium={() => setIsPremiumOpen(true)}
-        favoritesCount={favorites.length}
-        historyCount={history.length}
-        user={user}
-        currentLang={lang}
-        onChangeLang={setLang}
-        onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
-      />
+      {/* Top Navbar - Hidden on Reels */}
+      {activeTab !== 'reels' && (
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            setDetailAnime(null);
+            setActiveTab(tab);
+          }}
+          onOpenSearch={() => setIsSearchOpen(true)}
+          onOpenPremium={() => setIsPremiumOpen(true)}
+          favoritesCount={favorites.length}
+          historyCount={history.length}
+          user={user}
+          currentLang={lang}
+          onChangeLang={setLang}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
+        />
+      )}
 
       {/* Main Workspace Layout (Sidebar + Main View Area) */}
       <div className="flex-1 flex max-w-[1800px] w-full mx-auto">
@@ -469,7 +472,11 @@ export default function App() {
         />
 
         {/* Main Content Pane */}
-        <main className={`flex-1 min-w-0 p-3 sm:p-6 lg:p-8 pb-32 lg:pb-12 scroll-smooth ${activeTab === 'community' ? 'h-[calc(100vh-72px)] overflow-hidden flex flex-col' : ''}`}>
+        <main className={`flex-1 min-w-0 p-3 sm:p-6 lg:p-8 pb-32 lg:pb-12 scroll-smooth ${
+          (activeTab === 'community' || activeTab === 'messages' || activeTab === 'reels') 
+            ? 'h-full !p-0 overflow-hidden flex flex-col' 
+            : ''
+        }`}>
           
           {/* Detail View Pane */}
           {detailAnime ? (
@@ -548,7 +555,10 @@ export default function App() {
               )}
             </div>
           ) : activeTab === 'messages' ? (
-            <MessageCenterView user={user} />
+            <MessageCenterView 
+              user={user} 
+              onChatOpenStateChange={setIsPrivateChatOpen}
+            />
           ) : activeTab === 'reels' ? (
             <ReelsView user={user} />
           ) : activeTab === 'profile' ? (
@@ -810,17 +820,19 @@ export default function App() {
       {/* Footer */}
       <Footer />
 
-      {/* Mobile Bottom Navigation Bar */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          setDetailAnime(null);
-          setActiveTab(tab);
-        }}
-        onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenPremium={() => setIsPremiumOpen(true)}
-        favoritesCount={favorites.length}
-      />
+      {/* Mobile Bottom Navigation - Hidden on Reels or Active Chat */}
+      {activeTab !== 'reels' && !isPrivateChatOpen && (
+        <MobileBottomNav 
+          activeTab={activeTab} 
+          setActiveTab={(tab) => {
+            setDetailAnime(null);
+            setActiveTab(tab);
+          }}
+          onOpenSearch={() => setIsSearchOpen(true)}
+          onOpenPremium={() => setIsPremiumOpen(true)}
+          favoritesCount={favorites.length}
+        />
+      )}
 
       {/* Modals */}
       <VideoPlayerModal
