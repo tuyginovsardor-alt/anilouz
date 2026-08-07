@@ -19,7 +19,9 @@ import {
   GraduationCap,
   User,
   MessageSquare,
-  ShieldCheck
+  ShieldCheck,
+  LayoutGrid,
+  Play
 } from 'lucide-react';
 import { ActiveTab, Genre, UserProfile } from '../types';
 

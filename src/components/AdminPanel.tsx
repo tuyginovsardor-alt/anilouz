@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Users, Film, CreditCard, MessageSquare, ShieldAlert, 
   ChevronRight, ArrowUpRight, Activity, Terminal, Sparkles, RefreshCw, X,
-  Plus
+  Plus, Play
 } from 'lucide-react';
 import { Anime } from '../types';
 import { AdminView } from './AdminView';
@@ -79,6 +79,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onAnimeAdded })
           <StatCard label="Foydalanuvchilar" value="1,245" icon={<Users className="text-blue-500" />} color="from-blue-600 to-transparent" />
           <StatCard label="Anime Katalog" value="298" icon={<Film className="text-orange-500" />} color="from-orange-600 to-transparent" />
           <StatCard label="Tranzaksiyalar" value="89.4M" icon={<CreditCard className="text-green-500" />} color="from-green-600 to-transparent" />
+          <StatCard label="Faol Reels" value="128" icon={<Play className="text-pink-500" />} color="from-pink-600 to-transparent" />
           <StatCard label="Ticketlar" value="12" icon={<MessageSquare className="text-red-500" />} color="from-red-600 to-transparent" />
         </div>
 
@@ -86,15 +87,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onAnimeAdded })
           {/* Moderation Section */}
           <div className="lg:col-span-2 bg-[#111115] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[500px]">
             <div className="p-8 border-b border-white/5 flex justify-between items-center bg-[#16161c]">
-              <div className="flex items-center gap-3">
-                <Activity className="text-orange-500" size={20}/>
-                <h3 className="text-lg font-black uppercase text-white">Moderatsiya</h3>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center">
+                  <Play className="w-6 h-6 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tight">Reels Moderatsiyasi</h3>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Kutayotgan videolar: 8 ta</p>
+                </div>
               </div>
-              <span className="px-3 py-1 bg-zinc-900 border border-white/5 rounded-full text-[10px] font-black text-zinc-400">3 PENDING</span>
             </div>
-            <div className="flex-1 p-8 flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-              <Film className="w-12 h-12 text-zinc-700" />
-              <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Hozircha yangi so'rovlar yo'q</p>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl hover:border-orange-500/30 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-20 bg-black rounded-lg overflow-hidden border border-white/10 flex-shrink-0">
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+                        <Play className="w-6 h-6 text-orange-500/30" />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white">#AnimeEdit {i}</h4>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">@otaku_king • 18.5 MB</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button className="px-4 py-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-black rounded-xl text-[10px] font-black uppercase transition-all">Tasdiqlash</button>
+                    <button className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all">Rad etish</button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

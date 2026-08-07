@@ -14,6 +14,8 @@ import { FavoritesView } from './components/FavoritesView';
 import { HistoryView } from './components/HistoryView';
 import { ProfileView } from './components/ProfileView';
 import { CommunityChatView } from './components/CommunityChatView';
+import { MessageCenterView } from './components/MessageCenterView';
+import { ReelsView } from './components/ReelsView';
 import { Footer } from './components/Footer';
 import { AuthView } from './components/AuthView';
 import { AdminPanel } from './components/AdminPanel';
@@ -503,6 +505,52 @@ export default function App() {
               user={user}
               onBack={() => setActiveTab('home')}
             />
+          ) : activeTab === 'catalog' ? (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-black text-white uppercase tracking-tight">Katalog</h1>
+                  <p className="text-gray-500 text-sm font-bold mt-1 uppercase tracking-widest">Barcha janrlar va to'plamlar</p>
+                </div>
+              </div>
+              <GenrePills 
+                genres={GENRES_DATA} 
+                selectedGenre={selectedGenre} 
+                onSelectGenre={setSelectedGenre} 
+              />
+              {selectedGenre ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
+                  {animeList
+                    .filter(a => a.genres.includes(selectedGenre))
+                    .map(anime => (
+                      <AnimeCard 
+                        key={anime.id} 
+                        anime={anime} 
+                        onClick={() => setDetailAnime(anime)}
+                        onFavoriteToggle={toggleFavorite}
+                        isFavorite={favorites.includes(anime.id)}
+                      />
+                    ))
+                  }
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
+                  {animeList.map(anime => (
+                    <AnimeCard 
+                      key={anime.id} 
+                      anime={anime} 
+                      onClick={() => setDetailAnime(anime)}
+                      onFavoriteToggle={toggleFavorite}
+                      isFavorite={favorites.includes(anime.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'messages' ? (
+            <MessageCenterView user={user} />
+          ) : activeTab === 'reels' ? (
+            <ReelsView user={user} />
           ) : activeTab === 'profile' ? (
             /* View 3: Profile */
             <ProfileView
