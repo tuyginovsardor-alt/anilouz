@@ -33,8 +33,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 89,
     season: '4-fasl',
     description: `Insoniyat ulkan devorlar ortida gigant titanlardan yashanib yashaydi. Eren Yager va uning do'stlari insoniyat ozodligi uchun eng so'nggi jangga kirishadi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCzdoc1CB9zN-e6tcbGR8xZpu_j-LfAseQjjCFbZbsmMr_TULLoR7fyp_ierDTcNsvkJsVzm5fI5_vVIiued6N_pAZan2S-c67mV9ornZeW56puJbu8LFfujVNqk07uz2kWkr9u86yZzgKNYSfSr-XWrQTVNw2tVTY8bfhUV_DHSWL8qHO9IeBXv-Bp7wX5oS-vjXnoo7kOeMQ3JjsBecmRrMfdFis2EoRNaiZxAmA_7wGN8DHRU8io8g',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCzdoc1CB9zN-e6tcbGR8xZpu_j-LfAseQjjCFbZbsmMr_TULLoR7fyp_ierDTcNsvkJsVzm5fI5_vVIiued6N_pAZan2S-c67mV9ornZeW56puJbu8LFfujVNqk07uz2kWkr9u86yZzgKNYSfSr-XWrQTVNw2tVTY8bfhUV_DHSWL8qHO9IeBXv-Bp7wX5oS-vjXnoo7kOeMQ3JjsBecmRrMfdFis2EoRNaiZxAmA_7wGN8DHRU8io8g',
+    bannerImage: 'https://i.ibb.co/FbKPfwPw/photo-1-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/FbKPfwPw/photo-1-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[1],
     isTrending: true,
     isPopular: true,
@@ -63,8 +63,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 500,
     season: 'To\'liq serial',
     description: `Naruto o'z orzusiga erishish yo'lida do'stlari bilan birga eng kuchli ninja bo'lishga intiladi. Dunyoni qutqarish va o'z qishlog'ini himoya qilish uchun u barcha to'siqlarni yengib o'tadi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC6SUqxwBGUfMkHpo-8JgXxQMYBAdxf5qEo0V9iVTfbswwi7CaZkDgLUSiS2h_m7zgHO2KmOjeUAAHkc6rglANq034PATCsd1UeSCQiWLy3aPsiE8qbaxFBdhfKpTs4fmA_GzUmTrjgqOPmckyH70NMqGoi6qB9b5qtNixicFY71A2mJjHcfa3fdrMEjmuwx24LYxQX5uNfGXy7vwUkZYfSeduDttpDorSZmnUuVEzS7KY2W1kUeqGtTA',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC2eeX4reuQCFpQjLSI4qp_zSUj6XoklBD8-B3wp5VRjZATimim6O-dn-nMb-I72TZOG70eYgx_cjJgbNKMxzJB0SPEzlOuhoVhNeiaWS9L8Qj02Nt0Tqg3AAc31p2QjVU_1q20ghAIDEceD8ITqpcZvJTSgJweotJHHJ7ts8R6wPt65VjFnTfi4QoUKDs-q10NV0rWUZp2gIHwZ30_HxRFFANL4Xx9o7CNG7qGEk8EEKbceP2k6G2PFQ',
+    bannerImage: 'https://i.ibb.co/JRq1gBGk/photo-3-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/JRq1gBGk/photo-3-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[0],
     isTrending: true,
     isPopular: true,
@@ -94,8 +94,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 23,
     season: '2-fasl',
     description: `Sibuya hodisasi: Yuji Itadori va afsungarlar eng xavfli lanatli ruhlarga qarshi misli ko'rilmagan jang olib borishadi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBwk3k2tkpbGKAFG5DC3umxYIAQ1BqOmrXi4aLc9aO60ZANO-eozcfC1Yoa6hfbSFH9uPFMF3D0CcUd1W4wbR8-jKVyp8cd38CUE27aPXu0CsarNKrz4p85AFdhJlaQFVLcHjf5etD64oxLVrEvL9tetL3BBgVQe-2fS9lQEvK1kbNhz0Ig9uxK2P6tgrcsrxOrdj4xRv7pCA3FXXm28E8Xa6S84eiAtvA6EqRBTogDMXf_qx8cRW2h-Q',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDCpplBNBEKflk6i4tX-8vzzsJFFxsMfHbQVOs05ELm_h4LVI5P4kRsj-Tnj61mIfCg29htC-mvGVEwm4Gp5bDSiH7vQBaGFycuxpLXs4SXFTrsAurfM-SdlN0Jzfz4JsvAYBo_K02ExNvQUGTMHU0BJiZdFQPk4f1_tjkhKrQm9BKaFK1WL75aK2lBpzFLdDUagVUE2PgMSMGM7StbCWuuwhkVyI4JIw09pssjDFYiZhcOlnFRnP_6LQ',
+    bannerImage: 'https://i.ibb.co/SXHt559P/photo-2-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/SXHt559P/photo-2-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[2],
     isTrending: true,
     isPopular: true,
@@ -111,7 +111,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Sibuya jangi sirlari`,
       duration: '23:50',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBwk3k2tkpbGKAFG5DC3umxYIAQ1BqOmrXi4aLc9aO60ZANO-eozcfC1Yoa6hfbSFH9uPFMF3D0CcUd1W4wbR8-jKVyp8cd38CUE27aPXu0CsarNKrz4p85AFdhJlaQFVLcHjf5etD64oxLVrEvL9tetL3BBgVQe-2fS9lQEvK1kbNhz0Ig9uxK2P6tgrcsrxOrdj4xRv7pCA3FXXm28E8Xa6S84eiAtvA6EqRBTogDMXf_qx8cRW2h-Q'
+      thumbnail: 'https://i.ibb.co/SXHt559P/photo-2-2026-08-05-22-37-08.jpg'
     }))
   },
   {
@@ -125,8 +125,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 38,
     season: '3-fasl',
     description: `Tanjiro Kamado o'z singlisi Nezuko-ni iblis holatidan inson holatiga qaytarish va oilasi uchun qasos olish maqsadida iblis ovchilariga qo'shiladi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDksmvzMpn_-wGdeXfjM3ZNx_sTmdmLH51IVJFGW6NjPyhDqj5WLn53lBiw3Z9qtbvB5ErsWmp8lGcmYbMWd4ivILP3Uufq3f7MWfEf3KCnFBpO2V5RDRYlqO0Ynxi740AXx9VPZPF7lBdf5UumFayqWukz1OpxJzaeF1_GE8xxT5_rDG5e7EsCe8iV0Z-aZu0GWag3hnlaMPLD90-y0TXDSJTv14Ps31U6lTQzRxl2UaQ4yXrcDWwoDg',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClD5T_sQywJG8Dg-82gbAyR1g1eoorGot2QCHck0iWSH-sOPEtup1qfW8DexlbrK_e2WTtF2fES2MIr2D5tDA6ZNO9yPZDRu8mLRYe3By8kH3d5_no5Goru8i1ja1xwLD7hPm281YTFGJAAWg2BGE1Nj56lFRtkY87MxrIV3DmpwN8GqD6Qq0IX-G8Cj1bItlESZ2qHi0MM-n83jT2m4kTmS3ntFTsGc15AvnE6Vkpu5_9vpiZeqW__w',
+    bannerImage: 'https://i.ibb.co/bM7wBcjr/photo-5-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/bM7wBcjr/photo-5-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[3],
     isTrending: true,
     isPopular: true,
@@ -155,8 +155,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 1100,
     season: 'Wano mamlakati',
     description: `Monkey D. Luffy o'zining Somon shlyapali qaroqchilar jamoasi bilan afsonaviy xazina "One Piece"ni topish va Qaroqchilar Qiroli bo'lish uchun okeanlarni kezadi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDnmibjq7zM51uSMTeaM7m53Szr60Nw3a2jDjP3Z9r1JLQf-eASEJimSXV8we4Y6Et4dkqXI3eG4UQEYxM_z4tk2W46zy9kJsDvABZaS-QjajGQ0FYPcVognBuSBkwcUYHRNuZZxbsONYbz2gjRLX1qY-kdRbnb5K5XXo_9Czv0KlKQvm656IXPV-oHcHg8-2hys77rGz8p2jdxf5BmWbTh2YrJMm1QWovcO5jsmixcr_T8DnI9DBugNA',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDm6osHYiVav-JKGDd0o50YB2oMI2mpY1OD14BlZaBCkymwEfDTbPUTBO6bJLO0dxOdPlS_2ybxEaeY-cvQN8PdCWdVmaQtdts646ziYsKRV6xbu43AQnv3fwC31WqxlCSo5m-lZVihyJHEhyfomYGWB0t7ChIKb5YdwC5XiCBO8lXOC05oQxSX8pLbmPxe-9B6hCmGVxsDVyCNVyFzrR35jyEVH8lZfWruAshvlUXktxwgboodwC52bw',
+    bannerImage: 'https://i.ibb.co/3y55hyRV/photo-4-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/3y55hyRV/photo-4-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[0],
     isTrending: false,
     isPopular: true,
@@ -185,8 +185,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 12,
     season: '1-fasl',
     description: `Eng kuchsiz ovchi Sung Jinwoo sirli zindonda "Tizim" imkoniyatiga ega bo'ladi va dunyodagi eng kuchli soyalar hukmdoriga aylana boshlaydi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBwk3k2tkpbGKAFG5DC3umxYIAQ1BqOmrXi4aLc9aO60ZANO-eozcfC1Yoa6hfbSFH9uPFMF3D0CcUd1W4wbR8-jKVyp8cd38CUE27aPXu0CsarNKrz4p85AFdhJlaQFVLcHjf5etD64oxLVrEvL9tetL3BBgVQe-2fS9lQEvK1kbNhz0Ig9uxK2P6tgrcsrxOrdj4xRv7pCA3FXXm28E8Xa6S84eiAtvA6EqRBTogDMXf_qx8cRW2h-Q',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDCpplBNBEKflk6i4tX-8vzzsJFFxsMfHbQVOs05ELm_h4LVI5P4kRsj-Tnj61mIfCg29htC-mvGVEwm4Gp5bDSiH7vQBaGFycuxpLXs4SXFTrsAurfM-SdlN0Jzfz4JsvAYBo_K02ExNvQUGTMHU0BJiZdFQPk4f1_tjkhKrQm9BKaFK1WL75aK2lBpzFLdDUagVUE2PgMSMGM7StbCWuuwhkVyI4JIw09pssjDFYiZhcOlnFRnP_6LQ',
+    bannerImage: 'https://i.ibb.co/JRd5S8kx/photo-8-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/JRd5S8kx/photo-8-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[1],
     isTrending: true,
     isPopular: true,
@@ -202,7 +202,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Qorong'u zindon va yangi uyg'onish`,
       duration: '24:00',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDCpplBNBEKflk6i4tX-8vzzsJFFxsMfHbQVOs05ELm_h4LVI5P4kRsj-Tnj61mIfCg29htC-mvGVEwm4Gp5bDSiH7vQBaGFycuxpLXs4SXFTrsAurfM-SdlN0Jzfz4JsvAYBo_K02ExNvQUGTMHU0BJiZdFQPk4f1_tjkhKrQm9BKaFK1WL75aK2lBpzFLdDUagVUE2PgMSMGM7StbCWuuwhkVyI4JIw09pssjDFYiZhcOlnFRnP_6LQ'
+      thumbnail: 'https://i.ibb.co/JRd5S8kx/photo-8-2026-08-05-22-37-08.jpg'
     }))
   },
   {
@@ -216,8 +216,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 138,
     season: '6-fasl',
     description: `Qahramonlik kuchi bo'lmagan Izuku Midoriya №1 qahramon All Might-dan kuch qabul qiladi va eng yaxshi qahramon bo'lish uchun o'qiydi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAxYfGhGsKs3L0ZwrLxX1ur0C_xxgUw6gMsm6e0KYYC1A1B5Q7eyffVLWoCkS1h-TaghSzbj4i2brd_8HKtPnaAM4n6fNWGSgT3kKK_rLCwQ4lbkZeov5DNbyWe_CcpiXOlvpD0nRHl4wFRn3IkpinVpa9glsZdE6bWC9xgwFYRZNWGWO7NwHdNG6QEEqZEx8dIronT7E-6R0f91XWxKgpvvQd7u_wjZGYcvvPXeSqvlGndlFNLZGJ2tw',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAxYfGhGsKs3L0ZwrLxX1ur0C_xxgUw6gMsm6e0KYYC1A1B5Q7eyffVLWoCkS1h-TaghSzbj4i2brd_8HKtPnaAM4n6fNWGSgT3kKK_rLCwQ4lbkZeov5DNbyWe_CcpiXOlvpD0nRHl4wFRn3IkpinVpa9glsZdE6bWC9xgwFYRZNWGWO7NwHdNG6QEEqZEx8dIronT7E-6R0f91XWxKgpvvQd7u_wjZGYcvvPXeSqvlGndlFNLZGJ2tw',
+    bannerImage: 'https://i.ibb.co/p6tqF3JK/photo-7-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/p6tqF3JK/photo-7-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[2],
     isTrending: false,
     isPopular: true,
@@ -232,7 +232,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Qahramonlar va yovuzlar jangi`,
       duration: '23:30',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAxYfGhGsKs3L0ZwrLxX1ur0C_xxgUw6gMsm6e0KYYC1A1B5Q7eyffVLWoCkS1h-TaghSzbj4i2brd_8HKtPnaAM4n6fNWGSgT3kKK_rLCwQ4lbkZeov5DNbyWe_CcpiXOlvpD0nRHl4wFRn3IkpinVpa9glsZdE6bWC9xgwFYRZNWGWO7NwHdNG6QEEqZEx8dIronT7E-6R0f91XWxKgpvvQd7u_wjZGYcvvPXeSqvlGndlFNLZGJ2tw'
+      thumbnail: 'https://i.ibb.co/p6tqF3JK/photo-7-2026-08-05-22-37-08.jpg'
     }))
   },
   {
@@ -246,8 +246,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 37,
     season: '2-fasl',
     description: `Takemichi 12 yil orqaga - maktab davriga qaytadi va o'z sevgilisi Hinatani qutqarish uchun to'daning kelajagini o'zgartiradi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAe3_FhfayDZ2MQCe1LUYhEfx_mdyzJLFyVlmC-JbXkXjInxS2E-RLB-x4X-u-MxgatD72-_SpjUjI_c-lbuvCDPsAxr-4zZ-LmmnnY1ASPBrF9Cc_hSYG4s_My1XsOhhH_hs5B9UFsHPK8dnn8hNGRLmhdHQ2GkUeZRiCzb6ApATQ05BnXg2U3L_Q42YDPXwihzTa_NrH8cVLkdUHvbLicqUdyaqQCMpMYYOO3u_i586ImgRLX-RAFWQ',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAe3_FhfayDZ2MQCe1LUYhEfx_mdyzJLFyVlmC-JbXkXjInxS2E-RLB-x4X-u-MxgatD72-_SpjUjI_c-lbuvCDPsAxr-4zZ-LmmnnY1ASPBrF9Cc_hSYG4s_My1XsOhhH_hs5B9UFsHPK8dnn8hNGRLmhdHQ2GkUeZRiCzb6ApATQ05BnXg2U3L_Q42YDPXwihzTa_NrH8cVLkdUHvbLicqUdyaqQCMpMYYOO3u_i586ImgRLX-RAFWQ',
+    bannerImage: 'https://i.ibb.co/27cmcJbg/photo-6-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/27cmcJbg/photo-6-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[3],
     isTrending: false,
     isPopular: true,
@@ -262,7 +262,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Yangi yil jangi`,
       duration: '23:55',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAe3_FhfayDZ2MQCe1LUYhEfx_mdyzJLFyVlmC-JbXkXjInxS2E-RLB-x4X-u-MxgatD72-_SpjUjI_c-lbuvCDPsAxr-4zZ-LmmnnY1ASPBrF9Cc_hSYG4s_My1XsOhhH_hs5B9UFsHPK8dnn8hNGRLmhdHQ2GkUeZRiCzb6ApATQ05BnXg2U3L_Q42YDPXwihzTa_NrH8cVLkdUHvbLicqUdyaqQCMpMYYOO3u_i586ImgRLX-RAFWQ'
+      thumbnail: 'https://i.ibb.co/27cmcJbg/photo-6-2026-08-05-22-37-08.jpg'
     }))
   },
   {
@@ -276,8 +276,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 37,
     season: 'To\'liq serial',
     description: `Iqtidorli talaba Yagami Light o'lim daftarchasini topib oladi. Ismi yozilgan har bir kishi o'ladi. U dunyoni jinoyatchilardan tozalashni boshlaydi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAoLMVD2WqNkGRzQFxmGiQQlCVv6pJ7vqAHzplVwOTH1vapo4AgPMWb3hRraVPxGMnferXSOySgvCXMMvVi9i1NyK921nht0EMAh0RDKUtZRjh_nRy1J70rZXsWgHvMXsEE4xzYvwy4Snxtpoj2asxsAy8Fj-zczWbFKSUcPrH-9rhEhXEVR-Q1z2FLy5ezNd47WjE-KmMBt0vjl4AEZbNJv8PASmYGrJWRSedDnrq4CIct0yVuQ-i0Mg',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAoLMVD2WqNkGRzQFxmGiQQlCVv6pJ7vqAHzplVwOTH1vapo4AgPMWb3hRraVPxGMnferXSOySgvCXMMvVi9i1NyK921nht0EMAh0RDKUtZRjh_nRy1J70rZXsWgHvMXsEE4xzYvwy4Snxtpoj2asxsAy8Fj-zczWbFKSUcPrH-9rhEhXEVR-Q1z2FLy5ezNd47WjE-KmMBt0vjl4AEZbNJv8PASmYGrJWRSedDnrq4CIct0yVuQ-i0Mg',
+    bannerImage: 'https://i.ibb.co/Pz5SmWpV/photo-10-2026-08-05-22-37-09.jpg',
+    posterImage: 'https://i.ibb.co/Pz5SmWpV/photo-10-2026-08-05-22-37-09.jpg',
     videoUrl: SAMPLE_VIDEOS[0],
     isTrending: false,
     isPopular: true,
@@ -292,7 +292,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Daftarcha kuchi`,
       duration: '23:00',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAoLMVD2WqNkGRzQFxmGiQQlCVv6pJ7vqAHzplVwOTH1vapo4AgPMWb3hRraVPxGMnferXSOySgvCXMMvVi9i1NyK921nht0EMAh0RDKUtZRjh_nRy1J70rZXsWgHvMXsEE4xzYvwy4Snxtpoj2asxsAy8Fj-zczWbFKSUcPrH-9rhEhXEVR-Q1z2FLy5ezNd47WjE-KmMBt0vjl4AEZbNJv8PASmYGrJWRSedDnrq4CIct0yVuQ-i0Mg'
+      thumbnail: 'https://i.ibb.co/Pz5SmWpV/photo-10-2026-08-05-22-37-09.jpg'
     }))
   },
   {
@@ -306,8 +306,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 12,
     season: '1-fasl',
     description: `Haruka Sakura eng kuchli ko'cha jangchisi bo'lish uchun Bofurin maktabiga keladi. Biroq u yerdagilar shaharni himoya qiluvchi qahramonlar ekanini tushunadi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQlDmOFVgMN8m7tAi_d7mL1hBy6CCHAkGMpMj6RLEoZ7z8sPCfuRSfl3IzDM5AfD2YxYK30iGwZf3Fu5sCJgjsJRgGQDZ-LTp8DegrCJMbUPIAg8lOZudR-DAtc0UuYbo4YORf7lINp5WPKemOO6BG1bgGaLmc3HhwZyO07pFL8ka29evPTeKU-cNM1kAiTkJ4eZvCtf7f-E1ROZTvFaEtnHcSkYuODbPN1PNoVcgYRN8Vl_Nzx7rspg',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQlDmOFVgMN8m7tAi_d7mL1hBy6CCHAkGMpMj6RLEoZ7z8sPCfuRSfl3IzDM5AfD2YxYK30iGwZf3Fu5sCJgjsJRgGQDZ-LTp8DegrCJMbUPIAg8lOZudR-DAtc0UuYbo4YORf7lINp5WPKemOO6BG1bgGaLmc3HhwZyO07pFL8ka29evPTeKU-cNM1kAiTkJ4eZvCtf7f-E1ROZTvFaEtnHcSkYuODbPN1PNoVcgYRN8Vl_Nzx7rspg',
+    bannerImage: 'https://i.ibb.co/FL4zcQ9t/photo-11-2026-08-05-22-37-09.jpg',
+    posterImage: 'https://i.ibb.co/FL4zcQ9t/photo-11-2026-08-05-22-37-09.jpg',
     videoUrl: SAMPLE_VIDEOS[1],
     isTrending: false,
     isNew: true,
@@ -322,7 +322,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Bofurin qoidalari`,
       duration: '23:45',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQlDmOFVgMN8m7tAi_d7mL1hBy6CCHAkGMpMj6RLEoZ7z8sPCfuRSfl3IzDM5AfD2YxYK30iGwZf3Fu5sCJgjsJRgGQDZ-LTp8DegrCJMbUPIAg8lOZudR-DAtc0UuYbo4YORf7lINp5WPKemOO6BG1bgGaLmc3HhwZyO07pFL8ka29evPTeKU-cNM1kAiTkJ4eZvCtf7f-E1ROZTvFaEtnHcSkYuODbPN1PNoVcgYRN8Vl_Nzx7rspg'
+      thumbnail: 'https://i.ibb.co/FL4zcQ9t/photo-11-2026-08-05-22-37-09.jpg'
     }))
   },
   {
@@ -336,8 +336,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 12,
     season: '1-fasl',
     description: `Kafka Hibino kutilmaganda ozod bo'lgan maxluq (kaiju) kuchiga ega bo'ladi va Mudofaa kuchlariga kirib insoniyatni qutqarishga ahd qiladi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKUWqhfeQc-do51xJEW9kzVy-WrkXDQc5LA8ZkKFUflA-Apk8lIc3W5JouTJHsjY_w_pqN_a76eErjabwT_bp-EFTh0RajwgpaOE8x1YRModV2X-5-L24veoq073VyM8GQBfsn2GCIezQExcj7V9dRlOqa4qqWWil2iV2y6yNAD_bpejs-TXkEsuBKJbbHHgeX2CHyr8B_7cWFg4WVXP8JYNlx-8-Uhkc6PT7n7fSQ4Y5lA49lQoJpHg',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKUWqhfeQc-do51xJEW9kzVy-WrkXDQc5LA8ZkKFUflA-Apk8lIc3W5JouTJHsjY_w_pqN_a76eErjabwT_bp-EFTh0RajwgpaOE8x1YRModV2X-5-L24veoq073VyM8GQBfsn2GCIezQExcj7V9dRlOqa4qqWWil2iV2y6yNAD_bpejs-TXkEsuBKJbbHHgeX2CHyr8B_7cWFg4WVXP8JYNlx-8-Uhkc6PT7n7fSQ4Y5lA49lQoJpHg',
+    bannerImage: 'https://i.ibb.co/GfZwbfYn/photo-9-2026-08-05-22-37-08.jpg',
+    posterImage: 'https://i.ibb.co/GfZwbfYn/photo-9-2026-08-05-22-37-08.jpg',
     videoUrl: SAMPLE_VIDEOS[2],
     isTrending: false,
     isNew: true,
@@ -352,7 +352,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Kaijuga aylangan odam`,
       duration: '23:40',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKUWqhfeQc-do51xJEW9kzVy-WrkXDQc5LA8ZkKFUflA-Apk8lIc3W5JouTJHsjY_w_pqN_a76eErjabwT_bp-EFTh0RajwgpaOE8x1YRModV2X-5-L24veoq073VyM8GQBfsn2GCIezQExcj7V9dRlOqa4qqWWil2iV2y6yNAD_bpejs-TXkEsuBKJbbHHgeX2CHyr8B_7cWFg4WVXP8JYNlx-8-Uhkc6PT7n7fSQ4Y5lA49lQoJpHg'
+      thumbnail: 'https://i.ibb.co/GfZwbfYn/photo-9-2026-08-05-22-37-08.jpg'
     }))
   },
   {
@@ -366,8 +366,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 24,
     season: '2-fasl',
     description: `Yaponiya terma jamoasi uchun dunyodagi eng egoist va kuchli hujumchini yetishtirish maqsadida 300 ta yosh futbolchi Blue Lock loyihasiga to'planadi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA8tqbK9SQ5L_9B7P0dwlLmnn82vmk5ME3RTA8cx6JUgU8B3zYI6dCNtKKkyalgQTfWZtqod3i4faZcdsQMXBcEoG7xGq3OOCg0C8iD1Qq0uemda5yKh4bTmkg-4qB04XQ-vUrK5XKS_a21x_wuEZfnuDBKf0Ra2KyHnNtJwcEuBwyhcUXBMR7ycAv7eSD29ylG2V5ktqltuiK-FiTZ6dRA6_8XriW79x414IuGHkKlmzmiu-1ui6a0gA',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA8tqbK9SQ5L_9B7P0dwlLmnn82vmk5ME3RTA8cx6JUgU8B3zYI6dCNtKKkyalgQTfWZtqod3i4faZcdsQMXBcEoG7xGq3OOCg0C8iD1Qq0uemda5yKh4bTmkg-4qB04XQ-vUrK5XKS_a21x_wuEZfnuDBKf0Ra2KyHnNtJwcEuBwyhcUXBMR7ycAv7eSD29ylG2V5ktqltuiK-FiTZ6dRA6_8XriW79x414IuGHkKlmzmiu-1ui6a0gA',
+    bannerImage: 'https://i.ibb.co/rG6nnspX/photo-14-2026-08-05-22-37-09.jpg',
+    posterImage: 'https://i.ibb.co/rG6nnspX/photo-14-2026-08-05-22-37-09.jpg',
     videoUrl: SAMPLE_VIDEOS[3],
     isTrending: false,
     isNew: true,
@@ -382,7 +382,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Egoist futbol simulyasiyasi`,
       duration: '24:00',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA8tqbK9SQ5L_9B7P0dwlLmnn82vmk5ME3RTA8cx6JUgU8B3zYI6dCNtKKkyalgQTfWZtqod3i4faZcdsQMXBcEoG7xGq3OOCg0C8iD1Qq0uemda5yKh4bTmkg-4qB04XQ-vUrK5XKS_a21x_wuEZfnuDBKf0Ra2KyHnNtJwcEuBwyhcUXBMR7ycAv7eSD29ylG2V5ktqltuiK-FiTZ6dRA6_8XriW79x414IuGHkKlmzmiu-1ui6a0gA'
+      thumbnail: 'https://i.ibb.co/rG6nnspX/photo-14-2026-08-05-22-37-09.jpg'
     }))
   },
   {
@@ -396,8 +396,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 24,
     season: '2-fasl',
     description: `34 yoshli ishsiz erkak sehrli olamda qayta tug'iladi va yangi hayotini afsuslarsiz, eng mohir sehrgar bo'lib yashashga va'da beradi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAivEDvQ7D1949EDxJHLapUXFt8Xyk8bEzRTygH6dClXyondSu0tQYkcLvYcvC3Fd4H7PM10CkS7E3L2kUBNCpACheIjSvNVQoqpIuzmA6pOLkEtoSn40FpXV8tu8U4TVksQMhkzaSv6rOvymojESdxfCpxfDrfycd1TE98l7LkvCbIop9gV19exYuXcdwE_j2FjLSxcf5vW8mQZwImmOClE1VLrgh5luK-L1khUR5R1W4XqtY2Dce2Nw',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAivEDvQ7D1949EDxJHLapUXFt8Xyk8bEzRTygH6dClXyondSu0tQYkcLvYcvC3Fd4H7PM10CkS7E3L2kUBNCpACheIjSvNVQoqpIuzmA6pOLkEtoSn40FpXV8tu8U4TVksQMhkzaSv6rOvymojESdxfCpxfDrfycd1TE98l7LkvCbIop9gV19exYuXcdwE_j2FjLSxcf5vW8mQZwImmOClE1VLrgh5luK-L1khUR5R1W4XqtY2Dce2Nw',
+    bannerImage: 'https://i.ibb.co/QjpfGmpX/photo-13-2026-08-05-22-37-09.jpg',
+    posterImage: 'https://i.ibb.co/QjpfGmpX/photo-13-2026-08-05-22-37-09.jpg',
     videoUrl: SAMPLE_VIDEOS[0],
     isTrending: false,
     isNew: true,
@@ -412,7 +412,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${i + 1}-qism: Sehr akademiyasidagi sinov`,
       duration: '23:50',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAivEDvQ7D1949EDxJHLapUXFt8Xyk8bEzRTygH6dClXyondSu0tQYkcLvYcvC3Fd4H7PM10CkS7E3L2kUBNCpACheIjSvNVQoqpIuzmA6pOLkEtoSn40FpXV8tu8U4TVksQMhkzaSv6rOvymojESdxfCpxfDrfycd1TE98l7LkvCbIop9gV19exYuXcdwE_j2FjLSxcf5vW8mQZwImmOClE1VLrgh5luK-L1khUR5R1W4XqtY2Dce2Nw'
+      thumbnail: 'https://i.ibb.co/QjpfGmpX/photo-13-2026-08-05-22-37-09.jpg'
     }))
   },
   {
@@ -426,8 +426,8 @@ export const ANIME_DATABASE: Anime[] = [
     totalEpisodes: 293,
     season: '1-fasl',
     description: `Narutoning o'g'li Boruto o'z yo'lini topishga harakat qiladi va yangi avlod ninjalari bilan Otsutsuki xavfiga qarshi kurashadi.`,
-    bannerImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDweMl_Q9qDv1Q6qtZvzZgiU6TlYvRDc1h1KM3sYNPXey2ap57tY_VbUotQJo1nugGns0CY_oEjg3Ld01ViSkoAwtjWP1TIr88N09E8ZkLWg3PyWirxLg7Vi_uvTfxbQbWCT1d_a6UP6vZzjJrJP2kwWD13J5ZzsBN3Mj3kXp1GHyDrUVraJNGVmbKjJHLbISvvYl7NYOU_TxcS7LOqcGjh6IKJFkhdPPKBJSxodgIYmHta1ghFi6QtOA',
-    posterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDweMl_Q9qDv1Q6qtZvzZgiU6TlYvRDc1h1KM3sYNPXey2ap57tY_VbUotQJo1nugGns0CY_oEjg3Ld01ViSkoAwtjWP1TIr88N09E8ZkLWg3PyWirxLg7Vi_uvTfxbQbWCT1d_a6UP6vZzjJrJP2kwWD13J5ZzsBN3Mj3kXp1GHyDrUVraJNGVmbKjJHLbISvvYl7NYOU_TxcS7LOqcGjh6IKJFkhdPPKBJSxodgIYmHta1ghFi6QtOA',
+    bannerImage: 'https://i.ibb.co/6RFG8TJv/photo-12-2026-08-05-22-37-09.jpg',
+    posterImage: 'https://i.ibb.co/6RFG8TJv/photo-12-2026-08-05-22-37-09.jpg',
     videoUrl: SAMPLE_VIDEOS[1],
     isTrending: false,
     isPopular: false,
@@ -442,7 +442,7 @@ export const ANIME_DATABASE: Anime[] = [
       title: `${275 + i}-qism: Karma kuchi va yangi xavf`,
       duration: '23:20',
       videoUrl: SAMPLE_VIDEOS[i % SAMPLE_VIDEOS.length],
-      thumbnail: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDweMl_Q9qDv1Q6qtZvzZgiU6TlYvRDc1h1KM3sYNPXey2ap57tY_VbUotQJo1nugGns0CY_oEjg3Ld01ViSkoAwtjWP1TIr88N09E8ZkLWg3PyWirxLg7Vi_uvTfxbQbWCT1d_a6UP6vZzjJrJP2kwWD13J5ZzsBN3Mj3kXp1GHyDrUVraJNGVmbKjJHLbISvvYl7NYOU_TxcS7LOqcGjh6IKJFkhdPPKBJSxodgIYmHta1ghFi6QtOA'
+      thumbnail: 'https://i.ibb.co/6RFG8TJv/photo-12-2026-08-05-22-37-09.jpg'
     }))
   }
 ];
@@ -451,7 +451,7 @@ export const INITIAL_CONTINUE_WATCHING = [
   {
     animeId: 'one-piece',
     animeTitle: 'One Piece',
-    posterImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=600&auto=format&fit=crop',
+    posterImage: 'https://i.ibb.co/3y55hyRV/photo-4-2026-08-05-22-37-08.jpg',
     episodeNumber: 1065,
     progressPercentage: 75,
     lastWatchedAt: Date.now() - 3600000
@@ -459,7 +459,7 @@ export const INITIAL_CONTINUE_WATCHING = [
   {
     animeId: 'jujutsu-kaisen-2',
     animeTitle: 'Jujutsu Kaisen 2',
-    posterImage: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=600&auto=format&fit=crop',
+    posterImage: 'https://i.ibb.co/SXHt559P/photo-2-2026-08-05-22-37-08.jpg',
     episodeNumber: 23,
     progressPercentage: 40,
     lastWatchedAt: Date.now() - 7200000
@@ -467,7 +467,7 @@ export const INITIAL_CONTINUE_WATCHING = [
   {
     animeId: 'demon-slayer',
     animeTitle: 'Demon Slayer',
-    posterImage: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=600&auto=format&fit=crop',
+    posterImage: 'https://i.ibb.co/bM7wBcjr/photo-5-2026-08-05-22-37-08.jpg',
     episodeNumber: 11,
     progressPercentage: 90,
     lastWatchedAt: Date.now() - 14400000
@@ -475,7 +475,7 @@ export const INITIAL_CONTINUE_WATCHING = [
   {
     animeId: 'boruto',
     animeTitle: 'Boruto',
-    posterImage: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=600&auto=format&fit=crop',
+    posterImage: 'https://i.ibb.co/6RFG8TJv/photo-12-2026-08-05-22-37-09.jpg',
     episodeNumber: 289,
     progressPercentage: 65,
     lastWatchedAt: Date.now() - 86400000
