@@ -185,40 +185,68 @@ export default function App() {
     const fetchAnime = async () => {
       setIsAnimeLoading(true);
       try {
+        console.log('Fetching movies from Supabase...');
         const { data, error } = await supabase
           .from('movies')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
         
+        console.log('Movies fetched:', data?.length || 0);
+
         if (data && data.length > 0) {
-          const mappedAnime: Anime[] = data.map(m => ({
-            id: m.id.toString(),
-            title: m.title,
-            rating: Number(m.rating) || 0,
-            year: m.year || 2024,
-            genres: m.genre ? m.genre.split(',').map((g: string) => g.trim()) : [],
-            description: m.plot || '',
-            posterImage: m.poster_url || m.posterUrl || '',
-            bannerImage: m.poster_url || m.posterUrl || '',
-            videoUrl: m.video_url || '',
-            status: (m.status === 'Ongoing' ? 'Ongoing' : 'Yakunlangan') as 'Ongoing' | 'Yakunlangan',
-            studio: m.studio || 'Anilo Studio',
-            voiceovers: m.voiceovers || ['Anilo Studio'],
-            releaseYear: m.year || 2024,
-            episodes: Array.isArray(m.episodes) ? m.episodes : [],
-            episodeCount: m.is_series ? `${m.episodes?.length || 0}-qism` : 'Film',
-            totalEpisodes: m.episodes?.length || 1,
-            season: m.year?.toString() || '2024',
-            isTrending: m.view_count > 100,
-            isPopular: m.like_count > 50,
-            isNew: new Date(m.created_at).getTime() > Date.now() - (7 * 24 * 60 * 60 * 1000)
-          }));
+          const mappedAnime: Anime[] = data.map(m => {
+            // Determine status correctly
+            let mappedStatus: 'Ongoing' | 'Yakunlangan' = 'Yakunlangan';
+            if (m.status === 'Ongoing' || m.status === 'ongoing') {
+              mappedStatus = 'Ongoing';
+            }
+
+            // Map episodes correctly
+            const rawEpisodes = Array.isArray(m.episodes) ? m.episodes : [];
+            const mappedEpisodes = rawEpisodes.map((ep: any, index: number) => ({
+              id: ep.id || `ep-${m.id}-${index}`,
+              number: ep.number || index + 1,
+              title: ep.title || `${index + 1}-qism`,
+              duration: ep.duration || '24:00',
+              videoUrl: ep.videoUrl || ep.video_url || m.video_url || '',
+              thumbnail: ep.thumbnail || m.poster_url || m.posterUrl || ''
+            }));
+
+            return {
+              id: m.id.toString(),
+              title: m.title,
+              rating: Number(m.rating) || 0,
+              year: m.year || 2024,
+              genres: m.genre ? m.genre.split(',').map((g: string) => g.trim()) : [],
+              description: m.plot || '',
+              posterImage: m.poster_url || m.posterUrl || '',
+              bannerImage: m.banner_url || m.poster_url || m.posterUrl || '',
+              videoUrl: m.video_url || '',
+              status: mappedStatus,
+              studio: m.studio || m.translator || 'Anilo Studio',
+              voiceovers: m.voiceovers || [m.translator || 'Anilo Studio'],
+              releaseYear: m.year || 2024,
+              episodes: mappedEpisodes,
+              episodeCount: m.is_series ? `${mappedEpisodes.length || 0}-qism` : 'Film',
+              totalEpisodes: mappedEpisodes.length || 1,
+              season: m.year?.toString() || '2024',
+              isTrending: (m.view_count || 0) > 100,
+              isPopular: (m.like_count || 0) > 50,
+              isNew: new Date(m.created_at).getTime() > Date.now() - (7 * 24 * 60 * 60 * 1000)
+            };
+          });
           setAnimeList(mappedAnime);
+        } else {
+          // If database is empty, we keep the demo data or set empty
+          console.log('No movies found in database, keeping fallback data.');
         }
       } catch (err) {
-        console.error('Error fetching anime from Supabase:', err);
+        console.error('Error in fetchAnime:', err);
       } finally {
         setIsAnimeLoading(false);
       }
