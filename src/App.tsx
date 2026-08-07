@@ -92,16 +92,33 @@ export default function App() {
   useEffect(() => {
     // If supabase is not configured, skip auth/fetch
     if (!supabase) {
+      console.log('Supabase not configured, running in local mode');
       setIsAuthLoading(false);
       setIsAnimeLoading(false);
       return;
     }
 
+    // Safety timeout for loading state
+    const timeout = setTimeout(() => {
+      if (isAuthLoading) {
+        console.warn('Auth session check timed out');
+        setIsAuthLoading(false);
+      }
+    }, 5000);
+
     // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setIsAuthLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        console.log('Session check complete:', !!session);
+        setSession(session);
+      })
+      .catch(err => {
+        console.error('Session check error:', err);
+      })
+      .finally(() => {
+        setIsAuthLoading(false);
+        clearTimeout(timeout);
+      });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

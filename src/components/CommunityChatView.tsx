@@ -283,7 +283,7 @@ export const CommunityChatView: React.FC<CommunityChatViewProps> = ({ user, onBa
                         @{msg.senderName}
                       </span>
                       {isAdminMsg && (
-                        <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 drop-shadow" title="Admin / VIP" />
+                        <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 drop-shadow" />
                       )}
                     </div>
 
