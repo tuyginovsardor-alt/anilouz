@@ -16,6 +16,7 @@ import { ProfileView } from './components/ProfileView';
 import { CommunityChatView } from './components/CommunityChatView';
 import { Footer } from './components/Footer';
 import { AuthView } from './components/AuthView';
+import { AdminPanel } from './components/AdminPanel';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -424,7 +425,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0E0E12] text-gray-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black">
+    <div className="h-screen h-[100dvh] bg-[#0E0E12] text-gray-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black overflow-hidden fixed inset-0">
       
       {/* Top Navbar */}
       <Navbar
@@ -444,7 +445,7 @@ export default function App() {
       />
 
       {/* Main Workspace Layout (Sidebar + Main View Area) */}
-      <div className="flex-1 flex max-w-[1800px] w-full mx-auto">
+      <div className="flex-1 flex max-w-[1800px] w-full mx-auto overflow-hidden">
         
         {/* Left Sidebar */}
         <Sidebar
@@ -462,10 +463,11 @@ export default function App() {
           onOpenPremium={() => setIsPremiumOpen(true)}
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          user={user}
         />
 
         {/* Main Content Pane */}
-        <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 pb-28 lg:pb-12">
+        <main className="flex-1 min-w-0 overflow-y-auto custom-scrollbar p-3 sm:p-6 lg:p-8 pb-32 lg:pb-12 scroll-smooth overscroll-contain">
           
           {/* Detail View Pane */}
           {detailAnime ? (
@@ -513,6 +515,11 @@ export default function App() {
               onOpenPremium={() => setIsPremiumOpen(true)}
               savedCount={favorites.length}
               historyCount={history.length}
+              onAnimeAdded={(newAnime) => setAnimeList(prev => [newAnime, ...prev])}
+            />
+          ) : activeTab === 'admin' ? (
+            <AdminPanel 
+              onClose={() => setActiveTab('home')}
               onAnimeAdded={(newAnime) => setAnimeList(prev => [newAnime, ...prev])}
             />
           ) : activeTab === 'home' && !selectedGenre ? (

@@ -108,17 +108,18 @@ export const CommunityChatView: React.FC<CommunityChatViewProps> = ({ user, onBa
     const msgImage = customImageUrl || imageUrlInput;
 
     if (supabase) {
+      const isAdmin = user.role === 'admin' || user.role === 'owner';
       const { error } = await supabase
         .from('messages')
         .insert([{
           sender_name: user.name || 'ANILO EGA²',
           sender_avatar: user.avatar,
-          is_admin: user.isPremium,
+          is_admin: isAdmin,
           content: msgContent,
           image_url: msgImage,
           quoted_sender: replyTo?.senderName,
           quoted_text: replyTo ? (replyTo.text || '[Rasm]') : undefined,
-          user_color: user.isPremium ? 'text-yellow-400' : 'text-emerald-400',
+          user_color: isAdmin ? 'text-yellow-400' : 'text-emerald-400',
           group_id: 'public'
         }]);
 
@@ -128,18 +129,19 @@ export const CommunityChatView: React.FC<CommunityChatViewProps> = ({ user, onBa
     } else {
       // Fallback for local testing
       const timeString = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+      const isAdmin = user.role === 'admin' || user.role === 'owner';
       const newMessage: ChatMessage = {
         id: Date.now().toString(),
         senderName: user.name || 'ANILO FAN',
         senderAvatar: user.avatar,
-        isAdmin: user.isPremium,
+        isAdmin: isAdmin,
         isSelf: true,
         text: msgContent,
         image: msgImage,
         quotedSender: replyTo ? replyTo.senderName : undefined,
         quotedText: replyTo ? (replyTo.text || '[Rasm]') : undefined,
         timestamp: timeString,
-        userColor: user.isPremium ? 'text-yellow-400' : 'text-emerald-400',
+        userColor: isAdmin ? 'text-yellow-400' : 'text-emerald-400',
       };
       setMessages((prev) => [...prev, newMessage]);
     }

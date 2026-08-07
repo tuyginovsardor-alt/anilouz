@@ -18,8 +18,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   favoritesCount,
 }) => {
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0E0E12]/95 backdrop-blur-xl border-t border-white/10 px-2 pb-safe">
-      <nav className="flex items-center justify-around h-16 max-w-lg mx-auto">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[150] bg-[#0E0E12]/98 backdrop-blur-2xl border-t border-white/10 px-2 pb-2 sm:pb-4 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+      <nav className="flex items-center justify-around h-16 max-w-lg mx-auto relative">
         
         {/* Home */}
         <button

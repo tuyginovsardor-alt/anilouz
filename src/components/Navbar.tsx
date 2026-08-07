@@ -30,7 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showLangMenu, setShowLangMenu] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0E0E12]/95 backdrop-blur-md border-b border-white/5 px-4 lg:px-6 pt-3 pb-2 transition-all">
+    <header className="flex-shrink-0 z-40 bg-[#0E0E12]/95 backdrop-blur-md border-b border-white/5 px-4 lg:px-6 pt-3 pb-2 transition-all">
       <div className="flex items-center justify-between gap-4 max-w-[1800px] mx-auto">
         
         {/* Left: Mobile Menu Toggle & Brand Logo (Mobile only) */}

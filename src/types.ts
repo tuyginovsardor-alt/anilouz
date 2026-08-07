@@ -69,7 +69,7 @@ export interface Genre {
   count: number;
 }
 
-export type ActiveTab = 'home' | 'anime' | 'series' | 'movies' | 'genres' | 'new' | 'popular' | 'ongoing' | 'favorites' | 'history' | 'profile' | 'community';
+export type ActiveTab = 'home' | 'anime' | 'series' | 'movies' | 'genres' | 'new' | 'popular' | 'ongoing' | 'favorites' | 'history' | 'profile' | 'community' | 'admin';
 
 export interface ChatMessage {
   id: string;

@@ -1,11 +1,15 @@
 import React from 'react';
 import { 
   Users, Film, CreditCard, MessageSquare, ShieldAlert, 
-  ChevronRight, ArrowUpRight, Activity, Terminal, Sparkles, RefreshCw, X
+  ChevronRight, ArrowUpRight, Activity, Terminal, Sparkles, RefreshCw, X,
+  Plus
 } from 'lucide-react';
+import { Anime } from '../types';
+import { AdminView } from './AdminView';
 
 interface AdminPanelProps {
   onClose: () => void;
+  onAnimeAdded: (anime: Anime) => void;
 }
 
 const StatCard: React.FC<{ label: string, value: string, icon: React.ReactNode, color: string }> = ({ label, value, icon, color }) => (
@@ -22,9 +26,11 @@ const StatCard: React.FC<{ label: string, value: string, icon: React.ReactNode, 
   </div>
 );
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, onAnimeAdded }) => {
+  const [isAddAnimeOpen, setIsAddAnimeOpen] = React.useState(false);
+
   return (
-    <div className="fixed inset-0 z-[200] bg-[#050505] flex flex-col animate-fadeIn overflow-hidden">
+    <div className="flex flex-col w-full h-full animate-fadeIn overflow-hidden">
       {/* Header */}
       <header className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-[#0a0a0f]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="flex items-center gap-4">
@@ -36,12 +42,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
             <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Tizim nazorati va moderatsiya</p>
           </div>
         </div>
-        <button 
-          onClick={onClose}
-          className="p-3 rounded-2xl bg-white/5 hover:bg-red-500 hover:text-white transition-all text-gray-400 active:scale-90"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsAddAnimeOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-orange-600/20 active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            Anime Qo'shish
+          </button>
+          <button 
+            onClick={onClose}
+            className="p-3 rounded-2xl bg-white/5 hover:bg-red-500 hover:text-white transition-all text-gray-400 active:scale-90"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       {/* Content */}
@@ -67,7 +82,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
           <StatCard label="Ticketlar" value="12" icon={<MessageSquare className="text-red-500" />} color="from-red-600 to-transparent" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
           {/* Moderation Section */}
           <div className="lg:col-span-2 bg-[#111115] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col h-[500px]">
             <div className="p-8 border-b border-white/5 flex justify-between items-center bg-[#16161c]">
@@ -95,7 +110,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                 <div className="w-1.5 h-1.5 rounded-full bg-orange-600"></div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto font-mono text-[10px] space-y-3 pr-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto font-mono text-[10px] space-y-3 pr-2 custom-scrollbar text-left">
               <div className="p-3 bg-white/5 border border-white/5 rounded-xl text-zinc-500">
                 <span className="text-orange-500/50">[09:22:15]</span> AI Guard monitoring active...
               </div>
@@ -112,6 +127,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
           </div>
         </div>
       </main>
+
+      {/* Add Anime Modal */}
+      {isAddAnimeOpen && (
+        <AdminView 
+          onClose={() => setIsAddAnimeOpen(false)} 
+          onAnimeAdded={(anime) => {
+            onAnimeAdded(anime);
+            setIsAddAnimeOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };

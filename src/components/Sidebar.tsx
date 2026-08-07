@@ -18,9 +18,10 @@ import {
   Ghost,
   GraduationCap,
   User,
-  MessageSquare
+  MessageSquare,
+  ShieldCheck
 } from 'lucide-react';
-import { ActiveTab, Genre } from '../types';
+import { ActiveTab, Genre, UserProfile } from '../types';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -31,6 +32,7 @@ interface SidebarProps {
   onOpenPremium: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
+  user?: UserProfile;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -42,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenPremium,
   isOpenMobile,
   onCloseMobile,
+  user,
 }) => {
   const navItems = [
     { id: 'home', label: 'Bosh sahifa', icon: Home },
@@ -55,6 +58,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'community', label: 'Jamiyat Chat', icon: MessageSquare },
     { id: 'profile', label: 'Profilim', icon: User },
   ];
+
+  const isAdmin = user?.role === 'admin' || user?.role === 'owner';
+  if (isAdmin) {
+    navItems.push({ id: 'admin', label: 'Admin Panel', icon: ShieldCheck });
+  }
 
   const getGenreIcon = (name: string) => {
     switch (name) {
