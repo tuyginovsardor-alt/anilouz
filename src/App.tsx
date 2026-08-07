@@ -467,7 +467,7 @@ export default function App() {
         />
 
         {/* Main Content Pane */}
-        <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 pb-32 lg:pb-12 scroll-smooth">
+        <main className={`flex-1 min-w-0 p-3 sm:p-6 lg:p-8 pb-32 lg:pb-12 scroll-smooth ${activeTab === 'community' ? 'h-[calc(100vh-72px)] overflow-hidden flex flex-col' : ''}`}>
           
           {/* Detail View Pane */}
           {detailAnime ? (
