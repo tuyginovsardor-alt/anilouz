@@ -1,378 +1,306 @@
-
-import React, { useState, useEffect } from 'react';
-import { UserRole } from '../types';
-import { useNotification } from '../hooks/useNotification';
-import { supabase } from '../supabaseClient';
-import { checkAndTrackRegistration, logDeviceLogin } from '../services/dbService';
-import { Eye, EyeOff, Mail, Lock, Check } from 'lucide-react';
-import { GoogleIcon } from './icons/GoogleIcon';
-import { LegalDocType } from '../types';
+import React, { useState } from 'react';
+import { X, Mail, Lock, User, Eye, EyeOff, Sparkles, LogIn, UserPlus, ArrowRight } from 'lucide-react';
+import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '../services/dbService';
 
 interface AuthModalProps {
-    onClose: () => void;
-    onAuthSuccess: (role: UserRole) => void;
-    onOpenLegal?: (type: LegalDocType) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onAuthSuccess?: (user: { email: string; name?: string; avatar?: string }) => void;
 }
 
-type AuthMode = 'login' | 'register';
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess }) => {
+  const [isRegister, setIsRegister] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onAuthSuccess, onOpenLegal }) => {
-    const [mode, setMode] = useState<AuthMode>('login');
-    const [loginMethod, setLoginMethod] = useState<'password' | 'otp'>('password');
-    const [otpStep, setOtpStep] = useState(false);
-    const [otpCode, setOtpCode] = useState('');
-    const [otpType, setOtpType] = useState<'signup' | 'email'>('signup');
-    const [loading, setLoading] = useState(false);
-    
-    // Form States
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [isAgreed, setIsAgreed] = useState(false); // Rozilik holati
-    
-    // Device Tracking
-    const [deviceId, setDeviceId] = useState('');
-    const { addNotification } = useNotification();
+  if (!isOpen) return null;
 
-    useEffect(() => {
-        let storedId = localStorage.getItem('anilo_device_id');
-        if (!storedId) {
-            storedId = `dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            localStorage.setItem('anilo_device_id', storedId);
-        }
-        setDeviceId(storedId);
-    }, []);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
 
-    const handleGoogleLogin = async () => {
-        try {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: window.location.origin,
-                }
-            });
-            if (error) throw error;
-        } catch (error: any) {
-            addNotification({ type: 'error', title: 'Google Xatolik', message: error.message || 'Google orqali kirishda xatolik.' });
-        }
-    };
+    if (!email.trim() || !password.trim()) {
+      setErrorMsg("Iltimos, barcha maydonlarni to'ldiring.");
+      return;
+    }
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            
-            const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-            await logDeviceLogin(data.user.id, deviceId);
-            
-            const role = (profile as any)?.role || 'user';
-            onAuthSuccess(role);
-            addNotification({ type: 'success', title: 'Xush kelibsiz', message: `Tizimga kirdingiz!` });
-        } catch (error: any) {
-            addNotification({ type: 'error', title: 'Xatolik', message: 'Email yoki parol noto\'g\'ri.' });
-        } finally {
-            setLoading(false);
-        }
-    };
+    if (isRegister && password.length < 6) {
+      setErrorMsg("Parol kamida 6 ta belgidan iborat bo'lishi kerak.");
+      return;
+    }
 
-    const handleSendOtp = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const { error } = await supabase.auth.signInWithOtp({ email });
-            if (error) throw error;
-            setOtpType('email');
-            setOtpStep(true);
-            addNotification({ type: 'success', title: 'Kod yuborildi', message: 'Emailingizga bir martalik kirish kodi yuborildi.' });
-        } catch (error: any) {
-            addNotification({ type: 'error', title: 'Xatolik', message: error.message || 'Kod yuborishda xatolik yuz berdi.' });
-        } finally {
-            setLoading(false);
-        }
-    };
+    setLoading(true);
 
-    const handleVerifyOtp = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const { data, error } = await supabase.auth.verifyOtp({
-                email,
-                token: otpCode,
-                type: otpType
-            });
-            if (error) throw error;
-            
-            const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user!.id).single();
-            await logDeviceLogin(data.user!.id, deviceId);
-            
-            const role = (profile as any)?.role || 'user';
-            onAuthSuccess(role);
-            addNotification({ type: 'success', title: 'Xush kelibsiz', message: `Ulanish muvaffaqiyatli yakunlandi!` });
+    try {
+      if (isRegister) {
+        const data = await signUpWithEmail(email.trim(), password.trim(), fullName.trim());
+        setSuccessMsg("Ro'yxatdan muvaffaqiyatli o'tdingiz! Tizimga kirishingiz mumkin.");
+        if (data?.user) {
+          onAuthSuccess?.({
+            email: data.user.email || email,
+            name: fullName || data.user.email?.split('@')[0] || 'Foydalanuvchi',
+          });
+          setTimeout(() => {
             onClose();
-        } catch (error: any) {
-            addNotification({ type: 'error', title: 'Xatolik', message: error.message || 'Kod noto\'g\'ri yoki muddati tugagan.' });
-        } finally {
-            setLoading(false);
+          }, 1200);
         }
-    };
-
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!isAgreed) {
-            addNotification({ type: 'warning', title: 'Diqqat', message: 'Davom etish uchun shartlarga rozilik berishingiz kerak.' });
-            return;
+      } else {
+        const data = await signInWithEmail(email.trim(), password.trim());
+        setSuccessMsg("Tizimga muvaffaqiyatli kirdingiz!");
+        if (data?.user) {
+          onAuthSuccess?.({
+            email: data.user.email || email,
+            name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Foydalanuvchi',
+          });
+          setTimeout(() => {
+            onClose();
+          }, 1000);
         }
-        setLoading(true);
-        try {
-            await checkAndTrackRegistration(deviceId);
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) throw error;
-            
-            if (data?.session) {
-                // If auto-logged in directly without needing confirmation
-                await logDeviceLogin(data.user!.id, deviceId);
-                const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user!.id).single();
-                const role = (profile as any)?.role || 'user';
-                onAuthSuccess(role);
-                addNotification({ type: 'success', title: 'Xush kelibsiz', message: 'Tizimga muvaffaqiyatli kirdingiz!' });
-                onClose();
-            } else {
-                setOtpType('signup');
-                setOtpStep(true);
-                addNotification({ type: 'success', title: 'Tasdiqlash kodi', message: 'Emailingizga faollashtirish kodi yoki havolasi yuborildi!' });
-            }
-        } catch (error: any) {
-            addNotification({ type: 'error', title: 'Xatolik', message: error.message || "Ro'yxatdan o'tishda xatolik." });
-        } finally {
-            setLoading(false);
-        }
-    };
+      }
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      const msg = err.message || '';
+      if (msg.includes('Invalid login credentials')) {
+        setErrorMsg('Email yoki parol xato kiritildi.');
+      } else if (msg.includes('User already registered')) {
+        setErrorMsg("Ushbu email allaqachon ro'yxatdan o'tgan.");
+      } else {
+        setErrorMsg(msg || "Tizimga kirishda xatolik yuz berdi.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleCheckEmailConfirmed = async () => {
-        setLoading(true);
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                await logDeviceLogin(session.user.id, deviceId);
-                const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-                const role = (profile as any)?.role || 'user';
-                onAuthSuccess(role);
-                addNotification({ type: 'success', title: 'Xush kelibsiz', message: 'Tizimga kirdingiz!' });
-                onClose();
-            } else {
-                addNotification({ type: 'info', title: 'Kutilmoqda', message: 'Hali pochtadagi faollashtirish havolasi bosilmadi.' });
-            }
-        } catch (error: any) {
-            addNotification({ type: 'error', title: 'Xatolik', message: 'Tekshirishda xatolik yuz berdi.' });
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleGoogleAuth = async () => {
+    setErrorMsg(null);
+    setGoogleLoading(true);
+    try {
+      const data: any = await signInWithGoogle();
+      if (data?.user) {
+        setSuccessMsg("Google orqali tizimga kirdingiz!");
+        onAuthSuccess?.({
+          email: data.user.email || 'user@gmail.com',
+          name: data.user.user_metadata?.full_name || 'Google Foydalanuvchisi',
+        });
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+      }
+    } catch (err: any) {
+      console.error('Google Auth error:', err);
+      setErrorMsg(err.message || "Google orqali kirishda xatolik yuz berdi.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
-    const toggleMode = () => {
-        setMode(mode === 'login' ? 'register' : 'login');
-        setOtpStep(false);
-        setOtpCode('');
-        setEmail('');
-        setPassword('');
-        setIsAgreed(false);
-    };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div 
+        className="relative w-full max-w-md bg-[#12121A] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Decorative gradient glow background */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-orange-600/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-amber-600/15 rounded-full blur-3xl pointer-events-none" />
 
-    return (
-        <div className="fixed inset-0 bg-[#050505]/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
-            <div className="relative w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden animate-slide-in-up" onClick={e => e.stopPropagation()}>
-                
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-600/20 rounded-full blur-[60px] pointer-events-none"></div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-600/20 rounded-full blur-[60px] pointer-events-none"></div>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full bg-white/5 hover:bg-white/10 transition-all active:scale-95"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
-                <button onClick={onClose} className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors z-10">✕</button>
-
-                <div className="text-center mb-6 mt-2 relative z-10">
-                    <h2 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">
-                        {otpStep ? 'Faollashtirish' : (mode === 'login' ? 'Kirish' : "Ro'yxatdan o'tish")}
-                    </h2>
-                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest leading-normal">
-                        {otpStep ? 'Emailingizga yuborilgan kodni kiriting' : (mode === 'login' ? 'Profilingizga xush kelibsiz' : 'Yangi hisob yarating')}
-                    </p>
-                </div>
-
-                <div className="space-y-4 relative z-10">
-                    {!otpStep && (
-                        <>
-                            <button 
-                                onClick={handleGoogleLogin}
-                                className="w-full bg-white text-black py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2.5 hover:bg-gray-200 transition-all active:scale-95 shadow-lg"
-                            >
-                                <GoogleIcon width="18" height="18" />
-                                <span>Google bilan davom etish</span>
-                            </button>
-
-                            <div className="flex items-center gap-4 text-[9px] text-zinc-600 font-bold uppercase tracking-widest my-2">
-                                <div className="h-px bg-zinc-800 flex-1"></div>
-                                <span>Yoki</span>
-                                <div className="h-px bg-zinc-800 flex-1"></div>
-                            </div>
-                        </>
-                    )}
-
-                    {otpStep ? (
-                        <form onSubmit={handleVerifyOtp} className="space-y-4 animate-fade-in">
-                            <div className="space-y-2 text-center">
-                                <p className="text-xs text-zinc-400 font-medium leading-relaxed mb-4">
-                                    Biz quyidagi elektron pochtaga tasdiqlash kodi yoki havola yubordik:<br />
-                                    <strong className="text-orange-500 text-sm font-bold block mt-1">{email}</strong>
-                                    <span className="text-[10px] text-zinc-500 block mt-2">Iltimos, pochtangizni tekshiring (Spam papkasini ham). 6 xonali kodni kiriting yoki xat ichidagi faollashtirish havolasini bosing.</span>
-                                </p>
-                                <div className="space-y-1 text-left mt-4">
-                                    <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Tasdiqlash Kodi</label>
-                                    <div className="relative group">
-                                        <Check className="absolute left-5 top-1/2 -translate-y-1/2 text-orange-500" size={18}/>
-                                        <input 
-                                            type="text" 
-                                            value={otpCode}
-                                            onChange={(e) => setOtpCode(e.target.value.replace(/\s+/g, ''))}
-                                            required
-                                            maxLength={6}
-                                            className="w-full bg-[#151515] border border-white/5 focus:border-orange-500/50 rounded-2xl py-4 pl-12 pr-4 text-white text-lg tracking-widest font-black text-center outline-none transition-all placeholder:text-zinc-700 font-mono"
-                                            placeholder="123456"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button 
-                                type="submit" 
-                                disabled={loading || otpCode.length < 6}
-                                className="w-full py-4 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-xl shadow-orange-600/20"
-                            >
-                                {loading ? 'Tasdiqlanmoqda...' : 'Kod Orqali Tasdiqlash'}
-                            </button>
-
-                            <button 
-                                type="button" 
-                                onClick={handleCheckEmailConfirmed}
-                                disabled={loading}
-                                className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/5 rounded-2xl font-bold uppercase tracking-wider text-[10px] text-center"
-                            >
-                                {loading ? "Tekshirilmoqda..." : "Havolani tasdiqladim"}
-                            </button>
-
-                            <button 
-                                type="button" 
-                                onClick={() => setOtpStep(false)}
-                                className="w-full py-2 bg-transparent text-zinc-500 hover:text-white rounded-xl font-bold uppercase tracking-wide text-[10px] text-center"
-                            >
-                                Orqaga Qaytish
-                            </button>
-                        </form>
-                    ) : (
-                        <form onSubmit={mode === 'login' ? (loginMethod === 'otp' ? handleSendOtp : handleLogin) : handleRegister} className="space-y-3">
-                            {mode === 'login' && (
-                                <div className="flex gap-2 p-1 bg-[#121212] rounded-xl mb-2">
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setLoginMethod('password')}
-                                        className={`flex-1 py-2 text-[10px] uppercase tracking-wider font-black rounded-lg transition-all ${loginMethod === 'password' ? 'bg-orange-600 text-white' : 'text-zinc-500 hover:text-white'}`}
-                                    >
-                                        Parol bilan
-                                    </button>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setLoginMethod('otp')}
-                                        className={`flex-1 py-2 text-[10px] uppercase tracking-wider font-black rounded-lg transition-all ${loginMethod === 'otp' ? 'bg-orange-600 text-white' : 'text-zinc-500 hover:text-white'}`}
-                                    >
-                                        EMAIL KOD (OTP)
-                                    </button>
-                                </div>
-                            )}
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Email</label>
-                                <div className="relative group">
-                                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-orange-500 transition-colors" size={18}/>
-                                    <input 
-                                        type="email" 
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                        className="w-full bg-[#151515] border border-white/5 group-focus-within:border-orange-500/50 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm outline-none transition-all placeholder:text-zinc-700 font-medium"
-                                        placeholder="example@gmail.com"
-                                    />
-                                </div>
-                            </div>
-
-                            {!(mode === 'login' && loginMethod === 'otp') && (
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-zinc-500 uppercase ml-4 tracking-widest">Parol</label>
-                                    <div className="relative group">
-                                        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-orange-500 transition-colors" size={18}/>
-                                        <input 
-                                            type={showPassword ? "text" : "password"} 
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            required
-                                            className="w-full bg-[#151515] border border-white/5 group-focus-within:border-orange-500/50 rounded-2xl py-3.5 pl-12 pr-12 text-white text-sm outline-none transition-all placeholder:text-zinc-700 font-medium"
-                                            placeholder="••••••••"
-                                        />
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors"
-                                        >
-                                            {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {mode === 'register' && (
-                                <div className="flex items-start gap-3 mt-4 px-1 animate-fade-in">
-                                    <button 
-                                        type="button"
-                                        onClick={() => setIsAgreed(!isAgreed)}
-                                        className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isAgreed ? 'bg-orange-600 border-orange-600 shadow-[0_0_10px_rgba(249,115,22,0.4)]' : 'bg-zinc-900 border-white/10'}`}
-                                    >
-                                        {isAgreed && <Check size={14} className="text-white" strokeWidth={4} />}
-                                    </button>
-                                    <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">
-                                        Men "Anilo.uz" platformasining{' '}
-                                        <button type="button" onClick={() => onOpenLegal?.('terms')} className="text-orange-500 hover:underline">Ommaviy Oferta</button>{' '}
-                                        shartlariga va{' '}
-                                        <button type="button" onClick={() => onOpenLegal?.('privacy')} className="text-orange-500 hover:underline">Maxfiylik Siyosati</button>{' '}
-                                        qoidalariga to'liq roziman.
-                                    </p>
-                                </div>
-                            )}
-
-                            <button 
-                                type="submit" 
-                                disabled={loading || (mode === 'register' && !isAgreed)}
-                                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-xl mt-4 disabled:opacity-50 disabled:cursor-not-allowed ${mode === 'register' && !isAgreed ? 'bg-zinc-800 text-zinc-600' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-600/20'}`}
-                            >
-                                {loading ? 'Yuklanmoqda...' : (mode === 'login' ? (loginMethod === 'otp' ? 'Kodni emailga yuborish' : 'Tizimga Kirish') : 'Hisob Yaratish')}
-                            </button>
-                        </form>
-                    )}
-                </div>
-
-                {!otpStep && (
-                    <div className="mt-6 pt-4 border-t border-white/5 text-center relative z-10">
-                        <button 
-                            onClick={toggleMode}
-                            className="text-zinc-400 hover:text-white text-xs font-bold transition-colors"
-                        >
-                            {mode === 'login' ? (
-                                <>Hisobingiz yo'qmi? <span className="text-orange-500">Ro'yxatdan o'tish</span></>
-                            ) : (
-                                <>Hisobingiz bormi? <span className="text-orange-500">Kirish</span></>
-                            )}
-                        </button>
-                    </div>
-                )}
-
-            </div>
+        {/* Header Branding */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20 mb-3">
+            <Sparkles className="w-6 h-6 text-black" />
+          </div>
+          <h2 className="text-2xl font-black text-white tracking-tight">
+            ANILO<span className="text-orange-500">.UZ</span>
+          </h2>
+          <p className="text-xs text-gray-400 mt-1">
+            {isRegister ? "Yangi hisob yaratish" : "Hisobingizga xush kelibsiz"}
+          </p>
         </div>
-    );
+
+        {/* Mode Switch Tabs */}
+        <div className="flex bg-[#1A1A26] p-1 rounded-2xl border border-white/5 mb-6">
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegister(false);
+              setErrorMsg(null);
+              setSuccessMsg(null);
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 ${
+              !isRegister
+                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-md'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Kirish</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegister(true);
+              setErrorMsg(null);
+              setSuccessMsg(null);
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 ${
+              isRegister
+                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-md'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Ro'yxatdan o'tish</span>
+          </button>
+        </div>
+
+        {/* Notifications */}
+        {errorMsg && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium text-center">
+            {errorMsg}
+          </div>
+        )}
+        {successMsg && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium text-center">
+            {successMsg}
+          </div>
+        )}
+
+        {/* Form Inputs */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegister && (
+            <div>
+              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">
+                Ism va familiya
+              </label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Ali Valiyev"
+                  className="w-full bg-[#181824] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-orange-500 transition"
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">
+              Email manzili
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@gmail.com"
+                className="w-full bg-[#181824] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-orange-500 transition"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">
+              Parol
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[#181824] border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-orange-500 transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-black font-extrabold text-sm tracking-wide shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <span>{isRegister ? "Ro'yxatdan o'tish" : "Tizimga kirish"}</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Divider */}
+        <div className="relative my-6 text-center">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10" />
+          </div>
+          <span className="relative px-3 bg-[#12121A] text-[10px] font-bold uppercase tracking-widest text-gray-500">
+            yoki
+          </span>
+        </div>
+
+        {/* Google OAuth Button */}
+        <button
+          type="button"
+          onClick={handleGoogleAuth}
+          disabled={googleLoading}
+          className="w-full py-3 px-4 rounded-xl bg-[#181824] hover:bg-[#222232] border border-white/10 text-white font-bold text-xs transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+        >
+          {googleLoading ? (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+          )}
+          <span>Google orqali kirish</span>
+        </button>
+
+      </div>
+    </div>
+  );
 };

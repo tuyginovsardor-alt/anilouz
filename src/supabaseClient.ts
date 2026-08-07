@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { createClient } from '@supabase/supabase-js';
 
 const env = (import.meta as any).env || {};
@@ -12,27 +13,13 @@ export const supabaseUrl = rawUrl;
 export const supabaseAnonKey = storedKey || env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4Y21rZmx0cnp6enF3eXR6YXRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjAyMDA0NDgwMH0.demo';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        storageKey: 'anilo_auth_token',
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined
-    },
-    db: {
-        schema: 'public',
-    },
-    realtime: {
-        params: {
-            eventsPerSecond: 2,
-        },
-        timeout: 45000,
-    },
-    global: {
-        headers: { 'x-application-name': 'anilo-uz' },
-    },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
 });
 
 export const isSupabaseConfigured = () => {
-    return Boolean(supabaseUrl) && Boolean(supabaseAnonKey);
+  return Boolean(supabaseUrl) && Boolean(supabaseAnonKey);
 };
