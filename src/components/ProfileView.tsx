@@ -81,7 +81,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [editName, setEditName] = useState(user.name || 'ANILO EGA²');
   const [editAvatar, setEditAvatar] = useState(user.avatar);
   const [editCover, setEditCover] = useState(user.coverImage || PROFILE_BACKGROUNDS[0].url);
-  const [balance, setBalance] = useState<number>(248813);
+  const [balance, setBalance] = useState<number>(user.balance || 0);
+
+  // UseEffect to sync balance when user prop changes
+  React.useEffect(() => {
+    if (user.balance !== undefined) {
+      setBalance(user.balance);
+    }
+  }, [user.balance]);
 
   // Settings states
   const [videoQuality, setVideoQuality] = useState('1080p');
@@ -90,8 +97,25 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   const activeCover = user.coverImage || PROFILE_BACKGROUNDS[0].url;
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const updatedData = {
+      name: editName,
+      avatar: editAvatar,
+      cover_image: editCover,
+    };
+
+    if (supabase) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await supabase
+          .from('profiles')
+          .update(updatedData)
+          .eq('id', authUser.id);
+      }
+    }
+
     onUpdateUser({
       name: editName,
       avatar: editAvatar,
@@ -109,9 +133,32 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
-  const handleSelectCover = (bgUrl: string) => {
+  const handleSelectCover = async (bgUrl: string) => {
+    if (supabase) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await supabase
+          .from('profiles')
+          .update({ cover_image: bgUrl })
+          .eq('id', authUser.id);
+      }
+    }
     onUpdateUser({ coverImage: bgUrl });
     setEditCover(bgUrl);
+  };
+
+  const handleUpdateBalance = async (newBalance: number) => {
+    if (supabase) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await supabase
+          .from('profiles')
+          .update({ balance: newBalance })
+          .eq('id', authUser.id);
+      }
+    }
+    setBalance(newBalance);
+    onUpdateUser({ balance: newBalance });
   };
 
   return (
@@ -680,7 +727,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <button
                     key={amount}
                     onClick={() => {
-                      setBalance((prev) => prev + amount);
+                      handleUpdateBalance(balance + amount);
                     }}
                     className="py-2.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-bold transition active:scale-95"
                   >

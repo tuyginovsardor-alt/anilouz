@@ -79,7 +79,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onClose, onAnimeAdded }) =
     setSuccess(null);
 
     try {
-      const newAnime = {
+      // 1. Insert Anime
+      const animeData = {
         title,
         titleOriginal: originalTitle,
         year: Number(year),
@@ -91,10 +92,43 @@ export const AdminView: React.FC<AdminViewProps> = ({ onClose, onAnimeAdded }) =
         videoUrl: videoUrl,
         studio,
         status,
-        totalEpisodes: 1, // Simplified for now
+        totalEpisodes: 1,
         episodeCount: status === 'Ongoing' ? "1-qism" : "1-qism (Tugallangan)",
         releaseYear: Number(year),
         voiceovers: ["Anilo Studio"],
+      };
+
+      const { data: animeInsert, error: insertError } = await supabase
+        .from('anime')
+        .insert([animeData])
+        .select();
+
+      if (insertError) throw insertError;
+      
+      const newlyCreatedAnime = animeInsert[0];
+
+      // 2. Insert Episode (to episodes table if it exists)
+      const episodeData = {
+        anime_id: newlyCreatedAnime.id,
+        number: 1,
+        title: '1-qism',
+        duration: '24:00',
+        videoUrl: videoUrl,
+        thumbnail: posterUrl
+      };
+
+      // Try to insert into episodes table
+      try {
+        await supabase.from('episodes').insert([episodeData]);
+      } catch (e) {
+        console.warn("Episodes table may not exist or error inserting:", e);
+      }
+
+      setSuccess("Anime muvaffaqiyatli qo'shildi!");
+      
+      // Combine for UI state
+      const fullAnime: Anime = {
+        ...newlyCreatedAnime,
         episodes: [
           {
             id: 'ep-1',
@@ -107,17 +141,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onClose, onAnimeAdded }) =
         ]
       };
 
-      const { data, error: insertError } = await supabase
-        .from('anime')
-        .insert([newAnime])
-        .select();
-
-      if (insertError) throw insertError;
-
-      setSuccess("Anime muvaffaqiyatli qo'shildi!");
-      if (data && data[0]) {
-        onAnimeAdded(data[0] as Anime);
-      }
+      onAnimeAdded(fullAnime);
       
       // Reset form
       setTitle('');

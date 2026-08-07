@@ -91,4 +91,5 @@ export interface UserProfile {
   coverImage?: string;
   isPremium: boolean;
   premiumExpires?: string;
+  balance?: number;
 }

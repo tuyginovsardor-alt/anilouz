@@ -212,12 +212,46 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <button className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 py-3 rounded-2xl transition-all font-bold text-sm">
-                <Chrome className="w-5 h-5" />
+              <button 
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    const { error } = await supabase.auth.signInWithOAuth({
+                      provider: 'google',
+                      options: {
+                        redirectTo: window.location.origin,
+                      }
+                    });
+                    if (error) throw error;
+                  } catch (err: any) {
+                    setError(err.message);
+                    setLoading(false);
+                  }
+                }}
+                className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 py-3 rounded-2xl transition-all font-bold text-sm"
+              >
+                <Chrome className="w-5 h-5 text-orange-500" />
                 <span>Google</span>
               </button>
-              <button className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 py-3 rounded-2xl transition-all font-bold text-sm">
-                <Github className="w-5 h-5" />
+              <button 
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    const { error } = await supabase.auth.signInWithOAuth({
+                      provider: 'github',
+                      options: {
+                        redirectTo: window.location.origin,
+                      }
+                    });
+                    if (error) throw error;
+                  } catch (err: any) {
+                    setError(err.message);
+                    setLoading(false);
+                  }
+                }}
+                className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 py-3 rounded-2xl transition-all font-bold text-sm"
+              >
+                <Github className="w-5 h-5 text-indigo-400" />
                 <span>GitHub</span>
               </button>
             </div>

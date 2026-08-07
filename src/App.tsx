@@ -108,9 +108,45 @@ export default function App() {
 
     // Check active session
     supabase.auth.getSession()
-      .then(({ data: { session } }) => {
+      .then(async ({ data: { session } }) => {
         console.log('Session check complete:', !!session);
         setSession(session);
+        if (session?.user) {
+          // Fetch additional profile data from Supabase
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (!error && profile) {
+            setUser({
+              name: profile.name || session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
+              avatar: profile.avatar || session.user.user_metadata.avatar_url || 'https://i.postimg.cc/1XYBLxjY/photo-2026-06-01-00-29-48.jpg',
+              coverImage: profile.cover_image || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
+              isPremium: profile.is_premium || false,
+              balance: profile.balance || 0,
+            });
+          } else if (error && error.code === 'PGRST116') {
+            // Profile doesn't exist, create it
+            const newProfile = {
+              id: session.user.id,
+              name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
+              avatar: session.user.user_metadata.avatar_url || 'https://i.postimg.cc/1XYBLxjY/photo-2026-06-01-00-29-48.jpg',
+              balance: 0,
+              is_premium: false
+            };
+            await supabase.from('profiles').insert([newProfile]);
+            
+            setUser({
+              name: newProfile.name,
+              avatar: newProfile.avatar,
+              coverImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
+              isPremium: false,
+              balance: 0,
+            });
+          }
+        }
       })
       .catch(err => {
         console.error('Session check error:', err);
@@ -121,14 +157,24 @@ export default function App() {
       });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       if (session?.user) {
-        setUser(prev => ({
-          ...prev,
-          name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
-          avatar: session.user.user_metadata.avatar_url || prev.avatar
-        }));
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile) {
+          setUser({
+            name: profile.name,
+            avatar: profile.avatar,
+            coverImage: profile.cover_image,
+            isPremium: profile.is_premium,
+            balance: profile.balance,
+          });
+        }
       }
     });
 
@@ -137,7 +183,7 @@ export default function App() {
       try {
         const { data, error } = await supabase
           .from('anime')
-          .select('*')
+          .select('*, episodes(*)')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -146,13 +192,54 @@ export default function App() {
         }
       } catch (err) {
         console.error('Error fetching anime from Supabase:', err);
-        // Fallback to local data is already set as initial state
       } finally {
         setIsAnimeLoading(false);
       }
     };
 
+    // Fetch User Data (Favorites & History)
+    const fetchUserData = async (userId: string) => {
+      try {
+        // Fetch Favorites
+        const { data: favs } = await supabase
+          .from('favorites')
+          .select('anime_id')
+          .eq('user_id', userId);
+        
+        if (favs) {
+          setFavorites(favs.map(f => f.anime_id));
+        }
+
+        // Fetch History
+        const { data: hist } = await supabase
+          .from('watch_history')
+          .select('*')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false });
+
+        if (hist) {
+          const formattedHistory: WatchProgress[] = hist.map(h => ({
+            animeId: h.anime_id,
+            animeTitle: h.anime_title,
+            posterImage: h.poster_image,
+            episodeNumber: h.episode_number,
+            progressPercentage: h.progress_percentage,
+            lastWatchedAt: new Date(h.updated_at).getTime()
+          }));
+          setHistory(formattedHistory);
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+      }
+    };
+
     fetchAnime();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserData(session.user.id);
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -169,10 +256,26 @@ export default function App() {
     localStorage.setItem('anilo_user_profile', JSON.stringify(user));
   }, [user]);
 
-  const toggleFavorite = (animeId: string) => {
+  const toggleFavorite = async (animeId: string) => {
+    const isFav = favorites.includes(animeId);
+    
     setFavorites((prev) =>
-      prev.includes(animeId) ? prev.filter((id) => id !== animeId) : [...prev, animeId]
+      isFav ? prev.filter((id) => id !== animeId) : [...prev, animeId]
     );
+
+    if (session?.user) {
+      if (isFav) {
+        await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('anime_id', animeId);
+      } else {
+        await supabase
+          .from('favorites')
+          .insert([{ user_id: session.user.id, anime_id: animeId }]);
+      }
+    }
   };
 
   const handlePlayAnime = (anime: Anime, episodeNum = 1) => {
@@ -180,7 +283,7 @@ export default function App() {
     setActiveEpisodeNum(episodeNum);
   };
 
-  const updateWatchProgress = (animeId: string, episodeNum: number, pct: number) => {
+  const updateWatchProgress = async (animeId: string, episodeNum: number, pct: number) => {
     const targetAnime = animeList.find((a) => a.id === animeId);
     if (!targetAnime) return;
 
@@ -202,6 +305,20 @@ export default function App() {
       }
       return [updatedItem, ...prev];
     });
+
+    if (session?.user) {
+      await supabase
+        .from('watch_history')
+        .upsert([{
+          user_id: session.user.id,
+          anime_id: animeId,
+          anime_title: targetAnime.title,
+          poster_image: targetAnime.posterImage,
+          episode_number: episodeNum,
+          progress_percentage: pct,
+          updated_at: new Date().toISOString()
+        }], { onConflict: 'user_id,anime_id' });
+    }
   };
 
   // Filter lists based on selected genre & current view tab
