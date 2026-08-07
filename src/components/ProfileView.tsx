@@ -101,7 +101,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    } else {
+      // For local mode, we don't have a real logout, maybe just a message
+      alert("Lokal rejimda tizimdan chiqish imkoniyati yo'q.");
+    }
   };
 
   const handleSelectCover = (bgUrl: string) => {
@@ -425,20 +430,22 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </button>
 
             {/* 3. Admin Panel (If applicable) */}
-            <button
-              onClick={() => setIsAdminPanelOpen(true)}
-              className="w-full flex items-center justify-between py-3.5 px-4 hover:bg-white/5 transition group"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                  <ShieldAlert className="w-4 h-4" />
+            {supabase && (
+              <button
+                onClick={() => setIsAdminPanelOpen(true)}
+                className="w-full flex items-center justify-between py-3.5 px-4 hover:bg-white/5 transition group"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                    <ShieldAlert className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">
+                    Admin Panel (Anime Qo'shish)
+                  </span>
                 </div>
-                <span className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">
-                  Admin Panel (Anime Qo'shish)
-                </span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition" />
-            </button>
+                <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-white transition" />
+              </button>
+            )}
 
           </div>
         </div>

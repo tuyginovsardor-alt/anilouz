@@ -90,6 +90,13 @@ export default function App() {
   const [lang, setLang] = useState('UZ');
 
   useEffect(() => {
+    // If supabase is not configured, skip auth/fetch
+    if (!supabase) {
+      setIsAuthLoading(false);
+      setIsAnimeLoading(false);
+      return;
+    }
+
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -222,7 +229,7 @@ export default function App() {
     );
   }
 
-  if (!session) {
+  if (!session && supabase) {
     return <AuthView onSuccess={() => {}} />;
   }
 
