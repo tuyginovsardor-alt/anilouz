@@ -83,6 +83,7 @@ export default function App() {
       avatar: 'https://i.postimg.cc/1XYBLxjY/photo-2026-06-01-00-29-48.jpg',
       coverImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
       isPremium: true,
+      role: 'admin',
     };
   });
 

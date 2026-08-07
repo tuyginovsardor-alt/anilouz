@@ -167,17 +167,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       
       {/* Header Section with Background Banner & Gradient Vignette */}
       <div 
-        className={`relative h-72 sm:h-80 w-full bg-cover bg-center flex flex-col items-center justify-end pb-6 border-b ${isPremium ? 'border-yellow-500/30 shadow-[0_10px_50px_rgba(234,179,8,0.15)]' : 'border-white/10 shadow-2xl'} transition-all duration-500 overflow-hidden`}
+        className={`relative h-72 sm:h-80 w-full bg-cover bg-center flex flex-col items-center justify-end pb-6 border-b ${isPremium ? 'border-yellow-500/50 shadow-[0_10px_60px_rgba(234,179,8,0.2)]' : 'border-white/10 shadow-2xl'} transition-all duration-500 overflow-hidden`}
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(17, 17, 21, 0.3), ${isPremium ? 'rgba(10, 10, 2, 0.85)' : 'rgba(17, 17, 21, 0.85)'} 70%, ${isPremium ? 'rgba(10, 10, 2, 1)' : 'rgba(17, 17, 21, 1)'}), url('${sanitizeImageUrl(activeCover)}')`
+          backgroundImage: `linear-gradient(to bottom, rgba(17, 17, 21, 0.3), ${isPremium ? 'rgba(10, 10, 2, 0.9)' : 'rgba(17, 17, 21, 0.85)'} 70%, ${isPremium ? 'rgba(10, 10, 2, 1)' : 'rgba(17, 17, 21, 1)'}), url('${sanitizeImageUrl(activeCover)}')`
         }}
       >
         {/* Premium Ornament Overlays */}
         {isPremium && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/gold-dust.png')]" />
-            <div className="absolute top-4 left-4 w-16 h-16 border-t-2 border-l-2 border-yellow-500/30 rounded-tl-3xl" />
-            <div className="absolute top-4 right-4 w-16 h-16 border-t-2 border-r-2 border-yellow-500/30 rounded-tr-3xl" />
+            <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/gold-dust.png')]" />
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-yellow-500/5 to-transparent" />
+            {/* Corner Ornaments */}
+            <div className="absolute top-6 left-6 w-12 h-12 border-t-2 border-l-2 border-yellow-500/40 rounded-tl-xl" />
+            <div className="absolute top-6 right-6 w-12 h-12 border-t-2 border-r-2 border-yellow-500/40 rounded-tr-xl" />
+            <div className="absolute bottom-6 left-6 w-12 h-12 border-b-2 border-l-2 border-yellow-500/40 rounded-bl-xl" />
+            <div className="absolute bottom-6 right-6 w-12 h-12 border-b-2 border-r-2 border-yellow-500/40 rounded-br-xl" />
           </div>
         )}
 
