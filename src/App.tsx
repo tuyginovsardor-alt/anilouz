@@ -121,26 +121,27 @@ export default function App() {
 
           if (!error && profile) {
             setUser({
-              name: profile.name || session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
-              avatar: profile.avatar || session.user.user_metadata.avatar_url || 'https://i.postimg.cc/1XYBLxjY/photo-2026-06-01-00-29-48.jpg',
-              coverImage: profile.cover_image || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
-              isPremium: profile.is_premium || false,
+              name: profile.full_name || session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
+              avatar: profile.avatar_url || session.user.user_metadata.avatar_url || 'https://i.postimg.cc/1XYBLxjY/photo-2026-06-01-00-29-48.jpg',
+              coverImage: profile.banner_url || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
+              isPremium: !!profile.subscription_plan || false,
               balance: profile.balance || 0,
             });
           } else if (error && error.code === 'PGRST116') {
             // Profile doesn't exist, create it
             const newProfile = {
               id: session.user.id,
-              name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
-              avatar: session.user.user_metadata.avatar_url || 'https://i.postimg.cc/1XYBLxjY/photo-2026-06-01-00-29-48.jpg',
+              email: session.user.email,
+              full_name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
+              avatar_url: session.user.user_metadata.avatar_url || 'https://i.postimg.cc/1XYBLxjY/photo-2026-06-01-00-29-48.jpg',
               balance: 0,
-              is_premium: false
+              language: 'uz'
             };
             await supabase.from('profiles').insert([newProfile]);
             
             setUser({
-              name: newProfile.name,
-              avatar: newProfile.avatar,
+              name: newProfile.full_name,
+              avatar: newProfile.avatar_url,
               coverImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
               isPremium: false,
               balance: 0,
@@ -168,10 +169,10 @@ export default function App() {
 
         if (profile) {
           setUser({
-            name: profile.name,
-            avatar: profile.avatar,
-            coverImage: profile.cover_image,
-            isPremium: profile.is_premium,
+            name: profile.full_name,
+            avatar: profile.avatar_url,
+            coverImage: profile.banner_url,
+            isPremium: !!profile.subscription_plan,
             balance: profile.balance,
           });
         }

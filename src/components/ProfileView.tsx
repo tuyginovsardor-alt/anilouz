@@ -101,9 +101,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     e.preventDefault();
     
     const updatedData = {
-      name: editName,
-      avatar: editAvatar,
-      cover_image: editCover,
+      full_name: editName,
+      avatar_url: editAvatar,
+      banner_url: editCover,
     };
 
     if (supabase) {
@@ -139,7 +139,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       if (authUser) {
         await supabase
           .from('profiles')
-          .update({ cover_image: bgUrl })
+          .update({ banner_url: bgUrl })
           .eq('id', authUser.id);
       }
     }
