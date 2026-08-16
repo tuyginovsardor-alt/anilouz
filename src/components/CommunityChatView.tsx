@@ -107,43 +107,45 @@ export const CommunityChatView: React.FC<CommunityChatViewProps> = ({ user, onBa
     const msgContent = inputText;
     const msgImage = customImageUrl || imageUrlInput;
 
-    if (supabase) {
-      const isAdmin = user.role === 'admin' || user.role === 'owner';
-      const { error } = await supabase
-        .from('messages')
-        .insert([{
-          sender_name: user.name || 'ANILO EGA²',
-          sender_avatar: user.avatar,
-          is_admin: isAdmin,
-          content: msgContent,
-          image_url: msgImage,
-          quoted_sender: replyTo?.senderName,
-          quoted_text: replyTo ? (replyTo.text || '[Rasm]') : undefined,
-          user_color: isAdmin ? 'text-yellow-400' : 'text-emerald-400',
-          group_id: 'public'
-        }]);
+    const isAdmin = user.role === 'admin' || user.role === 'owner';
+    const timeString = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+    
+    const localNewMessage: ChatMessage = {
+      id: 'local-' + Date.now(),
+      senderName: user.name || 'ANILO FAN',
+      senderAvatar: user.avatar,
+      isAdmin: isAdmin,
+      isSelf: true,
+      text: msgContent,
+      image: msgImage,
+      quotedSender: replyTo ? replyTo.senderName : undefined,
+      quotedText: replyTo ? (replyTo.text || '[Rasm]') : undefined,
+      timestamp: timeString,
+      userColor: isAdmin ? 'text-yellow-400' : 'text-emerald-400',
+    };
 
-      if (error) {
-        console.error('Xabar yuborishda xatolik:', error);
+    // Immediate optimistic local update
+    setMessages((prev) => [...prev, localNewMessage]);
+    setTimeout(() => scrollToBottom('smooth'), 50);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('messages')
+          .insert([{
+            sender_name: user.name || 'ANILO EGA²',
+            sender_avatar: user.avatar,
+            is_admin: isAdmin,
+            content: msgContent,
+            image_url: msgImage,
+            quoted_sender: replyTo?.senderName,
+            quoted_text: replyTo ? (replyTo.text || '[Rasm]') : undefined,
+            user_color: isAdmin ? 'text-yellow-400' : 'text-emerald-400',
+            group_id: 'public'
+          }]);
+      } catch (e) {
+        console.warn("Supabase message save note:", e);
       }
-    } else {
-      // Fallback for local testing
-      const timeString = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
-      const isAdmin = user.role === 'admin' || user.role === 'owner';
-      const newMessage: ChatMessage = {
-        id: Date.now().toString(),
-        senderName: user.name || 'ANILO FAN',
-        senderAvatar: user.avatar,
-        isAdmin: isAdmin,
-        isSelf: true,
-        text: msgContent,
-        image: msgImage,
-        quotedSender: replyTo ? replyTo.senderName : undefined,
-        quotedText: replyTo ? (replyTo.text || '[Rasm]') : undefined,
-        timestamp: timeString,
-        userColor: isAdmin ? 'text-yellow-400' : 'text-emerald-400',
-      };
-      setMessages((prev) => [...prev, newMessage]);
     }
 
     setInputText('');

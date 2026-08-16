@@ -1,0 +1,16 @@
+# Anilo.uz SEO Robots Configuration
+User-agent: *
+Allow: /
+Sitemap: https://anilo.uz/sitemap.xml
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Video
+Allow: /
+
+User-agent: Yandex
+Allow: /
+
+User-agent: Bingbot
+Allow: /

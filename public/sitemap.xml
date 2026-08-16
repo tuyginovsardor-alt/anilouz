@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  
+  <!-- Main Home & Platform Routes -->
+  <url>
+    <loc>https://anilo.uz/</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <url>
+    <loc>https://anilo.uz/catalog</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://anilo.uz/reels</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://anilo.uz/community</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Popular Anime Catalogs in Uzbekistan -->
+  <url>
+    <loc>https://anilo.uz/anime/solo-leveling</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+    <video:video>
+      <video:thumbnail_loc>https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&amp;w=800&amp;auto=format&amp;fit=crop</video:thumbnail_loc>
+      <video:title>Solo Leveling 4K O'zbek tilida (Anilo.uz)</video:title>
+      <video:description>Sung Jinwoo sarguzashtlari o'zbekcha professional dublyajda Anilo.uz platformasida HD va 4K formatda.</video:description>
+    </video:video>
+  </url>
+
+  <url>
+    <loc>https://anilo.uz/anime/jujutsu-kaisen</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <url>
+    <loc>https://anilo.uz/anime/demon-slayer</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <url>
+    <loc>https://anilo.uz/anime/attack-on-titan</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <url>
+    <loc>https://anilo.uz/anime/naruto-shippuden</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://anilo.uz/anime/one-piece</loc>
+    <lastmod>2026-08-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+</urlset>

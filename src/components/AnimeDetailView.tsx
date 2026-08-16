@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Play, Heart, Star, ArrowLeft, Clock, Calendar, Tv, Sparkles, 
-  ChevronRight, Volume2, UserCheck, Layers, Check
+  ChevronRight, Volume2, UserCheck, Layers, Check, MessageSquare, Send, ThumbsUp
 } from 'lucide-react';
-import { Anime, Episode } from '../types';
+import { Anime, Episode, Comment } from '../types';
 import { AnimeCard } from './AnimeCard';
 
 interface AnimeDetailViewProps {
@@ -25,6 +25,66 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
   isFavorite,
   onBack,
 }) => {
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState<Comment[]>([
+    {
+      id: 'c-1',
+      animeId: anime.id,
+      episodeNumber: 1,
+      userName: 'AnimeLover_UZ',
+      userAvatar: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=200&auto=format&fit=crop',
+      text: 'Bu anime syujeti va musiqasi haqiqatan ham aqlbovar qilmas darajada zo\'r! Anilo.uz ga tarjima uchun rahmat!',
+      date: 'Bugun, 14:20',
+      likes: 18,
+      isLiked: false
+    },
+    {
+      id: 'c-2',
+      animeId: anime.id,
+      episodeNumber: 1,
+      userName: 'Bekzod_Otaku',
+      userAvatar: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=200&auto=format&fit=crop',
+      text: 'Ovozlashtirish sifati 4K video bilan ajoyib mos tushgan. Keyingi qismlarni intizorlik bilan kutamiz.',
+      date: 'Kecha, 21:05',
+      likes: 9,
+      isLiked: true
+    }
+  ]);
+
+  const handleSendComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+
+    const newC: Comment = {
+      id: 'c-' + Date.now(),
+      animeId: anime.id,
+      episodeNumber: 1,
+      userName: 'Siz (Foydalanuvchi)',
+      userAvatar: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=200&auto=format&fit=crop',
+      text: commentText.trim(),
+      date: 'Hozirgina',
+      likes: 0,
+      isLiked: false
+    };
+
+    setComments([newC, ...comments]);
+    setCommentText('');
+  };
+
+  const toggleCommentLike = (id: string) => {
+    setComments(comments.map(c => {
+      if (c.id === id) {
+        const isLiked = !c.isLiked;
+        return {
+          ...c,
+          isLiked,
+          likes: isLiked ? c.likes + 1 : c.likes - 1
+        };
+      }
+      return c;
+    }));
+  };
+
   // Similar anime filtered by genres
   const similarAnime = allAnime
     .filter((a) => a.id !== anime.id && a.genres.some((g) => anime.genres.includes(g)))
@@ -53,6 +113,7 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
       image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=200&auto=format&fit=crop',
     },
   ];
+
 
   return (
     <div className="min-h-screen bg-[#0F0F13] text-white pb-24 animate-fadeIn">
@@ -200,6 +261,74 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
                     <p className="text-xs font-bold text-white truncate">{member.name}</p>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider truncate">{member.role}</p>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Izohlar va Fikrlar / Comments Section */}
+          <div className="space-y-4 pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-orange-400" />
+                Fikrlar va Sharhlar ({comments.length})
+              </h3>
+              <span className="text-xs text-orange-400 font-bold">4.9 ★ Rating</span>
+            </div>
+
+            {/* Comment Form */}
+            <form onSubmit={handleSendComment} className="flex gap-2">
+              <input 
+                type="text" 
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Ushbu anime haqida o'z fikringizni yozing..."
+                className="flex-1 bg-[#161622] border border-white/10 focus:border-orange-500 rounded-xl px-4 py-3 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none transition shadow-inner"
+              />
+              <button 
+                type="submit"
+                disabled={!commentText.trim()}
+                className="px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-40 text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition active:scale-95 shadow-lg shadow-orange-600/30"
+              >
+                <Send className="w-4 h-4" />
+                <span className="hidden sm:inline">Yuborish</span>
+              </button>
+            </form>
+
+            {/* Comments List */}
+            <div className="space-y-3 pt-2">
+              {comments.map((c) => (
+                <div key={c.id} className="p-4 rounded-2xl bg-[#161622] border border-white/5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={c.userAvatar} 
+                        alt={c.userName} 
+                        className="w-8 h-8 rounded-full object-cover border border-orange-500/40"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-white">{c.userName}</p>
+                        <p className="text-[10px] text-gray-400">{c.date}</p>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => toggleCommentLike(c.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition ${
+                        c.isLiked 
+                          ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40' 
+                          : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span>{c.likes}</span>
+                    </button>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-gray-300 leading-relaxed pl-11">
+                    {c.text}
+                  </p>
                 </div>
               ))}
             </div>

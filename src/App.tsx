@@ -428,10 +428,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0E0E12] text-gray-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black">
+    <div className={`h-screen bg-[#0E0E12] text-gray-100 flex flex-col font-sans selection:bg-orange-500 selection:text-black overflow-hidden`}>
       
-      {/* Top Navbar - Hidden on Reels */}
-      {activeTab !== 'reels' && (
+      {/* Top Navbar - Hidden on Reels and Messages */}
+      {activeTab !== 'reels' && activeTab !== 'messages' && (
         <Navbar
           activeTab={activeTab}
           setActiveTab={(tab) => {
@@ -450,32 +450,34 @@ export default function App() {
       )}
 
       {/* Main Workspace Layout (Sidebar + Main View Area) */}
-      <div className="flex-1 flex max-w-[1800px] w-full mx-auto">
+      <div className={`flex-1 flex ${(activeTab === 'reels' || activeTab === 'messages') ? 'w-full' : 'max-w-[1800px] w-full mx-auto'}`}>
         
-        {/* Left Sidebar */}
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={(tab) => {
-            setDetailAnime(null);
-            setActiveTab(tab);
-          }}
-          selectedGenre={selectedGenre}
-          onSelectGenre={(genre) => {
-            setDetailAnime(null);
-            setSelectedGenre(genre);
-          }}
-          genres={GENRES_DATA}
-          onOpenPremium={() => setIsPremiumOpen(true)}
-          isOpenMobile={isMobileSidebarOpen}
-          onCloseMobile={() => setIsMobileSidebarOpen(false)}
-          user={user}
-        />
+        {/* Left Sidebar - Hidden on Reels and Messages */}
+        {activeTab !== 'reels' && activeTab !== 'messages' && (
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={(tab) => {
+              setDetailAnime(null);
+              setActiveTab(tab);
+            }}
+            selectedGenre={selectedGenre}
+            onSelectGenre={(genre) => {
+              setDetailAnime(null);
+              setSelectedGenre(genre);
+            }}
+            genres={GENRES_DATA}
+            onOpenPremium={() => setIsPremiumOpen(true)}
+            isOpenMobile={isMobileSidebarOpen}
+            onCloseMobile={() => setIsMobileSidebarOpen(false)}
+            user={user}
+          />
+        )}
 
         {/* Main Content Pane */}
-        <main className={`flex-1 min-w-0 p-3 sm:p-6 lg:p-8 pb-32 lg:pb-12 scroll-smooth ${
+        <main className={`flex-1 min-w-0 ${
           (activeTab === 'community' || activeTab === 'messages' || activeTab === 'reels') 
             ? 'h-full !p-0 overflow-hidden flex flex-col' 
-            : ''
+            : 'p-3 sm:p-6 lg:p-8 pb-32 lg:pb-12 scroll-smooth overflow-y-auto'
         }`}>
           
           {/* Detail View Pane */}
@@ -817,11 +819,11 @@ export default function App() {
         </main>
       </div>
 
-      {/* Footer */}
-      <Footer />
+      {/* Footer - Only visible on Home tab when no detail view is active */}
+      {activeTab === 'home' && !detailAnime && <Footer />}
 
-      {/* Mobile Bottom Navigation - Hidden on Reels or Active Chat */}
-      {activeTab !== 'reels' && !isPrivateChatOpen && (
+      {/* Mobile Bottom Navigation - Hidden on Active Chat */}
+      {!isPrivateChatOpen && (
         <MobileBottomNav 
           activeTab={activeTab} 
           setActiveTab={(tab) => {

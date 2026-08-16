@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, LayoutGrid, MessageSquare, Play, User } from 'lucide-react';
+import { Home, LayoutGrid, Send, Play, User } from 'lucide-react';
 import { ActiveTab, UserProfile } from '../types';
 
 interface MobileBottomNavProps {
@@ -46,7 +46,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             activeTab === 'messages' ? 'text-orange-500' : 'text-gray-400 hover:text-gray-200'
           }`}
         >
-          <MessageSquare className={`w-6 h-6 ${activeTab === 'messages' ? 'scale-110' : ''}`} />
+          <Send className={`w-6 h-6 -rotate-[30deg] translate-x-0.5 -translate-y-0.5 ${activeTab === 'messages' ? 'scale-110' : ''}`} />
           <span className="text-[10px] font-bold">Chat</span>
           <span className="absolute top-0 right-1 w-2 h-2 bg-orange-500 rounded-full border border-[#0E0E12]" />
         </button>
