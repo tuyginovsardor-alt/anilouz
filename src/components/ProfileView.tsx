@@ -334,7 +334,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
         {/* Fandub Studio Card */}
         <button
-          onClick={() => setIsFandubModalOpen(true)}
+          onClick={() => setActiveTab('fandub_dashboard')}
           className="w-full bg-[#6C5CE7]/20 hover:bg-[#6C5CE7]/30 border border-[#6C5CE7]/40 rounded-2xl p-4 flex items-center gap-4 transition-all group shadow-lg bg-gradient-to-r from-[#6C5CE7]/30 to-[#6C5CE7]/10 cursor-pointer text-left active:scale-[0.99]"
         >
           <div className="bg-[#6C5CE7]/30 p-2.5 rounded-xl flex items-center justify-center text-[#6C5CE7] border border-[#6C5CE7]/40 group-hover:scale-110 transition-transform">
@@ -342,10 +342,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
           <div className="flex flex-col items-start flex-1 min-w-0">
             <span className="font-extrabold text-base text-white tracking-wide group-hover:text-[#8c7ae6] transition-colors">
-              FANDUB STUDIO
+              FANDUB STUDIO DASHBORDI
             </span>
             <span className="text-[11px] font-bold text-[#b7b5b4] uppercase tracking-wider mt-0.5">
-              IJODKOR PANELI VA OVOZ BERISH
+              IJODKOR PANELI, MABLAG' YECHISH VA SHARTNOMA
             </span>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition" />

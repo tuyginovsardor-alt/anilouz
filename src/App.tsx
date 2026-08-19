@@ -19,11 +19,13 @@ import { ReelsView } from './components/ReelsView';
 import { Footer } from './components/Footer';
 import { AuthView } from './components/AuthView';
 import { AdminPanel } from './components/AdminPanel';
+import { FandubDashboardView } from './components/FandubDashboardView';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
 import { ANIME_DATABASE, GENRES_DATA, INITIAL_CONTINUE_WATCHING } from './data/animeData';
 import { Anime, ActiveTab, WatchProgress, UserProfile } from './types';
+import { updateSEOHead } from './utils/seo';
 import { ChevronRight, Flame, Sparkles, Tv, Clapperboard, Film, PlayCircle, Star, Monitor, Smartphone, LayoutGrid } from 'lucide-react';
 
 export default function App() {
@@ -93,6 +95,29 @@ export default function App() {
 
   // Language state
   const [lang, setLang] = useState('UZ');
+
+  useEffect(() => {
+    if (detailAnime) return; // Handled inside AnimeDetailView
+
+    const tabTitles: Record<string, string> = {
+      home: "Anilo.uz - O'zbekistondagi #1 Anime Platformasi (4K & HD)",
+      catalog: "Anime Katalogi va Barcha Janrlar - Anilo.uz",
+      reels: "Anime Reels va Qisqa Videolar - Anilo.uz",
+      community: "O'zbekiston Anime Hamjamiyati Chat - Anilo.uz",
+      messages: "Shaxsiy Xabarlar va Chat Center - Anilo.uz",
+      favorites: "Mening Sevimli Animelarim - Anilo.uz",
+      history: "Tomosha Qilish Tarixi - Anilo.uz",
+      profile: "Foydalanuvchi Profili - Anilo.uz",
+      admin: "Admin Tizimi Moderatsiyasi - Anilo.uz",
+    };
+
+    updateSEOHead({
+      title: tabTitles[activeTab] || "Anilo.uz - O'zbekcha Anime Platformasi",
+      description: "Anilo.uz - O'zbekistondagi eng yirik anime ko'rish platformasi. Solo Leveling, Jujutsu Kaisen, Demon Slayer va boshqa mashhur animelar o'zbekcha dublyajda va 4K formatda.",
+      keywords: "anilo, anilo.uz, anime uzbekcha, 4k anime, solo leveling, jujutsu kaisen, anime katalog, uzbek dublyaj",
+      url: `https://anilo.uz/${activeTab !== 'home' ? activeTab : ''}`
+    });
+  }, [activeTab, detailAnime]);
 
   useEffect(() => {
     // If supabase is not configured, skip auth/fetch
@@ -581,6 +606,12 @@ export default function App() {
             <AdminPanel 
               onClose={() => setActiveTab('home')}
               onAnimeAdded={(newAnime) => setAnimeList(prev => [newAnime, ...prev])}
+            />
+          ) : activeTab === 'fandub_dashboard' ? (
+            <FandubDashboardView 
+              user={user}
+              allAnime={animeList}
+              onBack={() => setActiveTab('profile')}
             />
           ) : activeTab === 'home' && !selectedGenre ? (
             /* View 3: Default Home Screen */

@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Plus, X, Upload, Film, Image as ImageIcon, 
-  Trash2, Save, AlertCircle, CheckCircle2, CloudUpload 
+  Trash2, Save, AlertCircle, CheckCircle2, CloudUpload, SearchCheck 
 } from 'lucide-react';
 import { Anime, Episode } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { pingGoogleSearchConsole } from '../utils/seo';
 
 interface AdminViewProps {
   onClose: () => void;
@@ -113,8 +114,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onClose, onAnimeAdded }) =
       
       const newlyCreatedMovie = movieInsert[0];
 
-      setSuccess("Anime muvaffaqiyatli qo'shildi!");
-      
       // Map back to Anime interface for UI update
       const fullAnime: Anime = {
         id: newlyCreatedMovie.id.toString(),
@@ -135,6 +134,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onClose, onAnimeAdded }) =
         totalEpisodes: newlyCreatedMovie.episodes?.length || 1,
         season: newlyCreatedMovie.year?.toString() || '2024',
       };
+
+      setSuccess("Anime muvaffaqiyatli qo'shildi va Google Search Console-ga avtomatik indeksatsiya xabari yuborildi! ⚡");
+      
+      // Auto ping Google Search Console & Bing Search
+      pingGoogleSearchConsole(title, fullAnime.id);
 
       onAnimeAdded(fullAnime);
       

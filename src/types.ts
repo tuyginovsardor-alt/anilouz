@@ -69,7 +69,36 @@ export interface Genre {
   count: number;
 }
 
-export type ActiveTab = 'home' | 'anime' | 'series' | 'movies' | 'genres' | 'new' | 'popular' | 'ongoing' | 'favorites' | 'history' | 'profile' | 'community' | 'admin' | 'reels' | 'messages' | 'catalog';
+export type ActiveTab = 'home' | 'anime' | 'series' | 'movies' | 'genres' | 'new' | 'popular' | 'ongoing' | 'favorites' | 'history' | 'profile' | 'community' | 'admin' | 'reels' | 'messages' | 'catalog' | 'fandub_dashboard';
+
+export interface FandubProfile {
+  id: string;
+  userId: string;
+  studioName: string;
+  handle: string;
+  logoUrl: string;
+  bio: string;
+  cardNumber?: string;
+  balance: number;
+  totalEarned: number;
+  isVerified: boolean;
+  commissionAgreed: boolean;
+  subscribersCount?: number;
+  totalViews?: number;
+}
+
+export interface FandubPayout {
+  id: string;
+  fandubId: string;
+  amount: number;
+  netAmount: number;
+  platformFee: number;
+  autoPayFee: number;
+  cardNumber: string;
+  status: 'pending' | 'completed' | 'rejected';
+  requestedAt: string;
+  processedAt?: string;
+}
 
 export interface ChatMessage {
   id: string;
@@ -86,11 +115,13 @@ export interface ChatMessage {
 }
 
 export interface UserProfile {
+  id?: string;
   name: string;
   avatar: string;
   coverImage?: string;
   isPremium: boolean;
   premiumExpires?: string;
   balance?: number;
-  role?: string;
+  role?: 'user' | 'fandub' | 'admin' | 'owner' | string;
+  fandubInfo?: FandubProfile;
 }

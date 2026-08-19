@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Play, Heart, Star, ArrowLeft, Clock, Calendar, Tv, Sparkles, 
   ChevronRight, Volume2, UserCheck, Layers, Check, MessageSquare, Send, ThumbsUp
 } from 'lucide-react';
 import { Anime, Episode, Comment } from '../types';
 import { AnimeCard } from './AnimeCard';
+import { updateSEOHead } from '../utils/seo';
 
 interface AnimeDetailViewProps {
   anime: Anime;
@@ -26,6 +27,17 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
   onBack,
 }) => {
   const [commentText, setCommentText] = useState('');
+
+  useEffect(() => {
+    updateSEOHead({
+      title: `${anime.title} 4K (O'zbek Tilida) Bepul Ko'rish`,
+      description: anime.description || `${anime.title} animesini o'zbekcha dublyaj va subtitrlarda Anilo.uz platformasida 4K hamda HD sifatda tomosha qiling.`,
+      keywords: `anilo, anilo.uz, ${anime.title}, ${anime.title} uzbekcha, ${(anime.genres || []).join(', ')}, 4k anime uzbekistan`,
+      image: anime.posterImage || anime.bannerImage,
+      url: `https://anilo.uz/anime/${anime.id}`,
+      anime
+    });
+  }, [anime]);
   const [comments, setComments] = useState<Comment[]>([
     {
       id: 'c-1',
@@ -218,6 +230,31 @@ export const AnimeDetailView: React.FC<AnimeDetailViewProps> = ({
             <p className="text-gray-300 leading-relaxed text-sm sm:text-base font-medium">
               {anime.description}
             </p>
+          </div>
+
+          {/* Fandub Dubbing Studio Profile Card */}
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-[#182029] to-[#121820] border border-orange-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-center gap-4">
+              <img 
+                src="https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=200&auto=format&fit=crop" 
+                alt="Anilo Dubbing Studio" 
+                className="w-14 h-14 rounded-full object-cover border-2 border-orange-500 shadow-md shrink-0"
+              />
+              <div className="space-y-0.5 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-1.5">
+                  <h4 className="font-extrabold text-sm text-white">Anilo Dubbing Studio</h4>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/40">
+                    ✓ Rasmiy Fandub
+                  </span>
+                </div>
+                <p className="text-xs font-mono text-orange-400">@AniloDubbing</p>
+                <p className="text-[11px] text-gray-300">Professional o'zbekcha 4K dublyaj va tarjima mualliflari</p>
+              </div>
+            </div>
+
+            <button className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-extrabold text-xs shrink-0 transition active:scale-95 shadow-lg shadow-orange-500/20">
+              + Obuna bo'lish (14.2K)
+            </button>
           </div>
 
           {/* Quick Specifications Info Box */}
